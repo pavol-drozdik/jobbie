@@ -56,8 +56,16 @@ export default function HomeScreen() {
       token: session.access_token,
       query: { limit: '30', offset: '0', is_active: 'true', sort: 'date_desc' },
     });
-    if (res.ok && Array.isArray(res.data)) setJobs(res.data);
-    else setJobs([]);
+    if (res.ok && Array.isArray(res.data)) {
+      setJobs(res.data);
+      if (res.data.length > 0) {
+        api('/api/jobs/impressions', {
+          method: 'POST',
+          token: session.access_token,
+          body: { job_ids: res.data.map((j) => j.id) },
+        }).catch(() => {});
+      }
+    } else setJobs([]);
   };
 
   useEffect(() => {

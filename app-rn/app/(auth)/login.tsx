@@ -90,6 +90,14 @@ export default function LoginScreen() {
         </Button>
         <Button
           variant="link"
+          onPress={() => router.back()}
+          disabled={loading}
+          style={styles.link}
+        >
+          Späť
+        </Button>
+        <Button
+          variant="link"
           onPress={() => router.push('/(auth)/register')}
           disabled={loading}
           style={styles.link}

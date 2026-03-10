@@ -8,6 +8,8 @@ export type CurrentUser = {
   id: string;
   email: string;
   role: UserRole;
+  looking_for_work: boolean;
+  offering_work: boolean;
 };
 
 type AuthContextValue = {
@@ -16,6 +18,7 @@ type AuthContextValue = {
   loading: boolean;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  syncSession: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -26,15 +29,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchUser = async (token: string) => {
-    const res = await api<{ id: string; email: string; role: string }>(
-      '/api/auth/me',
-      { token }
-    );
+    const res = await api<{
+      id: string;
+      email: string;
+      role: string;
+      looking_for_work?: boolean;
+      offering_work?: boolean;
+    }>('/api/auth/me', { token });
     if (res.ok && res.data) {
       setUser({
         id: res.data.id,
         email: res.data.email,
         role: res.data.role as UserRole,
+        looking_for_work: res.data.looking_for_work ?? false,
+        offering_work: res.data.offering_work ?? false,
       });
     } else {
       setUser(null);
@@ -51,8 +59,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  /** Sync session from Supabase (e.g. after signUp so roles screen has token). */
+  const syncSession = async () => {
+    const { data } = await supabase.auth.getSession();
+    const s = data.session;
+    setSession(s ? { access_token: s.access_token } : null);
+    if (s?.access_token) {
+      await fetchUser(s.access_token);
+    } else {
+      setUser(null);
+    }
+  };
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session: s } }) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7490/ingest/953e80a6-dd3a-405d-9917-1610bb939dfd',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'346cbd'},body:JSON.stringify({sessionId:'346cbd',location:'auth-context.tsx:initial getSession',message:'Initial getSession resolved',data:{hasSession:!!s,hasToken:!!s?.access_token},timestamp:Date.now(),hypothesisId:'H1,H3,H5'})}).catch(()=>{});
+      // #endregion
       setSession(s ? { access_token: s.access_token } : null);
       if (s?.access_token) {
         fetchUser(s.access_token).finally(() => setLoading(false));
@@ -64,7 +87,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, s) => {
+    } = supabase.auth.onAuthStateChange((event, s) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7490/ingest/953e80a6-dd3a-405d-9917-1610bb939dfd',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'346cbd'},body:JSON.stringify({sessionId:'346cbd',location:'auth-context.tsx:onAuthStateChange',message:'Auth state change',data:{event,hasSession:!!s,hasToken:!!s?.access_token},timestamp:Date.now(),hypothesisId:'H1,H2,H3,H5'})}).catch(()=>{});
+      // #endregion
       setSession(s ? { access_token: s.access_token } : null);
       if (s?.access_token) {
         fetchUser(s.access_token);
@@ -77,9 +103,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
     setSession(null);
     setUser(null);
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // Clear state already; ensure promise resolves so caller can navigate.
+    }
   };
 
   return (

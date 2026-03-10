@@ -40,7 +40,13 @@ export default function JobDetailScreen() {
     const res = await api<Job>(`/api/jobs/${id}`, {
       token: session.access_token,
     });
-    if (res.ok && res.data) setJob(res.data);
+    if (res.ok && res.data) {
+      setJob(res.data);
+      api(`/api/jobs/${id}/view`, {
+        method: 'POST',
+        token: session.access_token,
+      }).catch(() => {});
+    }
   };
 
   useEffect(() => {

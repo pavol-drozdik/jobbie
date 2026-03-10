@@ -5,6 +5,7 @@ import {
   Body,
   UseGuards,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { JwksAuthGuard } from '../auth/jwks-auth.guard';
 import { CurrentUserDecorator } from '../auth/current-user.decorator';
@@ -13,12 +14,16 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { ProfileResponseDto, ProfileUpdateDto } from './profiles.dto';
 
 const PROFILE_COLUMNS =
-  'id,role,display_name,company_name,avatar_url,bio,education,skills,' +
-  'job_interests,location,description,sector';
+  'id,role,display_name,company_name,first_name,last_name,registered_office,' +
+  'tax_id,vat_id,avatar_url,bio,education,skills,job_interests,location,' +
+  'description,sector,looking_for_work,offering_work,experience,' +
+  'registration_number,website,logo_url';
 
 @Controller('profiles')
 @UseGuards(JwksAuthGuard)
 export class ProfilesController {
+  private readonly logger = new Logger(ProfilesController.name);
+
   constructor(private supabase: SupabaseService) {}
 
   @Get('me')
@@ -29,10 +34,36 @@ export class ProfilesController {
       .select(PROFILE_COLUMNS)
       .eq('id', user.id)
       .single();
-    if (error || !data) {
-      throw new NotFoundException('Profil nebol nájdený.');
+    if (!error && data) {
+      return data as unknown as ProfileResponseDto;
     }
-    return data as unknown as ProfileResponseDto;
+    this.logger.warn(
+      `Profile select failed for user ${user.id}: code=${(error as { code?: string })?.code} message=${(error as { message?: string })?.message}`,
+    );
+    const { data: created, error: insertError } = await this.supabase
+      .getClient()
+      .from('profiles')
+      .insert({
+        id: user.id,
+        role: user.role,
+        looking_for_work: true,
+        offering_work: false,
+      })
+      .select(PROFILE_COLUMNS)
+      .single();
+    if (!insertError && created) {
+      return created as unknown as ProfileResponseDto;
+    }
+    const { data: retry } = await this.supabase
+      .getClient()
+      .from('profiles')
+      .select(PROFILE_COLUMNS)
+      .eq('id', user.id)
+      .single();
+    if (retry) return retry as unknown as ProfileResponseDto;
+    throw new NotFoundException(
+      `Profil nebol nájdený. (user id: ${user.id})`,
+    );
   }
 
   @Patch('me')
@@ -50,7 +81,9 @@ export class ProfilesController {
         .eq('id', user.id)
         .single();
       if (error || !data) {
-        throw new NotFoundException('Profil nebol nájdený.');
+        throw new NotFoundException(
+          `Profil nebol nájdený. (user id: ${user.id})`,
+        );
       }
       return data as unknown as ProfileResponseDto;
     }
@@ -64,7 +97,19 @@ export class ProfilesController {
       .select(PROFILE_COLUMNS)
       .single();
     if (error || !data) {
-      throw new NotFoundException('Profil nebol nájdený.');
+      this.logger.warn(
+        `Profile update failed for user ${user.id}: code=${(error as { code?: string })?.code} message=${(error as { message?: string })?.message}`,
+      );
+      const { data: fallback } = await this.supabase
+        .getClient()
+        .from('profiles')
+        .select(PROFILE_COLUMNS)
+        .eq('id', user.id)
+        .single();
+      if (fallback) return fallback as unknown as ProfileResponseDto;
+      throw new NotFoundException(
+        `Profil nebol nájdený. (user id: ${user.id})`,
+      );
     }
     return data as unknown as ProfileResponseDto;
   }

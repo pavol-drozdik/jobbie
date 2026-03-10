@@ -57,8 +57,16 @@ export default function FindWorkScreen() {
       token: session.access_token,
       query,
     });
-    if (res.ok && Array.isArray(res.data)) setJobs(res.data);
-    else setJobs([]);
+    if (res.ok && Array.isArray(res.data)) {
+      setJobs(res.data);
+      if (res.data.length > 0) {
+        api('/api/jobs/impressions', {
+          method: 'POST',
+          token: session.access_token,
+          body: { job_ids: res.data.map((j) => j.id) },
+        }).catch(() => {});
+      }
+    } else setJobs([]);
   }, [session?.access_token, filters]);
 
   useEffect(() => {

@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   Alert,
   TouchableOpacity,
+  Switch,
+  Platform,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '../../lib/auth-context';
@@ -16,35 +18,69 @@ import { colors, spacing, typography } from '../../constants/theme';
 import { Button, Input, Label } from '../../components/ui';
 
 type Profile = {
+  role?: string;
+  looking_for_work?: boolean;
+  offering_work?: boolean;
   display_name?: string | null;
   company_name?: string | null;
   bio?: string | null;
   education?: string | null;
   skills?: string | null;
+  job_interests?: string | null;
   location?: string | null;
   description?: string | null;
   sector?: string | null;
+  experience?: string | null;
+  registration_number?: string | null;
+  website?: string | null;
+  logo_url?: string | null;
 };
 
 export default function ProfileScreen() {
-  const { user, session, signOut } = useAuth();
+  const { user, session, signOut, refreshUser } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [displayName, setDisplayName] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [bio, setBio] = useState('');
+  const [lookingForWork, setLookingForWork] = useState(false);
+  const [offeringWork, setOfferingWork] = useState(false);
+  const [skills, setSkills] = useState('');
+  const [experience, setExperience] = useState('');
+  const [jobInterests, setJobInterests] = useState('');
+  const [location, setLocation] = useState('');
+  const [description, setDescription] = useState('');
+  const [sector, setSector] = useState('');
+  const [registrationNumber, setRegistrationNumber] = useState('');
+  const [website, setWebsite] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const load = async () => {
     if (!session?.access_token) return;
+    setSaveError(null);
     const res = await api<Profile & { email?: string }>('/api/profiles/me', {
       token: session.access_token,
     });
     if (res.ok && res.data) {
-      setProfile(res.data);
-      setDisplayName(res.data.display_name ?? '');
-      setCompanyName(res.data.company_name ?? '');
-      setBio(res.data.bio ?? '');
+      const d = res.data;
+      setProfile(d);
+      setSaveError(null);
+      setDisplayName(d.display_name ?? '');
+      setCompanyName(d.company_name ?? '');
+      setBio(d.bio ?? '');
+      setLookingForWork(d.looking_for_work ?? true);
+      setOfferingWork(d.offering_work ?? false);
+      setSkills(d.skills ?? '');
+      setExperience(d.experience ?? '');
+      setJobInterests(d.job_interests ?? '');
+      setLocation(d.location ?? '');
+      setDescription(d.description ?? '');
+      setSector(d.sector ?? '');
+      setRegistrationNumber(d.registration_number ?? '');
+      setWebsite(d.website ?? '');
+      setLogoUrl(d.logo_url ?? '');
     }
   };
 
@@ -55,32 +91,62 @@ export default function ProfileScreen() {
   const handleSave = async () => {
     if (!session?.access_token) return;
     setSaving(true);
+    setSaveError(null);
     try {
-      await api('/api/profiles/me', {
+      const res = await api('/api/profiles/me', {
         token: session.access_token,
         method: 'PATCH',
         body: {
           display_name: displayName.trim() || null,
           company_name: companyName.trim() || null,
           bio: bio.trim() || null,
+          looking_for_work: lookingForWork,
+          offering_work: offeringWork,
+          skills: skills.trim() || null,
+          experience: experience.trim() || null,
+          job_interests: jobInterests.trim() || null,
+          location: location.trim() || null,
+          description: description.trim() || null,
+          sector: sector.trim() || null,
+          registration_number: registrationNumber.trim() || null,
+          website: website.trim() || null,
+          logo_url: logoUrl.trim() || null,
         },
       });
+      if (!res.ok) {
+        const msg =
+          (res.data as { message?: string })?.message ||
+          res.body ||
+          'Uloženie zlyhalo.';
+        setSaveError(msg);
+        return;
+      }
       await load();
+      await refreshUser();
     } finally {
       setSaving(false);
     }
   };
 
+  const performLogout = () => {
+    signOut().then(() => router.replace('/(auth)/login'));
+  };
+
   const handleLogout = () => {
-    Alert.alert('Odhlásiť', 'Naozaj sa chcete odhlásiť?', [
-      { text: S.cancel, style: 'cancel' },
-      {
-        text: S.logout,
-        style: 'destructive',
-        onPress: () =>
-          signOut().then(() => router.replace('/(auth)/login')),
-      },
-    ]);
+    if (Platform.OS === 'web') {
+      if (window.confirm('Naozaj sa chcete odhlásiť?')) {
+        performLogout();
+      }
+    } else {
+      Alert.alert('Odhlásiť', 'Naozaj sa chcete odhlásiť?', [
+        { text: S.cancel, style: 'cancel' },
+        {
+          text: S.logout,
+          style: 'destructive',
+          onPress: performLogout,
+        },
+      ]);
+    }
   };
 
   if (!user) {
@@ -99,25 +165,94 @@ export default function ProfileScreen() {
     );
   }
 
+  const isCompany = profile?.role === 'company';
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Text style={styles.heading}>{S.profilTitle}</Text>
+      {saveError ? (
+        <Text style={styles.saveError} selectable>{saveError}</Text>
+      ) : null}
       <Label>{S.emailReadOnly}</Label>
       <Text style={styles.value}>{user.email}</Text>
-      <Label>{S.fullName}</Label>
+      <Label>{S.roleLabel}</Label>
+      <Text style={styles.value}>
+        {isCompany ? S.roleCompany : S.roleIndividual}
+      </Text>
+      <View style={styles.switchRow}>
+        <Text style={styles.switchLabel}>{S.lookingForWork}</Text>
+        <Switch
+          value={lookingForWork}
+          onValueChange={setLookingForWork}
+          disabled={saving}
+        />
+      </View>
+      <View style={styles.switchRow}>
+        <Text style={styles.switchLabel}>{S.offeringWork}</Text>
+        <Switch
+          value={offeringWork}
+          onValueChange={setOfferingWork}
+          disabled={saving}
+        />
+      </View>
+      {!isCompany && (
+        <>
+          <Label>{S.fullName}</Label>
+          <Input
+            style={styles.input}
+            value={displayName}
+            onChangeText={setDisplayName}
+            placeholder={S.fullName}
+            editable={!saving}
+          />
+        </>
+      )}
+      {isCompany && (
+        <>
+          <Label>{S.companyName}</Label>
+          <Input
+            style={styles.input}
+            value={companyName}
+            onChangeText={setCompanyName}
+            placeholder={S.companyName}
+            editable={!saving}
+          />
+          <Label>{S.registrationNumber}</Label>
+          <Input
+            style={styles.input}
+            value={registrationNumber}
+            onChangeText={setRegistrationNumber}
+            placeholder={S.registrationNumber}
+            editable={!saving}
+          />
+          <Label>{S.website}</Label>
+          <Input
+            style={styles.input}
+            value={website}
+            onChangeText={setWebsite}
+            placeholder={S.website}
+            keyboardType="url"
+            autoCapitalize="none"
+            editable={!saving}
+          />
+          <Label>{S.logoUrl}</Label>
+          <Input
+            style={styles.input}
+            value={logoUrl}
+            onChangeText={setLogoUrl}
+            placeholder={S.logoUrl}
+            keyboardType="url"
+            autoCapitalize="none"
+            editable={!saving}
+          />
+        </>
+      )}
+      <Label>{S.location}</Label>
       <Input
         style={styles.input}
-        value={displayName}
-        onChangeText={setDisplayName}
-        placeholder="Celé meno"
-        editable={!saving}
-      />
-      <Label>{S.companyName}</Label>
-      <Input
-        style={styles.input}
-        value={companyName}
-        onChangeText={setCompanyName}
-        placeholder="Názov firmy"
+        value={location}
+        onChangeText={setLocation}
+        placeholder={S.location}
         editable={!saving}
       />
       <Label>{S.bio}</Label>
@@ -125,10 +260,61 @@ export default function ProfileScreen() {
         style={[styles.input, styles.textArea]}
         value={bio}
         onChangeText={setBio}
-        placeholder="Bio"
+        placeholder={S.bio}
         multiline
         editable={!saving}
       />
+      {profile?.looking_for_work && !isCompany && (
+        <>
+          <Label>{S.skills}</Label>
+          <Input
+            style={[styles.input, styles.textArea]}
+            value={skills}
+            onChangeText={setSkills}
+            placeholder={S.skills}
+            multiline
+            editable={!saving}
+          />
+          <Label>{S.experience}</Label>
+          <Input
+            style={[styles.input, styles.textArea]}
+            value={experience}
+            onChangeText={setExperience}
+            placeholder={S.experience}
+            multiline
+            editable={!saving}
+          />
+          <Label>{S.jobInterests}</Label>
+          <Input
+            style={styles.input}
+            value={jobInterests}
+            onChangeText={setJobInterests}
+            placeholder={S.preferredJobType}
+            editable={!saving}
+          />
+        </>
+      )}
+      {profile?.offering_work && (
+        <>
+          <Label>{S.description}</Label>
+          <Input
+            style={[styles.input, styles.textArea]}
+            value={description}
+            onChangeText={setDescription}
+            placeholder={S.description}
+            multiline
+            editable={!saving}
+          />
+          <Label>{S.sector}</Label>
+          <Input
+            style={styles.input}
+            value={sector}
+            onChangeText={setSector}
+            placeholder={S.sector}
+            editable={!saving}
+          />
+        </>
+      )}
       <Button
         onPress={handleSave}
         loading={saving}
@@ -165,11 +351,23 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     color: colors.foreground,
   },
+  saveError: {
+    ...typography.bodySmall,
+    color: colors.destructive,
+    marginBottom: spacing.lg,
+  },
   value: {
     ...typography.body,
     marginBottom: spacing.lg,
     color: colors.mutedForeground,
   },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  switchLabel: { ...typography.bodySmall, flex: 1 },
   input: { marginBottom: spacing.lg },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
   button: { marginBottom: spacing.lg },

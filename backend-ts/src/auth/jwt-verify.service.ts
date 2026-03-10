@@ -53,12 +53,14 @@ export class JwtVerifyService {
       const { data: profile } = await this.supabase
         .getClient()
         .from('profiles')
-        .select('role')
+        .select('role, looking_for_work, offering_work')
         .eq('id', uid)
         .single();
       const role =
         profile?.role === 'individual' ? UserRole.individual : UserRole.company;
-      return { id: uid, email, role };
+      const looking_for_work = Boolean((profile as { looking_for_work?: boolean })?.looking_for_work);
+      const offering_work = Boolean((profile as { offering_work?: boolean })?.offering_work);
+      return { id: uid, email, role, looking_for_work, offering_work };
     } catch {
       return null;
     }

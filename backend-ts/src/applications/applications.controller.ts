@@ -14,18 +14,36 @@ import { JwksAuthGuard } from '../auth/jwks-auth.guard';
 import { CurrentUserDecorator } from '../auth/current-user.decorator';
 import { CurrentUser } from '../auth/auth.types';
 import { SupabaseService } from '../supabase/supabase.service';
+import { FeedScoringService } from '../jobs/feed-scoring.service';
 import { ApplicationCreateDto, ApplicationResponseDto } from './applications.dto';
 
 @Controller('applications')
 @UseGuards(JwksAuthGuard)
 export class ApplicationsController {
-  constructor(private supabase: SupabaseService) {}
+  constructor(
+    private supabase: SupabaseService,
+    private feedScoring: FeedScoringService,
+  ) {}
 
   @Post()
   async create(
     @CurrentUserDecorator() user: CurrentUser,
     @Body() body: ApplicationCreateDto,
   ): Promise<ApplicationResponseDto> {
+    const { data: profileRow } = await this.supabase
+      .getClient()
+      .from('profiles')
+      .select('looking_for_work')
+      .eq('id', user.id)
+      .single();
+    const lookingForWork = (profileRow as { looking_for_work?: boolean } | null)
+      ?.looking_for_work;
+    if (!lookingForWork) {
+      throw new ForbiddenException(
+        'Ak chcete reagovať na ponuky, povolte "Hľadám prácu" v profile.',
+      );
+    }
+
     const { data: job } = await this.supabase
       .getClient()
       .from('job_offers')
@@ -59,6 +77,7 @@ export class ApplicationsController {
     if (error || !data) {
       throw new ForbiddenException('Failed to create application');
     }
+    this.feedScoring.invalidateEngagement(user.id);
     return data as ApplicationResponseDto;
   }
 

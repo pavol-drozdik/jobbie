@@ -1,14 +1,18 @@
 import { Tabs } from 'expo-router';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../lib/auth-context';
 import { S } from '../../constants/strings';
 import { colors } from '../../constants/theme';
 
 export default function TabsLayout() {
+  const { user } = useAuth();
+  const showAddTab = user?.offering_work !== false;
+
   return (
     <Tabs
       screenOptions={{
-        headerShown: false, 
+        headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.gray400,
         tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
@@ -63,36 +67,22 @@ export default function TabsLayout() {
         name="add"
         options={{
           title: S.navPridat,
+          href: showAddTab ? undefined : null,
           tabBarIcon: () => (
             <View style={styles.fab}>
-              <Ionicons name="add" size={20} color={colors.primaryForeground} />
+              <Ionicons name="add" size={24} color={colors.primaryForeground} />
             </View>
           ),
         }}
       />
       <Tabs.Screen
-        name="offers"
+        name="messages"
         options={{
-          title: S.navPonuky,
+          title: S.navSpravy,
           tabBarIcon: ({ color, size, focused }) => (
             <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
               <Ionicons
-                name="list-outline"
-                size={size}
-                color={focused ? colors.primary : color}
-              />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="plans"
-        options={{
-          title: S.navPlany,
-          tabBarIcon: ({ color, size, focused }) => (
-            <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
-              <Ionicons
-                name="card-outline"
+                name="chatbubbles-outline"
                 size={size}
                 color={focused ? colors.primary : color}
               />
@@ -116,11 +106,12 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="messages"
-        options={{
-          href: null,
-          title: S.navSpravy,
-        }}
+        name="offers"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="plans"
+        options={{ href: null }}
       />
     </Tabs>
   );
@@ -138,22 +129,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryLight,
   },
   fab: {
-    width: 40,
-    height: 40,
-    borderRadius: 16,
-    backgroundColor: colors.primaryDark,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -16,
+    marginTop: -18,
     borderWidth: 4,
     borderColor: colors.background,
-    shadowColor: 'rgba(99,102,241,0.6)',
+    shadowColor: 'rgba(99,102,241,0.5)',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.5,
     shadowRadius: 12,
     elevation: 8,
-  },
-  fabActive: {
-    backgroundColor: colors.primaryDark,
   },
 });

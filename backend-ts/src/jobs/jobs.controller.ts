@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -13,10 +14,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { JwksAuthGuard } from '../auth/jwks-auth.guard';
+import { OptionalJwksAuthGuard } from '../auth/optional-jwks-auth.guard';
 import { CurrentUserDecorator } from '../auth/current-user.decorator';
 import { CurrentUser } from '../auth/auth.types';
 import { SupabaseService } from '../supabase/supabase.service';
 import { JobsService } from './jobs.service';
+import {
+  FeedScoringService,
+  type JobForScore,
+} from './feed-scoring.service';
 import {
   JobOfferCreateDto,
   JobOfferUpdateDto,
@@ -44,16 +50,18 @@ function toResponse(row: JobRow | null): JobOfferResponseDto {
 }
 
 @Controller('jobs')
-@UseGuards(JwksAuthGuard)
 export class JobsController {
   constructor(
     private supabase: SupabaseService,
     private jobsService: JobsService,
+    private feedScoring: FeedScoringService,
   ) {}
 
+  /** List jobs. When user is logged in, order by rule-based score (see FeedScoringService). */
   @Get()
+  @UseGuards(OptionalJwksAuthGuard)
   async list(
-    @CurrentUserDecorator() user: CurrentUser,
+    @CurrentUserDecorator() user: CurrentUser | null,
     @Query('company_id') companyId?: string,
     @Query('is_active') isActive?: string,
     @Query('my') my?: string,
@@ -71,7 +79,8 @@ export class JobsController {
     const limitNum = Math.min(Number(limit) || 50, 100);
     const offsetNum = Math.max(Number(offset) || 0, 0);
     const filterByMy = my === 'true';
-    const effectiveCompanyId = filterByMy ? user.id : companyId;
+    const effectiveCompanyId =
+      filterByMy && user ? user.id : companyId;
 
     let query = this.supabase
       .getClient()
@@ -144,36 +153,110 @@ export class JobsController {
       });
     }
 
-    if (sort === 'date_asc') {
-      list = [...list].sort(
-        (a, b) =>
-          new Date((a.created_at as string) ?? 0).getTime() -
-          new Date((b.created_at as string) ?? 0).getTime(),
-      );
-    } else if (sort === 'wage_desc') {
-      list = [...list].sort((a, b) => {
-        const va = Number(a.compensation_amount) || 0;
-        const vb = Number(b.compensation_amount) || 0;
-        return vb - va;
-      });
+    if (user) {
+      const { profile, engagement } =
+        await this.feedScoring.loadEngagement(user.id);
+      list = this.feedScoring.scoreAndSort(
+        list as unknown as JobForScore[],
+        profile,
+        engagement,
+      ) as unknown as JobRow[];
     } else {
-      list = [...list].sort(
-        (a, b) =>
-          new Date((b.created_at as string) ?? 0).getTime() -
-          new Date((a.created_at as string) ?? 0).getTime(),
-      );
+      if (sort === 'date_asc') {
+        list = [...list].sort(
+          (a, b) =>
+            new Date((a.created_at as string) ?? 0).getTime() -
+            new Date((b.created_at as string) ?? 0).getTime(),
+        );
+      } else if (sort === 'wage_desc') {
+        list = [...list].sort((a, b) => {
+          const va = Number(a.compensation_amount) || 0;
+          const vb = Number(b.compensation_amount) || 0;
+          return vb - va;
+        });
+      } else {
+        list = [...list].sort(
+          (a, b) =>
+            new Date((b.created_at as string) ?? 0).getTime() -
+            new Date((a.created_at as string) ?? 0).getTime(),
+        );
+      }
     }
 
     const paginated = list.slice(offsetNum, offsetNum + limitNum);
     return paginated.map((row) => toResponse(row));
   }
 
+  @Post('impressions')
+  @UseGuards(JwksAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async recordImpressions(
+    @CurrentUserDecorator() user: CurrentUser,
+    @Body() body: { job_ids?: string[] },
+  ): Promise<{ ok: boolean }> {
+    const jobIds = Array.isArray(body?.job_ids) ? body.job_ids : [];
+    if (jobIds.length === 0) return { ok: true };
+    const now = new Date().toISOString();
+    const rows = jobIds.map((job_id: string) => ({
+      user_id: user.id,
+      job_id,
+      shown_at: now,
+    }));
+    await this.supabase
+      .getClient()
+      .from('job_impressions')
+      .insert(rows);
+    this.feedScoring.invalidateEngagement(user.id);
+    return { ok: true };
+  }
+
+  @Get('saved')
+  @UseGuards(JwksAuthGuard)
+  async listSaved(
+    @CurrentUserDecorator() user: CurrentUser,
+  ): Promise<JobOfferResponseDto[]> {
+    const { data: saved } = await this.supabase
+      .getClient()
+      .from('saved_jobs')
+      .select('job_id')
+      .eq('user_id', user.id)
+      .order('saved_at', { ascending: false });
+    const jobIds = (saved ?? []).map((r: { job_id: string }) => r.job_id);
+    if (jobIds.length === 0) return [];
+    const { data: rows } = await this.supabase
+      .getClient()
+      .from('job_offers')
+      .select('*')
+      .in('id', jobIds)
+      .eq('is_deleted', false);
+    const order = new Map(jobIds.map((id, i) => [id, i]));
+    const list = ((rows ?? []) as JobRow[]).sort(
+      (a, b) => (order.get(a.id as string) ?? 0) - (order.get(b.id as string) ?? 0),
+    );
+    return list.map((row) => toResponse(row));
+  }
+
   @Post()
+  @UseGuards(JwksAuthGuard)
   @HttpCode(HttpStatus.OK)
   async create(
     @CurrentUserDecorator() user: CurrentUser,
     @Body() body: JobOfferCreateDto,
   ): Promise<JobOfferResponseDto> {
+    const { data: profileRow } = await this.supabase
+      .getClient()
+      .from('profiles')
+      .select('offering_work')
+      .eq('id', user.id)
+      .single();
+    const offeringWork = (profileRow as { offering_work?: boolean } | null)
+      ?.offering_work;
+    if (!offeringWork) {
+      throw new ForbiddenException(
+        'Ak chcete zverejňovať ponuky, povolte "Ponúkam prácu" v profile.',
+      );
+    }
+
     const isDraft = body.is_draft ?? true;
     if (!isDraft) {
       const { data: countData } = await this.supabase
@@ -241,12 +324,70 @@ export class JobsController {
       .select()
       .single();
     if (error || !data) {
-      throw new ForbiddenException('Failed to create job');
+      const message =
+        [error?.message, error?.details, error?.code]
+          .filter(Boolean)
+          .join(' ') || 'Failed to create job';
+      throw new ForbiddenException(message);
     }
     return toResponse(data as JobRow);
   }
 
+  @Post(':job_id/view')
+  @UseGuards(JwksAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async recordView(
+    @Param('job_id') jobId: string,
+    @CurrentUserDecorator() user: CurrentUser,
+  ): Promise<{ ok: boolean }> {
+    await this.supabase
+      .getClient()
+      .from('job_views')
+      .upsert(
+        { user_id: user.id, job_id: jobId, viewed_at: new Date().toISOString() },
+        { onConflict: 'user_id,job_id' },
+      );
+    this.feedScoring.invalidateEngagement(user.id);
+    return { ok: true };
+  }
+
+  @Post(':job_id/save')
+  @UseGuards(JwksAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async saveJob(
+    @Param('job_id') jobId: string,
+    @CurrentUserDecorator() user: CurrentUser,
+  ): Promise<{ ok: boolean }> {
+    await this.supabase
+      .getClient()
+      .from('saved_jobs')
+      .upsert(
+        { user_id: user.id, job_id: jobId, saved_at: new Date().toISOString() },
+        { onConflict: 'user_id,job_id' },
+      );
+    this.feedScoring.invalidateEngagement(user.id);
+    return { ok: true };
+  }
+
+  @Delete(':job_id/save')
+  @UseGuards(JwksAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async unsaveJob(
+    @Param('job_id') jobId: string,
+    @CurrentUserDecorator() user: CurrentUser,
+  ): Promise<{ ok: boolean }> {
+    await this.supabase
+      .getClient()
+      .from('saved_jobs')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('job_id', jobId);
+    this.feedScoring.invalidateEngagement(user.id);
+    return { ok: true };
+  }
+
   @Get(':job_id')
+  @UseGuards(JwksAuthGuard)
   async getOne(
     @Param('job_id') jobId: string,
     @CurrentUserDecorator() _user: CurrentUser,
@@ -264,6 +405,7 @@ export class JobsController {
   }
 
   @Patch(':job_id')
+  @UseGuards(JwksAuthGuard)
   async update(
     @Param('job_id') jobId: string,
     @CurrentUserDecorator() user: CurrentUser,
@@ -308,6 +450,7 @@ export class JobsController {
   }
 
   @Post(':job_id/activate')
+  @UseGuards(JwksAuthGuard)
   async activate(
     @Param('job_id') jobId: string,
     @CurrentUserDecorator() user: CurrentUser,

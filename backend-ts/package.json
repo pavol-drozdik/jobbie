@@ -32,5 +32,11 @@
     "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^20.0.0",
     "typescript": "^5.0.0"
+  },
+  "overrides": {
+    "glob": ">=10.4.6",
+    "serialize-javascript": ">=6.0.2",
+    "tmp": ">=0.2.4",
+    "lodash": ">=4.17.21"
   }
 }

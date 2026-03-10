@@ -12,6 +12,8 @@ export class AuthController {
       id: user.id,
       email: user.email,
       role: user.role,
+      looking_for_work: user.looking_for_work,
+      offering_work: user.offering_work,
     };
   }
 }
