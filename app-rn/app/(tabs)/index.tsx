@@ -41,31 +41,62 @@ type Job = {
   job_type?: string | null;
   is_active: boolean;
   is_draft?: boolean;
+  is_urgent?: boolean;
   created_at?: string | null;
 };
+
+const HOME_SECTION_LIMIT = 5;
 
 export default function HomeScreen() {
   const { session, user } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [urgentJobs, setUrgentJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchJobs = async () => {
     if (!session?.access_token) return;
-    const res = await api<Job[]>('/api/jobs', {
-      token: session.access_token,
-      query: { limit: '30', offset: '0', is_active: 'true', sort: 'date_desc' },
-    });
-    if (res.ok && Array.isArray(res.data)) {
-      setJobs(res.data);
-      if (res.data.length > 0) {
+    const [latestRes, urgentRes] = await Promise.all([
+      api<Job[]>('/api/jobs', {
+        token: session.access_token,
+        query: {
+          limit: String(HOME_SECTION_LIMIT),
+          offset: '0',
+          is_active: 'true',
+          sort: 'date_desc',
+        },
+      }),
+      api<Job[]>('/api/jobs', {
+        token: session.access_token,
+        query: {
+          limit: String(HOME_SECTION_LIMIT),
+          offset: '0',
+          is_active: 'true',
+          urgent_only: 'true',
+          sort: 'date_desc',
+        },
+      }),
+    ]);
+    if (latestRes.ok && Array.isArray(latestRes.data)) {
+      setJobs(latestRes.data);
+      if (latestRes.data.length > 0) {
         api('/api/jobs/impressions', {
           method: 'POST',
           token: session.access_token,
-          body: { job_ids: res.data.map((j) => j.id) },
+          body: { job_ids: latestRes.data.map((j) => j.id) },
         }).catch(() => {});
       }
     } else setJobs([]);
+    if (urgentRes.ok && Array.isArray(urgentRes.data)) {
+      setUrgentJobs(urgentRes.data);
+      if (urgentRes.data.length > 0) {
+        api('/api/jobs/impressions', {
+          method: 'POST',
+          token: session.access_token,
+          body: { job_ids: urgentRes.data.map((j) => j.id) },
+        }).catch(() => {});
+      }
+    } else setUrgentJobs([]);
   };
 
   useEffect(() => {
@@ -222,7 +253,7 @@ export default function HomeScreen() {
           </ScrollView>
         </View>
 
-        {/* Latest */}
+        {/* Latest (up to 5) */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleRow}>
@@ -247,7 +278,47 @@ export default function HomeScreen() {
           {jobs.length === 0 ? (
             <Text style={styles.noJobs}>{S.noJobsYet}</Text>
           ) : (
-            jobs.map((item) => (
+            jobs.slice(0, HOME_SECTION_LIMIT).map((item) => (
+              <JobCard
+                key={item.id}
+                job={item}
+                onPress={() => router.push(`/jobs/${item.id}`)}
+              />
+            ))
+          )}
+        </View>
+
+        {/* Urgent (up to 5) */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleRow}>
+              <View style={[styles.sectionIconWrap, styles.sectionIconWrapUrgent]}>
+                <Ionicons
+                  name="alert-circle"
+                  size={18}
+                  color="#fff"
+                />
+              </View>
+              <Text style={styles.sectionTitle}>{S.sectionUrgent}</Text>
+            </View>
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: '/(tabs)/find',
+                  params: { urgent_only: 'true' },
+                })
+              }
+              activeOpacity={0.7}
+            >
+              <Text style={styles.sectionLink}>
+                {S.all} <Ionicons name="arrow-forward" size={12} color={colors.primary} />
+              </Text>
+            </TouchableOpacity>
+          </View>
+          {urgentJobs.length === 0 ? (
+            <Text style={styles.noJobs}>{S.noJobsYet}</Text>
+          ) : (
+            urgentJobs.slice(0, HOME_SECTION_LIMIT).map((item) => (
               <JobCard
                 key={item.id}
                 job={item}
@@ -439,6 +510,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  sectionIconWrapUrgent: {
+    backgroundColor: '#dc2626',
   },
   sectionLinkWrap: {
     flexDirection: 'row',

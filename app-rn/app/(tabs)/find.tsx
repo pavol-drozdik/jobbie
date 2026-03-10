@@ -24,8 +24,12 @@ import { EmptyState } from '../../components/ui';
 import type { Job } from '../../types/job';
 
 export default function FindWorkScreen() {
-  const params = useLocalSearchParams<{ category?: string }>();
+  const params = useLocalSearchParams<{
+    category?: string;
+    urgent_only?: string;
+  }>();
   const initCategory = params.category ?? 'all';
+  const initUrgentOnly = params.urgent_only === 'true';
 
   const { session, user } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -34,6 +38,7 @@ export default function FindWorkScreen() {
   const [filters, setFilters] = useState<JobFiltersState>({
     ...defaultJobFilters,
     category: initCategory,
+    urgent_only: initUrgentOnly,
   });
 
   const fetchJobs = useCallback(async () => {

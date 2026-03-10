@@ -14,11 +14,15 @@ import { api } from '../../lib/api';
 import { S } from '../../constants/strings';
 import { colors, spacing, typography } from '../../constants/theme';
 import { Card } from '../../components/ui';
+import { Avatar } from '../../components/ui/Avatar';
 
 type Room = {
   id: string;
   application_id: string;
   created_at: string;
+   other_user_id?: string;
+   other_user_name?: string | null;
+   other_user_avatar_url?: string | null;
 };
 
 export default function MessagesScreen() {
@@ -72,9 +76,25 @@ export default function MessagesScreen() {
             activeOpacity={0.8}
           >
             <Card style={styles.card}>
-              <Text style={styles.cardTitle}>
-                Konverzácia {item.id.slice(0, 8)}...
-              </Text>
+              <View style={styles.cardContent}>
+                <Avatar
+                  size={40}
+                  source={
+                    item.other_user_avatar_url
+                      ? { uri: item.other_user_avatar_url }
+                      : undefined
+                  }
+                  fallback={item.other_user_name ?? '??'}
+                />
+                <View style={styles.cardTextWrap}>
+                  <Text style={styles.cardTitle} numberOfLines={1}>
+                    {item.other_user_name || `Konverzácia ${item.id.slice(0, 8)}...`}
+                  </Text>
+                  <Text style={styles.cardSubtitle} numberOfLines={1}>
+                    {S.chat}
+                  </Text>
+                </View>
+              </View>
             </Card>
           </TouchableOpacity>
         )}
@@ -95,5 +115,20 @@ const styles = StyleSheet.create({
   listEmpty: { flexGrow: 1 },
   empty: { ...typography.body, color: colors.mutedForeground },
   card: { marginBottom: spacing.md },
-  cardTitle: { ...typography.body, fontWeight: '500', color: colors.foreground },
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  cardTextWrap: { flex: 1 },
+  cardTitle: {
+    ...typography.body,
+    fontWeight: '600',
+    color: colors.foreground,
+  },
+  cardSubtitle: {
+    ...typography.caption,
+    color: colors.mutedForeground,
+    marginTop: 2,
+  },
 });

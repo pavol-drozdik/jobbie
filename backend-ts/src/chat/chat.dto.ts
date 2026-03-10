@@ -7,6 +7,9 @@ export interface ChatRoomResponseDto {
   individual_id: string;
   application_id: string;
   created_at: string;
+  other_user_id: string;
+  other_user_name: string | null;
+  other_user_avatar_url: string | null;
 }
 
 export interface ChatMessageResponseDto {

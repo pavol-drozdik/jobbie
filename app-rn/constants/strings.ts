@@ -110,6 +110,7 @@ export const S = {
   findWorkCount: 'ponúk k dispozícii',
   categories: 'Kategórie',
   latestOffers: 'Najnovšie ponuky',
+  sectionUrgent: 'Urgentné',
   all: 'Všetky',
   statsPonuky: 'Ponúk',
   statsPracantov: 'Pracantov',

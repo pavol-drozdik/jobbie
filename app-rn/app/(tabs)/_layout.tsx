@@ -13,6 +13,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarLabelPosition: 'below-icon',
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.gray400,
         tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
@@ -122,6 +123,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
   },

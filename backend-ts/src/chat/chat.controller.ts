@@ -26,6 +26,21 @@ function userCanAccessRoom(
   return room.company_id === userId || room.individual_id === userId;
 }
 
+function getOtherUserId(
+  room: { company_id?: string; individual_id?: string },
+  userId: string,
+): string {
+  return room.company_id === userId ? String(room.individual_id) : String(room.company_id);
+}
+
+type ProfileSummary = {
+  id: string;
+  display_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  logo_url?: string | null;
+};
+
 @Controller('chat')
 @UseGuards(JwksAuthGuard)
 export class ChatController {
@@ -69,7 +84,40 @@ export class ChatController {
       .eq('application_id', applicationId)
       .maybeSingle();
     if (existing) {
-      return existing as ChatRoomResponseDto;
+      const room = existing as {
+        id: string;
+        company_id: string;
+        individual_id: string;
+        job_id: string;
+        application_id: string;
+        created_at: string;
+      };
+      const otherUserId = getOtherUserId(room, user.id);
+      const { data: profile } = await this.supabase
+        .getClient()
+        .from('profiles')
+        .select('id, display_name, first_name, last_name, logo_url')
+        .eq('id', otherUserId)
+        .single();
+      const p = profile as
+        | {
+            id: string;
+            display_name?: string | null;
+            first_name?: string | null;
+            last_name?: string | null;
+            logo_url?: string | null;
+          }
+        | null;
+      const nameFromProfile =
+        p?.display_name ||
+        [p?.first_name, p?.last_name].filter(Boolean).join(' ') ||
+        null;
+      return {
+        ...room,
+        other_user_id: otherUserId,
+        other_user_name: nameFromProfile,
+        other_user_avatar_url: p?.logo_url ?? null,
+      };
     }
     const row = {
       job_id: a.job_id,
@@ -86,7 +134,40 @@ export class ChatController {
     if (error || !created) {
       throw new ForbiddenException('Failed to create room');
     }
-    return created as ChatRoomResponseDto;
+    const room = created as {
+      id: string;
+      company_id: string;
+      individual_id: string;
+      job_id: string;
+      application_id: string;
+      created_at: string;
+    };
+    const otherUserId = getOtherUserId(room, user.id);
+    const { data: profile } = await this.supabase
+      .getClient()
+      .from('profiles')
+      .select('id, display_name, first_name, last_name, logo_url')
+      .eq('id', otherUserId)
+      .single();
+    const p = profile as
+      | {
+          id: string;
+          display_name?: string | null;
+          first_name?: string | null;
+          last_name?: string | null;
+          logo_url?: string | null;
+        }
+      | null;
+    const nameFromProfile =
+      p?.display_name ||
+      [p?.first_name, p?.last_name].filter(Boolean).join(' ') ||
+      null;
+    return {
+      ...room,
+      other_user_id: otherUserId,
+      other_user_name: nameFromProfile,
+      other_user_avatar_url: p?.logo_url ?? null,
+    };
   }
 
   @Get('rooms')
@@ -104,7 +185,48 @@ export class ChatController {
       .or(`company_id.eq.${user.id},individual_id.eq.${user.id}`)
       .order('created_at', { ascending: false })
       .range(offsetNum, offsetNum + limitNum - 1);
-    return (data ?? []) as ChatRoomResponseDto[];
+    const rooms = (data ?? []) as {
+      id: string;
+      job_id: string;
+      company_id: string;
+      individual_id: string;
+      application_id: string;
+      created_at: string;
+    }[];
+    if (!rooms.length) return [];
+
+    const otherIdsSet = new Set<string>();
+    for (const room of rooms) {
+      const otherId = getOtherUserId(room, user.id);
+      if (otherId) otherIdsSet.add(otherId);
+    }
+    const otherIds = Array.from(otherIdsSet);
+
+    let profilesById = new Map<string, ProfileSummary>();
+    if (otherIds.length > 0) {
+      const { data: profiles } = await this.supabase
+        .getClient()
+        .from('profiles')
+        .select('id, display_name, first_name, last_name, logo_url')
+        .in('id', otherIds);
+      const rows = (profiles ?? []) as ProfileSummary[];
+      profilesById = new Map(rows.map((p) => [p.id, p]));
+    }
+
+    return rooms.map((room) => {
+      const otherId = getOtherUserId(room, user.id);
+      const p = profilesById.get(otherId);
+      const nameFromProfile =
+        p?.display_name ||
+        [p?.first_name, p?.last_name].filter(Boolean).join(' ') ||
+        null;
+      return {
+        ...room,
+        other_user_id: otherId,
+        other_user_name: nameFromProfile,
+        other_user_avatar_url: p?.logo_url ?? null,
+      };
+    });
   }
 
   @Post('messages')
