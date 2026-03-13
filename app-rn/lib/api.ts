@@ -1,4 +1,4 @@
-const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://api.heycocreate.com';
+const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
 
 export type ApiOptions = {
   token?: string | null;

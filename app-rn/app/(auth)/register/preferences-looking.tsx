@@ -9,14 +9,12 @@ import { colors, spacing, typography } from '../../../constants/theme';
 import { Button, Input, Label } from '../../../components/ui';
 
 export default function PreferencesLookingScreen() {
-  const { credentials, roles, setPreferences } = useRegistration();
+  const { credentials, setPreferences } = useRegistration();
   const { doSignUp, saving, error } = useRegistrationSignUp();
   const [lookingCategory, setLookingCategory] = useState('');
   const [preferredLocation, setPreferredLocation] = useState('');
 
   const pending = getPendingRegistration();
-  const effectiveRoles = roles ?? pending.roles;
-  const offeringWork = effectiveRoles?.offering_work ?? false;
 
   const handleContinue = async () => {
     const job_interests = lookingCategory.trim() || null;
@@ -27,13 +25,13 @@ export default function PreferencesLookingScreen() {
       sector: null as string | null,
     };
     setPreferences(prefs);
-    if (offeringWork) {
-      router.replace('/(auth)/register/preferences-offering');
-      return;
-    }
     const result = await doSignUp(prefs);
-    if (result.ok && result.needsEmailConfirmation) {
-      router.replace('/(auth)/register/confirm-email');
+    if (result.ok) {
+      if (result.needsEmailConfirmation) {
+        router.replace('/(auth)/register/confirm-email');
+      } else {
+        router.replace('/(tabs)');
+      }
     }
   };
 
@@ -43,18 +41,17 @@ export default function PreferencesLookingScreen() {
       location: null,
       sector: null,
     });
-    if (offeringWork) {
-      router.replace('/(auth)/register/preferences-offering');
-      return;
-    }
     const result = await doSignUp(null);
-    if (result.ok && result.needsEmailConfirmation) {
-      router.replace('/(auth)/register/confirm-email');
+    if (result.ok) {
+      if (result.needsEmailConfirmation) {
+        router.replace('/(auth)/register/confirm-email');
+      } else {
+        router.replace('/(tabs)');
+      }
     }
   };
 
-  const hasData =
-    (credentials ?? pending.credentials) && (roles ?? pending.roles);
+  const hasData = !!(credentials ?? pending.credentials);
   if (!hasData) {
     return (
       <View style={[styles.centered, styles.container]}>

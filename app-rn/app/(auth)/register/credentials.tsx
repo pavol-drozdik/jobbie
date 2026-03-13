@@ -88,7 +88,7 @@ export default function CredentialsScreen() {
       dic: dic.trim(),
       vatId: vatPayer ? vatId.trim() : '',
     });
-    router.replace('/(auth)/register/roles');
+    router.replace('/(auth)/register/preferences-looking');
   };
 
   return (

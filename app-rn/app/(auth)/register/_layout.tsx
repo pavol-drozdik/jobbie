@@ -8,9 +8,7 @@ export default function RegisterLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="account-type" />
       <Stack.Screen name="credentials" />
-      <Stack.Screen name="roles" />
       <Stack.Screen name="preferences-looking" />
-      <Stack.Screen name="preferences-offering" />
       <Stack.Screen name="complete-profile" />
       <Stack.Screen name="confirm-email" />
       <Stack.Screen name="welcome" />

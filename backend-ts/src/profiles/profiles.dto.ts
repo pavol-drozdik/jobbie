@@ -18,12 +18,11 @@ export interface ProfileResponseDto {
   location: string | null;
   description: string | null;
   sector: string | null;
-  looking_for_work: boolean;
-  offering_work: boolean;
   experience: string | null;
   registration_number: string | null;
   website: string | null;
   logo_url: string | null;
+  credits: number;
 }
 
 export class ProfileUpdateDto {
@@ -100,14 +99,6 @@ export class ProfileUpdateDto {
   @IsString()
   @MaxLength(200)
   sector?: string | null;
-
-  @IsOptional()
-  @IsBoolean()
-  looking_for_work?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  offering_work?: boolean;
 
   @IsOptional()
   @IsString()

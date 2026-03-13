@@ -38,8 +38,8 @@ begin
   v_registration_number := nullif(trim(meta->>'ico'), '');
   v_tax_id := nullif(trim(meta->>'dic'), '');
   v_vat_id := nullif(trim(meta->>'ic_dph'), '');
-  v_looking_for_work := (meta->>'looking_for_work') = 'true';
-  v_offering_work := (meta->>'offering_work') = 'true';
+  v_looking_for_work := coalesce((meta->>'looking_for_work') = 'true', true);
+  v_offering_work := coalesce((meta->>'offering_work') = 'true', true);
   v_job_interests := nullif(trim(meta->>'job_interests'), '');
   v_location := nullif(trim(meta->>'location'), '');
   v_sector := nullif(trim(meta->>'sector'), '');

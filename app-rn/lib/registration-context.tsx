@@ -97,10 +97,6 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
       const rols = rolesOverride ?? roles;
       if (!creds) return meta;
       meta.role = creds.accountType;
-      if (rols) {
-        meta.looking_for_work = rols.looking_for_work ? 'true' : 'false';
-        meta.offering_work = rols.offering_work ? 'true' : 'false';
-      }
       if (creds.accountType === 'individual') {
         meta.first_name = creds.firstName.trim();
         meta.last_name = creds.lastName.trim();

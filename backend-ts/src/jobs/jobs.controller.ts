@@ -18,7 +18,6 @@ import { OptionalJwksAuthGuard } from '../auth/optional-jwks-auth.guard';
 import { CurrentUserDecorator } from '../auth/current-user.decorator';
 import { CurrentUser } from '../auth/auth.types';
 import { SupabaseService } from '../supabase/supabase.service';
-import { JobsService } from './jobs.service';
 import {
   FeedScoringService,
   type JobForScore,
@@ -53,7 +52,6 @@ function toResponse(row: JobRow | null): JobOfferResponseDto {
 export class JobsController {
   constructor(
     private supabase: SupabaseService,
-    private jobsService: JobsService,
     private feedScoring: FeedScoringService,
   ) {}
 
@@ -243,34 +241,18 @@ export class JobsController {
     @CurrentUserDecorator() user: CurrentUser,
     @Body() body: JobOfferCreateDto,
   ): Promise<JobOfferResponseDto> {
-    const { data: profileRow } = await this.supabase
-      .getClient()
-      .from('profiles')
-      .select('offering_work')
-      .eq('id', user.id)
-      .single();
-    const offeringWork = (profileRow as { offering_work?: boolean } | null)
-      ?.offering_work;
-    if (!offeringWork) {
-      throw new ForbiddenException(
-        'Ak chcete zverejňovať ponuky, povolte "Ponúkam prácu" v profile.',
-      );
-    }
-
     const isDraft = body.is_draft ?? true;
     if (!isDraft) {
-      const { data: countData } = await this.supabase
+      const { data: creditsRow } = await this.supabase
         .getClient()
-        .from('job_offers')
-        .select('id')
-        .eq('company_id', user.id)
-        .eq('is_active', true)
-        .eq('is_deleted', false);
-      const count = (countData ?? []).length;
-      const maxJobs = await this.jobsService.getMaxActiveJobs(user.id);
-      if (count >= maxJobs) {
+        .from('profiles')
+        .select('credits')
+        .eq('id', user.id)
+        .single();
+      const credits = (creditsRow as { credits?: number } | null)?.credits ?? 0;
+      if (credits < 1) {
         throw new ForbiddenException(
-          'Nemáte predplatné na ďalší aktívny inzerát. Zvoľte vyšší plán.',
+          'Na zverejnenie ponuky potrebujete aspoň 1 kredit. Kúpte kredity v profile.',
         );
       }
     }
@@ -279,7 +261,7 @@ export class JobsController {
     const { data: profile } = await this.supabase
       .getClient()
       .from('profiles')
-      .select('company_name, display_name')
+      .select('company_name, display_name, credits')
       .eq('id', user.id)
       .single();
     if (profile && (profile as { company_name?: string }).company_name) {
@@ -329,6 +311,15 @@ export class JobsController {
           .filter(Boolean)
           .join(' ') || 'Failed to create job';
       throw new ForbiddenException(message);
+    }
+    if (!isDraft && profile) {
+      const current =
+        (profile as { credits?: number }).credits ?? 0;
+      await this.supabase
+        .getClient()
+        .from('profiles')
+        .update({ credits: Math.max(0, current - 1) })
+        .eq('id', user.id);
     }
     return toResponse(data as JobRow);
   }

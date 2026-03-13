@@ -1,14 +1,10 @@
 import { Tabs } from 'expo-router';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../lib/auth-context';
 import { S } from '../../constants/strings';
 import { colors } from '../../constants/theme';
 
 export default function TabsLayout() {
-  const { user } = useAuth();
-  const showAddTab = user?.offering_work !== false;
-
   return (
     <Tabs
       screenOptions={{
@@ -68,7 +64,6 @@ export default function TabsLayout() {
         name="add"
         options={{
           title: S.navPridat,
-          href: showAddTab ? undefined : null,
           tabBarIcon: () => (
             <View style={styles.fab}>
               <Ionicons name="add" size={24} color={colors.primaryForeground} />

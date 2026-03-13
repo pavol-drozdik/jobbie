@@ -29,8 +29,8 @@ async function bootstrap() {
     }),
   );
   app.setGlobalPrefix('api', {
-  exclude: ['health', 'debug/supabase-project'],
-});
+    exclude: ['health', 'thanks', 'debug/supabase-project'],
+  });
   app.useWebSocketAdapter(new IoAdapter(app));
   const port = process.env.PORT ?? 8000;
   await app.listen(port);

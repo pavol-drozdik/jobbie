@@ -1,5 +1,6 @@
 import {
   Controller,
+  Get,
   Post,
   Body,
   Req,
@@ -8,6 +9,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import Stripe from 'stripe';
 import { JwksAuthGuard } from '../auth/jwks-auth.guard';
@@ -18,7 +20,9 @@ import { StripeService } from './stripe.service';
 import {
   CreateCheckoutSessionDto,
   CreateSubscriptionCheckoutDto,
+  CreateCreditsCheckoutDto,
   CreateCheckoutSessionResponseDto,
+  CreditPackDto,
 } from './payments.dto';
 
 @Controller('payments')
@@ -26,6 +30,7 @@ export class PaymentsController {
   constructor(
     private supabase: SupabaseService,
     private stripe: StripeService,
+    private config: ConfigService,
   ) {}
 
   @Post('checkout-session')
@@ -46,6 +51,61 @@ export class PaymentsController {
       cancelUrl,
     );
     return result;
+  }
+
+  @Get('credit-packs')
+  async getCreditPacks(): Promise<CreditPackDto[]> {
+    return this.stripe.listCreditPacks();
+  }
+
+  @Get('credit-packs-config')
+  getCreditPacksConfig() {
+    return this.stripe.getCreditsConfigHint();
+  }
+
+  @Post('checkout-credits')
+  @UseGuards(JwksAuthGuard)
+  async createCreditsCheckout(
+    @CurrentUserDecorator() user: CurrentUser,
+    @Body() body: CreateCreditsCheckoutDto,
+  ): Promise<CreateCheckoutSessionResponseDto> {
+    const baseUrl =
+      this.config.get<string>('PUBLIC_API_URL') ??
+      'https://api.heycocreate.com';
+    const thanks = (credits: string) =>
+      `${baseUrl.replace(/\/$/, '')}/thanks?credits=${credits}`;
+    const successUrl = body.success_url ?? thanks('success');
+    const cancelUrl = body.cancel_url ?? thanks('cancel');
+    let priceId: string;
+    let creditsAmount: number;
+    const packs = await this.stripe.listCreditPacks();
+    if (body.price_id && packs.length > 0) {
+      const pack = packs.find((p) => p.price_id === body.price_id);
+      if (!pack) {
+        throw new BadRequestException('Neplatný balík kreditov.');
+      }
+      priceId = pack.price_id;
+      creditsAmount = pack.credits;
+    } else {
+      const defaultPriceId = this.stripe.getDefaultCreditsPriceId();
+      if (!defaultPriceId) {
+        throw new ServiceUnavailableException(
+          'Stripe credits price not configured',
+        );
+      }
+      priceId = defaultPriceId;
+      creditsAmount = Math.min(
+        Math.max(1, Math.floor(body.credits_amount)),
+        1000,
+      );
+    }
+    return this.stripe.createCreditsCheckoutSession(
+      user.id,
+      priceId,
+      creditsAmount,
+      successUrl,
+      cancelUrl,
+    );
   }
 
   @Post('checkout-subscription')
@@ -123,6 +183,22 @@ export class PaymentsController {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as { metadata?: Record<string, string> };
       const meta = (session.metadata ?? {}) as Record<string, string>;
+      if (meta.type === 'credits' && meta.user_id && meta.credits) {
+        const userId = meta.user_id;
+        const addCredits = parseInt(meta.credits, 10) || 0;
+        if (addCredits > 0) {
+          const { data: row } = await supabase
+            .from('profiles')
+            .select('credits')
+            .eq('id', userId)
+            .single();
+          const current = (row as { credits?: number } | null)?.credits ?? 0;
+          await supabase
+            .from('profiles')
+            .update({ credits: current + addCredits })
+            .eq('id', userId);
+        }
+      }
       const jobId = meta.job_id;
       if (jobId) {
         await supabase

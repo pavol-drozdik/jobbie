@@ -7,9 +7,9 @@ import {
   ActivityIndicator,
   Alert,
   TouchableOpacity,
-  Switch,
   Platform,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { useAuth } from '../../lib/auth-context';
 import { api } from '../../lib/api';
@@ -19,8 +19,6 @@ import { Button, Input, Label } from '../../components/ui';
 
 type Profile = {
   role?: string;
-  looking_for_work?: boolean;
-  offering_work?: boolean;
   display_name?: string | null;
   company_name?: string | null;
   bio?: string | null;
@@ -34,6 +32,7 @@ type Profile = {
   registration_number?: string | null;
   website?: string | null;
   logo_url?: string | null;
+  credits?: number;
 };
 
 export default function ProfileScreen() {
@@ -42,8 +41,6 @@ export default function ProfileScreen() {
   const [displayName, setDisplayName] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [bio, setBio] = useState('');
-  const [lookingForWork, setLookingForWork] = useState(false);
-  const [offeringWork, setOfferingWork] = useState(false);
   const [skills, setSkills] = useState('');
   const [experience, setExperience] = useState('');
   const [jobInterests, setJobInterests] = useState('');
@@ -70,8 +67,6 @@ export default function ProfileScreen() {
       setDisplayName(d.display_name ?? '');
       setCompanyName(d.company_name ?? '');
       setBio(d.bio ?? '');
-      setLookingForWork(d.looking_for_work ?? true);
-      setOfferingWork(d.offering_work ?? false);
       setSkills(d.skills ?? '');
       setExperience(d.experience ?? '');
       setJobInterests(d.job_interests ?? '');
@@ -88,6 +83,10 @@ export default function ProfileScreen() {
     load().finally(() => setLoading(false));
   }, [session?.access_token]);
 
+  useFocusEffect(() => {
+    if (session?.access_token && profile !== null) void load();
+  });
+
   const handleSave = async () => {
     if (!session?.access_token) return;
     setSaving(true);
@@ -100,8 +99,6 @@ export default function ProfileScreen() {
           display_name: displayName.trim() || null,
           company_name: companyName.trim() || null,
           bio: bio.trim() || null,
-          looking_for_work: lookingForWork,
-          offering_work: offeringWork,
           skills: skills.trim() || null,
           experience: experience.trim() || null,
           job_interests: jobInterests.trim() || null,
@@ -179,22 +176,14 @@ export default function ProfileScreen() {
       <Text style={styles.value}>
         {isCompany ? S.roleCompany : S.roleIndividual}
       </Text>
-      <View style={styles.switchRow}>
-        <Text style={styles.switchLabel}>{S.lookingForWork}</Text>
-        <Switch
-          value={lookingForWork}
-          onValueChange={setLookingForWork}
-          disabled={saving}
-        />
-      </View>
-      <View style={styles.switchRow}>
-        <Text style={styles.switchLabel}>{S.offeringWork}</Text>
-        <Switch
-          value={offeringWork}
-          onValueChange={setOfferingWork}
-          disabled={saving}
-        />
-      </View>
+      <Label>{S.credits}</Label>
+      <Text style={styles.value}>{profile?.credits ?? 0}</Text>
+      <TouchableOpacity
+        style={styles.buyCreditsBtn}
+        onPress={() => router.push('/buy-credits')}
+      >
+        <Text style={styles.buyCreditsText}>{S.buyCredits}</Text>
+      </TouchableOpacity>
       {!isCompany && (
         <>
           <Label>{S.fullName}</Label>
@@ -264,7 +253,7 @@ export default function ProfileScreen() {
         multiline
         editable={!saving}
       />
-      {profile?.looking_for_work && !isCompany && (
+      {!isCompany && (
         <>
           <Label>{S.skills}</Label>
           <Input
@@ -294,27 +283,25 @@ export default function ProfileScreen() {
           />
         </>
       )}
-      {profile?.offering_work && (
-        <>
-          <Label>{S.description}</Label>
-          <Input
-            style={[styles.input, styles.textArea]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder={S.description}
-            multiline
-            editable={!saving}
-          />
-          <Label>{S.sector}</Label>
-          <Input
-            style={styles.input}
-            value={sector}
-            onChangeText={setSector}
-            placeholder={S.sector}
-            editable={!saving}
-          />
-        </>
-      )}
+      <>
+        <Label>{S.description}</Label>
+        <Input
+          style={[styles.input, styles.textArea]}
+          value={description}
+          onChangeText={setDescription}
+          placeholder={S.description}
+          multiline
+          editable={!saving}
+        />
+        <Label>{S.sector}</Label>
+        <Input
+          style={styles.input}
+          value={sector}
+          onChangeText={setSector}
+          placeholder={S.sector}
+          editable={!saving}
+        />
+      </>
       <Button
         onPress={handleSave}
         loading={saving}
@@ -384,6 +371,19 @@ const styles = StyleSheet.create({
   },
   linkText: { ...typography.body, color: colors.foreground },
   chevron: { fontSize: 20, color: colors.mutedForeground },
+  buyCreditsBtn: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.lg,
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  buyCreditsText: {
+    ...typography.body,
+    color: colors.primaryForeground,
+    fontWeight: '600',
+  },
   logout: { marginTop: spacing.xl },
   logoutText: { color: colors.destructive },
   empty: { ...typography.body, color: colors.mutedForeground },

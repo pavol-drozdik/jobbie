@@ -30,20 +30,6 @@ export class ApplicationsController {
     @CurrentUserDecorator() user: CurrentUser,
     @Body() body: ApplicationCreateDto,
   ): Promise<ApplicationResponseDto> {
-    const { data: profileRow } = await this.supabase
-      .getClient()
-      .from('profiles')
-      .select('looking_for_work')
-      .eq('id', user.id)
-      .single();
-    const lookingForWork = (profileRow as { looking_for_work?: boolean } | null)
-      ?.looking_for_work;
-    if (!lookingForWork) {
-      throw new ForbiddenException(
-        'Ak chcete reagovať na ponuky, povolte "Hľadám prácu" v profile.',
-      );
-    }
-
     const { data: job } = await this.supabase
       .getClient()
       .from('job_offers')

@@ -140,4 +140,7 @@ export const S = {
   applicationDeadline: 'Dátum uzávierky prihlásení',
   completionDeadline: 'Termín dokončenia',
   locationAddress: 'Adresa / lokalita',
+  credits: 'Kredity',
+  buyCredits: 'Kúpiť kredity',
+  returnToApp: 'Návrat do aplikácie',
 };

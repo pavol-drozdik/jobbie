@@ -1,4 +1,29 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsNumber, Min } from 'class-validator';
+
+export interface CreditPackDto {
+  price_id: string;
+  credits: number;
+  unit_amount: number;
+  currency: string;
+}
+
+export class CreateCreditsCheckoutDto {
+  @IsOptional()
+  @IsString()
+  price_id?: string;
+
+  @IsNumber()
+  @Min(1)
+  credits_amount!: number;
+
+  @IsOptional()
+  @IsString()
+  success_url?: string;
+
+  @IsOptional()
+  @IsString()
+  cancel_url?: string;
+}
 
 export class CreateCheckoutSessionDto {
   @IsString()

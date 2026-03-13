@@ -8,8 +8,6 @@ export type CurrentUser = {
   id: string;
   email: string;
   role: UserRole;
-  looking_for_work: boolean;
-  offering_work: boolean;
 };
 
 type AuthContextValue = {
@@ -29,22 +27,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchUser = async (token: string) => {
-    const res = await api<{
-      id: string;
-      email: string;
-      role: string;
-      looking_for_work?: boolean;
-      offering_work?: boolean;
-    }>('/api/auth/me', { token });
-    if (res.ok && res.data) {
-      setUser({
-        id: res.data.id,
-        email: res.data.email,
-        role: res.data.role as UserRole,
-        looking_for_work: res.data.looking_for_work ?? false,
-        offering_work: res.data.offering_work ?? false,
-      });
-    } else {
+    try {
+      const res = await api<{
+        id: string;
+        email: string;
+        role: string;
+      }>('/api/auth/me', { token });
+      if (res.ok && res.data) {
+        setUser({
+          id: res.data.id,
+          email: res.data.email,
+          role: res.data.role as UserRole,
+        });
+      } else {
+        setUser(null);
+      }
+    } catch {
       setUser(null);
     }
   };

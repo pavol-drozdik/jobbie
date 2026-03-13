@@ -12,6 +12,7 @@ export default function RootLayout() {
         <Stack.Screen name="jobs/[id]" options={{ headerShown: true, title: 'Ponuka' }} />
         <Stack.Screen name="chat/[roomId]" options={{ headerShown: true, title: 'Chat' }} />
         <Stack.Screen name="plans" options={{ headerShown: true, title: 'Plány' }} />
+        <Stack.Screen name="buy-credits" options={{ headerShown: true, title: 'Kúpiť kredity' }} />
       </Stack>
     </AuthProvider>
   );

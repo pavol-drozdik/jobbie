@@ -16,8 +16,7 @@ import { ProfileResponseDto, ProfileUpdateDto } from './profiles.dto';
 const PROFILE_COLUMNS =
   'id,role,display_name,company_name,first_name,last_name,registered_office,' +
   'tax_id,vat_id,avatar_url,bio,education,skills,job_interests,location,' +
-  'description,sector,looking_for_work,offering_work,experience,' +
-  'registration_number,website,logo_url';
+  'description,sector,experience,registration_number,website,logo_url,credits';
 
 @Controller('profiles')
 @UseGuards(JwksAuthGuard)
@@ -46,8 +45,7 @@ export class ProfilesController {
       .insert({
         id: user.id,
         role: user.role,
-        looking_for_work: true,
-        offering_work: false,
+        credits: 0,
       })
       .select(PROFILE_COLUMNS)
       .single();
@@ -72,7 +70,9 @@ export class ProfilesController {
     @Body() body: ProfileUpdateDto,
   ): Promise<ProfileResponseDto> {
     const payload = body as Record<string, unknown>;
-    const keys = Object.keys(payload).filter((k) => payload[k] !== undefined);
+    const keys = Object.keys(payload).filter(
+      (k) => payload[k] !== undefined && k !== 'credits',
+    );
     if (keys.length === 0) {
       const { data, error } = await this.supabase
         .getClient()
