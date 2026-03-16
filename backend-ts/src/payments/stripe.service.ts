@@ -24,6 +24,66 @@ export class StripeService {
     return this.config.get<string>('STRIPE_PRICE_ID_CREDITS') ?? null;
   }
 
+  getPublishableKey(): string | null {
+    return this.config.get<string>('STRIPE_PUBLISHABLE_KEY') ?? null;
+  }
+
+  async createPaymentIntentCredits(
+    userId: string,
+    priceId: string,
+    creditsAmount: number,
+  ): Promise<{ client_secret: string }> {
+    const stripe = this.getStripe();
+    const price = await stripe.prices.retrieve(priceId);
+    const amount = price.unit_amount ?? 0;
+    const currency = price.currency ?? 'eur';
+    if (amount < 1) {
+      throw new ServiceUnavailableException('Invalid price amount');
+    }
+    const pi = await stripe.paymentIntents.create({
+      amount,
+      currency,
+      automatic_payment_methods: { enabled: true },
+      metadata: {
+        user_id: userId,
+        credits: String(creditsAmount),
+        type: 'credits',
+      },
+    });
+    return {
+      client_secret: pi.client_secret ?? '',
+    };
+  }
+
+  async createPaymentIntentJobPost(
+    companyId: string,
+    jobId: string,
+  ): Promise<{ client_secret: string }> {
+    const priceId = this.config.get<string>('STRIPE_PRICE_ID_JOB_POST');
+    if (!priceId) {
+      throw new ServiceUnavailableException('Stripe price not configured');
+    }
+    const stripe = this.getStripe();
+    const price = await stripe.prices.retrieve(priceId);
+    const amount = price.unit_amount ?? 0;
+    const currency = price.currency ?? 'eur';
+    if (amount < 1) {
+      throw new ServiceUnavailableException('Invalid job post price');
+    }
+    const pi = await stripe.paymentIntents.create({
+      amount,
+      currency,
+      automatic_payment_methods: { enabled: true },
+      metadata: {
+        company_id: companyId,
+        job_id: jobId,
+      },
+    });
+    return {
+      client_secret: pi.client_secret ?? '',
+    };
+  }
+
   getCreditsConfigHint(): {
     stripeConfigured: boolean;
     hasDefaultPrice: boolean;

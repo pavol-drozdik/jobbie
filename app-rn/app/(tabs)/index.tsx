@@ -18,19 +18,7 @@ import { S } from '../../constants/strings';
 import { colors, radius, spacing, typography } from '../../constants/theme';
 import { JobCard } from '../../components/jobs/JobCard';
 import { CategoryBadge, getCategoryLabel, getCategoryConfig } from '../../components/ui/CategoryBadge';
-
-const CATEGORIES = [
-  'construction',
-  'moving',
-  'cleaning',
-  'babysitting',
-  'gardening',
-  'delivery',
-  'warehouse',
-  'events',
-  'painting',
-  'other',
-];
+import { CATEGORIES } from '../../types/job';
 
 type Job = {
   id: string;

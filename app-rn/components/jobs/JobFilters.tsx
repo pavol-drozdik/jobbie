@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Input, Button, Select } from '../ui';
 import { getCategoryLabel } from '../ui/CategoryBadge';
+import { CATEGORIES } from '../../types/job';
 import { colors, radius, spacing, typography } from '../../constants/theme';
 import { S } from '../../constants/strings';
 
@@ -20,19 +21,6 @@ if (
 ) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
-
-const CATEGORIES = [
-  'construction',
-  'moving',
-  'cleaning',
-  'babysitting',
-  'gardening',
-  'delivery',
-  'warehouse',
-  'events',
-  'painting',
-  'other',
-];
 
 const JOB_TYPES = [
   { value: 'all', label: S.anyJobType },

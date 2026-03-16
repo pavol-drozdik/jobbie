@@ -7,16 +7,16 @@ const categoryConfig: Record<
   string,
   { label: string; icon: keyof typeof Ionicons.glyphMap; bg: string; text: string }
 > = {
-  construction: { label: 'Stavba', icon: 'construct-outline', bg: '#fff7ed', text: '#c2410c' },
-  moving: { label: 'Sťahovanie', icon: 'car-outline', bg: '#eff6ff', text: '#1d4ed8' },
-  cleaning: { label: 'Upratovanie', icon: 'sparkles-outline', bg: '#ecfdf5', text: '#047857' },
-  babysitting: { label: 'Opatrovanie', icon: 'heart-outline', bg: '#fdf2f8', text: '#be185d' },
-  gardening: { label: 'Záhrada', icon: 'leaf-outline', bg: '#f0fdf4', text: '#15803d' },
-  delivery: { label: 'Doručovanie', icon: 'cube-outline', bg: '#f5f3ff', text: '#6d28d9' },
-  warehouse: { label: 'Sklad', icon: 'cube-outline', bg: '#fffbeb', text: '#b45309' },
-  events: { label: 'Eventy', icon: 'musical-notes-outline', bg: '#fdf4ff', text: '#a21caf' },
-  painting: { label: 'Maľovanie', icon: 'brush-outline', bg: '#ecfeff', text: '#0e7490' },
-  other: { label: 'Iné', icon: 'ellipsis-horizontal', bg: '#f9fafb', text: '#4b5563' },
+  stavba: { label: 'Stavba', icon: 'construct-outline', bg: '#fff7ed', text: '#c2410c' },
+  domacnost: { label: 'Domácnosť', icon: 'home-outline', bg: '#eff6ff', text: '#1d4ed8' },
+  zahrada: { label: 'Záhrada', icon: 'leaf-outline', bg: '#f0fdf4', text: '#15803d' },
+  stahovanie: { label: 'Sťahovanie', icon: 'car-outline', bg: '#f5f3ff', text: '#6d28d9' },
+  sklad: { label: 'Sklad', icon: 'cube-outline', bg: '#fffbeb', text: '#b45309' },
+  eventy: { label: 'Eventy', icon: 'musical-notes-outline', bg: '#fdf4ff', text: '#a21caf' },
+  starostlivost: { label: 'Starostlivosť', icon: 'heart-outline', bg: '#fdf2f8', text: '#be185d' },
+  gastro: { label: 'Gastro', icon: 'restaurant-outline', bg: '#ecfdf5', text: '#047857' },
+  auto: { label: 'Auto', icon: 'car-sport-outline', bg: '#ecfeff', text: '#0e7490' },
+  ine: { label: 'Iné', icon: 'ellipsis-horizontal', bg: '#f9fafb', text: '#4b5563' },
 };
 
 export function getCategoryLabel(category: string): string {
@@ -24,7 +24,7 @@ export function getCategoryLabel(category: string): string {
 }
 
 export function getCategoryConfig(category: string) {
-  return categoryConfig[category] ?? categoryConfig.other;
+  return categoryConfig[category] ?? categoryConfig.ine;
 }
 
 type CategoryBadgeProps = {

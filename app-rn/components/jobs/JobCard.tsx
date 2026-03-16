@@ -37,7 +37,7 @@ export function JobCard({ job, onPress }: JobCardProps) {
     job.compensation_amount
   );
   const location = job.location_address ?? job.location;
-  const category = job.category ?? (job.job_type || 'other');
+  const category = job.category ?? (job.job_type || 'ine');
   const showCategory =
     category &&
     category !== 'full_time' &&

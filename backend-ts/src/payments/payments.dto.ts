@@ -55,3 +55,22 @@ export interface CreateCheckoutSessionResponseDto {
   checkout_url: string;
   session_id: string;
 }
+
+export class CreatePaymentIntentCreditsDto {
+  @IsOptional()
+  @IsString()
+  price_id?: string;
+
+  @IsNumber()
+  @Min(1)
+  credits_amount!: number;
+}
+
+export class CreatePaymentIntentJobDto {
+  @IsString()
+  job_id!: string;
+}
+
+export interface PaymentIntentResponseDto {
+  client_secret: string;
+}

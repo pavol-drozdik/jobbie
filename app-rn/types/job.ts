@@ -32,16 +32,16 @@ export type Job = {
 };
 
 export const CATEGORIES = [
-  'construction',
-  'moving',
-  'cleaning',
-  'babysitting',
-  'gardening',
-  'delivery',
-  'warehouse',
-  'events',
-  'painting',
-  'other',
+  'stavba',
+  'domacnost',
+  'zahrada',
+  'stahovanie',
+  'sklad',
+  'eventy',
+  'starostlivost',
+  'gastro',
+  'auto',
+  'ine',
 ] as const;
 
 export const JOB_TYPES = [

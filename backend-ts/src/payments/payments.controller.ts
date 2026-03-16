@@ -22,6 +22,9 @@ import {
   CreateSubscriptionCheckoutDto,
   CreateCreditsCheckoutDto,
   CreateCheckoutSessionResponseDto,
+  CreatePaymentIntentCreditsDto,
+  CreatePaymentIntentJobDto,
+  PaymentIntentResponseDto,
   CreditPackDto,
 } from './payments.dto';
 
@@ -61,6 +64,71 @@ export class PaymentsController {
   @Get('credit-packs-config')
   getCreditPacksConfig() {
     return this.stripe.getCreditsConfigHint();
+  }
+
+  @Get('config')
+  getConfig(): { publishableKey: string | null } {
+    return {
+      publishableKey: this.stripe.getPublishableKey(),
+    };
+  }
+
+  @Post('create-payment-intent-credits')
+  @UseGuards(JwksAuthGuard)
+  async createPaymentIntentCredits(
+    @CurrentUserDecorator() user: CurrentUser,
+    @Body() body: CreatePaymentIntentCreditsDto,
+  ): Promise<PaymentIntentResponseDto> {
+    let priceId: string;
+    let creditsAmount: number;
+    const packs = await this.stripe.listCreditPacks();
+    if (body.price_id && packs.length > 0) {
+      const pack = packs.find((p) => p.price_id === body.price_id);
+      if (!pack) {
+        throw new BadRequestException('Neplatný balík kreditov.');
+      }
+      priceId = pack.price_id;
+      creditsAmount = pack.credits;
+    } else {
+      const defaultPriceId = this.stripe.getDefaultCreditsPriceId();
+      if (!defaultPriceId) {
+        throw new ServiceUnavailableException(
+          'Stripe credits price not configured',
+        );
+      }
+      priceId = defaultPriceId;
+      creditsAmount = Math.min(
+        Math.max(1, Math.floor(body.credits_amount)),
+        1000,
+      );
+    }
+    return this.stripe.createPaymentIntentCredits(
+      user.id,
+      priceId,
+      creditsAmount,
+    );
+  }
+
+  @Post('create-payment-intent-job')
+  @UseGuards(JwksAuthGuard)
+  async createPaymentIntentJob(
+    @CurrentUserDecorator() user: CurrentUser,
+    @Body() body: CreatePaymentIntentJobDto,
+  ): Promise<PaymentIntentResponseDto> {
+    const { data: job, error } = await this.supabase
+      .getClient()
+      .from('job_offers')
+      .select('id, company_id')
+      .eq('id', body.job_id)
+      .single();
+    if (error || !job) {
+      throw new NotFoundException('Ponuka nebola nájdená.');
+    }
+    const row = job as { company_id: string };
+    if (row.company_id !== user.id) {
+      throw new BadRequestException('Ponuka nepatrí aktuálnemu používateľovi.');
+    }
+    return this.stripe.createPaymentIntentJobPost(user.id, body.job_id);
   }
 
   @Post('checkout-credits')
@@ -193,6 +261,39 @@ export class PaymentsController {
             .eq('id', userId)
             .single();
           const current = (row as { credits?: number } | null)?.credits ?? 0;
+          await supabase
+            .from('profiles')
+            .update({ credits: current + addCredits })
+            .eq('id', userId);
+        }
+      }
+      const jobId = meta.job_id;
+      if (jobId) {
+        await supabase
+          .from('job_offers')
+          .update({ is_active: true })
+          .eq('id', jobId);
+      }
+    }
+
+    if (event.type === 'payment_intent.succeeded') {
+      const pi = event.data.object as { metadata?: Record<string, string> };
+      const meta = (pi.metadata ?? {}) as Record<string, string>;
+      if (
+        meta.type === 'credits' &&
+        meta.user_id &&
+        meta.credits
+      ) {
+        const userId = meta.user_id;
+        const addCredits = parseInt(meta.credits, 10) || 0;
+        if (addCredits > 0) {
+          const { data: row } = await supabase
+            .from('profiles')
+            .select('credits')
+            .eq('id', userId)
+            .single();
+          const current =
+            (row as { credits?: number } | null)?.credits ?? 0;
           await supabase
             .from('profiles')
             .update({ credits: current + addCredits })
