@@ -1,0 +1,61 @@
+---
+description: Scalability, pagination, caching, and scale-readiness for backend, DB, and PWA
+globs: backend-ts/**,app-pwa/**,supabase/migrations/**
+alwaysApply: false
+---
+
+# Scalability checklist
+
+Apply on every list endpoint, migration with filters, catalog/config endpoint, or heavy background work.
+
+See [docs/scalability.md](../../docs/scalability.md) for patterns, env vars, and anti-patterns.
+
+## Pagination
+
+- No unbounded `select` without `.range()` / `.limit()`; max `limit` **100**.
+- Prefer keyset `(created_at, id)` via `backend-ts/src/common/keyset-cursor.ts` for large tables (ledger, audit, high-volume lists).
+- **Forbidden**: fetch all rows then filter/slice in Node (except documented admin one-offs).
+
+## List vs detail API
+
+- New resources: `GET /resource` (slim `*ListItemDto`) + `GET /resource/:id` (full DTO).
+- List handlers: **explicit column** `select(...)`, not `select('*')`.
+- List payloads omit large fields (`body`, full HTML descriptions, gallery blobs).
+
+## N+1 queries
+
+- Batch related IDs with `.in()` + `Map`; no `await` inside loops over list rows unless documented.
+
+## Database indexes
+
+- Any new filter/sort column used in list/search → btree or GIN index in the **same migration** as the column.
+- Public catalog examples: `idx_company_ads_active_list`, `idx_cvs_employer_visible_updated`, `idx_applications_job_created`.
+
+## Background work
+
+- Email, index rebuild, export, or report paths **>2s or >100 rows** → enqueue BullMQ `background` queue when `REDIS_URL` is set; keep inline fallback for local dev.
+- **Never** queue credit grants or Stripe fulfillment (synchronous + idempotent RPC only).
+
+## Cache
+
+- Static catalog (billing config, credit packs, plans, SK municipalities): Redis TTL via `CatalogCacheService` or `Cache-Control` on `@Public()` GETs.
+- Invalidate or short TTL when admin edits catalog tables.
+
+## Storage & CDN
+
+- Uploads: Supabase buckets + `validateImageUpload` / compress; path scoped to `auth.uid()`.
+- Public list images: `NuxtImg` + optional `NUXT_PUBLIC_MEDIA_CDN_URL`; private chat media stays signed URLs.
+
+## Search
+
+- **Jobs**: Typesense primary; Postgres `search_jobs_hybrid` fallback only.
+- New searchable domains (company ads, CVs): add Typesense collection + backfill script + env gate before relying on in-memory text filter.
+
+## Feature flags
+
+- UX rollouts: PostHog (`useFeatureFlag`) or `FEATURE_*` env on backend — not silent hardcoded toggles without comment.
+
+## Ops
+
+- New list filter → verify index in Supabase Query Performance after deploy.
+- Multi-instance API: `REDIS_URL` for feed cache, BullMQ, and Socket.IO Redis adapter.

@@ -1,0 +1,6 @@
+.nuxt/
+.output/
+stats/
+dist/
+127.0.0.1/
+node_modules/

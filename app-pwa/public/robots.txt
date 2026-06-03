@@ -1,0 +1,4 @@
+# Served dynamically by Nitro (`server/routes/robots.txt.get.ts`) when the app runs.
+# This file is a fallback for static hosting without the Node server.
+User-agent: *
+Disallow: /

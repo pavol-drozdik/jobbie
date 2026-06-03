@@ -1,0 +1,38 @@
+---
+description: Nest API security — public DTOs, guards, ownership
+globs: backend-ts/**
+alwaysApply: false
+---
+
+# Backend API security (backend-ts)
+
+## Public vs owner responses
+- List/detail endpoints callable without auth must use **redacted** mappers:
+  - Jobs: `toPublicJobResponse(row, viewer?)` in `jobs/public-response.mapper.ts`
+  - Company ads: `toPublicCompanyAdResponse(row, viewer?)` in `company-ads/public-response.mapper.ts`
+- Never spread full DB rows (`...row`) into anonymous responses.
+- Contact fields (`employer_email`, `contact_email`, `contact_phone`) only when `show_phone_publicly` or viewer is owner/admin.
+- Exact address: null `location_address` / `street_address` when `show_exact_address` is false.
+- Tax fields (`ico`, `dic`, `ic_dph`) only for owner/admin on company ads.
+- Employer CV detail: gate contact on `show_contact_details` or `cv_contact_unlocks`; never expose `gender` / `has_disability` / `birth_date`.
+- `GET /profiles/me/export`: throttled; audit `data.export.requested`.
+
+## Mutations
+- Use `JwksAuthGuard` on create/update/delete/publish.
+- Verify `company_id` / `owner_id === user.id` before writes; return `ForbiddenException` otherwise.
+- Credit spend and Stripe webhooks: verify metadata and signatures; do not trust client amounts.
+
+## Sensitive fields
+- Do not return `stripeCustomerId` in client-facing billing DTOs unless explicitly required by Stripe.js (prefer server-only).
+- `GET /profiles/me` may return billing fields for the authenticated owner only.
+
+## Service role
+- `SupabaseService` uses service role and bypasses RLS — enforce all rules in controllers/services, not only in RLS.
+
+## File uploads
+- New upload types: extend `StorageUploadService` init/finalize + `file-allowlist.ts`; not ad-hoc `supabase.storage.upload` in controllers.
+- `@Throttle()` + metadata validation on init + ownership checks; finalize sniffs magic bytes.
+- See `.cursor/rules/security-storage.mdc`.
+
+## Tests
+- Add specs for anonymous vs owner job/ad responses when changing mappers.

@@ -1,0 +1,11 @@
+# Copy to supabase/config.toml when using Supabase CLI locally (`supabase init` / `supabase start`).
+# Hosted projects: enable TOTP in Dashboard (see supabase/AUTH-MFA.md).
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+# Optional: passkeys (WebAuthn) in settings — also off by default in CLI config.
+# [auth.mfa.web_authn]
+# enroll_enabled = true
+# verify_enabled = true

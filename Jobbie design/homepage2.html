@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jobbie — Nájdi brigádu. Bez stresu. Ihneď.</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+    <style>
+        /* ── Improvements on top of style.css ── */
+
+        /* Stats bar under hero search */
+        .hero-stats {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-top: 22px;
+            flex-wrap: wrap;
+        }
+        .hero-stat { display: flex; flex-direction: column; }
+        .hero-stat-num { font-family: "DM Sans", sans-serif; font-size: 22px; font-weight: 800; color: #fff; line-height: 1; }
+        .hero-stat-label { font-family: "DM Sans", sans-serif; font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.7); }
+        .hero-stat-sep { font-size: 22px; color: rgba(255,255,255,0.3); }
+
+        /* Feature section visual placeholders */
+        .feature-visual {
+            width: 100%;
+            height: 100%;
+            min-height: 380px;
+            background: #f0faf4;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding: 32px;
+        }
+
+        .feature-visual::before {
+            content: '';
+            position: absolute;
+            width: 280px; height: 280px;
+            border-radius: 50%;
+            background: rgba(34,197,94,0.08);
+            top: -80px; right: -80px;
+        }
+
+        .fv-stack { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 340px; }
+
+        .fv-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        .fv-card-img {
+            width: 46px; height: 46px; border-radius: 10px;
+            background: #cff0db;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .fv-card-img i { color: #22c55e; font-size: 20px; }
+
+        .fv-card-info { flex: 1; }
+        .fv-card-title { font-family: "DM Sans", sans-serif; font-size: 15px; font-weight: 700; color: #000; margin-bottom: 3px; }
+        .fv-card-meta { font-family: "DM Sans", sans-serif; font-size: 13px; font-weight: 500; color: rgba(0,0,0,0.4); }
+        .fv-card-salary { font-family: "DM Sans", sans-serif; font-size: 14px; font-weight: 800; color: #22c55e; white-space: nowrap; }
+
+        .fv-search {
+            background: #fff;
+            border-radius: 999px;
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        .fv-search i { color: #22c55e; }
+        .fv-search span { font-family: "DM Sans", sans-serif; font-size: 15px; color: rgba(0,0,0,0.35); flex: 1; }
+        .fv-search-btn { background: #22c55e; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .fv-search-btn i { color: #fff; font-size: 13px; }
+
+        .fv-stat-row { display: flex; gap: 10px; }
+
+        .fv-stat-card {
+            flex: 1;
+            background: #22c55e;
+            border-radius: 14px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .fv-stat-card.light { background: #cff0db; }
+
+        .fv-stat-card-val { font-family: "DM Sans", sans-serif; font-size: 22px; font-weight: 800; color: #fff; }
+        .fv-stat-card.light .fv-stat-card-val { color: #15803d; }
+        .fv-stat-card-label { font-family: "DM Sans", sans-serif; font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.8); }
+        .fv-stat-card.light .fv-stat-card-label { color: rgba(21,128,61,0.7); }
+
+        /* Trust strip */
+        .trust-strip {
+            background: #fff;
+            border-radius: 20px;
+            padding: 32px 48px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            gap: 20px;
+            max-width: 1400px;
+            width: calc(100% - 40px);
+            box-shadow: 0 0 20px rgba(0,0,0,0.06);
+        }
+
+        .trust-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+        .trust-num { font-family: "DM Sans", sans-serif; font-size: 42px; font-weight: 800; color: #22c55e; line-height: 1; }
+
+        .trust-label { font-family: "DM Sans", sans-serif; font-size: 16px; font-weight: 500; color: rgba(0,0,0,0.5); }
+
+        .trust-sep { width: 1px; height: 50px; background: rgba(0,0,0,0.08); }
+
+        /* Improved section header */
+        .section-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 1400px;
+            padding: 0 20px;
+            margin-bottom: 30px;
+        }
+
+        .section-header h2 { margin: 0; }
+        .section-header p { margin: 0; }
+
+        .section-header-left { display: flex; flex-direction: column; gap: 6px; }
+
+        .section-btn {
+            background: #fff;
+            border: 1.5px solid #22c55e;
+            border-radius: 999px;
+            padding: 10px 22px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: #22c55e;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+            white-space: nowrap;
+        }
+
+        .section-btn:hover { background: #22c55e; color: #fff; }
+
+        /* Better category cards */
+        .category-grid-v2 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            max-width: 1400px;
+            width: calc(100% - 40px);
+        }
+
+        .cat-card-v2 {
+            background: #fff;
+            border-radius: 16px;
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.06);
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            text-decoration: none;
+        }
+
+        .cat-card-v2:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+
+        .cat-icon-wrap {
+            width: 46px; height: 46px; min-width: 46px;
+            border-radius: 12px;
+            background: #f0faf4;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s;
+        }
+
+        .cat-card-v2:hover .cat-icon-wrap { background: #cff0db; }
+        .cat-icon-wrap i { color: #22c55e; font-size: 20px; }
+
+        .cat-card-v2 .category-name { display: block; }
+        .cat-card-v2 .active-posts { display: block; }
+
+        /* Better job cards header */
+        .jobs-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            max-width: 1400px;
+            width: calc(100% - 40px);
+            margin-bottom: 30px;
+        }
+
+        .jobs-header-text h2 { margin-bottom: 6px; }
+        .jobs-header-text p { margin: 0; }
+
+        /* Footer */
+        footer {
+            background: #000;
+            margin-top: 140px;
+            padding: 60px 20px 32px;
+            width: 100%;
+        }
+
+        .footer-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.8fr 1fr 1fr 1fr;
+            gap: 48px;
+            margin-bottom: 48px;
+        }
+
+        .footer-brand {}
+
+        .footer-logo {
+            font-family: "DM Sans", sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            color: #22c55e;
+            margin-bottom: 12px;
+        }
+
+        .footer-tagline {
+            font-family: "DM Sans", sans-serif;
+            font-size: 15px;
+            font-weight: 400;
+            color: rgba(255,255,255,0.5);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .footer-socials { display: flex; gap: 10px; }
+
+        .footer-social {
+            width: 38px; height: 38px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.08);
+            display: flex; align-items: center; justify-content: center;
+            color: rgba(255,255,255,0.6);
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .footer-social:hover { background: #22c55e; color: #fff; }
+
+        .footer-col-title {
+            font-family: "DM Sans", sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 18px;
+        }
+
+        .footer-links { display: flex; flex-direction: column; gap: 10px; }
+
+        .footer-link {
+            font-family: "DM Sans", sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.65);
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+
+        .footer-link:hover { color: #22c55e; }
+
+        .footer-bottom {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .footer-copy {
+            font-family: "DM Sans", sans-serif;
+            font-size: 14px;
+            font-weight: 400;
+            color: rgba(255,255,255,0.3);
+        }
+
+        .footer-bottom-links { display: flex; gap: 20px; }
+
+        .footer-bottom-links a {
+            font-family: "DM Sans", sans-serif;
+            font-size: 14px;
+            color: rgba(255,255,255,0.3);
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+
+        .footer-bottom-links a:hover { color: #22c55e; }
+
+        @media (max-width: 900px) {
+            .footer-inner { grid-template-columns: 1fr 1fr; }
+            .trust-strip { flex-wrap: wrap; padding: 24px; }
+            .trust-sep { display: none; }
+            .category-grid-v2 { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 600px) {
+            .footer-inner { grid-template-columns: 1fr; }
+            .category-grid-v2 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <img>
+            <nav>
+                <span>Domov</span>
+                <span>Pozrieť ponuky</span>
+                <span>Hľadať firmy</span>
+            </nav>
+            <nav>
+                <button>Registrovať sa</button>
+                <button>Prihlásiť sa</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ── HERO ── -->
+    <section class="hero">
+        <div class="hero-banner relative">
+            <div class="w-50 hero-bp">
+                <h1>Nájdi brigádu.<br>Bez stresu. Ihneď.</h1>
+                <p>Jobbie spája ľudí s firmami rýchlo a jednoducho.<br>Prihlásiš sa dnes, pracuješ zajtra.</p>
+                <form id="search-bar">
+                    <input type="text" placeholder="Aká brigáda hľadáš?">
+                    <div class="search-circle">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+                </form>
+                <div class="category-pills-cont">
+                    <div class="category-pill"><i class="fa-solid fa-trowel-bricks"></i><span>Stavba</span></div>
+                    <div class="category-pill"><i class="fa-solid fa-broom"></i><span>Upratovanie</span></div>
+                    <div class="category-pill"><i class="fa-solid fa-leaf"></i><span>Záhrada</span></div>
+                    <div class="category-pill"><i class="fa-solid fa-utensils"></i><span>Gastronómia</span></div>
+                    <div class="category-pill"><i class="fa-solid fa-truck"></i><span>Doprava</span></div>
+                </div>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <span class="hero-stat-num">1 200+</span>
+                        <span class="hero-stat-label">aktívnych brigád</span>
+                    </div>
+                    <span class="hero-stat-sep">·</span>
+                    <div class="hero-stat">
+                        <span class="hero-stat-num">500+</span>
+                        <span class="hero-stat-label">overených firiem</span>
+                    </div>
+                    <span class="hero-stat-sep">·</span>
+                    <div class="hero-stat">
+                        <span class="hero-stat-num">4.8 ★</span>
+                        <span class="hero-stat-label">priemerné hodnotenie</span>
+                    </div>
+                </div>
+            </div>
+            <div class="w-50 phone-section">
+                <div class="hero-cards">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Nová ponuka!</span>
+                </div>
+                <div class="hero-cards">
+                    <i class="fa-solid fa-money-bill-wave"></i>
+                    <span>6,70 €/hod.</span>
+                </div>
+                <div class="hero-cards">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span>Žilina</span>
+                </div>
+                <img src="./assets/9061-01-iphone-16-mockup.png">
+            </div>
+        </div>
+    </section>
+
+    <!-- ── TRUST STRIP ── -->
+    <section class="section-mt" style="padding: 0 20px;">
+        <div class="trust-strip">
+            <div class="trust-item">
+                <span class="trust-num">1 200+</span>
+                <span class="trust-label">Aktívnych brigád</span>
+            </div>
+            <div class="trust-sep"></div>
+            <div class="trust-item">
+                <span class="trust-num">500+</span>
+                <span class="trust-label">Overených firiem</span>
+            </div>
+            <div class="trust-sep"></div>
+            <div class="trust-item">
+                <span class="trust-num">12 000+</span>
+                <span class="trust-label">Registrovaných používateľov</span>
+            </div>
+            <div class="trust-sep"></div>
+            <div class="trust-item">
+                <span class="trust-num">4.8 ★</span>
+                <span class="trust-label">Priemerné hodnotenie</span>
+            </div>
+            <div class="trust-sep"></div>
+            <div class="trust-item">
+                <span class="trust-num">48 hod.</span>
+                <span class="trust-label">Priemerné obsadenie</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── HOW IT WORKS ── -->
+    <section class="how-works section-mt">
+        <div class="how-works-inner">
+            <h2>Ako Jobbie Funguje</h2>
+            <div class="role-selector">
+                <div class="selected" data-role="zamestnavatel">Zamestnávateľ</div>
+                <div data-role="brigadnik">Brigádnik</div>
+                <div data-role="poskytovatel">Poskytovateľ</div>
+            </div>
+            <div class="carousel">
+                <div class="carousel-track"></div>
+                <div class="carousel-controls">
+                    <button class="carousel-back-btn"><i class="fa-solid fa-arrow-left"></i></button>
+                    <div class="carousel-dot active"></div>
+                    <div class="carousel-dot"></div>
+                    <div class="carousel-dot"></div>
+                    <button class="carousel-next-btn"><i class="fa-solid fa-arrow-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── FEATURE: BRIGÁDNICI ── -->
+    <section class="col section-mt">
+        <div class="col-flex section-inner" style="gap:60px;align-items:center">
+            <div class="w-50">
+                <h2>Tisíce brigád.<br><span class="green-text">Jeden web.</span></h2>
+                <p>Ušetri si čas pri hľadaní brigády a začni zarábať čo najskôr.</p>
+                <div class="ordered-list">
+                    <div class="list-item">
+                        <div class="bullet">1.</div>
+                        <span>Stovky brigád na jednom mieste — filtruj podľa mesta, odboru alebo mzdy</span>
+                    </div>
+                    <div class="list-item">
+                        <div class="bullet">2.</div>
+                        <span>Prihlás sa jedným kliknutím bez životopisu</span>
+                    </div>
+                    <div class="list-item">
+                        <div class="bullet">3.</div>
+                        <span>Hodnotenia firiem ti pomôžu vybrať si toho správneho zamestnávateľa</span>
+                    </div>
+                </div>
+            </div>
+            <div class="w-50">
+                <img src="assets/feature-job-search.svg" alt="Job search visual" style="width:100%;border-radius:24px">
+            </div>
+        </div>
+    </section>
+
+    <!-- ── FEATURE: FIRMY ── -->
+    <section class="col section-mt">
+        <div class="col-flex section-inner" style="gap:60px;align-items:center">
+            <div class="w-50">
+                <img src="assets/feature-employer.svg" alt="Employer visual" style="width:100%;border-radius:24px">
+            </div>
+            <div class="w-50">
+                <h2>Tisíce brigádnikov.<br><span class="green-text">Jeden inzerát.</span></h2>
+                <p>Ušetri si čas pri hľadaní brigádnika a obsaď pozíciu do 48 hodín.</p>
+                <div class="ordered-list">
+                    <div class="list-item">
+                        <div class="bullet">1.</div>
+                        <span>Oslovíš tisíce overených brigádnikov s jedným inzerátom</span>
+                    </div>
+                    <div class="list-item">
+                        <div class="bullet">2.</div>
+                        <span>Jednoduché spravovanie prihlášok priamo v aplikácii</span>
+                    </div>
+                    <div class="list-item">
+                        <div class="bullet">3.</div>
+                        <span>Rýchle obsadenie pozície — priemer 48 hodín od zverejnenia</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── CATEGORIES ── -->
+    <section class="section-mt" style="align-items:flex-start;padding:0 20px">
+        <div class="section-header">
+            <div class="section-header-left">
+                <h2 style="margin:0">Kategórie</h2>
+                <p style="margin:0">Nájdi brigádu presne v oblasti, ktorá ťa zaujíma.</p>
+            </div>
+        </div>
+        <div class="category-grid-v2">
+            <a href="jobposts.html" class="cat-card-v2">
+                <div class="cat-icon-wrap"><i class="fa-solid fa-trowel-bricks"></i></div>
+                <div><span class="category-name">Stavba</span><span class="active-posts">67 aktuálnych ponúk</span></div>
+            </a>
+            <a href="jobposts.html" class="cat-card-v2">
+                <div class="cat-icon-wrap"><i class="fa-solid fa-broom"></i></div>
+                <div><span class="category-name">Upratovanie</span><span class="active-posts">43 aktuálnych ponúk</span></div>
+            </a>
+            <a href="jobposts.html" class="cat-card-v2">
+                <div class="cat-icon-wrap"><i class="fa-solid fa-leaf"></i></div>
+                <div><span class="category-name">Záhrada</span><span class="active-posts">38 aktuálnych ponúk</span></div>
+            </a>
+            <a href="jobposts.html" class="cat-card-v2">
+                <div class="cat-icon-wrap"><i class="fa-solid fa-truck"></i></div>
+                <div><span class="category-name">Doprava</span><span class="active-posts">55 aktuálnych ponúk</span></div>
+            </a>
+            <a href="jobposts.html" class="cat-card-v2">
+                <div class="cat-icon-wrap"><i class="fa-solid fa-utensils"></i></div>
+                <div><span class="category-name">Gastronómia</span><span class="active-posts">29 aktuálnych ponúk</span></div>
+            </a>
+            <a href="jobposts.html" class="cat-card-v2">
+                <div class="cat-icon-wrap"><i class="fa-solid fa-box"></i></div>
+                <div><span class="category-name">Skladovanie</span><span class="active-posts">31 aktuálnych ponúk</span></div>
+            </a>
+            <a href="jobposts.html" class="cat-card-v2">
+                <div class="cat-icon-wrap"><i class="fa-solid fa-laptop-code"></i></div>
+                <div><span class="category-name">IT &amp; Technika</span><span class="active-posts">18 aktuálnych ponúk</span></div>
+            </a>
+            <a href="jobposts.html" class="cat-card-v2">
+                <div class="cat-icon-wrap"><i class="fa-solid fa-store"></i></div>
+                <div><span class="category-name">Obchod &amp; Predaj</span><span class="active-posts">24 aktuálnych ponúk</span></div>
+            </a>
+            <a href="jobposts.html" class="cat-card-v2">
+                <div class="cat-icon-wrap"><i class="fa-solid fa-paint-roller"></i></div>
+                <div><span class="category-name">Rekonštrukcie</span><span class="active-posts">19 aktuálnych ponúk</span></div>
+            </a>
+            <a href="jobposts.html" class="cat-card-v2">
+                <div class="cat-icon-wrap"><i class="fa-solid fa-graduation-cap"></i></div>
+                <div><span class="category-name">Vzdelávanie</span><span class="active-posts">12 aktuálnych ponúk</span></div>
+            </a>
+            <a href="jobposts.html" class="cat-card-v2">
+                <div class="cat-icon-wrap"><i class="fa-solid fa-heart-pulse"></i></div>
+                <div><span class="category-name">Zdravotníctvo</span><span class="active-posts">9 aktuálnych ponúk</span></div>
+            </a>
+            <a href="jobposts.html" class="cat-card-v2">
+                <div class="cat-icon-wrap"><i class="fa-solid fa-ellipsis"></i></div>
+                <div><span class="category-name">Iné</span><span class="active-posts">47 aktuálnych ponúk</span></div>
+            </a>
+        </div>
+    </section>
+
+    <!-- ── JOB POSTS ── -->
+    <section class="section-mt job-posts" style="align-items:flex-start;padding:0 20px">
+        <div class="jobs-header">
+            <div class="jobs-header-text">
+                <h2>Aktuálne<span class="green-text"> ponuky</span></h2>
+                <p>Najnovšie ponuky pripravené priamo pre teba</p>
+            </div>
+            <a href="jobposts.html"><button class="section-btn">Zobraziť všetky ponuky</button></a>
+        </div>
+        <div class="grid" style="max-width:1400px;width:100%">
+            <div class="card">
+                <div class="image-cont">
+                    <div class="category-pill"><i class="fa-solid fa-trowel-bricks"></i><span>Stavba</span></div>
+                    <div class="new-pill">Nové</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Vypratanie garáže a kosenie trávnika</h3>
+                    <div class="card-detail">
+                        <div class="card-detail-item"><i class="fa-solid fa-location-dot"></i><span>Dlhé Pole</span></div>
+                        <div class="card-detail-item"><i class="fa-solid fa-calendar"></i><span>16. 05. – 18. 05. 2026</span></div>
+                        <div class="card-detail-item"><i class="fa-solid fa-money-bill-wave"></i><span>6,70 €/hod.</span></div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="profile">
+                            <div class="profile-picture">MP</div>
+                            <span class="profile-name">Martin Paček</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="image-cont">
+                    <div class="category-pill"><i class="fa-solid fa-broom"></i><span>Upratovanie</span></div>
+                    <div class="new-pill">Nové</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Upratovanie kancelárskych priestorov</h3>
+                    <div class="card-detail">
+                        <div class="card-detail-item"><i class="fa-solid fa-location-dot"></i><span>Žilina</span></div>
+                        <div class="card-detail-item"><i class="fa-solid fa-calendar"></i><span>20. 05. 2026</span></div>
+                        <div class="card-detail-item"><i class="fa-solid fa-money-bill-wave"></i><span>7,00 €/hod.</span></div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="profile">
+                            <div class="profile-picture" style="background:#0ea5e9">JN</div>
+                            <span class="profile-name">Jana Nováková</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="image-cont">
+                    <div class="category-pill"><i class="fa-solid fa-truck"></i><span>Doprava</span></div>
+                    <div class="new-pill">Urgentné</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Rozvoz tovaru — Žilina a okolie</h3>
+                    <div class="card-detail">
+                        <div class="card-detail-item"><i class="fa-solid fa-location-dot"></i><span>Martin</span></div>
+                        <div class="card-detail-item"><i class="fa-solid fa-calendar"></i><span>od 22. 05. 2026</span></div>
+                        <div class="card-detail-item"><i class="fa-solid fa-money-bill-wave"></i><span>9,00 €/hod.</span></div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="profile">
+                            <div class="profile-picture" style="background:#f59e0b">TK</div>
+                            <span class="profile-name">Tomáš Kováč</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="image-cont">
+                    <div class="category-pill"><i class="fa-solid fa-leaf"></i><span>Záhrada</span></div>
+                    <div class="new-pill">Nové</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Kosenie a úprava záhrady pri dome</h3>
+                    <div class="card-detail">
+                        <div class="card-detail-item"><i class="fa-solid fa-location-dot"></i><span>Bytča</span></div>
+                        <div class="card-detail-item"><i class="fa-solid fa-calendar"></i><span>17. 05. 2026</span></div>
+                        <div class="card-detail-item"><i class="fa-solid fa-money-bill-wave"></i><span>8,00 €/hod.</span></div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="profile">
+                            <div class="profile-picture" style="background:#ef4444">LH</div>
+                            <span class="profile-name">Lucia Horváthová</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── CTA BANNER ── -->
+    <section class="section-mt">
+        <div class="CTA-banner">
+            <h2>Chceš inzerovať svoje služby?</h2>
+            <p>Daj o sebe vedieť. Získavaj zákazníkov bez námahy. Či si firma alebo živnostník, inzeruj u nás a nechaj zákazníkov, aby našli práve teba.</p>
+            <button>Vytvor inzerát zadarmo</button>
+        </div>
+    </section>
+
+    <!-- ── REVIEWS ── -->
+    <section class="reviews section-mt">
+        <div>
+            <h2>Čo hovoria naši <br><span class="green-text">používatelia</span></h2>
+        </div>
+        <div class="reviews-slider-wrap">
+            <div class="reviews-row">
+                <div class="reviews-track">
+                    <div class="review-card">
+                        <div><div class="profile-picture">MP</div><div class="profile-name">Martin Paček</div></div>
+                        <div class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                        <p>"Páči sa mi, že vidím hodnotenia firiem. Mám istotu, že chodím robiť tam, kde je to seriózne a vyplatia mi to načas."</p>
+                    </div>
+                    <div class="review-card">
+                        <div><div class="profile-picture" style="background:#0ea5e9">JN</div><div class="profile-name">Jana Nováková</div></div>
+                        <div class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                        <p>"Brigádu som našla do hodiny. Jednoduchá registrácia, prehľadné ponuky. Odporúčam každému, kto hľadá prácu popri škole."</p>
+                    </div>
+                    <div class="review-card">
+                        <div><div class="profile-picture" style="background:#f59e0b">TK</div><div class="profile-name">Tomáš Kováč</div></div>
+                        <div class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                        <p>"Super aplikácia! Notifikácie ma upozornili na novú ponuku skôr, ako som si stihol kávu. Nastúpil som na druhý deň."</p>
+                    </div>
+                    <div class="review-card">
+                        <div><div class="profile-picture" style="background:#ef4444">LH</div><div class="profile-name">Lucia Horváthová</div></div>
+                        <div class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                        <p>"Konečne platforma, kde nemusím posielať životopis do prázdna. Firma ma kontaktovala priamo a dohodli sme sa rýchlo."</p>
+                    </div>
+                    <div class="review-card">
+                        <div><div class="profile-picture" style="background:#10b981">PB</div><div class="profile-name">Peter Blaho</div></div>
+                        <div class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i></div>
+                        <p>"Jobbie mi pomohol nájsť sezónnu prácu počas leta. Výber bol obrovský a filtrovanie podľa mesta fungovalo perfektne."</p>
+                    </div>
+                </div>
+            </div>
+            <div class="reviews-row">
+                <div class="reviews-track reviews-track--offset">
+                    <div class="review-card">
+                        <div><div class="profile-picture" style="background:#6366f1">SK</div><div class="profile-name">Simona Kráľová</div></div>
+                        <div class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                        <p>"Veľmi som ocenila možnosť vidieť, koľko ľudí sa už prihlásilo. Vedela som, kedy sa ponáhľať a kedy mám čas."</p>
+                    </div>
+                    <div class="review-card">
+                        <div><div class="profile-picture" style="background:#ec4899">RM</div><div class="profile-name">Rastislav Mináč</div></div>
+                        <div class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                        <p>"Chat priamo v aplikácii je skvelý. Dohodol som si pohovor bez toho, aby som musel posielať e-maily sem-tam."</p>
+                    </div>
+                    <div class="review-card">
+                        <div><div class="profile-picture" style="background:#14b8a6">AV</div><div class="profile-name">Andrea Vlčková</div></div>
+                        <div class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                        <p>"Jobbie je presne to, čo som hľadala. Rýchle, jednoduché a bez zbytočného papierovačiek. Odporúčam všetkým."</p>
+                    </div>
+                    <div class="review-card">
+                        <div><div class="profile-picture" style="background:#f97316">MF</div><div class="profile-name">Marek Filo</div></div>
+                        <div class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i></div>
+                        <p>"Ako zamestnávateľ som obsadil pozíciu za dva dni. Kvalitných uchádzačov bolo veľa a systém na správu prihlášok je intuitívny."</p>
+                    </div>
+                    <div class="review-card">
+                        <div><div class="profile-picture" style="background:#8b5cf6">ZP</div><div class="profile-name">Zuzana Polívková</div></div>
+                        <div class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                        <p>"Používam Jobbie každé prázdniny. Vždy nájdem niečo zaujímavé a blízko domu. Hodnotenia firiem mi pomáhajú vybrať si."</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── DOWNLOAD ── -->
+    <section class="section-mt">
+        <div class="download">
+            <h2>Jobbie vždy<br>po ruke</h2>
+            <p>Stiahni si aplikáciu a buď prvý, kto sa prihlási na nové brigády.<br>Notifikácie, chat a profil vo vrecku.</p>
+            <div class="download-buttons">
+                <button><i class="fa-brands fa-apple"></i> App Store</button>
+                <button><i class="fa-brands fa-google-play"></i> Google Play</button>
+            </div>
+            <img src="assets/9061-01-iphone-16-mockup3.png">
+        </div>
+    </section>
+
+    <!-- ── BLOG ── -->
+    <section class="section-mt blog-posts" style="align-items:flex-start;padding:0 20px">
+        <div class="jobs-header">
+            <div class="jobs-header-text">
+                <h2>Z nášho<span class="green-text"> blogu</span></h2>
+            </div>
+            <a href="blogarchive.html"><button class="section-btn">Všetky články</button></a>
+        </div>
+        <div class="grid" style="max-width:1400px;width:100%">
+            <div class="card">
+                <div class="image-cont">
+                    <div class="new-pill">Tipy</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Ako napísať životopis, keď nemáš skúsenosti</h3>
+                    <p class="card-detail">Aj bez praxe môžeš zaujať. Ukážeme ti, na čo sa firmy pozerajú.</p>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="date"><i class="fa-solid fa-calendar"></i><span>16. 05. 2026</span></div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="image-cont">
+                    <div class="new-pill">Kariéra</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>10 otázok, ktoré ti môžu položiť na pohovore</h3>
+                    <p class="card-detail">Priprav sa na najčastejšie otázky a choď na pohovor s istotou.</p>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="date"><i class="fa-solid fa-calendar"></i><span>12. 05. 2026</span></div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="image-cont">
+                    <div class="new-pill">Brigády</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Najlepšie letné brigády pre študentov 2026</h3>
+                    <p class="card-detail">Leto sa blíži. Zisti, ktoré brigády sú tento rok najžiadanejšie.</p>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="date"><i class="fa-solid fa-calendar"></i><span>08. 05. 2026</span></div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── FAQ ── -->
+    <section class="section-mt faq-section">
+        <div><h2>Často kladené otázky</h2></div>
+        <div class="faq-questions">
+            <div class="faq-item">
+                <button class="faq-header" onclick="toggleFaq(this)">
+                    <span>Ako sa zaregistrujem na Jobbie?</span>
+                    <div class="faq-icon">+</div>
+                </button>
+                <div class="faq-body">
+                    <p>Registrácia je jednoduchá a bezplatná. Klikni na tlačidlo „Registrovať sa", vyplň svoje údaje a za pár minút si pripravený hľadať brigády.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-header" onclick="toggleFaq(this)">
+                    <span>Je používanie Jobbie zadarmo?</span>
+                    <div class="faq-icon">+</div>
+                </button>
+                <div class="faq-body">
+                    <p>Áno, pre brigádnikov je platforma úplne bezplatná. Firmy majú k dispozícii bezplatný aj prémiový plán s rozšírenými funkciami.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-header" onclick="toggleFaq(this)">
+                    <span>Ako rýchlo môžem nájsť brigádu?</span>
+                    <div class="faq-icon">+</div>
+                </button>
+                <div class="faq-body">
+                    <p>Mnohí používatelia nájdu vhodnú brigádu do 24 hodín. Pomocou filtrov môžeš rýchlo zúžiť výber podľa lokality, odvetvia či hodinovej mzdy.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-header" onclick="toggleFaq(this)">
+                    <span>Môžem inzerovať brigádu ako firma?</span>
+                    <div class="faq-icon">+</div>
+                </button>
+                <div class="faq-body">
+                    <p>Samozrejme. Po registrácii firemného účtu môžeš vytvoriť inzerát, nastaviť požiadavky a prijímať prihlášky priamo cez platformu.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-header" onclick="toggleFaq(this)">
+                    <span>Je dostupná mobilná aplikácia?</span>
+                    <div class="faq-icon">+</div>
+                </button>
+                <div class="faq-body">
+                    <p>Áno, Jobbie aplikácia je dostupná pre iOS aj Android. Stiahni si ju z App Store alebo Google Play a maj prehľad o brigádach vždy po ruke.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── NEWSLETTER ── -->
+    <section class="col section-mt newsletter">
+        <div class="col-flex section-inner" style="align-items:center;gap:60px">
+            <div class="w-50">
+                <img src="assets/feature-newsletter.svg" alt="Newsletter visual" style="width:100%;border-radius:24px">
+            </div>
+            <div class="w-50">
+                <h2>Novinky zo <span class="green-text">sveta práce</span></h2>
+                <p style="margin-bottom:24px">Odoberaj novinky a buď prvý, kto sa dozvie o nových brigádach a článkoch na blogu.</p>
+                <form>
+                    <input type="email" placeholder="Váš e-mail">
+                    <div class="gdpr">
+                        <input type="checkbox" id="gdpr" name="gdpr">
+                        <label for="gdpr">Súhlasím so spracovaním osobných údajov</label>
+                    </div>
+                    <button>Odoberať</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── FOOTER ── -->
+    <footer>
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <div class="footer-logo">Jobbie</div>
+                <p class="footer-tagline">Spájame ľudí s firmami rýchlo a jednoducho. Nájdi brigádu alebo brigádnika — bez stresu, ihneď.</p>
+                <div class="footer-socials">
+                    <div class="footer-social"><i class="fa-brands fa-facebook-f"></i></div>
+                    <div class="footer-social"><i class="fa-brands fa-instagram"></i></div>
+                    <div class="footer-social"><i class="fa-brands fa-linkedin-in"></i></div>
+                    <div class="footer-social"><i class="fa-brands fa-tiktok"></i></div>
+                </div>
+            </div>
+            <div>
+                <div class="footer-col-title">Pre brigádnikov</div>
+                <div class="footer-links">
+                    <a href="jobposts.html" class="footer-link">Hľadať brigádu</a>
+                    <a href="signup.html" class="footer-link">Registrovať sa</a>
+                    <a href="login.html" class="footer-link">Prihlásiť sa</a>
+                    <a href="#" class="footer-link">Môj profil</a>
+                </div>
+            </div>
+            <div>
+                <div class="footer-col-title">Pre firmy</div>
+                <div class="footer-links">
+                    <a href="addjob.html" class="footer-link">Pridať inzerát</a>
+                    <a href="addcompany.html" class="footer-link">Profil firmy</a>
+                    <a href="#" class="footer-link">Prémiový plán</a>
+                    <a href="#" class="footer-link">Kontakt</a>
+                </div>
+            </div>
+            <div>
+                <div class="footer-col-title">Spoločnosť</div>
+                <div class="footer-links">
+                    <a href="blogarchive.html" class="footer-link">Blog</a>
+                    <a href="#" class="footer-link">O nás</a>
+                    <a href="#" class="footer-link">Podmienky použitia</a>
+                    <a href="#" class="footer-link">Ochrana súkromia</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span class="footer-copy">© 2026 Jobbie s.r.o. Všetky práva vyhradené.</span>
+            <div class="footer-bottom-links">
+                <a href="#">Podmienky</a>
+                <a href="#">Súkromie</a>
+                <a href="#">Cookies</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="main.js"></script>
+</body>
+</html>

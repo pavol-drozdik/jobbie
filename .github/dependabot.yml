@@ -1,0 +1,40 @@
+version: 2
+updates:
+  # Backend Nest API
+  - package-ecosystem: npm
+    directory: /backend-ts
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - backend
+    groups:
+      nest:
+        patterns:
+          - '@nestjs/*'
+      stripe:
+        patterns:
+          - 'stripe'
+
+  # PWA (Nuxt)
+  - package-ecosystem: npm
+    directory: /app-pwa
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - frontend
+
+  # GitHub Actions versions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+      - dependencies
+      - ci

@@ -1,0 +1,30 @@
+---
+description: Keep /docs in sync when changing app-pwa, backend-ts, or supabase
+globs:
+  - app-pwa/**/*
+  - backend-ts/**/*
+  - supabase/**/*
+---
+
+# Documentation maintenance
+
+When you change code under `app-pwa/`, `backend-ts/`, or `supabase/`:
+
+1. Update the relevant file(s) in `docs/` (see [docs/README.md](../../docs/README.md) for the map).
+2. Add an entry to [docs/changelog.md](../../docs/changelog.md) with date and sections: Changed, Added, Fixed, Security, Database, Docs (omit empty sections).
+3. Do not invent behavior — if unsure, mark `TODO: verify` in the doc.
+4. Do not paste secrets or `.env` values into markdown.
+
+| Change type | Update |
+|-------------|--------|
+| Auth, sessions, CSRF, roles | `docs/auth-security.md`, possibly `docs/SECURITY.md` |
+| API routes, guards, crons | `docs/backend.md`, `docs/architecture.md` |
+| PWA routes, composables, UX | `docs/frontend.md`, `docs/features.md` |
+| Migrations, RLS, RPCs | `docs/database.md`, `docs/database-schema-conventions.md` |
+| Credits, Stripe, plans | `docs/payments-credits.md` |
+| Uploads, storage | `docs/uploads.md` |
+| Notifications, alerts | `docs/notifications.md` |
+| Env vars, deploy | `docs/deployment.md`, `.env.example` |
+| New product feature | `docs/features.md` |
+
+Keep edits concise; link to existing runbooks instead of duplicating them.

@@ -1,0 +1,414 @@
+// https://nuxt.com/docs/api/configuration/nuxt-config
+import { fileURLToPath } from 'node:url'
+import { visualizer } from 'rollup-plugin-visualizer'
+import {
+  BRAND_APPLE_TOUCH_ICON_PATH,
+  BRAND_FAVICON_PATH,
+  BRAND_ICON_192_PATH,
+  BRAND_ICON_512_PATH,
+  BRAND_THEME_COLOR,
+} from './utils/brand-assets'
+import {
+  parseAllowIndexing,
+  normalizeSiteUrl,
+  SEO_DEFAULT_DESCRIPTION,
+  SEO_DEFAULT_TITLE,
+  SEO_DEFAULT_OG_IMAGE_PATH,
+} from './utils/seo-config'
+import {
+  SEO_NOINDEX_ROUTE_PATTERNS,
+  SEO_PUBLIC_SSR_ROUTE_PATTERNS,
+} from './utils/seo-route-policy'
+
+const cvDocumentDir = fileURLToPath(new URL('../backend-ts/src/cv/document', import.meta.url))
+const cvPaginationNodePath = fileURLToPath(
+  new URL('../backend-ts/src/cv/document/cv-document-pagination.node.ts', import.meta.url),
+)
+const cvPaginationBrowserStub = fileURLToPath(
+  new URL('./utils/cv-document-pagination.browser-stub.ts', import.meta.url),
+)
+
+const allowIndexing = parseAllowIndexing(process.env.NUXT_PUBLIC_ALLOW_INDEXING)
+const siteUrl = normalizeSiteUrl(process.env.NUXT_PUBLIC_SITE_URL)
+const isCapacitorBuild = process.env.NUXT_PUBLIC_CAPACITOR_BUILD === '1'
+const analyzeBundle = process.env.ANALYZE === '1' || process.env.ANALYZE === 'true'
+
+function supabaseImageHosts(): string[] {
+  const raw = process.env.NUXT_PUBLIC_SUPABASE_URL?.trim()
+  if (!raw) return []
+  try {
+    return [new URL(raw).hostname]
+  } catch {
+    return []
+  }
+}
+
+import { buildPlatformSecurityHeaders } from './utils/platform-csp'
+import { normalizePublicApiBase } from './utils/api-base-url'
+
+const PRIVATE_NO_STORE_HEADERS = {
+  'cache-control': 'private, no-store, must-revalidate',
+} as const
+
+function buildSeoRouteRules(): Record<string, object> {
+  const security = buildPlatformSecurityHeaders()
+  const rules: Record<string, object> = {
+    '/_nuxt/**': {
+      headers: {
+        'cache-control': 'public, max-age=31536000, immutable',
+      },
+    },
+    '/assets/**': {
+      headers: {
+        'cache-control': 'public, max-age=31536000, immutable',
+      },
+    },
+    '/app/profile/settings': { redirect: { to: '/nastavenia', statusCode: 301 } },
+    '/nastavenia/sukromie': { redirect: { to: '/nastavenia/profil', statusCode: 301 } },
+    '/cennik/kredity': { redirect: { to: '/cennik', statusCode: 301 } },
+    '/app/plans': { redirect: { to: '/cennik?tab=plans', statusCode: 301 } },
+    '/app/plans/**': { redirect: { to: '/cennik?tab=plans', statusCode: 301 } },
+    '/faq': { redirect: { to: '/', statusCode: 301 } },
+    '/casto-kladene-otazky': { redirect: { to: '/', statusCode: 301 } },
+    '/o-nas': { redirect: { to: '/', statusCode: 301 } },
+    '/kontakt': { redirect: { to: '/', statusCode: 301 } },
+    '/app/jobs/**': { redirect: { to: '/ponuka/**', statusCode: 301 } },
+    '/nastavenia/**': { headers: { ...security, ...PRIVATE_NO_STORE_HEADERS } },
+    '/chat/**': { headers: { ...security, ...PRIVATE_NO_STORE_HEADERS } },
+    '/spravca-uchadzacov/**': { headers: { ...security, ...PRIVATE_NO_STORE_HEADERS } },
+    '/dashboard/**': { headers: { ...security, ...PRIVATE_NO_STORE_HEADERS } },
+    '/platba': { headers: { ...security, ...PRIVATE_NO_STORE_HEADERS } },
+    '/profil/**': { headers: { ...security, ...PRIVATE_NO_STORE_HEADERS } },
+  }
+  if (!allowIndexing) {
+    rules['/**'] = {
+      headers: {
+        'X-Robots-Tag': 'noindex, nofollow',
+        ...security,
+      },
+    }
+    return rules
+  }
+  rules['/**'] = { headers: { ...security } }
+  // CRITICAL: every per-route override below MUST spread the security
+  // headers into its own `headers` block. Nitro replaces (not merges) the
+  // `headers` object when the same route pattern is reconfigured, so a
+  // partial override that only sets `X-Robots-Tag` would silently drop CSP /
+  // HSTS / XFO on those pages.
+  for (const pattern of SEO_PUBLIC_SSR_ROUTE_PATTERNS) {
+    const robots =
+      pattern === '/databaza-zivotopisov'
+        ? 'noindex, nofollow'
+        : 'index, follow'
+    rules[pattern] = {
+      ssr: true,
+      headers: { ...security, 'X-Robots-Tag': robots },
+    }
+  }
+  for (const pattern of SEO_NOINDEX_ROUTE_PATTERNS) {
+    if (rules[pattern]) {
+      const prev = rules[pattern] as { headers?: Record<string, string> }
+      rules[pattern] = {
+        ...prev,
+        headers: {
+          ...security,
+          ...(prev.headers ?? {}),
+          'X-Robots-Tag': 'noindex, nofollow',
+        },
+      }
+      continue
+    }
+    rules[pattern] = {
+      ssr: false,
+      headers: { ...security, 'X-Robots-Tag': 'noindex, nofollow' },
+    }
+  }
+  return rules
+}
+
+export default defineNuxtConfig({
+  hooks: {
+    listen(_server, listener) {
+      if (listener.dev) {
+        console.info(
+          '[JOBBIE] PWA dev server ready — start Nest API (backend-ts, port 8000) before login/API calls.',
+        )
+      }
+    },
+    'render:html': (html, { event }) => {
+      const nonce = (event as { context?: { cspNonce?: string } })?.context
+        ?.cspNonce
+      if (!nonce) return
+      return html.replace(
+        /<script(?![^>]*\snonce=)/gi,
+        `<script nonce="${nonce}"`,
+      )
+    },
+  },
+  components: [
+    '~/components',
+    { path: '~/components/ui', pathPrefix: false },
+    { path: '~/components/consent', pathPrefix: false },
+    { path: '~/components/marketing', pathPrefix: false },
+    { path: '~/components/seo', pathPrefix: false },
+  ],
+  /**
+   * Default CSR for the logged-in PWA. When `NUXT_PUBLIC_ALLOW_INDEXING` is set,
+   * SSR is enabled globally and public marketing routes opt in via `routeRules`.
+   */
+  ssr: allowIndexing,
+  app: {
+    /** Production: set NUXT_PUBLIC_CDN_URL (origin only); Nuxt prefixes `_nuxt` assets. */
+    cdnURL: (() => {
+      const raw = process.env.NUXT_PUBLIC_CDN_URL?.trim()
+      if (!raw) return ''
+      return raw.endsWith('/') ? raw : `${raw}/`
+    })(),
+    head: {
+      htmlAttrs: { lang: 'sk' },
+      title: SEO_DEFAULT_TITLE,
+      titleTemplate: '%s — JOBBIE',
+      meta: [
+        { charset: 'utf-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'description', content: SEO_DEFAULT_DESCRIPTION },
+        ...(allowIndexing
+          ? [{ name: 'robots', content: 'index, follow' }]
+          : [{ name: 'robots', content: 'noindex, nofollow' }]),
+        { property: 'og:site_name', content: 'JOBBIE' },
+        { property: 'og:locale', content: 'sk_SK' },
+        { property: 'og:image', content: SEO_DEFAULT_OG_IMAGE_PATH },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        ...(isCapacitorBuild
+          ? [
+              {
+                'http-equiv': 'Content-Security-Policy',
+                content:
+                  "default-src 'self' capacitor: ionic: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; connect-src 'self' https: wss:; frame-src https://js.stripe.com https://hooks.stripe.com;",
+              },
+            ]
+          : []),
+      ],
+      link: [
+        { rel: 'icon', type: 'image/svg+xml', href: BRAND_FAVICON_PATH },
+        { rel: 'apple-touch-icon', href: BRAND_APPLE_TOUCH_ICON_PATH },
+      ],
+    },
+  },
+  devtools: { enabled: false },
+  // Avoid Vite pre-transform trying to resolve `#app-manifest` inside dead branches (Nuxt + Vite 6).
+  // Unrelated to PWA `pwa.manifest` in this file.
+  experimental: {
+    appManifest: false,
+  },
+  compatibilityDate: '2025-03-16',
+  devServer: {
+    port: 3001,
+  },
+  runtimeConfig: {
+    public: {
+      /** Same origin as `app.cdnURL` for runtime checks / meta */
+      cdnUrl: process.env.NUXT_PUBLIC_CDN_URL || '',
+      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:8000',
+      supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL || '',
+      supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      stripePublishableKey: process.env.NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
+      turnstileSiteKey: process.env.NUXT_PUBLIC_TURNSTILE_SITE_KEY || '',
+      /** Set to 1 to send sampled nav/click/submit batches to the API */
+      auditClientEvents: process.env.NUXT_PUBLIC_AUDIT_CLIENT_EVENTS || '',
+      /** Client telemetry: nav sample rate 0..1 (default 0.4 if unset when audit enabled) */
+      auditClientSampleRate: process.env.NUXT_PUBLIC_AUDIT_CLIENT_SAMPLE_RATE || '',
+      sentryDsn: process.env.NUXT_PUBLIC_SENTRY_DSN || '',
+      sentryEnvironment: process.env.NUXT_PUBLIC_SENTRY_ENVIRONMENT || '',
+      sentryTracesSampleRate: process.env.NUXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE || '0',
+      posthogKey: process.env.NUXT_PUBLIC_POSTHOG_KEY || '',
+      posthogHost: process.env.NUXT_PUBLIC_POSTHOG_HOST || '',
+      /** Optional PostHog config version string (see PostHog Nuxt docs). */
+      posthogDefaults: process.env.NUXT_PUBLIC_POSTHOG_DEFAULTS || '',
+      /** Google Tag Manager container ID (GTM-…). GA4/Clarity tags live in the container; consent-gated load. */
+      gtmContainerId: process.env.NUXT_PUBLIC_GTM_CONTAINER_ID || '',
+      /** Sample rate 0..1 for Core Web Vitals beacon (0 = off). */
+      webVitalsSampleRate: process.env.NUXT_PUBLIC_WEB_VITALS_SAMPLE_RATE || '0',
+      /** Canonical site origin (no trailing slash), e.g. https://jobbie.sk — overridable via NUXT_PUBLIC_SITE_URL */
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || '',
+      /** Set to 1 on production only (NUXT_PUBLIC_ALLOW_INDEXING). */
+      allowIndexing: process.env.NUXT_PUBLIC_ALLOW_INDEXING || '',
+      /** Set to 1 after legal counsel review — enables indexing of terms/privacy pages. */
+      legalPublished: process.env.NUXT_PUBLIC_LEGAL_PUBLISHED || '',
+      brandName: process.env.NUXT_PUBLIC_BRAND_NAME || 'JOBBIE',
+      brandAlternateName: process.env.NUXT_PUBLIC_BRAND_ALTERNATE_NAME || 'Jobbie',
+      supportEmail: process.env.NUXT_PUBLIC_SUPPORT_EMAIL || 'info@jobbie.sk',
+      supportPhone: process.env.NUXT_PUBLIC_SUPPORT_PHONE || '',
+      socialInstagramUrl: process.env.NUXT_PUBLIC_SOCIAL_INSTAGRAM_URL || '',
+      socialFacebookUrl: process.env.NUXT_PUBLIC_SOCIAL_FACEBOOK_URL || '',
+    },
+  },
+  modules: [
+    './modules/dev-stable',
+    '@nuxt/image',
+    '@nuxtjs/tailwindcss',
+    '@vite-pwa/nuxt',
+  ],
+  /** Tailwind config viewer (`/_tailwind`) can ECONNRESET and fork-restart `nuxt dev` on Windows. */
+  tailwindcss: {
+    viewer: false,
+  },
+  css: [
+    '~/assets/css/main.css',
+    '~/assets/css/cv-template-mini-sheets.css',
+    '~/assets/css/font-awesome.css',
+  ],
+  /** Hashed build assets: long cache when served by Nitro or mirrored CDN. */
+  nitro: {
+    /**
+     * Do not set `nitro.preset` here: forcing `node-server` breaks `nuxt generate`
+     * (HTML gets `/@vite/client` + `C:/.../entry.js`). `nuxt build` still defaults to
+     * `node-server` for `.output/server`.
+     *
+     * Disable link crawling so we do not prerender every route as HTML on Windows
+     * (that path once produced the same broken dev-only asset URLs).
+     */
+    prerender: {
+      crawlLinks: false,
+      routes: allowIndexing
+        ? [
+            '/',
+            '/bezpecnost',
+            '/cennik',
+            '/pracovne-ponuky',
+            '/zahranicne-pracovne-ponuky',
+            '/profesionali',
+            '/blog',
+            '/ponuky-na-email',
+            '/databaza-zivotopisov',
+            '/vseobecne-podmienky',
+            '/ochrana-osobnych-udajov',
+          ]
+        : [],
+    },
+    routeRules: buildSeoRouteRules(),
+  },
+  image: {
+    format: ['webp', 'avif'],
+    quality: 82,
+    domains: supabaseImageHosts(),
+    screens: {
+      xs: 320,
+      sm: 640,
+      md: 768,
+      lg: 1024,
+      xl: 1280,
+    },
+  },
+  /**
+   * PWA: `autoUpdate` activates a new service worker and reloads clients when an
+   * update is found; browsers often check on tab focus, which caused a brief full
+   * reload (auth boot / blank flash). `prompt` defers reload until the user
+   * confirms via the banner in `app.vue`.
+   *
+   * To confirm a document reload vs in-app skeleton: DevTools → Network → Doc,
+   * enable Preserve log, switch tabs and return; a new document request indicates
+   * a real reload. `performance.getEntriesByType('navigation')[0]?.type` shows
+   * `reload` vs `navigate`.
+   */
+  pwa: {
+    /** Custom SW: precache + Web Push `push` / `notificationclick` handlers. */
+    strategies: 'injectManifest',
+    srcDir: 'service-worker',
+    filename: 'sw.ts',
+    registerType: 'prompt',
+    /**
+     * Web Push needs an active service worker. With `false`, local `nuxt dev`
+     * never registers the SW and push subscribe always fails after timeout.
+     */
+    /** Off in dev — SW + proxy races caused ECONNRESET and `nuxt dev` restart loops. */
+    devOptions: {
+      enabled: false,
+    },
+    manifest: {
+      name: 'JOBBIE',
+      short_name: 'JOBBIE',
+      description: 'Nájdi prácu. Nájdi pomoc.',
+      theme_color: BRAND_THEME_COLOR,
+      background_color: '#ffffff',
+      display: 'standalone',
+      start_url: '/',
+      icons: [
+        { src: BRAND_ICON_192_PATH, sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: BRAND_ICON_512_PATH, sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: BRAND_FAVICON_PATH, sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+      ],
+    },
+    injectManifest: {
+      globPatterns: ['**/*.{js,css,html,png,ico,svg}'],
+      maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+      globIgnores: [
+        '**/home-design/feature-*.webp',
+        '**/home-design/*-illustration.png',
+        '**/home-design/jobbie-def-thumb.webp',
+        '**/home-design/hero-*.png',
+        '**/home-design/perspective.png',
+        '**/pdf.worker*.js',
+        '**/pdf.worker*.mjs',
+        '**/img/9061-01-iphone-*.png',
+      ],
+    },
+  },
+  /**
+   * Ignore build output dirs so `nuxt generate` / `nuxt build` while `nuxt dev` is running
+   * does not trigger endless Nitro restarts and eventual heap OOM (~4GB default limit).
+   */
+  watchers: {
+    chokidar: {
+      ignored: [
+        '**/.output/**',
+        '**/.nuxt/**',
+        '**/dist/**',
+        '**/127.0.0.1/**',
+      ],
+    },
+  },
+  alias: {
+    '#cv-document': cvDocumentDir,
+  },
+  vite: {
+    server: {
+      proxy: {
+        '/api': {
+          target: normalizePublicApiBase(process.env.NUXT_PUBLIC_API_BASE_URL),
+          changeOrigin: true,
+        },
+        '/socket.io': {
+          target: normalizePublicApiBase(process.env.NUXT_PUBLIC_API_BASE_URL),
+          ws: true,
+          changeOrigin: true,
+        },
+      },
+      watch: {
+        ignored: [
+          '**/.output/**',
+          '**/.nuxt/**',
+          '**/dist/**',
+          '**/127.0.0.1/**',
+          '**/../backend-ts/**',
+        ],
+      },
+    },
+    resolve: {
+      alias: {
+        '#cv-document': cvDocumentDir,
+        [cvPaginationNodePath]: cvPaginationBrowserStub,
+      },
+    },
+    plugins: analyzeBundle
+      ? [
+          visualizer({
+            filename: 'stats/bundle-stats.html',
+            gzipSize: true,
+            brotliSize: true,
+            open: false,
+          }),
+        ]
+      : [],
+  },
+})

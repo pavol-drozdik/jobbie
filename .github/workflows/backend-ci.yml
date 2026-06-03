@@ -1,0 +1,94 @@
+name: backend-ci
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'backend-ts/**'
+      - 'supabase/migrations/**'
+      - 'app-pwa/**'
+      - 'scripts/security-check.sh'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    paths:
+      - 'backend-ts/**'
+      - 'supabase/migrations/**'
+      - 'app-pwa/**'
+      - 'scripts/security-check.sh'
+      - '.github/workflows/backend-ci.yml'
+
+# Least-privilege default; individual jobs grant only what they need.
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend-ts
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: backend-ts/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build API
+        run: npm run build
+
+  # Fails the build when any production dependency has a high/critical CVE.
+  # Use `npm audit --omit=dev` so a dev-only finding doesn't block the merge —
+  # those are tracked separately via Dependabot.
+  npm-audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend-ts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: backend-ts/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: npm audit (high/critical, prod only)
+        run: npm audit --omit=dev --audit-level=high
+
+  # Lightweight grep-based guardrails for security regressions. See
+  # scripts/security-check.sh for the full list of patterns.
+  security-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+      - name: Run security-check.sh
+        run: bash scripts/security-check.sh
+
+  pwa-npm-audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app-pwa
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: app-pwa/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: npm audit (high/critical, prod only)
+        run: npm audit --omit=dev --audit-level=high

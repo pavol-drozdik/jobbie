@@ -1,0 +1,51 @@
+---
+description: Billing, Stripe, and credits security rules
+globs: backend-ts/src/payments/**,backend-ts/src/billing/**,backend-ts/src/jobs/**,backend-ts/src/company-ads/**,backend-ts/src/applications/**,supabase/migrations/*billing*,supabase/migrations/*stripe*,supabase/migrations/*credit*,app-pwa/**/buy-credits*,app-pwa/**/pricing/**,app-pwa/components/profile/BuyCreditsPanel.vue
+alwaysApply: false
+---
+
+# Billing & credits
+
+## Source of truth
+
+- **Charged catalog** (packs, subscription prices): Postgres `credit_packs` + `subscription_plans` + Stripe Price IDs. `GET /billing/config` and checkout load from DB via `BillingCatalogService`.
+- **Spend costs** (publish, unlock, promote): `billing.config.ts` `CREDIT_COSTS` only. Keep `billing-catalog.seed-alignment.ts` / migration seeds aligned with `CREDIT_PACKAGES` and `SUBSCRIPTION_PLAN_SPECS`.
+
+## Grants & balance
+
+- Credit grants only in `StripeService.fulfillCreditsIfNeeded`, subscription invoice/cron handlers, or `CreditsService.grant` / `reverseSpendByRef` (adjustment). Never from PWA or client Supabase.
+- Never update `profiles.credits` outside RPCs (`grant_credits`, `spend_credits`, `expire_due_credit_lots`).
+- Migrations: deny client DML on `credit_ledger`, `credit_lots`, `stripe_credit_fulfillments`.
+
+## Payments & webhooks
+
+- Verify Stripe via signed webhook + `paymentIntents.retrieve` (`status === 'succeeded'`).
+- Claim `stripe_webhook_events` atomically (`processing` → `processed`).
+- Insert `stripe_credit_fulfillments` **before** `grant_credits`; on `23505`, verify ledger row exists before success.
+- Checkout: resolve server `price_id` → `credit_packs` row; do not accept client `credits_amount` or arbitrary pack prices.
+- Re-validate PI amount/credits against `credit_packs` in `validateCreditPackForPaymentIntent`.
+
+## Spend & idempotency
+
+- Every product spend: stable `ref_type` + `ref_id` (`spend_credits` is idempotent per ref; includes `lot_id` on ledger).
+- Distinct refs per billable action (e.g. job publish `jobId`, renew `jobId:renew:…`, promotion `jobId:kind`).
+- If a DB step fails **after** spend, call `CreditsService.reverseSpendByRef` (RPC `reverse_spend_for_ref`).
+- Publish order: draft → `assertCanPublish` → charge → activate/update; compensate on activate failure.
+
+## Subscriptions & limits
+
+- Monthly grants: backend only (`SubscriptionCreditsService`, free cron). On `subscription_period_credit_grants` `23505`, verify `credit_ledger` before skipping; `grant_credits` is idempotent on `stripe_invoice_id` / `payment_intent_id`.
+- Active offer limits: `SubscriptionLimitsService` before publish (jobs + active company ads vs `max_active_jobs`).
+- Refunds: `revoke_credits_for_payment_refund` (idempotent).
+
+## UX
+
+- Insufficient balance: `ForbiddenException` with `INSUFFICIENT_CREDITS_MESSAGE` from `billing-errors.ts` (sync with PWA `utils/billing-errors.ts`).
+
+## Adding a credit-consuming feature
+
+1. Add cost to `CREDIT_COSTS` if new action type.
+2. Call `CreditsService.spendByKey` / `spendAmount` with unique `refType` + `refId`.
+3. On downstream failure after spend, `reverseSpendByRef`.
+4. `audit.recordAuditEvent` for spend and reversal.
+5. Do not trust client prices or credit amounts.

@@ -1,0 +1,912 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --g50:#F0FAF4;--g100:#D6F2E0;--g200:#A8E0BB;--g400:#4EBB7A;--g500:#2EA85C;--g600:#1E8A47;--g700:#156335;--g900:#0A3D20;
+  --sand:#FAFAF8;--sand2:#F3F3EE;--sand3:#E5E8E2;
+  --ink:#0E1C12;--ink2:#3D5444;--ink3:#8A9E8F;
+  --amber:#F5A623;--al:#FEF4E0;
+  --surface:#FFFFFF;--r:10px;--r2:16px;
+}
+body{font-family:'Inter',sans-serif;background:#F0F0EC;color:var(--ink)}
+
+/* LAYOUT */
+.app{max-width:1100px;margin:0 auto;padding:2rem 1.5rem 4rem}
+.page-section{margin-bottom:4rem}
+.page-label{font-size:11px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem;display:flex;align-items:center;gap:8px}
+.page-label::after{content:'';flex:1;height:1px;background:var(--sand3)}
+.page-title{font-size:1.4rem;font-weight:800;color:var(--ink);margin-bottom:.3rem;letter-spacing:-.5px}
+.page-desc{font-size:13px;color:var(--ink3);margin-bottom:1.25rem}
+
+/* DEVICE FRAMES */
+.frames{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start}
+.desktop-frame{background:var(--surface);border-radius:12px;overflow:hidden;border:1.5px solid var(--sand3);box-shadow:0 4px 24px rgba(0,0,0,.06)}
+.mobile-frame{background:var(--surface);border-radius:24px;overflow:hidden;border:1.5px solid var(--sand3);box-shadow:0 4px 24px rgba(0,0,0,.08);position:relative}
+.mobile-notch{background:#0E1C12;height:28px;display:flex;align-items:center;justify-content:center}
+.notch-pill{width:60px;height:6px;background:rgba(255,255,255,.2);border-radius:99px}
+.frame-label{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;padding:6px 12px;background:var(--sand2);border-bottom:1px solid var(--sand3)}
+
+/* MINI NAV */
+.mini-nav{height:36px;background:var(--surface);border-bottom:1px solid var(--g100);display:flex;align-items:center;justify-content:space-between;padding:0 12px;flex-shrink:0}
+.mini-logo{font-size:12px;font-weight:900;color:var(--g700);letter-spacing:-.5px;display:flex;align-items:center;gap:5px}
+.logo-sq{width:18px;height:18px;background:var(--g500);border-radius:4px;display:flex;align-items:center;justify-content:center}
+.logo-sq svg{width:10px;height:10px;fill:#fff}
+.mini-nav-links{display:flex;gap:8px}
+.mnl{font-size:9px;font-weight:500;color:var(--ink3)}
+.mini-btn{background:var(--g500);color:#fff;font-size:9px;font-weight:700;padding:4px 10px;border-radius:99px;border:none}
+
+/* MOBILE NAV */
+.mob-nav{height:32px;background:var(--surface);border-bottom:1px solid var(--g100);display:flex;align-items:center;justify-content:space-between;padding:0 10px}
+.mob-logo{font-size:11px;font-weight:900;color:var(--g700);letter-spacing:-.5px}
+.mob-burger{display:flex;flex-direction:column;gap:2.5px}
+.mob-burger span{display:block;width:16px;height:1.5px;background:var(--ink2);border-radius:99px}
+.mob-tabs{background:var(--surface);border-top:1px solid var(--sand3);display:flex;justify-content:space-around;padding:6px 0 4px}
+.mob-tab{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:8px;font-weight:500;color:var(--ink3)}
+.mob-tab.active{color:var(--g500)}
+.mob-tab svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+
+/* CONTENT BLOCKS */
+.hero-block{padding:16px 12px 12px;background:var(--surface)}
+.live-b{display:inline-flex;align-items:center;gap:5px;background:var(--g50);border:1px solid var(--g200);color:var(--g700);font-size:8px;font-weight:700;padding:3px 8px;border-radius:99px;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em}
+.ld{width:5px;height:5px;background:var(--g500);border-radius:50%;animation:lp 2s infinite}
+@keyframes lp{0%,100%{box-shadow:0 0 0 0 rgba(46,168,92,.5)}60%{box-shadow:0 0 0 4px rgba(46,168,92,0)}}
+.h1-big{font-size:18px;font-weight:800;color:var(--ink);line-height:1.1;letter-spacing:-.8px;margin-bottom:6px}
+.h1-big em{font-style:normal;color:var(--g500)}
+.h1-sm{font-size:13px;font-weight:800;color:var(--ink);line-height:1.15;letter-spacing:-.5px;margin-bottom:5px}
+.h1-sm em{font-style:normal;color:var(--g500)}
+.sub-text{font-size:9px;color:var(--ink2);line-height:1.5;margin-bottom:10px}
+.btn-g{background:var(--g500);color:#fff;font-size:9px;font-weight:700;padding:7px 14px;border-radius:99px;border:none;display:inline-flex;align-items:center;gap:4px}
+.btn-g-sm{background:var(--g500);color:#fff;font-size:8px;font-weight:700;padding:5px 10px;border-radius:99px;border:none}
+.btn-o{background:transparent;color:var(--g700);font-size:9px;font-weight:600;padding:7px 14px;border-radius:99px;border:1.5px solid var(--g200)}
+.btn-row{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.trust-row{display:flex;gap:10px;flex-wrap:wrap}
+.trust-i{display:flex;align-items:center;gap:3px;font-size:8px;color:var(--ink3);font-weight:500}
+.chk-c{width:12px;height:12px;background:var(--g100);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chk-c svg{width:7px;height:7px;stroke:var(--g600);fill:none;stroke-width:2.5;stroke-linecap:round}
+
+/* STATS BAR */
+.stats-b{display:grid;grid-template-columns:repeat(3,1fr);background:var(--g900);border-top:none}
+.stat-c{padding:8px 6px;text-align:center;border-right:1px solid rgba(255,255,255,.07)}
+.stat-c:last-child{border-right:none}
+.snum{font-size:13px;font-weight:800;color:#fff;letter-spacing:-.5px}
+.snum em{font-style:normal;color:var(--g400)}
+.slbl{font-size:7px;font-weight:500;color:rgba(255,255,255,.4);margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
+
+/* SEARCH */
+.search-s{padding:10px 12px;background:var(--surface);border-bottom:1px solid var(--g100)}
+.s-lbl{font-size:8px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px}
+.s-box{display:flex;align-items:center;gap:6px;background:var(--g50);border:1.5px solid var(--g200);border-radius:8px;padding:6px 10px;margin-bottom:7px}
+.s-box svg{color:var(--g400);flex-shrink:0}
+.s-ph{font-size:8px;color:var(--ink3);flex:1}
+.s-go-mini{background:var(--g500);color:#fff;font-size:8px;font-weight:700;padding:4px 8px;border-radius:6px;border:none;flex-shrink:0}
+.chips-row{display:flex;gap:4px;flex-wrap:wrap}
+.chip-s{background:var(--surface);border:1px solid var(--sand3);border-radius:99px;padding:3px 8px;font-size:7px;font-weight:500;color:var(--ink2)}
+.chip-s.on{background:var(--g50);border-color:var(--g500);color:var(--g700)}
+
+/* JOB CARDS */
+.cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 12px}
+.cards-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:10px 12px}
+.jcard{background:var(--surface);border:1px solid var(--sand3);border-radius:10px;overflow:hidden;position:relative}
+.jcard-stripe{height:2.5px}
+.jcard-stripe.g{background:var(--g500)}
+.jcard-stripe.a{background:var(--amber)}
+.jcard-body{padding:7px}
+.jcard-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px}
+.jco-logo{width:24px;height:24px;border-radius:6px;background:var(--g50);border:1px solid var(--g100);display:flex;align-items:center;justify-content:center;font-size:12px}
+.jbadge{font-size:7px;font-weight:700;padding:2px 6px;border-radius:99px}
+.jb-u{background:var(--al);color:#8A5C00}
+.jb-n{background:var(--g50);color:var(--g700)}
+.jb-h{background:#FEE8E8;color:#992B2B}
+.jtit{font-size:9px;font-weight:700;color:var(--ink);margin-bottom:1px;letter-spacing:-.2px}
+.jco{font-size:8px;color:var(--ink3);margin-bottom:5px}
+.jmeta{display:flex;gap:6px;flex-wrap:wrap}
+.jm{font-size:7px;color:var(--ink3);display:flex;align-items:center;gap:2px}
+.jfooter{display:flex;justify-content:space-between;align-items:center;margin-top:6px;padding-top:6px;border-top:1px solid var(--sand3)}
+.jrate{font-size:10px;font-weight:800;color:var(--g700);letter-spacing:-.3px}
+.jrate span{font-size:7px;font-weight:400;color:var(--ink3)}
+.japply{background:var(--g50);color:var(--g700);border:1px solid var(--g200);border-radius:6px;padding:3px 7px;font-size:7px;font-weight:700}
+.avatars-r{display:flex;align-items:center;gap:3px;margin-top:4px}
+.avs{display:flex}
+.av-s{width:12px;height:12px;border-radius:50%;background:var(--g200);border:1.5px solid var(--surface);margin-left:-3px;font-size:6px;display:flex;align-items:center;justify-content:center;color:var(--g700);font-weight:700}
+.av-s:first-child{margin-left:0}
+.app-cnt{font-size:7px;color:var(--ink3)}
+
+/* CATEGORIES */
+.cat-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding:8px 12px}
+.cat-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px 12px}
+.ccat{background:var(--surface);border:1px solid var(--sand3);border-radius:8px;padding:8px 4px;text-align:center}
+.ccat-icon{font-size:14px;display:block;margin-bottom:3px}
+.ccat-name{font-size:7px;font-weight:700;color:var(--ink2)}
+.ccat-cnt{font-size:6px;color:var(--ink3);margin-top:1px}
+
+/* STEPS */
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px 12px}
+.step-card{background:var(--surface);border:1px solid var(--sand3);border-radius:10px;padding:10px 8px;position:relative;overflow:hidden}
+.step-wm{font-size:2.5rem;font-weight:900;color:var(--g100);position:absolute;bottom:-4px;right:4px;line-height:1;letter-spacing:-2px}
+.step-ico{width:24px;height:24px;background:var(--g50);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;margin-bottom:5px;border:1px solid var(--g100)}
+.step-t{font-size:8px;font-weight:700;color:var(--ink);margin-bottom:3px}
+.step-d{font-size:7px;color:var(--ink2);line-height:1.4}
+
+/* CTA BANNER */
+.cta-ban{margin:8px 12px 10px;background:var(--g900);border-radius:12px;padding:14px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;position:relative;overflow:hidden}
+.cta-orb{position:absolute;right:-30px;top:-30px;width:100px;height:100px;background:var(--g700);border-radius:50%;opacity:.3}
+.cta-t{position:relative;z-index:1}
+.cta-t h3{font-size:10px;font-weight:800;color:#fff;margin-bottom:2px;letter-spacing:-.3px}
+.cta-t p{font-size:8px;color:rgba(255,255,255,.5);line-height:1.4}
+.cta-hl{color:var(--g400)}
+.btn-w{background:#fff;color:var(--g700);border:none;border-radius:99px;padding:7px 12px;font-size:8px;font-weight:700;white-space:nowrap;position:relative;z-index:1}
+
+/* FILTERS SIDEBAR */
+.layout-2col{display:grid;grid-template-columns:120px 1fr;gap:8px;padding:8px 12px}
+.sidebar{background:var(--surface);border-radius:8px;border:1px solid var(--sand3);padding:8px}
+.filter-title{font-size:9px;font-weight:700;color:var(--ink);margin-bottom:6px;letter-spacing:-.2px}
+.filter-group{margin-bottom:8px}
+.fg-label{font-size:7px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
+.fg-label svg{width:8px;height:8px;stroke:currentColor;fill:none;stroke-width:2}
+.fcheck{display:flex;align-items:center;gap:4px;margin-bottom:3px}
+.fcheck-box{width:10px;height:10px;border-radius:3px;border:1.5px solid var(--sand3);flex-shrink:0}
+.fcheck-box.on{background:var(--g500);border-color:var(--g500)}
+.fcheck-lbl{font-size:7px;color:var(--ink2)}
+.range-track{height:3px;background:var(--sand3);border-radius:99px;margin:5px 0;position:relative}
+.range-fill{position:absolute;left:20%;right:30%;top:0;bottom:0;background:var(--g500);border-radius:99px}
+.range-thumb{position:absolute;width:8px;height:8px;background:var(--g500);border-radius:50%;top:-2.5px;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.btn-g-full{background:var(--g500);color:#fff;font-size:8px;font-weight:700;padding:6px 10px;border-radius:99px;border:none;width:100%;margin-top:8px;text-align:center}
+
+/* RESULTS HEADER */
+.results-hdr{display:flex;justify-content:space-between;align-items:center;padding:8px 0;margin-bottom:6px}
+.results-cnt{font-size:9px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
+.sort-select{font-size:7px;font-weight:500;color:var(--ink2);background:var(--surface);border:1px solid var(--sand3);border-radius:6px;padding:3px 6px}
+
+/* JOB DETAIL */
+.detail-layout{display:grid;grid-template-columns:1fr 130px;gap:8px;padding:8px 12px}
+.detail-main{}
+.breadcrumb{font-size:7px;color:var(--ink3);margin-bottom:6px;display:flex;align-items:center;gap:3px}
+.bc-sep{color:var(--sand3)}
+.detail-co{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.co-big{width:32px;height:32px;border-radius:8px;background:var(--g50);border:1px solid var(--g100);display:flex;align-items:center;justify-content:center;font-size:16px}
+.co-info .cn{font-size:9px;font-weight:700;color:var(--ink)}
+.co-info .cv{font-size:7px;color:var(--g500);display:flex;align-items:center;gap:2px}
+.detail-h1{font-size:14px;font-weight:800;color:var(--ink);letter-spacing:-.5px;margin-bottom:6px}
+.meta-chips{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+.mchip{background:var(--g50);border:1px solid var(--g100);border-radius:99px;padding:3px 7px;font-size:7px;font-weight:600;color:var(--g700);display:flex;align-items:center;gap:2px}
+.tabs{display:flex;gap:0;border-bottom:1.5px solid var(--sand3);margin-bottom:8px}
+.tab{font-size:8px;font-weight:600;padding:5px 10px;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-1.5px;cursor:pointer}
+.tab.active{color:var(--g500);border-bottom-color:var(--g500)}
+.tab-content p{font-size:8px;color:var(--ink2);line-height:1.6}
+.detail-sidebar{}
+.price-card{background:var(--surface);border:1.5px solid var(--g200);border-radius:10px;padding:10px;margin-bottom:8px}
+.price-big{font-size:18px;font-weight:800;color:var(--g700);letter-spacing:-.8px}
+.price-sub{font-size:7px;color:var(--ink3)}
+.calc-label{font-size:7px;font-weight:600;color:var(--ink2);margin:6px 0 3px}
+.calc-slider{width:100%;height:3px;background:var(--sand3);border-radius:99px;position:relative;margin-bottom:4px}
+.calc-fill{position:absolute;left:0;width:60%;top:0;bottom:0;background:var(--g500);border-radius:99px}
+.calc-total{font-size:10px;font-weight:700;color:var(--g700);letter-spacing:-.3px}
+.btn-g-full-big{background:var(--g500);color:#fff;font-size:9px;font-weight:700;padding:9px 10px;border-radius:99px;border:none;width:100%;text-align:center;margin-bottom:5px}
+.btn-save{background:transparent;color:var(--g700);font-size:8px;font-weight:600;padding:6px 10px;border-radius:99px;border:1.5px solid var(--g200);width:100%;text-align:center}
+.trust-small{margin-top:8px}
+.ts-item{display:flex;align-items:center;gap:3px;font-size:7px;color:var(--g600);font-weight:500;margin-bottom:3px}
+
+/* PRICING */
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px 12px}
+.pcard{background:var(--surface);border:1.5px solid var(--sand3);border-radius:10px;padding:10px 8px;text-align:center}
+.pcard.featured{border-color:var(--g500)}
+.pcard-badge{background:var(--g50);color:var(--g700);font-size:7px;font-weight:700;padding:2px 8px;border-radius:99px;display:inline-block;margin-bottom:5px}
+.pcard-name{font-size:10px;font-weight:800;color:var(--ink);letter-spacing:-.3px;margin-bottom:2px}
+.pcard-price{font-size:16px;font-weight:800;color:var(--g500);letter-spacing:-.8px;margin-bottom:2px}
+.pcard-price span{font-size:8px;font-weight:400;color:var(--ink3)}
+.pcard-feat{font-size:7px;color:var(--ink2);line-height:1.6;margin-bottom:8px;text-align:left}
+.pcard-feat li{list-style:none;padding:1px 0;display:flex;align-items:center;gap:3px}
+.pcard-feat li::before{content:'✓';color:var(--g500);font-size:7px;font-weight:700}
+
+/* WIZARD */
+.wizard{padding:10px 12px}
+.progress-bar{height:3px;background:var(--sand3);border-radius:99px;margin-bottom:10px}
+.progress-fill{height:100%;background:var(--g500);border-radius:99px;transition:width .3s}
+.step-indicators{display:flex;justify-content:space-between;margin-bottom:10px}
+.step-ind{display:flex;flex-direction:column;align-items:center;gap:3px}
+.step-circle{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700}
+.sc-done{background:var(--g500);color:#fff}
+.sc-active{background:var(--surface);border:2px solid var(--g500);color:var(--g500)}
+.sc-future{background:var(--surface);border:2px solid var(--sand3);color:var(--ink3)}
+.step-ind-lbl{font-size:7px;font-weight:500;color:var(--ink3)}
+.form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
+.form-group{margin-bottom:6px}
+.form-label{font-size:8px;font-weight:600;color:var(--ink2);margin-bottom:3px;display:block}
+.form-input{width:100%;background:var(--sand2);border:1.5px solid var(--sand3);border-radius:7px;padding:6px 8px;font-size:8px;color:var(--ink);font-family:'Inter',sans-serif}
+.form-input:focus{border-color:var(--g500);outline:none}
+.form-textarea{width:100%;background:var(--sand2);border:1.5px solid var(--sand3);border-radius:7px;padding:6px 8px;font-size:8px;color:var(--ink);font-family:'Inter',sans-serif;resize:none;height:50px}
+
+/* AUTH */
+.auth-card{margin:10px 12px;background:var(--surface);border:1.5px solid var(--sand3);border-radius:12px;padding:16px}
+.auth-logo{text-align:center;margin-bottom:10px}
+.auth-h1{font-size:14px;font-weight:800;color:var(--ink);text-align:center;letter-spacing:-.5px;margin-bottom:2px}
+.auth-sub{font-size:8px;color:var(--ink3);text-align:center;margin-bottom:12px}
+.divider{display:flex;align-items:center;gap:6px;margin:8px 0;font-size:7px;color:var(--ink3)}
+.div-line{flex:1;height:1px;background:var(--sand3)}
+.forgot{font-size:7px;color:var(--g500);text-align:right;display:block;margin-top:2px;margin-bottom:8px}
+.register-link{font-size:8px;color:var(--ink3);text-align:center;margin-top:8px}
+.register-link span{color:var(--g500);font-weight:600}
+
+/* DASHBOARD */
+.dashboard-layout{display:grid;grid-template-columns:80px 1fr;gap:0}
+.dash-sidebar{background:var(--surface);border-right:1px solid var(--sand3);padding:8px 0;min-height:300px}
+.dash-nav-item{display:flex;align-items:center;gap:5px;padding:7px 10px;font-size:8px;font-weight:500;color:var(--ink3);cursor:pointer}
+.dash-nav-item.active{color:var(--g500);background:var(--g50);border-right:2px solid var(--g500)}
+.dash-nav-item svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;flex-shrink:0}
+.dash-main{padding:10px}
+.welcome-banner{background:var(--g50);border:1px solid var(--g100);border-radius:8px;padding:10px;margin-bottom:8px}
+.wb-title{font-size:11px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+.wb-sub{font-size:8px;color:var(--g600);margin-top:2px}
+.metric-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:8px}
+.metric-card{background:var(--surface);border:1px solid var(--sand3);border-radius:8px;padding:8px}
+.mc-label{font-size:7px;font-weight:500;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+.mc-value{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-.8px}
+.mc-value em{font-style:normal;color:var(--g500)}
+.activity-list{}
+.act-title{font-size:9px;font-weight:700;color:var(--ink);margin-bottom:6px;letter-spacing:-.2px}
+.act-item{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--sand3)}
+.act-item:last-child{border-bottom:none}
+.act-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.act-dot.g{background:var(--g500)}
+.act-dot.a{background:var(--amber)}
+.act-dot.gr{background:var(--sand3)}
+.act-text{font-size:7px;color:var(--ink2);flex:1}
+.act-time{font-size:6px;color:var(--ink3)}
+
+/* EMPLOYER HERO */
+.emp-hero{background:var(--g900);padding:16px 12px;position:relative;overflow:hidden}
+.emp-orb{position:absolute;right:-30px;top:-30px;width:120px;height:120px;background:var(--g700);border-radius:50%;opacity:.3}
+.emp-h1{font-size:16px;font-weight:800;color:#fff;letter-spacing:-.8px;margin-bottom:5px;position:relative;z-index:1}
+.emp-sub{font-size:8px;color:rgba(255,255,255,.5);margin-bottom:10px;position:relative;z-index:1;line-height:1.5}
+.emp-stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;position:relative;z-index:1}
+.emp-stat{font-size:7px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:3px}
+.emp-stat-val{color:#fff;font-weight:700}
+
+/* MOBILE SPECIFIC */
+.mob-hero{padding:12px 10px 10px;background:var(--surface)}
+.mob-cards{padding:8px 10px}
+.mob-card{background:var(--surface);border:1px solid var(--sand3);border-radius:10px;overflow:hidden;margin-bottom:6px}
+
+/* SUCCESS */
+.success-screen{padding:20px 12px;text-align:center;background:var(--surface)}
+.success-circle{width:50px;height:50px;border-radius:50%;background:var(--g50);border:2px solid var(--g200);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:24px}
+.success-h1{font-size:13px;font-weight:800;color:var(--ink);letter-spacing:-.5px;margin-bottom:4px}
+.success-sub{font-size:8px;color:var(--ink3);margin-bottom:12px;line-height:1.5}
+
+/* SECTION TITLE ROW */
+.sec-row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 12px 0}
+.sec-t{font-size:10px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+.sec-link{font-size:8px;font-weight:600;color:var(--g500)}
+
+/* FOOTER */
+.mini-footer{background:var(--ink);padding:8px 12px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.mf-col-title{font-size:7px;font-weight:700;color:#fff;margin-bottom:4px}
+.mf-link{font-size:6px;color:rgba(255,255,255,.4);display:block;margin-bottom:2px}
+</style>
+
+<div class="app">
+
+<!-- ═══ PAGE 1: HOME ═══ -->
+<div class="page-section">
+  <div class="page-label">Stránka 1 / 8</div>
+  <div class="page-title">Domov — Landing Page</div>
+  <div class="page-desc">Hlavná stránka pre nových návštevníkov. Hero sekcia, vyhľadávanie, ponuky, kategórie.</div>
+  <div class="frames">
+    <div class="desktop-frame">
+      <div class="frame-label">🖥 Desktop</div>
+      <div class="mini-nav">
+        <div class="mini-logo"><div class="logo-sq"><svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg></div>JOBBIE</div>
+        <div class="mini-nav-links"><span class="mnl">Brigády</span><span class="mnl">Pre firmy</span><span class="mnl">Ako to funguje</span></div>
+        <button class="mini-btn">Zaregistrovať sa</button>
+      </div>
+      <div class="hero-block">
+        <div class="live-b"><div class="ld"></div>1 247 aktívnych brigád práve teraz</div>
+        <div class="h1-big">Nájdi brigádu.<br>Bez stresu. <em>Ihneď.</em></div>
+        <div class="sub-text">Jobbie spája ľudí s firmami rýchlo a jednoducho. Prihlásiš sa dnes, pracuješ zajtra — peniaze máš do 24 hodín.</div>
+        <div class="btn-row"><button class="btn-g">🔍 Hľadám brigádu</button><button class="btn-o">Pre zamestnávateľov →</button></div>
+        <div class="trust-row">
+          <div class="trust-i"><div class="chk-c"><svg viewBox="0 0 12 10"><polyline points="1,5 4,8 11,1"/></svg></div>Platba do 24 hodín</div>
+          <div class="trust-i"><div class="chk-c"><svg viewBox="0 0 12 10"><polyline points="1,5 4,8 11,1"/></svg></div>Overení zamestnávatelia</div>
+          <div class="trust-i"><div class="chk-c"><svg viewBox="0 0 12 10"><polyline points="1,5 4,8 11,1"/></svg></div>Bez skrytých poplatkov</div>
+        </div>
+      </div>
+      <div class="stats-b">
+        <div class="stat-c"><div class="snum"><em>12</em>K+</div><div class="slbl">Brigádnikov</div></div>
+        <div class="stat-c"><div class="snum"><em>98</em>%</div><div class="slbl">Spokojnosť</div></div>
+        <div class="stat-c"><div class="snum">4.8<em>★</em></div><div class="slbl">Hodnotenie</div></div>
+      </div>
+      <div class="search-s">
+        <div class="s-lbl">Rýchle vyhľadávanie</div>
+        <div class="s-box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="s-ph">Napr. skladník, čašník, kuriér...</span><button class="s-go-mini">Hľadať</button></div>
+        <div class="chips-row"><span class="chip-s on">Všetky</span><span class="chip-s">Bratislava</span><span class="chip-s">Dnes</span><span class="chip-s">Víkend</span><span class="chip-s">8–12€/hod</span><span class="chip-s">Gastro</span></div>
+      </div>
+      <div class="sec-row"><div class="sec-t">Odporúčané brigády</div><div class="sec-link">Zobraziť všetky →</div></div>
+      <div class="cards-grid">
+        <div class="jcard"><div class="jcard-stripe a"></div><div class="jcard-body"><div class="jcard-top"><div class="jco-logo">🏪</div><div class="jbadge jb-u">⚡ Urgentné</div></div><div class="jtit">Skladový pracovník</div><div class="jco">Kaufland Slovakia</div><div class="jmeta"><div class="jm">📍 Bratislava</div><div class="jm">🕐 Dnes 14:00</div></div><div class="avatars-r"><div class="avs"><div class="av-s">M</div><div class="av-s">J</div><div class="av-s">+5</div></div><div class="app-cnt">7 záujemcov</div></div><div class="jfooter"><div class="jrate">11,50€ <span>/hod</span></div><button class="japply">Prihlásiť sa</button></div></div></div>
+        <div class="jcard"><div class="jcard-stripe g"></div><div class="jcard-body"><div class="jcard-top"><div class="jco-logo">🍽️</div><div class="jbadge jb-n">Nové</div></div><div class="jtit">Čašník / Čašníčka</div><div class="jco">Bistro Central</div><div class="jmeta"><div class="jm">📍 Staré Mesto</div><div class="jm">🕐 Sobota 10:00</div></div><div class="avatars-r"><div class="avs"><div class="av-s">A</div><div class="av-s">K</div></div><div class="app-cnt">2 záujemcovia</div></div><div class="jfooter"><div class="jrate">10,00€ <span>/hod</span></div><button class="japply">Prihlásiť sa</button></div></div></div>
+        <div class="jcard"><div class="jcard-stripe g"></div><div class="jcard-body"><div class="jcard-top"><div class="jco-logo">📦</div><div class="jbadge jb-h">🔥 Populárne</div></div><div class="jtit">Kuriér / Doručovateľ</div><div class="jco">DPD Slovakia</div><div class="jmeta"><div class="jm">📍 Celá BA</div><div class="jm">🕐 Flexibilne</div></div><div class="avatars-r"><div class="avs"><div class="av-s">P</div><div class="av-s">R</div><div class="av-s">+11</div></div><div class="app-cnt">13 záujemcov</div></div><div class="jfooter"><div class="jrate">13,00€ <span>/hod</span></div><button class="japply">Prihlásiť sa</button></div></div></div>
+      </div>
+      <div class="sec-row" style="margin-top:4px"><div class="sec-t">Kategórie brigád</div></div>
+      <div class="cat-grid">
+        <div class="ccat"><span class="ccat-icon">🏪</span><div class="ccat-name">Obchod</div><div class="ccat-cnt">234</div></div>
+        <div class="ccat"><span class="ccat-icon">🍽️</span><div class="ccat-name">Gastro</div><div class="ccat-cnt">187</div></div>
+        <div class="ccat"><span class="ccat-icon">📦</span><div class="ccat-name">Sklad</div><div class="ccat-cnt">156</div></div>
+        <div class="ccat"><span class="ccat-icon">🚚</span><div class="ccat-name">Doprava</div><div class="ccat-cnt">98</div></div>
+        <div class="ccat"><span class="ccat-icon">🧹</span><div class="ccat-name">Upratovanie</div><div class="ccat-cnt">76</div></div>
+        <div class="ccat"><span class="ccat-icon">💻</span><div class="ccat-name">IT/Online</div><div class="ccat-cnt">54</div></div>
+      </div>
+      <div class="sec-row" style="margin-top:4px"><div class="sec-t">Ako Jobbie funguje?</div></div>
+      <div class="steps-grid">
+        <div class="step-card"><div class="step-wm">01</div><div class="step-ico">🔍</div><div class="step-t">Nájdi brigádu</div><div class="step-d">Prehliadaj overené ponuky vo svojom okolí podľa miesta a sadzby.</div></div>
+        <div class="step-card"><div class="step-wm">02</div><div class="step-ico">✅</div><div class="step-t">Prihláš sa jedným klikom</div><div class="step-d">Žiadne formuláre. Zamestnávateľ ťa kontaktuje do hodiny.</div></div>
+        <div class="step-card"><div class="step-wm">03</div><div class="step-ico">💸</div><div class="step-t">Zarob. Dostaneš peniaze.</div><div class="step-d">Odmena na účte do 24 hodín po smene. Bez prekvapení.</div></div>
+      </div>
+      <div class="cta-ban"><div class="cta-orb"></div><div class="cta-t"><h3>Si zamestnávateľ? <span class="cta-hl">Nájdi pomoc dnes.</span></h3><p>Tisíce overených brigádnikov čakajú. Prvých 5 inzerátov zadarmo.</p></div><button class="btn-w">Zverejniť brigádu →</button></div>
+      <div class="mini-footer"><div><div class="mf-col-title">JOBBIE</div><div class="mf-link">O nás</div><div class="mf-link">Blog</div></div><div><div class="mf-col-title">Brigádnici</div><div class="mf-link">Hľadať brigády</div><div class="mf-link">Registrácia</div></div><div><div class="mf-col-title">Zamestnávatelia</div><div class="mf-link">Zverejniť brigádu</div><div class="mf-link">Cenník</div></div><div><div class="mf-col-title">Kontakt</div><div class="mf-link">info@jobbie.sk</div><div class="mf-link">+421 900 000</div></div></div>
+    </div>
+    <div class="mobile-frame">
+      <div class="mobile-notch"><div class="notch-pill"></div></div>
+      <div class="frame-label">📱 Mobile</div>
+      <div class="mob-nav"><div class="mob-logo">JOBBIE</div><div class="mob-burger"><span></span><span></span><span></span></div></div>
+      <div class="mob-hero">
+        <div class="live-b" style="font-size:7px"><div class="ld"></div>1 247 brigád teraz</div>
+        <div class="h1-sm">Nájdi brigádu.<br>Bez stresu. <em>Ihneď.</em></div>
+        <div class="sub-text">Prihlásiš sa dnes, pracuješ zajtra.</div>
+        <div class="btn-row"><button class="btn-g-sm">🔍 Hľadám brigádu</button></div>
+        <div class="trust-row" style="gap:6px">
+          <div class="trust-i"><div class="chk-c"><svg viewBox="0 0 12 10"><polyline points="1,5 4,8 11,1"/></svg></div>Platba 24h</div>
+          <div class="trust-i"><div class="chk-c"><svg viewBox="0 0 12 10"><polyline points="1,5 4,8 11,1"/></svg></div>Overení</div>
+        </div>
+      </div>
+      <div class="stats-b">
+        <div class="stat-c"><div class="snum" style="font-size:11px"><em>12K</em>+</div><div class="slbl" style="font-size:6px">Brigádnikov</div></div>
+        <div class="stat-c"><div class="snum" style="font-size:11px"><em>98</em>%</div><div class="slbl" style="font-size:6px">Spokojnosť</div></div>
+        <div class="stat-c"><div class="snum" style="font-size:11px">4.8<em>★</em></div><div class="slbl" style="font-size:6px">Hodnotenie</div></div>
+      </div>
+      <div class="search-s" style="padding:8px 10px">
+        <div class="s-box" style="padding:5px 8px"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="s-ph" style="font-size:7px">Hľadaj brigádu...</span><button class="s-go-mini" style="font-size:7px">Hľadať</button></div>
+        <div class="chips-row"><span class="chip-s on">Všetky</span><span class="chip-s">Dnes</span><span class="chip-s">Víkend</span></div>
+      </div>
+      <div class="mob-cards">
+        <div class="mob-card"><div class="jcard-stripe a"></div><div class="jcard-body"><div class="jcard-top"><div class="jco-logo" style="width:20px;height:20px;font-size:10px">🏪</div><div class="jbadge jb-u" style="font-size:6px">⚡ Urgentné</div></div><div class="jtit" style="font-size:8px">Skladový pracovník</div><div class="jco" style="font-size:7px">Kaufland Slovakia</div><div class="jfooter"><div class="jrate" style="font-size:9px">11,50€ <span>/hod</span></div><button class="japply" style="font-size:7px">Prihlásiť sa</button></div></div></div>
+        <div class="mob-card"><div class="jcard-stripe g"></div><div class="jcard-body"><div class="jcard-top"><div class="jco-logo" style="width:20px;height:20px;font-size:10px">🍽️</div><div class="jbadge jb-n" style="font-size:6px">Nové</div></div><div class="jtit" style="font-size:8px">Čašník / Čašníčka</div><div class="jco" style="font-size:7px">Bistro Central</div><div class="jfooter"><div class="jrate" style="font-size:9px">10,00€ <span>/hod</span></div><button class="japply" style="font-size:7px">Prihlásiť sa</button></div></div></div>
+      </div>
+      <div class="mob-tabs">
+        <div class="mob-tab active"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Domov</div>
+        <div class="mob-tab"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Hľadať</div>
+        <div class="mob-tab"><svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg>Brigády</div>
+        <div class="mob-tab"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profil</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE 2: ZOZNAM BRIGÁD ═══ -->
+<div class="page-section">
+  <div class="page-label">Stránka 2 / 8</div>
+  <div class="page-title">Zoznam brigád — /brigady</div>
+  <div class="page-desc">Prehľad všetkých brigád s filtrovacím sidebarem a radením výsledkov.</div>
+  <div class="frames">
+    <div class="desktop-frame">
+      <div class="frame-label">🖥 Desktop</div>
+      <div class="mini-nav"><div class="mini-logo"><div class="logo-sq"><svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg></div>JOBBIE</div><div class="mini-nav-links"><span class="mnl">Brigády</span><span class="mnl">Pre firmy</span></div><button class="mini-btn">Zaregistrovať sa</button></div>
+      <div class="search-s"><div class="s-box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="s-ph">Hľadaj brigádu...</span><button class="s-go-mini">Hľadať</button></div></div>
+      <div class="layout-2col">
+        <div class="sidebar">
+          <div class="filter-title">Filtre</div>
+          <div class="filter-group">
+            <div class="fg-label">Kategória <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+            <div class="fcheck"><div class="fcheck-box on"></div><div class="fcheck-lbl">Gastro</div></div>
+            <div class="fcheck"><div class="fcheck-box"></div><div class="fcheck-lbl">Sklad</div></div>
+            <div class="fcheck"><div class="fcheck-box on"></div><div class="fcheck-lbl">Obchod</div></div>
+            <div class="fcheck"><div class="fcheck-box"></div><div class="fcheck-lbl">Doprava</div></div>
+          </div>
+          <div class="filter-group">
+            <div class="fg-label">Dátum <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+            <div class="fcheck"><div class="fcheck-box on"></div><div class="fcheck-lbl">Dnes</div></div>
+            <div class="fcheck"><div class="fcheck-box"></div><div class="fcheck-lbl">Zajtra</div></div>
+            <div class="fcheck"><div class="fcheck-box"></div><div class="fcheck-lbl">Tento týždeň</div></div>
+          </div>
+          <div class="filter-group">
+            <div class="fg-label">Hodinová sadzba</div>
+            <div class="range-track"><div class="range-fill"></div><div class="range-thumb" style="left:18%"></div><div class="range-thumb" style="left:68%"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:7px;color:var(--ink3)"><span>6€</span><span>18€</span></div>
+          </div>
+          <div class="filter-group">
+            <div class="fg-label">Typ práce</div>
+            <div class="fcheck"><div class="fcheck-box on"></div><div class="fcheck-lbl">Jednorazová</div></div>
+            <div class="fcheck"><div class="fcheck-box"></div><div class="fcheck-lbl">Dlhodobá</div></div>
+            <div class="fcheck"><div class="fcheck-box on"></div><div class="fcheck-lbl">Víkendová</div></div>
+          </div>
+          <div class="btn-g-full">Použiť filtre</div>
+        </div>
+        <div>
+          <div class="results-hdr"><div class="results-cnt">247 brigád</div><select class="sort-select"><option>Najnovšie</option><option>Najvyšší plat</option></select></div>
+          <div class="cards-grid-2">
+            <div class="jcard"><div class="jcard-stripe a"></div><div class="jcard-body"><div class="jcard-top"><div class="jco-logo">🏪</div><div class="jbadge jb-u">⚡ Urgentné</div></div><div class="jtit">Skladový pracovník</div><div class="jco">Kaufland Slovakia</div><div class="jmeta"><div class="jm">📍 Bratislava</div><div class="jm">🕐 Dnes 14:00</div></div><div class="jfooter"><div class="jrate">11,50€ <span>/hod</span></div><button class="japply">Prihlásiť sa</button></div></div></div>
+            <div class="jcard"><div class="jcard-stripe g"></div><div class="jcard-body"><div class="jcard-top"><div class="jco-logo">🍽️</div><div class="jbadge jb-n">Nové</div></div><div class="jtit">Čašník / Čašníčka</div><div class="jco">Bistro Central</div><div class="jmeta"><div class="jm">📍 Staré Mesto</div><div class="jm">🕐 Sobota</div></div><div class="jfooter"><div class="jrate">10,00€ <span>/hod</span></div><button class="japply">Prihlásiť sa</button></div></div></div>
+            <div class="jcard"><div class="jcard-stripe g"></div><div class="jcard-body"><div class="jcard-top"><div class="jco-logo">📦</div><div class="jbadge jb-h">🔥 Populárne</div></div><div class="jtit">Kuriér / Doručovateľ</div><div class="jco">DPD Slovakia</div><div class="jmeta"><div class="jm">📍 Celá BA</div><div class="jm">🕐 Flexibilne</div></div><div class="jfooter"><div class="jrate">13,00€ <span>/hod</span></div><button class="japply">Prihlásiť sa</button></div></div></div>
+            <div class="jcard"><div class="jcard-stripe g"></div><div class="jcard-body"><div class="jcard-top"><div class="jco-logo">🧹</div><div class="jbadge jb-n">Nové</div></div><div class="jtit">Upratovač / Upratovačka</div><div class="jco">CleanPro s.r.o.</div><div class="jmeta"><div class="jm">📍 Ružinov</div><div class="jm">🕐 Denne</div></div><div class="jfooter"><div class="jrate">9,50€ <span>/hod</span></div><button class="japply">Prihlásiť sa</button></div></div></div>
+          </div>
+          <div style="display:flex;justify-content:center;gap:4px;padding:8px 0">
+            <button style="width:22px;height:22px;border-radius:6px;border:1px solid var(--sand3);font-size:8px;background:var(--surface);color:var(--ink2)">‹</button>
+            <button style="width:22px;height:22px;border-radius:6px;border:none;font-size:8px;background:var(--g500);color:#fff">1</button>
+            <button style="width:22px;height:22px;border-radius:6px;border:1px solid var(--sand3);font-size:8px;background:var(--surface);color:var(--ink2)">2</button>
+            <button style="width:22px;height:22px;border-radius:6px;border:1px solid var(--sand3);font-size:8px;background:var(--surface);color:var(--ink2)">3</button>
+            <button style="width:22px;height:22px;border-radius:6px;border:1px solid var(--sand3);font-size:8px;background:var(--surface);color:var(--ink2)">›</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mobile-frame">
+      <div class="mobile-notch"><div class="notch-pill"></div></div>
+      <div class="frame-label">📱 Mobile</div>
+      <div class="mob-nav"><div class="mob-logo">Brigády</div><button style="background:var(--g50);color:var(--g700);border:1px solid var(--g200);border-radius:99px;padding:4px 10px;font-size:8px;font-weight:700">Filtre ▼</button></div>
+      <div style="padding:8px 10px">
+        <div class="s-box" style="padding:5px 8px;margin-bottom:6px"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="s-ph" style="font-size:7px">Hľadaj brigádu...</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:8px;font-weight:700;color:var(--ink)">247 brigád</span><span style="font-size:7px;color:var(--ink3)">Najnovšie ↓</span></div>
+        <div class="mob-card"><div class="jcard-stripe a"></div><div class="jcard-body"><div class="jcard-top"><div class="jco-logo" style="width:20px;height:20px;font-size:10px">🏪</div><div class="jbadge jb-u" style="font-size:6px">⚡ Urgentné</div></div><div class="jtit" style="font-size:8px">Skladový pracovník</div><div class="jco" style="font-size:7px">Kaufland · 📍 Bratislava · 11,50€/hod</div><div class="jfooter" style="margin-top:4px;padding-top:4px"><div class="jrate" style="font-size:9px">11,50€/hod</div><button class="japply" style="font-size:7px">Prihlásiť sa</button></div></div></div>
+        <div class="mob-card" style="margin-top:6px"><div class="jcard-stripe g"></div><div class="jcard-body"><div class="jcard-top"><div class="jco-logo" style="width:20px;height:20px;font-size:10px">🍽️</div><div class="jbadge jb-n" style="font-size:6px">Nové</div></div><div class="jtit" style="font-size:8px">Čašník / Čašníčka</div><div class="jco" style="font-size:7px">Bistro Central · 📍 Staré Mesto</div><div class="jfooter" style="margin-top:4px;padding-top:4px"><div class="jrate" style="font-size:9px">10,00€/hod</div><button class="japply" style="font-size:7px">Prihlásiť sa</button></div></div></div>
+        <div class="mob-card" style="margin-top:6px"><div class="jcard-stripe g"></div><div class="jcard-body"><div class="jcard-top"><div class="jco-logo" style="width:20px;height:20px;font-size:10px">📦</div><div class="jbadge jb-h" style="font-size:6px">🔥 Hot</div></div><div class="jtit" style="font-size:8px">Kuriér / Doručovateľ</div><div class="jco" style="font-size:7px">DPD Slovakia · 📍 Celá BA</div><div class="jfooter" style="margin-top:4px;padding-top:4px"><div class="jrate" style="font-size:9px">13,00€/hod</div><button class="japply" style="font-size:7px">Prihlásiť sa</button></div></div></div>
+      </div>
+      <div style="position:relative;height:28px"><button style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:var(--g500);color:#fff;border:none;border-radius:99px;padding:6px 16px;font-size:8px;font-weight:700;box-shadow:0 4px 12px rgba(46,168,92,.3)">⚙ Filtre</button></div>
+      <div class="mob-tabs">
+        <div class="mob-tab"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Domov</div>
+        <div class="mob-tab active"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Hľadať</div>
+        <div class="mob-tab"><svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg>Brigády</div>
+        <div class="mob-tab"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profil</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE 3: DETAIL BRIGÁDY ═══ -->
+<div class="page-section">
+  <div class="page-label">Stránka 3 / 8</div>
+  <div class="page-title">Detail brigády — /brigady/:id</div>
+  <div class="page-desc">Detailná stránka ponuky s kalkulačkou zárobku a prihlasovacím panelom.</div>
+  <div class="frames">
+    <div class="desktop-frame">
+      <div class="frame-label">🖥 Desktop</div>
+      <div class="mini-nav"><div class="mini-logo"><div class="logo-sq"><svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg></div>JOBBIE</div><div class="mini-nav-links"><span class="mnl">Brigády</span><span class="mnl">Pre firmy</span></div><button class="mini-btn">Zaregistrovať sa</button></div>
+      <div class="detail-layout">
+        <div class="detail-main">
+          <div class="breadcrumb"><span>Domov</span><span class="bc-sep">›</span><span>Brigády</span><span class="bc-sep">›</span><span style="color:var(--ink2)">Skladový pracovník</span></div>
+          <div class="detail-co"><div class="co-big">🏪</div><div class="co-info"><div class="cn">Kaufland Slovakia</div><div class="cv">✓ Overený zamestnávateľ · ★ 4.8 (47 hodnotení)</div></div></div>
+          <div class="jbadge jb-u" style="display:inline-block;margin-bottom:6px">⚡ Urgentné — obsadzujeme dnes</div>
+          <div class="detail-h1">Skladový pracovník</div>
+          <div class="meta-chips">
+            <div class="mchip">📍 Bratislava, Petržalka</div>
+            <div class="mchip">🕐 Dnes 14:00</div>
+            <div class="mchip">⏱ 8 hodín</div>
+            <div class="mchip">💰 11,50€/hod</div>
+          </div>
+          <div class="tabs">
+            <div class="tab active">Popis</div>
+            <div class="tab">Požiadavky</div>
+            <div class="tab">Zamestnávateľ</div>
+          </div>
+          <div class="tab-content"><p>Hľadáme spoľahlivého pracovníka do skladu na jednorázovú smenu. Náplň práce zahŕňa vykladanie tovaru, triedenie a ukladanie na regály. Práca je fyzicky nenáročná, nevyžaduje predchádzajúce skúsenosti. Zabezpečíme zaškolenie na mieste. Pracovné oblečenie je k dispozícii.</p></div>
+          <div style="margin-top:10px;padding:8px;background:var(--g50);border-radius:8px;border:1px solid var(--g100)">
+            <div style="font-size:8px;font-weight:700;color:var(--ink);margin-bottom:4px">Podobné brigády</div>
+            <div style="display:flex;gap:6px">
+              <div class="jcard" style="flex:1"><div class="jcard-stripe g"></div><div class="jcard-body"><div class="jtit" style="font-size:8px">Pomocný skladník</div><div class="jco" style="font-size:7px">Tesco · 10,50€/hod</div></div></div>
+              <div class="jcard" style="flex:1"><div class="jcard-stripe g"></div><div class="jcard-body"><div class="jtit" style="font-size:8px">Operátor skladu</div><div class="jco" style="font-size:7px">Amazon · 12,00€/hod</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="detail-sidebar">
+          <div class="price-card">
+            <div class="price-big">11,50€</div>
+            <div class="price-sub">za hodinu</div>
+            <div class="calc-label">Koľko hodín odpracuješ?</div>
+            <div class="calc-slider"><div class="calc-fill"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:7px;color:var(--ink3);margin-bottom:4px"><span>1h</span><span>12h</span></div>
+            <div style="font-size:7px;color:var(--ink3);margin-bottom:2px">Odhadovaný zárobok:</div>
+            <div class="calc-total">69,00€</div>
+          </div>
+          <button class="btn-g-full-big">Prihlásiť sa na brigádu</button>
+          <button class="btn-save">💾 Uložiť brigádu</button>
+          <div class="trust-small">
+            <div class="ts-item"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Overený zamestnávateľ</div>
+            <div class="ts-item"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Platba garantovaná do 24h</div>
+            <div class="ts-item"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Bez skrytých poplatkov</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mobile-frame">
+      <div class="mobile-notch"><div class="notch-pill"></div></div>
+      <div class="frame-label">📱 Mobile</div>
+      <div class="mob-nav"><button style="background:none;border:none;font-size:14px;color:var(--ink2)">‹</button><div class="mob-logo">Detail brigády</div><div style="width:16px"></div></div>
+      <div style="padding:10px 10px 6px">
+        <div class="detail-co" style="margin-bottom:6px"><div class="co-big" style="width:28px;height:28px;font-size:14px">🏪</div><div class="co-info"><div class="cn" style="font-size:9px">Kaufland Slovakia</div><div class="cv" style="font-size:7px">✓ Overený · ★ 4.8</div></div></div>
+        <div class="detail-h1" style="font-size:13px">Skladový pracovník</div>
+        <div class="meta-chips" style="gap:3px">
+          <div class="mchip" style="font-size:6px">📍 Petržalka</div>
+          <div class="mchip" style="font-size:6px">🕐 Dnes 14:00</div>
+          <div class="mchip" style="font-size:6px">💰 11,50€/hod</div>
+        </div>
+        <div style="background:var(--g50);border:1.5px solid var(--g200);border-radius:8px;padding:8px;margin:8px 0">
+          <div style="font-size:9px;font-weight:700;color:var(--ink);margin-bottom:2px">Odhadovaný zárobok</div>
+          <div style="font-size:18px;font-weight:800;color:var(--g700);letter-spacing:-.8px">69,00€</div>
+          <div style="font-size:7px;color:var(--ink3)">za 6 hodín práce</div>
+        </div>
+        <div class="tab-content"><p style="font-size:7px;line-height:1.5">Hľadáme spoľahlivého pracovníka do skladu na jednorázovú smenu. Náplň práce zahŕňa vykladanie tovaru, triedenie a ukladanie na regály...</p></div>
+      </div>
+      <div style="background:var(--surface);border-top:1px solid var(--sand3);padding:8px 10px;display:flex;gap:6px">
+        <button class="btn-save" style="flex:1;font-size:8px;padding:8px 6px">💾 Uložiť</button>
+        <button class="btn-g-full-big" style="flex:2;font-size:9px;padding:8px 10px;margin:0">Prihlásiť sa →</button>
+      </div>
+      <div class="mob-tabs">
+        <div class="mob-tab"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Domov</div>
+        <div class="mob-tab active"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Hľadať</div>
+        <div class="mob-tab"><svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg>Brigády</div>
+        <div class="mob-tab"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profil</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE 4: PRE ZAMESTNÁVATEĽOV ═══ -->
+<div class="page-section">
+  <div class="page-label">Stránka 4 / 8</div>
+  <div class="page-title">Pre zamestnávateľov — /firmy</div>
+  <div class="page-desc">Landing page pre firmy s ceníkom, benefitmi a formulárom na zverejnenie brigády.</div>
+  <div class="frames">
+    <div class="desktop-frame">
+      <div class="frame-label">🖥 Desktop</div>
+      <div class="mini-nav"><div class="mini-logo"><div class="logo-sq"><svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg></div>JOBBIE</div><div class="mini-nav-links"><span class="mnl">Pre firmy</span><span class="mnl">Cenník</span></div><button class="mini-btn" style="background:var(--amber);border:none">Zverejniť brigádu</button></div>
+      <div class="emp-hero">
+        <div class="emp-orb"></div>
+        <div class="emp-h1">Nájdite správneho človeka.<br>Dnes.</div>
+        <div class="emp-sub">Viac ako 12 000 overených brigádnikov čaká na vašu ponuku. Priemerný čas obsadenia: 2 hodiny.</div>
+        <div class="btn-row" style="position:relative;z-index:1"><button class="btn-w" style="font-size:9px;padding:8px 14px">Zverejniť brigádu zadarmo</button><button style="background:transparent;color:rgba(255,255,255,.7);font-size:9px;font-weight:600;padding:8px 14px;border-radius:99px;border:1.5px solid rgba(255,255,255,.2)">Pozrieť ceny</button></div>
+        <div class="emp-stats">
+          <div class="emp-stat"><span class="emp-stat-val">2h</span> priem. obsadenie</div>
+          <div class="emp-stat"><span class="emp-stat-val">98%</span> spokojnosť</div>
+          <div class="emp-stat"><span class="emp-stat-val">12K+</span> brigádnikov</div>
+        </div>
+      </div>
+      <div class="steps-grid" style="padding-top:10px">
+        <div class="step-card"><div class="step-wm">01</div><div class="step-ico">📝</div><div class="step-t">Zverejnite brigádu</div><div class="step-d">Vyplňte formulár za 2 minúty. Brigáda ide online okamžite.</div></div>
+        <div class="step-card"><div class="step-wm">02</div><div class="step-ico">📩</div><div class="step-t">Prijímajte prihlášky</div><div class="step-d">Automaticky dostávate notifikácie na každú prihlášku.</div></div>
+        <div class="step-card"><div class="step-wm">03</div><div class="step-ico">✅</div><div class="step-t">Potvrďte brigádnika</div><div class="step-d">Jedným klikom potvrdíte vybraného uchádzača.</div></div>
+      </div>
+      <div class="sec-row"><div class="sec-t">Cenové plány</div></div>
+      <div class="pricing-grid">
+        <div class="pcard">
+          <div class="pcard-name">Zadarmo</div>
+          <div class="pcard-price">0€<span>/mes</span></div>
+          <ul class="pcard-feat"><li>1 aktívny inzerát</li><li>Základný profil firmy</li><li>Email podpora</li></ul>
+          <button class="btn-o" style="width:100%;font-size:8px;padding:6px 10px">Začať zadarmo</button>
+        </div>
+        <div class="pcard featured">
+          <div class="pcard-badge">Najobľúbenejší</div>
+          <div class="pcard-name">Štart</div>
+          <div class="pcard-price">29€<span>/mes</span></div>
+          <ul class="pcard-feat"><li>5 inzerátov</li><li>Prioritné zobrazenie</li><li>Hodnotenia brigádnikov</li><li>Chat s uchádzačmi</li></ul>
+          <button class="btn-g-sm" style="width:100%;font-size:8px;padding:7px 10px;border-radius:99px">Vybrať plán</button>
+        </div>
+        <div class="pcard">
+          <div class="pcard-name">Pro</div>
+          <div class="pcard-price">79€<span>/mes</span></div>
+          <ul class="pcard-feat"><li>Neobmedzené inzeráty</li><li>Featured badge</li><li>Analytics dashboard</li><li>Dedikovaný support</li></ul>
+          <button class="btn-o" style="width:100%;font-size:8px;padding:6px 10px">Vybrať Pro</button>
+        </div>
+      </div>
+    </div>
+    <div class="mobile-frame">
+      <div class="mobile-notch"><div class="notch-pill"></div></div>
+      <div class="frame-label">📱 Mobile</div>
+      <div class="mob-nav"><div class="mob-logo">Pre firmy</div><button class="mini-btn" style="font-size:8px;padding:5px 10px;background:var(--amber);border:none;border-radius:99px;color:#fff;font-weight:700">Zverejniť</button></div>
+      <div class="emp-hero" style="padding:12px 10px">
+        <div class="emp-orb" style="width:80px;height:80px;right:-20px;top:-20px"></div>
+        <div class="emp-h1" style="font-size:13px">Nájdite správneho<br>človeka. Dnes.</div>
+        <div class="emp-sub" style="font-size:7px">12 000+ brigádnikov čaká na vašu ponuku.</div>
+        <button class="btn-w" style="font-size:8px;padding:7px 14px">Zverejniť zadarmo →</button>
+      </div>
+      <div style="padding:8px 10px">
+        <div style="font-size:9px;font-weight:800;color:var(--ink);margin-bottom:6px;letter-spacing:-.3px">Cenové plány</div>
+        <div class="pcard" style="margin-bottom:6px;border:2px solid var(--g500)">
+          <div class="pcard-badge">Najobľúbenejší</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="pcard-name" style="font-size:11px">Štart</div>
+            <div class="pcard-price" style="font-size:14px">29€<span>/mes</span></div>
+          </div>
+          <ul class="pcard-feat" style="margin:5px 0"><li>5 inzerátov</li><li>Prioritné zobrazenie</li><li>Chat s uchádzačmi</li></ul>
+          <button class="btn-g-sm" style="width:100%;font-size:8px;padding:7px;border-radius:99px">Vybrať plán</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div class="pcard"><div class="pcard-name" style="font-size:9px">Zadarmo</div><div class="pcard-price" style="font-size:12px">0€<span>/mes</span></div></div>
+          <div class="pcard"><div class="pcard-name" style="font-size:9px">Pro</div><div class="pcard-price" style="font-size:12px">79€<span>/mes</span></div></div>
+        </div>
+      </div>
+      <div class="mob-tabs">
+        <div class="mob-tab"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Domov</div>
+        <div class="mob-tab"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Hľadať</div>
+        <div class="mob-tab active"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Firmy</div>
+        <div class="mob-tab"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profil</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE 5: REGISTRÁCIA ═══ -->
+<div class="page-section">
+  <div class="page-label">Stránka 5 / 8</div>
+  <div class="page-title">Registrácia brigádnika — /registracia</div>
+  <div class="page-desc">3-krokový wizard s progress barom, validáciou formulárov a záverečnou success obrazovkou.</div>
+  <div class="frames">
+    <div class="desktop-frame">
+      <div class="frame-label">🖥 Desktop — Krok 2 / 3</div>
+      <div class="mini-nav"><div class="mini-logo"><div class="logo-sq"><svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg></div>JOBBIE</div></div>
+      <div class="wizard">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:9px;font-weight:700;color:var(--ink)">Vytvor si profil</span><span style="font-size:8px;color:var(--ink3)">Krok 2 z 3</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:66%"></div></div>
+        <div class="step-indicators">
+          <div class="step-ind"><div class="step-circle sc-done">✓</div><div class="step-ind-lbl">Základné údaje</div></div>
+          <div class="step-ind"><div class="step-circle sc-active">2</div><div class="step-ind-lbl">Tvoj profil</div></div>
+          <div class="step-ind"><div class="step-circle sc-future">3</div><div class="step-ind-lbl">Potvrdenie</div></div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group"><label class="form-label">Mesto / Región</label><select class="form-input"><option>Bratislava I</option></select></div>
+          <div class="form-group"><label class="form-label">Skúsenosti</label><select class="form-input"><option>Žiadne</option></select></div>
+        </div>
+        <div class="form-group"><label class="form-label">Kategórie záujmu</label>
+          <div class="chips-row" style="margin-top:4px"><span class="chip-s on">🏪 Obchod</span><span class="chip-s on">🍽️ Gastro</span><span class="chip-s">📦 Sklad</span><span class="chip-s">🚚 Doprava</span><span class="chip-s">🧹 Upratovanie</span><span class="chip-s">💻 IT</span></div>
+        </div>
+        <div class="form-group"><label class="form-label">Dostupnosť</label>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:4px">
+            <div style="background:var(--g500);border-radius:4px;padding:3px;text-align:center"><div style="font-size:6px;color:#fff;font-weight:700">Po</div><div style="font-size:6px;color:rgba(255,255,255,.7)">Ráno</div></div>
+            <div style="background:var(--g100);border-radius:4px;padding:3px;text-align:center"><div style="font-size:6px;color:var(--g700);font-weight:700">Ut</div><div style="font-size:6px;color:var(--ink3)">—</div></div>
+            <div style="background:var(--g500);border-radius:4px;padding:3px;text-align:center"><div style="font-size:6px;color:#fff;font-weight:700">St</div><div style="font-size:6px;color:rgba(255,255,255,.7)">Večer</div></div>
+            <div style="background:var(--g100);border-radius:4px;padding:3px;text-align:center"><div style="font-size:6px;color:var(--g700);font-weight:700">Št</div><div style="font-size:6px;color:var(--ink3)">—</div></div>
+            <div style="background:var(--g500);border-radius:4px;padding:3px;text-align:center"><div style="font-size:6px;color:#fff;font-weight:700">Pi</div><div style="font-size:6px;color:rgba(255,255,255,.7)">Ráno</div></div>
+            <div style="background:var(--g500);border-radius:4px;padding:3px;text-align:center"><div style="font-size:6px;color:#fff;font-weight:700">So</div><div style="font-size:6px;color:rgba(255,255,255,.7)">Celý</div></div>
+            <div style="background:var(--g500);border-radius:4px;padding:3px;text-align:center"><div style="font-size:6px;color:#fff;font-weight:700">Ne</div><div style="font-size:6px;color:rgba(255,255,255,.7)">Celý</div></div>
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">Krátky bio <span style="color:var(--ink3)">(max 200 znakov)</span></label><textarea class="form-textarea" placeholder="Spoľahlivý študent, rád pracujem v tíme..."></textarea><div style="font-size:7px;color:var(--ink3);text-align:right;margin-top:2px">47 / 200</div></div>
+        <div style="display:flex;gap:8px;margin-top:4px"><button class="btn-o" style="flex:1;font-size:9px;padding:9px">← Späť</button><button class="btn-g" style="flex:2;font-size:9px;padding:9px 14px;border-radius:99px">Pokračovať →</button></div>
+      </div>
+    </div>
+    <div class="mobile-frame">
+      <div class="mobile-notch"><div class="notch-pill"></div></div>
+      <div class="frame-label">📱 Mobile — Krok 3 (Success)</div>
+      <div class="mob-nav"><div class="mob-logo">Registrácia</div></div>
+      <div class="success-screen">
+        <div class="success-circle">✅</div>
+        <div class="success-h1">Vitaj v Jobbie!</div>
+        <div class="success-sub">Tvoj profil je vytvorený a čaká na teba<br>1 247 brigád vo tvojom okolí.</div>
+        <button class="btn-g" style="font-size:10px;padding:10px 20px;border-radius:99px">Prezerať brigády →</button>
+        <div style="margin-top:8px;background:var(--g50);border:1px solid var(--g100);border-radius:8px;padding:8px;text-align:left">
+          <div style="font-size:8px;font-weight:700;color:var(--ink);margin-bottom:4px">Tvoj profil</div>
+          <div style="font-size:7px;color:var(--ink2);margin-bottom:2px">👤 Ján Novák</div>
+          <div style="font-size:7px;color:var(--ink2);margin-bottom:2px">📍 Bratislava I</div>
+          <div style="font-size:7px;color:var(--ink2)">🏪 Obchod · 🍽️ Gastro</div>
+          <div style="margin-top:6px"><div style="font-size:7px;color:var(--ink3);margin-bottom:2px">Kompletnosť profilu</div><div style="background:var(--sand3);border-radius:99px;height:4px"><div style="background:var(--g500);width:75%;height:100%;border-radius:99px"></div></div><div style="font-size:7px;color:var(--g500);font-weight:700;margin-top:1px">75%</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE 6: PRIHLÁSENIE ═══ -->
+<div class="page-section">
+  <div class="page-label">Stránka 6 / 8</div>
+  <div class="page-title">Prihlásenie — /prihlasenie</div>
+  <div class="page-desc">Centered auth karta, reset hesla flow, prepínanie medzi brigádnikom a zamestnávateľom.</div>
+  <div class="frames">
+    <div class="desktop-frame">
+      <div class="frame-label">🖥 Desktop</div>
+      <div class="mini-nav"><div class="mini-logo"><div class="logo-sq"><svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg></div>JOBBIE</div></div>
+      <div style="background:var(--g50);padding:20px;display:flex;justify-content:center">
+        <div class="auth-card" style="margin:0;width:300px">
+          <div class="auth-logo"><div style="font-size:14px;font-weight:900;color:var(--g700);letter-spacing:-.5px;display:flex;align-items:center;justify-content:center;gap:6px"><div style="width:24px;height:24px;background:var(--g500);border-radius:6px;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg></div>JOBBIE</div></div>
+          <div class="auth-h1" style="margin-top:10px">Vitaj späť 👋</div>
+          <div class="auth-sub">Prihláste sa do svojho konta</div>
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" placeholder="jan@example.com" value="jan.novak@gmail.com"/></div>
+          <div class="form-group"><label class="form-label">Heslo</label><div style="position:relative"><input class="form-input" type="password" value="••••••••" style="width:100%;padding-right:28px"/><span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:9px;color:var(--ink3)">👁</span></div><span class="forgot">Zabudol/a si heslo?</span></div>
+          <button class="btn-g" style="width:100%;font-size:10px;padding:10px;border-radius:99px;justify-content:center">Prihlásiť sa</button>
+          <div class="divider"><div class="div-line"></div>alebo<div class="div-line"></div></div>
+          <button class="btn-o" style="width:100%;font-size:9px;padding:9px;text-align:center">Registrovať sa zadarmo</button>
+          <div class="register-link">Firma? <span>Prihlásiť sa ako zamestnávateľ</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="mobile-frame">
+      <div class="mobile-notch"><div class="notch-pill"></div></div>
+      <div class="frame-label">📱 Mobile</div>
+      <div class="mob-nav"><div class="mob-logo">Prihlásenie</div></div>
+      <div style="padding:16px 10px">
+        <div style="text-align:center;margin-bottom:12px"><div style="font-size:14px;font-weight:900;color:var(--g700);letter-spacing:-.5px">JOBBIE</div></div>
+        <div class="auth-h1" style="font-size:13px;text-align:center">Vitaj späť 👋</div>
+        <div class="auth-sub" style="margin-bottom:10px">Prihláste sa do konta</div>
+        <div class="form-group" style="margin-bottom:6px"><label class="form-label">Email</label><input class="form-input" style="width:100%" placeholder="jan@example.com"/></div>
+        <div class="form-group" style="margin-bottom:6px"><label class="form-label">Heslo</label><input class="form-input" style="width:100%" type="password" value="••••••••"/><span class="forgot">Zabudol/a si heslo?</span></div>
+        <button class="btn-g" style="width:100%;font-size:10px;padding:11px;border-radius:99px;justify-content:center;margin-bottom:8px">Prihlásiť sa</button>
+        <div class="divider"><div class="div-line"></div>alebo<div class="div-line"></div></div>
+        <button class="btn-o" style="width:100%;font-size:9px;padding:9px;text-align:center;margin-top:6px">Registrovať sa zadarmo</button>
+        <div class="register-link" style="margin-top:8px">Firma? <span>Prihlásenie pre zamestnávateľov</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE 7: DASHBOARD BRIGÁDNIKA ═══ -->
+<div class="page-section">
+  <div class="page-label">Stránka 7 / 8</div>
+  <div class="page-title">Dashboard brigádnika — /profil</div>
+  <div class="page-desc">Osobný dashboard s prehľadom, prihláškami, zarobikami a editáciou profilu.</div>
+  <div class="frames">
+    <div class="desktop-frame">
+      <div class="frame-label">🖥 Desktop</div>
+      <div class="mini-nav"><div class="mini-logo"><div class="logo-sq"><svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg></div>JOBBIE</div><div style="font-size:9px;font-weight:600;color:var(--ink2);display:flex;align-items:center;gap:4px"><div style="width:20px;height:20px;border-radius:50%;background:var(--g200);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:var(--g700)">JN</div>Ján Novák</div></div>
+      <div class="dashboard-layout">
+        <div class="dash-sidebar">
+          <div class="dash-nav-item active"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Prehľad</div>
+          <div class="dash-nav-item"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>Prihlášky</div>
+          <div class="dash-nav-item"><svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>Uložené</div>
+          <div class="dash-nav-item"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profil</div>
+          <div class="dash-nav-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Nastavenia</div>
+        </div>
+        <div class="dash-main">
+          <div class="welcome-banner"><div class="wb-title">Ahoj, Ján 👋</div><div class="wb-sub">Dnes ťa čaká 1 247 brigád. Nájdi svoju!</div></div>
+          <div class="metric-grid">
+            <div class="metric-card"><div class="mc-label">Odpracované smeny</div><div class="mc-value"><em>14</em></div></div>
+            <div class="metric-card"><div class="mc-label">Celkový zárobok</div><div class="mc-value"><em>847</em>€</div></div>
+            <div class="metric-card"><div class="mc-label">Aktívne prihlášky</div><div class="mc-value"><em>3</em></div></div>
+            <div class="metric-card"><div class="mc-label">Hodnotenie</div><div class="mc-value"><em>4.9</em>★</div></div>
+          </div>
+          <div class="act-title">Nedávna aktivita</div>
+          <div class="activity-list">
+            <div class="act-item"><div class="act-dot g"></div><div class="act-text">Potvrdená brigáda — Kaufland, Sklad</div><div class="act-time">dnes</div></div>
+            <div class="act-item"><div class="act-dot a"></div><div class="act-text">Prihlásený na brigádu — Bistro Central</div><div class="act-time">včera</div></div>
+            <div class="act-item"><div class="act-dot g"></div><div class="act-text">Dokončená brigáda — DPD Slovakia · 78€</div><div class="act-time">pon</div></div>
+            <div class="act-item"><div class="act-dot gr"></div><div class="act-text">Zamietnutá žiadosť — Pizza Mia</div><div class="act-time">ned</div></div>
+          </div>
+          <div style="margin-top:8px"><div class="sec-t" style="margin-bottom:6px">Odporúčané pre teba</div>
+          <div class="cards-grid-2">
+            <div class="jcard"><div class="jcard-stripe g"></div><div class="jcard-body"><div class="jtit" style="font-size:8px">Pokladníčka</div><div class="jco" style="font-size:7px">Tesco · Petržalka · 10,50€/hod</div><button class="japply" style="margin-top:5px">Prihlásiť sa</button></div></div>
+            <div class="jcard"><div class="jcard-stripe a"></div><div class="jcard-body"><div class="jtit" style="font-size:8px">Pomocný kuchár</div><div class="jco" style="font-size:7px">Pizza Mia · Centrum · 11€/hod</div><button class="japply" style="margin-top:5px">Prihlásiť sa</button></div></div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+    <div class="mobile-frame">
+      <div class="mobile-notch"><div class="notch-pill"></div></div>
+      <div class="frame-label">📱 Mobile — Profil tab</div>
+      <div class="mob-nav"><div class="mob-logo">Môj profil</div><button style="background:none;border:none;font-size:9px;font-weight:600;color:var(--g500)">Upraviť</button></div>
+      <div style="padding:10px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:10px;background:var(--g50);border-radius:8px;border:1px solid var(--g100)">
+          <div style="width:40px;height:40px;border-radius:50%;background:var(--g500);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0">JN</div>
+          <div><div style="font-size:11px;font-weight:800;color:var(--ink)">Ján Novák</div><div style="font-size:8px;color:var(--ink3)">📍 Bratislava I · ★ 4.9</div></div>
+        </div>
+        <div style="margin-bottom:6px"><div style="font-size:7px;color:var(--ink3);margin-bottom:2px;font-weight:600">KOMPLETNOSŤ PROFILU</div><div style="background:var(--sand3);border-radius:99px;height:5px"><div style="background:var(--g500);width:75%;height:100%;border-radius:99px"></div></div><div style="font-size:7px;color:var(--g500);font-weight:700;margin-top:1px">75% — Doplň bio pre +10%</div></div>
+        <div class="metric-grid" style="grid-template-columns:repeat(2,1fr);gap:5px;margin-bottom:8px">
+          <div class="metric-card" style="padding:7px"><div class="mc-label" style="font-size:6px">Smeny</div><div class="mc-value" style="font-size:14px"><em>14</em></div></div>
+          <div class="metric-card" style="padding:7px"><div class="mc-label" style="font-size:6px">Zárobok</div><div class="mc-value" style="font-size:14px"><em>847</em>€</div></div>
+        </div>
+        <div style="font-size:9px;font-weight:700;color:var(--ink);margin-bottom:5px">Aktívne prihlášky</div>
+        <div class="mob-card"><div class="jcard-stripe a"></div><div class="jcard-body"><div class="jcard-top"><div class="jco-logo" style="width:20px;height:20px;font-size:10px">🍽️</div><div style="font-size:7px;padding:2px 7px;border-radius:99px;background:var(--al);color:#8A5C00;font-weight:700">Čaká na odpoveď</div></div><div class="jtit" style="font-size:8px">Čašník — Bistro Central</div><div class="jco" style="font-size:7px">Prihlásený včera · 10,00€/hod</div></div></div>
+      </div>
+      <div class="mob-tabs">
+        <div class="mob-tab"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Domov</div>
+        <div class="mob-tab"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Hľadať</div>
+        <div class="mob-tab"><svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg>Brigády</div>
+        <div class="mob-tab active"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profil</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE 8: DASHBOARD ZAMESTNÁVATEĽA ═══ -->
+<div class="page-section">
+  <div class="page-label">Stránka 8 / 8</div>
+  <div class="page-title">Dashboard zamestnávateľa — /firma/dashboard</div>
+  <div class="page-desc">Správa inzerátov, prehľad prihlášok, rýchle potvrdenie uchádzačov a formulár novej brigády.</div>
+  <div class="frames">
+    <div class="desktop-frame">
+      <div class="frame-label">🖥 Desktop</div>
+      <div class="mini-nav"><div class="mini-logo"><div class="logo-sq"><svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg></div>JOBBIE <span style="font-size:8px;background:var(--amber-light);color:#8A5C00;padding:1px 6px;border-radius:99px;font-weight:700;margin-left:4px">Firma</span></div><div style="font-size:9px;font-weight:600;color:var(--ink2);display:flex;align-items:center;gap:4px"><div style="width:20px;height:20px;border-radius:50%;background:var(--g200);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:var(--g700)">K</div>Kaufland Slovakia</div></div>
+      <div class="dashboard-layout">
+        <div class="dash-sidebar">
+          <div class="dash-nav-item active"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Prehľad</div>
+          <div class="dash-nav-item"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>Inzeráty</div>
+          <div class="dash-nav-item"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Prihlášky</div>
+          <div class="dash-nav-item"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Platby</div>
+          <div class="dash-nav-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4"/></svg>Nastavenia</div>
+        </div>
+        <div class="dash-main">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div class="wb-title" style="font-size:11px">Dobrý deň, Kaufland Slovakia</div>
+            <button class="btn-g-sm" style="font-size:8px;padding:7px 12px;border-radius:99px">+ Nová brigáda</button>
+          </div>
+          <div class="metric-grid">
+            <div class="metric-card"><div class="mc-label">Aktívne inzeráty</div><div class="mc-value"><em>3</em></div></div>
+            <div class="metric-card"><div class="mc-label">Prihlášky celkom</div><div class="mc-value"><em>47</em></div></div>
+            <div class="metric-card"><div class="mc-label">Obsadené pozície</div><div class="mc-value"><em>12</em></div></div>
+            <div class="metric-card"><div class="mc-label">Výdavky tento mes.</div><div class="mc-value"><em>1 380</em>€</div></div>
+          </div>
+          <div style="margin-top:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div class="act-title" style="margin:0">Moje inzeráty</div><button class="btn-g-sm" style="font-size:7px;padding:4px 8px;border-radius:99px">+ Pridať</button></div>
+            <div style="background:var(--surface);border:1px solid var(--sand3);border-radius:8px;overflow:hidden">
+              <div style="display:grid;grid-template-columns:1fr 80px 60px 60px 70px;gap:0;background:var(--sand2);padding:5px 8px">
+                <div style="font-size:7px;font-weight:700;color:var(--ink3)">Pozícia</div>
+                <div style="font-size:7px;font-weight:700;color:var(--ink3)">Status</div>
+                <div style="font-size:7px;font-weight:700;color:var(--ink3)">Prihlášky</div>
+                <div style="font-size:7px;font-weight:700;color:var(--ink3)">Dátum</div>
+                <div style="font-size:7px;font-weight:700;color:var(--ink3)">Akcie</div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 80px 60px 60px 70px;gap:0;padding:6px 8px;border-bottom:1px solid var(--sand3)">
+                <div style="font-size:8px;font-weight:600;color:var(--ink)">Skladový pracovník</div>
+                <div><span style="font-size:7px;background:var(--g50);color:var(--g700);padding:2px 6px;border-radius:99px;font-weight:700">● Aktívny</span></div>
+                <div style="font-size:8px;color:var(--ink2)">12</div>
+                <div style="font-size:7px;color:var(--ink3)">Dnes</div>
+                <div style="display:flex;gap:3px"><button style="font-size:7px;background:var(--sand2);border:1px solid var(--sand3);border-radius:4px;padding:2px 5px;color:var(--ink2)">Upraviť</button><button style="font-size:7px;background:#FEE8E8;border:none;border-radius:4px;padding:2px 5px;color:#992B2B">Pauz.</button></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 80px 60px 60px 70px;gap:0;padding:6px 8px;border-bottom:1px solid var(--sand3)">
+                <div style="font-size:8px;font-weight:600;color:var(--ink)">Pokladníčka</div>
+                <div><span style="font-size:7px;background:var(--al);color:#8A5C00;padding:2px 6px;border-radius:99px;font-weight:700">● Draft</span></div>
+                <div style="font-size:8px;color:var(--ink2)">0</div>
+                <div style="font-size:7px;color:var(--ink3)">Zajtra</div>
+                <div style="display:flex;gap:3px"><button style="font-size:7px;background:var(--g50);border:1px solid var(--g200);border-radius:4px;padding:2px 5px;color:var(--g700);font-weight:700">Zverejniť</button></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 80px 60px 60px 70px;gap:0;padding:6px 8px">
+                <div style="font-size:8px;font-weight:600;color:var(--ink)">Upratovač/ka</div>
+                <div><span style="font-size:7px;background:var(--sand3);color:var(--ink3);padding:2px 6px;border-radius:99px;font-weight:700">● Ukončený</span></div>
+                <div style="font-size:8px;color:var(--ink2)">8</div>
+                <div style="font-size:7px;color:var(--ink3)">Min. týž.</div>
+                <div style="display:flex;gap:3px"><button style="font-size:7px;background:var(--sand2);border:1px solid var(--sand3);border-radius:4px;padding:2px 5px;color:var(--ink2)">Zopakovať</button></div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:8px">
+            <div class="act-title" style="margin-bottom:6px">Najnovšie prihlášky — Skladový pracovník</div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <div style="display:flex;align-items:center;gap:6px;padding:6px;background:var(--surface);border:1px solid var(--sand3);border-radius:8px">
+                <div style="width:24px;height:24px;border-radius:50%;background:var(--g200);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--g700)">JN</div>
+                <div style="flex:1"><div style="font-size:8px;font-weight:700;color:var(--ink)">Ján Novák</div><div style="font-size:7px;color:var(--ink3)">★ 4.9 · 14 brigád odpracovaných</div></div>
+                <button style="font-size:7px;background:var(--g500);color:#fff;border:none;border-radius:6px;padding:4px 8px;font-weight:700">Prijať</button>
+                <button style="font-size:7px;background:transparent;color:var(--ink3);border:1px solid var(--sand3);border-radius:6px;padding:4px 8px">Zamietnuť</button>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;padding:6px;background:var(--surface);border:1px solid var(--sand3);border-radius:8px">
+                <div style="width:24px;height:24px;border-radius:50%;background:var(--g200);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--g700)">MK</div>
+                <div style="flex:1"><div style="font-size:8px;font-weight:700;color:var(--ink)">Mária Kováčová</div><div style="font-size:7px;color:var(--ink3)">★ 4.7 · 8 brigád odpracovaných</div></div>
+                <button style="font-size:7px;background:var(--g500);color:#fff;border:none;border-radius:6px;padding:4px 8px;font-weight:700">Prijať</button>
+                <button style="font-size:7px;background:transparent;color:var(--ink3);border:1px solid var(--sand3);border-radius:6px;padding:4px 8px">Zamietnuť</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mobile-frame">
+      <div class="mobile-notch"><div class="notch-pill"></div></div>
+      <div class="frame-label">📱 Mobile — Nová brigáda</div>
+      <div class="mob-nav"><button style="background:none;border:none;font-size:14px;color:var(--ink2)">‹</button><div class="mob-logo">Nová brigáda</div><div style="width:16px"></div></div>
+      <div style="padding:10px">
+        <div style="background:var(--g50);border:1px solid var(--g100);border-radius:8px;padding:8px;margin-bottom:8px">
+          <div style="font-size:8px;font-weight:700;color:var(--g700);margin-bottom:2px">Náhľad inzerátu</div>
+          <div class="jcard" style="border-color:var(--g200)"><div class="jcard-stripe g"></div><div class="jcard-body"><div class="jtit" style="font-size:9px">Skladový pracovník</div><div class="jco" style="font-size:7px">Kaufland Slovakia · Bratislava</div><div class="jfooter" style="margin-top:5px;padding-top:5px"><div class="jrate" style="font-size:10px">11,50€<span>/hod</span></div><button class="japply" style="font-size:7px">Prihlásiť sa</button></div></div></div>
+        </div>
+        <div class="form-group" style="margin-bottom:6px"><label class="form-label">Názov pozície</label><input class="form-input" style="width:100%" value="Skladový pracovník"/></div>
+        <div class="form-grid-2" style="margin-bottom:6px">
+          <div><label class="form-label">Dátum</label><input class="form-input" value="19.03.2026"/></div>
+          <div><label class="form-label">Hodinová sadzba</label><input class="form-input" value="11,50 €"/></div>
+        </div>
+        <div class="form-group" style="margin-bottom:6px"><label class="form-label">Popis brigády</label><textarea class="form-textarea" style="width:100%">Hľadáme pracovníka do skladu...</textarea></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px;background:var(--surface);border:1px solid var(--sand3);border-radius:8px;margin-bottom:8px">
+          <div style="font-size:8px;font-weight:600;color:var(--ink)">Označiť ako urgentné</div>
+          <div style="width:30px;height:16px;background:var(--g500);border-radius:99px;position:relative"><div style="width:12px;height:12px;background:#fff;border-radius:50%;position:absolute;right:2px;top:2px"></div></div>
+        </div>
+        <button class="btn-g" style="width:100%;font-size:10px;padding:11px;border-radius:99px;justify-content:center">Zverejniť brigádu →</button>
+        <button class="btn-o" style="width:100%;font-size:9px;padding:8px;text-align:center;margin-top:6px">Uložiť ako draft</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>

@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrácia — Jobbie</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background-color: #f2faf4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            font-family: "DM Sans", sans-serif;
+        }
+
+        /* ── Card ── */
+        .login-card {
+            display: flex;
+            width: 100%;
+            max-width: 1060px;
+            border-radius: 24px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.13);
+            overflow: hidden;
+        }
+
+        /* ── Left panel ── */
+        .login-left {
+            width: 38%;
+            min-width: 38%;
+            background: linear-gradient(155deg, rgba(21,128,61,1) 0%, rgba(34,197,94,1) 100%);
+            padding: 40px 44px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-left::before, .login-left::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.07);
+        }
+
+        .login-left::before { width: 320px; height: 320px; top: -80px; right: -100px; }
+        .login-left::after  { width: 200px; height: 200px; bottom: 40px; left: -60px; }
+
+        .login-logo {
+            font-size: 22px;
+            font-weight: 800;
+            color: rgba(255,255,255,0.9);
+            position: relative;
+            z-index: 1;
+        }
+
+        .login-left-bottom { position: relative; z-index: 1; }
+
+        .login-tagline {
+            font-size: 38px;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.2;
+            margin: 0 0 14px;
+        }
+
+        .login-sub {
+            font-size: 17px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.75);
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* ── Right panel ── */
+        .login-right {
+            flex: 1;
+            background: #ffffff;
+            padding: 44px 52px 44px;
+            display: flex;
+            flex-direction: column;
+            min-height: 640px;
+        }
+
+        /* ── Progress bar ── */
+        .progress-bar {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 36px;
+            gap: 0;
+        }
+
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .progress-circle {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 2px solid #d1d5db;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: rgba(0,0,0,0.3);
+            transition: all 0.3s;
+            position: relative;
+            z-index: 1;
+        }
+
+        .progress-circle.active  { border-color: #22c55e; background: #22c55e; color: #fff; }
+        .progress-circle.done    { border-color: #22c55e; background: #22c55e; color: #fff; }
+
+        .progress-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(0,0,0,0.3);
+            white-space: nowrap;
+            margin-top: 2px;
+        }
+
+        .progress-label.active { color: #22c55e; font-weight: 700; }
+        .progress-label.done   { color: #22c55e; }
+
+        .progress-connector {
+            flex: 1;
+            height: 2px;
+            background: #d1d5db;
+            margin-top: 16px;
+            transition: background 0.3s;
+        }
+
+        .progress-connector.done { background: #22c55e; }
+
+        /* ── Step content ── */
+        .step { display: none; flex-direction: column; flex: 1; }
+        .step.active { display: flex; }
+
+        .step-heading {
+            font-size: 30px;
+            font-weight: 800;
+            color: #000;
+            margin: 0 0 6px;
+            line-height: 1.15;
+        }
+
+        .step-heading span { color: #22c55e; }
+
+        .step-desc {
+            font-size: 16px;
+            font-weight: 400;
+            color: rgba(0,0,0,0.5);
+            margin: 0 0 28px;
+            line-height: 1.5;
+        }
+
+        /* ── Type cards (step 1) ── */
+        .type-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            flex: 1;
+            align-content: start;
+        }
+
+        .type-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 18px;
+            padding: 28px 24px;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s, transform 0.15s;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .type-card:hover { border-color: #22c55e; transform: translateY(-2px); }
+
+        .type-card.selected {
+            border-color: #22c55e;
+            background: #f0fdf4;
+        }
+
+        .type-card i {
+            font-size: 32px;
+            color: rgba(0,0,0,0.2);
+            transition: color 0.2s;
+        }
+
+        .type-card.selected i { color: #22c55e; }
+
+        .type-card h3 {
+            font-size: 20px;
+            font-weight: 800;
+            color: #000;
+            margin: 0;
+        }
+
+        .type-card p {
+            font-size: 15px;
+            font-weight: 400;
+            color: rgba(0,0,0,0.45);
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        /* ── Role cards (step 2) ── */
+        .role-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+            align-content: start;
+        }
+
+        .role-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 999px;
+            padding: 16px 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .role-card:hover { border-color: #22c55e; }
+
+        .role-card.selected {
+            border-color: #22c55e;
+            background: #f0fdf4;
+        }
+
+        .role-card-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            color: rgba(0,0,0,0.3);
+            flex-shrink: 0;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .role-card.selected .role-card-icon { background: #cff0db; color: #15803d; }
+
+        .role-card-text {
+            font-size: 17px;
+            font-weight: 600;
+            color: #000;
+            flex: 1;
+        }
+
+        .role-card-check {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid #d1d5db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .role-card.selected .role-card-check {
+            background: #22c55e;
+            border-color: #22c55e;
+        }
+
+        .role-card-check i { color: #fff; font-size: 12px; display: none; }
+        .role-card.selected .role-card-check i { display: block; }
+
+        /* ── Form fields (step 3 & 4) ── */
+        .fields-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .field-row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 14px;
+        }
+
+        .field-label {
+            font-size: 15px;
+            font-weight: 600;
+            color: #000;
+        }
+
+        .field-wrap { position: relative; display: flex; align-items: center; }
+
+        .field-input {
+            width: 100%;
+            height: 52px;
+            background: #fafcfb;
+            border: 1.5px solid transparent;
+            border-radius: 999px;
+            padding: 0 46px 0 20px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 16px;
+            font-weight: 400;
+            color: #000;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .field-input::placeholder { color: rgba(0,0,0,0.3); }
+        .field-input:focus { border-color: #22c55e; }
+
+        .field-icon {
+            position: absolute;
+            right: 18px;
+            color: rgba(0,0,0,0.3);
+            font-size: 15px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            transition: color 0.15s;
+        }
+
+        .field-icon:hover { color: #22c55e; }
+
+        /* ── Navigation ── */
+        .step-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 28px;
+            gap: 12px;
+        }
+
+        .btn-back {
+            height: 52px;
+            padding: 0 28px;
+            background: #fafcfb;
+            color: rgba(0,0,0,0.6);
+            border: 1.5px solid #e5e7eb;
+            border-radius: 999px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color 0.15s, color 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-back:hover { border-color: #22c55e; color: #22c55e; }
+        .btn-back.hidden { visibility: hidden; pointer-events: none; }
+
+        .btn-next {
+            height: 52px;
+            padding: 0 36px;
+            background: #22c55e;
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .btn-next:hover { opacity: 0.88; }
+
+        /* ── Divider ── */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 12px 0;
+        }
+
+        .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: rgba(0,0,0,0.1); }
+
+        .divider span { font-size: 13px; font-weight: 500; color: rgba(0,0,0,0.35); }
+
+        /* ── Google button ── */
+        .btn-google {
+            width: 100%;
+            height: 52px;
+            background: #fff;
+            color: #000;
+            border: 1.5px solid rgba(0,0,0,0.12);
+            border-radius: 999px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .btn-google:hover { background: #fafcfb; border-color: rgba(0,0,0,0.2); }
+        .btn-google svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+        /* ── Login link ── */
+        .login-row {
+            text-align: center;
+            font-size: 15px;
+            font-weight: 500;
+            color: rgba(0,0,0,0.45);
+            margin-top: 16px;
+        }
+
+        .login-row a { color: #22c55e; font-weight: 700; text-decoration: none; }
+        .login-row a:hover { opacity: 0.75; }
+
+        /* ── Error hint ── */
+        .step-error {
+            font-size: 14px;
+            font-weight: 500;
+            color: #ef4444;
+            margin-top: 6px;
+            display: none;
+        }
+
+        .step-error.visible { display: block; }
+
+        @media (max-width: 720px) {
+            .login-left { display: none; }
+            .login-right { padding: 32px 24px; }
+            .type-cards { grid-template-columns: 1fr; }
+            .field-row, .field-row-3 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+
+    <!-- ── Left ── -->
+    <div class="login-left">
+        <div class="login-logo">Jobbie</div>
+        <div class="login-left-bottom">
+            <h2 class="login-tagline">Začni svoju<br>cestu s nami.</h2>
+            <p class="login-sub">Registrácia trvá menej ako minútu. Nájdi prácu alebo brigádnikov už dnes.</p>
+        </div>
+    </div>
+
+    <!-- ── Right ── -->
+    <div class="login-right">
+
+        <!-- Progress bar -->
+        <div class="progress-bar" id="progress-bar">
+            <div class="progress-step">
+                <div class="progress-circle active" id="pc-1">1</div>
+                <span class="progress-label active" id="pl-1">Typ účtu</span>
+            </div>
+            <div class="progress-connector" id="conn-1"></div>
+            <div class="progress-step">
+                <div class="progress-circle" id="pc-2">2</div>
+                <span class="progress-label" id="pl-2">Role</span>
+            </div>
+            <div class="progress-connector" id="conn-2"></div>
+            <div class="progress-step">
+                <div class="progress-circle" id="pc-3">3</div>
+                <span class="progress-label" id="pl-3">Profil</span>
+            </div>
+            <div class="progress-connector" id="conn-3"></div>
+            <div class="progress-step">
+                <div class="progress-circle" id="pc-4">4</div>
+                <span class="progress-label" id="pl-4">Prístup</span>
+            </div>
+        </div>
+
+        <!-- ── Step 1: Account type ── -->
+        <div class="step active" id="step-1">
+            <h2 class="step-heading">Aký typ účtu <span>chceš?</span></h2>
+            <p class="step-desc">Vyber si, ako budeš Jobbie používať.</p>
+
+            <div class="type-cards">
+                <div class="type-card" data-type="jednotlivec">
+                    <i class="fa-solid fa-user"></i>
+                    <h3>Jednotlivec</h3>
+                    <p>Fyzická osoba hľadajúca prácu, brigádu alebo ponúkajúca svoje služby.</p>
+                </div>
+                <div class="type-card" data-type="firma">
+                    <i class="fa-solid fa-building"></i>
+                    <h3>Firma / SZČO</h3>
+                    <p>Podnikateľ alebo firma hľadajúca brigádnikov, zamestnancov alebo dodávateľov.</p>
+                </div>
+            </div>
+
+            <span class="step-error" id="err-1">Vyber typ účtu aby si mohol pokračovať.</span>
+
+            <div class="step-nav">
+                <button class="btn-back hidden"><i class="fa-solid fa-arrow-left"></i> Späť</button>
+                <button class="btn-next" onclick="nextStep()">Ďalej <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- ── Step 2: Roles ── -->
+        <div class="step" id="step-2">
+            <h2 class="step-heading">Aktívne <span>roly</span></h2>
+            <p class="step-desc">Čo chceš robiť? Môžeš vybrať aj viac možností.</p>
+
+            <div class="role-cards">
+                <div class="role-card" data-role="pomoc">
+                    <div class="role-card-icon"><i class="fa-solid fa-hammer"></i></div>
+                    <span class="role-card-text">Potrebujem pomoc s prácou</span>
+                    <div class="role-card-check"><i class="fa-solid fa-check"></i></div>
+                </div>
+                <div class="role-card" data-role="male-prace">
+                    <div class="role-card-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+                    <span class="role-card-text">Hľadám malé práce</span>
+                    <div class="role-card-check"><i class="fa-solid fa-check"></i></div>
+                </div>
+                <div class="role-card" data-role="klienti">
+                    <div class="role-card-icon"><i class="fa-solid fa-store"></i></div>
+                    <span class="role-card-text">Chcem aby ma klienti našli</span>
+                    <div class="role-card-check"><i class="fa-solid fa-check"></i></div>
+                </div>
+            </div>
+
+            <span class="step-error" id="err-2">Vyber aspoň jednu rolu aby si mohol pokračovať.</span>
+
+            <div class="step-nav">
+                <button class="btn-back" onclick="prevStep()"><i class="fa-solid fa-arrow-left"></i> Späť</button>
+                <button class="btn-next" onclick="nextStep()">Ďalej <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- ── Step 3: Profile info ── -->
+        <div class="step" id="step-3">
+            <h2 class="step-heading">Tvoj <span>profil</span></h2>
+            <p class="step-desc" id="step3-desc">Pár základných informácií o tebe.</p>
+
+            <!-- Jednotlivec fields -->
+            <div class="fields-wrap" id="fields-jednotlivec">
+                <div class="field-row">
+                    <div class="field-group">
+                        <label class="field-label">Meno</label>
+                        <div class="field-wrap">
+                            <input class="field-input" type="text" placeholder="Ján">
+                            <i class="field-icon fa-regular fa-user"></i>
+                        </div>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Priezvisko</label>
+                        <div class="field-wrap">
+                            <input class="field-input" type="text" placeholder="Novák">
+                            <i class="field-icon fa-regular fa-user"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Dátum narodenia</label>
+                    <div class="field-wrap">
+                        <input class="field-input" type="date">
+                        <i class="field-icon fa-regular fa-calendar"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Firma fields -->
+            <div class="fields-wrap" id="fields-firma" style="display:none">
+                <div class="field-group">
+                    <label class="field-label">Názov spoločnosti</label>
+                    <div class="field-wrap">
+                        <input class="field-input" type="text" placeholder="Napr. Stavebná firma Novák s.r.o.">
+                        <i class="field-icon fa-regular fa-building"></i>
+                    </div>
+                </div>
+                <div class="field-row-3">
+                    <div class="field-group">
+                        <label class="field-label">IČO</label>
+                        <div class="field-wrap">
+                            <input class="field-input" type="text" placeholder="12345678">
+                        </div>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">IČ DPH</label>
+                        <div class="field-wrap">
+                            <input class="field-input" type="text" placeholder="SK1234567890">
+                        </div>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">DIČ</label>
+                        <div class="field-wrap">
+                            <input class="field-input" type="text" placeholder="1234567890">
+                        </div>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Sídlo spoločnosti</label>
+                    <div class="field-wrap">
+                        <input class="field-input" type="text" placeholder="Hlavná 1, 010 01 Žilina">
+                        <i class="field-icon fa-solid fa-location-dot"></i>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Meno používateľa profilu</label>
+                    <div class="field-wrap">
+                        <input class="field-input" type="text" placeholder="jan.novak">
+                        <i class="field-icon fa-solid fa-at"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-nav">
+                <button class="btn-back" onclick="prevStep()"><i class="fa-solid fa-arrow-left"></i> Späť</button>
+                <button class="btn-next" onclick="nextStep()">Ďalej <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- ── Step 4: Credentials ── -->
+        <div class="step" id="step-4">
+            <h2 class="step-heading">Vytvor si <span>účet</span></h2>
+            <p class="step-desc">Zadaj e-mail a heslo, alebo sa registruj cez Google.</p>
+
+            <div class="fields-wrap" style="overflow: visible;">
+                <div class="field-group">
+                    <label class="field-label">E-mail</label>
+                    <div class="field-wrap">
+                        <input class="field-input" type="email" id="reg-email" placeholder="jan.novak@email.sk">
+                        <i class="field-icon fa-regular fa-envelope"></i>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Heslo</label>
+                    <div class="field-wrap">
+                        <input class="field-input" type="password" id="reg-password" placeholder="Minimálne 8 znakov">
+                        <button class="field-icon" type="button" id="toggle-pw1" tabindex="-1">
+                            <i class="fa-regular fa-eye" id="eye1"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Zopakovať heslo</label>
+                    <div class="field-wrap">
+                        <input class="field-input" type="password" id="reg-password2" placeholder="Zopakuj heslo">
+                        <button class="field-icon" type="button" id="toggle-pw2" tabindex="-1">
+                            <i class="fa-regular fa-eye" id="eye2"></i>
+                        </button>
+                    </div>
+                </div>
+                <span class="step-error" id="err-4"></span>
+            </div>
+
+            <div class="divider" style="margin-top:20px"><span>alebo</span></div>
+
+            <button class="btn-google" type="button">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Registrovať sa cez Google
+            </button>
+
+            <div class="step-nav" style="margin-top: 16px;">
+                <button class="btn-back" onclick="prevStep()"><i class="fa-solid fa-arrow-left"></i> Späť</button>
+                <button class="btn-next" onclick="submitForm()">Registrovať sa <i class="fa-solid fa-check"></i></button>
+            </div>
+
+            <p class="login-row">Už máš účet? <a href="login.html">Prihlásiť sa</a></p>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    let currentStep  = 1;
+    let accountType  = null;
+    const totalSteps = 4;
+
+    /* ── Type card selection ── */
+    document.querySelectorAll('.type-card').forEach(card => {
+        card.addEventListener('click', () => {
+            document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            accountType = card.dataset.type;
+            document.getElementById('err-1').classList.remove('visible');
+        });
+    });
+
+    /* ── Role card selection (multi) ── */
+    document.querySelectorAll('.role-card').forEach(card => {
+        card.addEventListener('click', () => {
+            card.classList.toggle('selected');
+            document.getElementById('err-2').classList.remove('visible');
+        });
+    });
+
+    /* ── Progress update ── */
+    function updateProgress(step) {
+        for (let i = 1; i <= totalSteps; i++) {
+            const circle = document.getElementById('pc-' + i);
+            const label  = document.getElementById('pl-' + i);
+
+            circle.classList.remove('active', 'done');
+            label.classList.remove('active', 'done');
+
+            if (i < step)       { circle.classList.add('done'); circle.innerHTML = '<i class="fa-solid fa-check" style="font-size:12px"></i>'; label.classList.add('done'); }
+            else if (i === step) { circle.classList.add('active'); circle.textContent = i; label.classList.add('active'); }
+            else                 { circle.textContent = i; }
+
+            if (i < totalSteps) {
+                const conn = document.getElementById('conn-' + i);
+                conn.classList.toggle('done', i < step);
+            }
+        }
+    }
+
+    /* ── Show step ── */
+    function showStep(n) {
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        document.getElementById('step-' + n).classList.add('active');
+
+        // Show correct profile fields
+        if (n === 3) {
+            document.getElementById('fields-jednotlivec').style.display = accountType === 'jednotlivec' ? 'flex' : 'none';
+            document.getElementById('fields-firma').style.display       = accountType === 'firma'       ? 'flex' : 'none';
+            document.getElementById('step3-desc').textContent =
+                accountType === 'firma'
+                    ? 'Zadaj základné informácie o tvojej firme.'
+                    : 'Pár základných informácií o tebe.';
+        }
+
+        updateProgress(n);
+        currentStep = n;
+    }
+
+    /* ── Validate step ── */
+    function validateStep(n) {
+        if (n === 1) {
+            if (!accountType) { document.getElementById('err-1').classList.add('visible'); return false; }
+        }
+        if (n === 2) {
+            const selected = document.querySelectorAll('.role-card.selected');
+            if (selected.length === 0) { document.getElementById('err-2').classList.add('visible'); return false; }
+        }
+        return true;
+    }
+
+    function nextStep() {
+        if (!validateStep(currentStep)) return;
+        if (currentStep < totalSteps) showStep(currentStep + 1);
+    }
+
+    function prevStep() {
+        if (currentStep > 1) showStep(currentStep - 1);
+    }
+
+    /* ── Step 4: show/hide password ── */
+    function togglePassword(inputId, eyeId) {
+        const input = document.getElementById(inputId);
+        const eye   = document.getElementById(eyeId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            eye.classList.replace('fa-eye', 'fa-eye-slash');
+        } else {
+            input.type = 'password';
+            eye.classList.replace('fa-eye-slash', 'fa-eye');
+        }
+    }
+
+    document.getElementById('toggle-pw1').addEventListener('click', () => togglePassword('reg-password',  'eye1'));
+    document.getElementById('toggle-pw2').addEventListener('click', () => togglePassword('reg-password2', 'eye2'));
+
+    /* ── Submit ── */
+    function submitForm() {
+        const email = document.getElementById('reg-email').value.trim();
+        const pw1   = document.getElementById('reg-password').value;
+        const pw2   = document.getElementById('reg-password2').value;
+        const err   = document.getElementById('err-4');
+
+        if (!email) { err.textContent = 'Zadaj e-mailovú adresu.'; err.classList.add('visible'); return; }
+        if (pw1.length < 8) { err.textContent = 'Heslo musí mať aspoň 8 znakov.'; err.classList.add('visible'); return; }
+        if (pw1 !== pw2)    { err.textContent = 'Heslá sa nezhodujú.'; err.classList.add('visible'); return; }
+
+        err.classList.remove('visible');
+        alert('Registrácia úspešná! 🎉');
+    }
+</script>
+
+</body>
+</html>

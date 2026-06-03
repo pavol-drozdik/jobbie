@@ -1,0 +1,43 @@
+---
+description: GDPR and privacy enforcement for CV, profile, email, and exports
+globs:
+  - supabase/migrations/**
+  - backend-ts/**
+  - app-pwa/**
+alwaysApply: true
+---
+
+# Privacy & GDPR (JOBBIE)
+
+See [docs/GDPR-PRIVACY.md](../../docs/GDPR-PRIVACY.md) for the full runbook.
+
+## CV & employer database
+
+- Employers see a CV only when `cvs.visible_to_employers = true`, candidate `profiles.public_show_in_company_search !== false`, and individual role.
+- Contact fields (`email`, `phone`, `linkedin_url`, full address, `birth_date`) on employer detail only when `show_contact_details` **or** `cv_contact_unlocks` row exists for `(company_id, cv_id)`.
+- Never return `gender`, `has_disability`, or birth date to employer list/detail DTOs.
+- Redact `references[].email` / `phone` under the same contact rule.
+- `profiles.public_allow_platform_contact === false` blocks platform chat from CV database flows.
+
+## Addresses & public catalog
+
+- Jobs: null `location_address` when `show_exact_address` is false (mapper + `job_offers_public` view).
+- Company ads: null `street_address` when `show_exact_address` is false (mapper + `company_ads_public` view).
+- Public profile: respect `public_show_address`, `public_show_phone`, `public_show_account_email`, `public_profile_enabled`.
+
+## Email
+
+- Job alert digests: transactional — use `job_email_alerts` notification category; include per-alert pause link and category unsubscribe link.
+- Marketing / digest: require `marketing_processing_consent` (and channel prefs); include unsubscribe token.
+- Record changes in `consent_events` via `ConsentEventsService` (service_role insert).
+
+## Account rights
+
+- Delete: `POST /api/profiles/me/delete` only — scrub profile, hide CVs, deactivate alerts, ban auth user.
+- Export: `GET /api/profiles/me/export` — ZIP with `data.json`; add new personal data fields to `DataExportService` when extending schema.
+- Public token routes: `@Public()` on `public/notification-preferences` and `public/job-alerts`.
+
+## Database
+
+- `cv_personal_info`: sensitive columns revoked from `authenticated`/`anon`; contact via Nest unlock logic only.
+- New PII tables: default deny RLS; no broad grants on `consent_events` inserts from clients.

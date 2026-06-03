@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsIn, IsOptional, IsString } from 'class-validator';
 
 export interface ApplicationResponseDto {
   id: string;
@@ -18,4 +18,10 @@ export class ApplicationCreateDto {
   @IsOptional()
   @IsString()
   message?: string | null;
+}
+
+export class ApplicationStatusPatchDto {
+  @IsString()
+  @IsIn(['accepted', 'rejected', 'interview_invited', 'pending'])
+  status!: 'accepted' | 'rejected' | 'interview_invited' | 'pending';
 }

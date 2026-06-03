@@ -1,0 +1,137 @@
+/**
+ * Shared Content-Security-Policy builder for Nitro route rules and per-request nonces.
+ */
+
+export type PlatformCspOptions = {
+  apiOrigin: string
+  supabaseOrigin: string
+  posthogHost: string
+  /** Per-request nonce for first-party inline scripts (SSR). */
+  scriptNonce?: string
+}
+
+/** True when the API origin is plain HTTP on localhost (dev). */
+export function isLocalHttpApiOrigin(apiOrigin: string): boolean {
+  try {
+    const u = new URL(apiOrigin)
+    return (
+      u.protocol === 'http:' &&
+      (u.hostname === 'localhost' || u.hostname === '127.0.0.1')
+    )
+  } catch {
+    return false
+  }
+}
+
+export function resolvePlatformCspOrigins(): {
+  apiOrigin: string
+  supabaseOrigin: string
+  posthogHost: string
+} {
+  const supabaseUrl = process.env.NUXT_PUBLIC_SUPABASE_URL?.trim() ?? ''
+  let supabaseOrigin = ''
+  try {
+    if (supabaseUrl) supabaseOrigin = new URL(supabaseUrl).origin
+  } catch {
+    /* ignore */
+  }
+  const apiRaw =
+    process.env.NUXT_PUBLIC_API_BASE_URL?.trim() || 'http://localhost:8000'
+  let apiOrigin = apiRaw.replace(/\/+$/, '')
+  try {
+    apiOrigin = new URL(apiOrigin).origin
+  } catch {
+    /* keep string */
+  }
+  const posthogHost =
+    process.env.NUXT_PUBLIC_POSTHOG_HOST?.trim() || 'https://eu.i.posthog.com'
+  return { apiOrigin, supabaseOrigin, posthogHost }
+}
+
+export function buildContentSecurityPolicy(options: PlatformCspOptions): string {
+  const { apiOrigin, supabaseOrigin, posthogHost, scriptNonce } = options
+  const connectSrc = [
+    "'self'",
+    apiOrigin,
+    supabaseOrigin,
+    'https://*.supabase.co',
+    'wss://*.supabase.co',
+    'https://api.stripe.com',
+    'https://checkout.stripe.com',
+    'https://m.stripe.network',
+    'https://*.sentry.io',
+    posthogHost,
+    'https://www.google-analytics.com',
+    'https://*.google-analytics.com',
+    'https://analytics.google.com',
+    'https://www.clarity.ms',
+    'https://*.clarity.ms',
+  ]
+    .filter(Boolean)
+    .join(' ')
+  const imgSrc = [
+    "'self'",
+    'data:',
+    'blob:',
+    supabaseOrigin,
+    'https://*.supabase.co',
+    'https://*.stripe.com',
+    'https://www.google-analytics.com',
+    'https://*.google-analytics.com',
+    'https://*.clarity.ms',
+  ]
+    .filter(Boolean)
+    .join(' ')
+  const scriptSrcParts = [
+    "'self'",
+    scriptNonce ? `'nonce-${scriptNonce}'` : "'unsafe-inline'",
+    'https://js.stripe.com',
+    'https://checkout.stripe.com',
+    'https://challenges.cloudflare.com',
+    'https://www.googletagmanager.com',
+    'https://www.clarity.ms',
+  ]
+  const scriptSrc = scriptSrcParts.join(' ')
+  const directives = [
+    "default-src 'self'",
+    `script-src ${scriptSrc}`,
+    `connect-src ${connectSrc}`,
+    `img-src ${imgSrc}`,
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self' data:",
+    'frame-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://challenges.cloudflare.com',
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    "worker-src 'self' blob:",
+    "manifest-src 'self'",
+  ]
+  // upgrade-insecure-requests on http://localhost spams empty CSP reports in dev.
+  if (!isLocalHttpApiOrigin(apiOrigin)) {
+    directives.push('upgrade-insecure-requests')
+  }
+  return directives.join('; ')
+}
+
+export function buildPlatformSecurityHeaders(scriptNonce?: string): Record<string, string> {
+  const origins = resolvePlatformCspOrigins()
+  const csp = buildContentSecurityPolicy({ ...origins, scriptNonce })
+  const headers: Record<string, string> = {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy':
+      'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(self "https://js.stripe.com" "https://*.stripe.com"), publickey-credentials-get=(self), interest-cohort=(), browsing-topics=()',
+    'Cross-Origin-Opener-Policy': 'same-origin',
+    'Cross-Origin-Resource-Policy': 'same-site',
+    'Content-Security-Policy': csp,
+  }
+  if (!isLocalHttpApiOrigin(origins.apiOrigin)) {
+    headers['Strict-Transport-Security'] =
+      'max-age=63072000; includeSubDomains; preload'
+    headers['Content-Security-Policy-Report-Only'] =
+      `${csp}; report-uri ${origins.apiOrigin}/api/csp-report`
+  }
+  return headers
+}

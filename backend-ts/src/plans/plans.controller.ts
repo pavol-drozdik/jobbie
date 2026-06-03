@@ -1,28 +1,47 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Header, UseGuards } from '@nestjs/common';
+import { CatalogCacheService } from '../redis/catalog-cache.service';
 import { JwksAuthGuard } from '../auth/jwks-auth.guard';
 import { CurrentUserDecorator } from '../auth/current-user.decorator';
 import { CurrentUser } from '../auth/auth.types';
 import { SupabaseService } from '../supabase/supabase.service';
 import { PlanResponseDto, MySubscriptionResponseDto } from './plans.dto';
+import { Public } from '../auth/public.decorator';
+import {
+  PUBLIC_SUBSCRIPTION_PLAN_SLUGS,
+  filterPublicSubscriptionPlans,
+} from '../billing/public-pricing-catalog';
 
 @Controller('plans')
-@UseGuards(JwksAuthGuard)
 export class PlansController {
-  constructor(private supabase: SupabaseService) {}
+  constructor(
+    private supabase: SupabaseService,
+    private readonly catalogCache: CatalogCacheService,
+  ) {}
 
+  /** Public: pricing table can load before the client session is ready. */
   @Get()
+  @Public()
+  @Header('Cache-Control', 'public, max-age=300')
   async list(): Promise<PlanResponseDto[]> {
-    const { data } = await this.supabase
-      .getClient()
-      .from('subscription_plans')
-      .select(
-        'id,slug,name_sk,price_monthly_cents,max_active_jobs,sort_order',
-      )
-      .order('sort_order');
-    return (data ?? []) as PlanResponseDto[];
+    return this.catalogCache.getOrSet('catalog:plans-list:v4', async () => {
+      const { data, error } = await this.supabase
+        .getClient()
+        .from('subscription_plans')
+        .select(
+          'id,slug,name_sk,price_monthly_cents,max_active_jobs,monthly_credits,max_cv_unlocks_monthly,max_cv_contacts_monthly,max_cv_pdf_downloads_monthly,sort_order,active',
+        )
+        .in('slug', [...PUBLIC_SUBSCRIPTION_PLAN_SLUGS])
+        .order('sort_order');
+      const rows = (data ?? []) as Array<PlanResponseDto & { active?: boolean }>;
+      const activeOnly = error
+        ? rows
+        : rows.filter((row) => row.active !== false);
+      return filterPublicSubscriptionPlans(activeOnly);
+    }, 900);
   }
 
   @Get('me')
+  @UseGuards(JwksAuthGuard)
   async getMySubscription(
     @CurrentUserDecorator() user: CurrentUser,
   ): Promise<MySubscriptionResponseDto | null> {

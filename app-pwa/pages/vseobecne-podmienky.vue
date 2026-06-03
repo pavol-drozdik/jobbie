@@ -1,0 +1,25 @@
+<template>
+  <MarketingContentPage
+    :page="TRUST_TERMS_PAGE"
+    :show-legal-review-banner="!brand.legalPublished"
+  />
+</template>
+
+<script setup lang="ts">
+import MarketingContentPage from '~/components/marketing/MarketingContentPage.vue'
+import { TRUST_TERMS_PAGE } from '~/utils/trust-page-content'
+import { ROUTES } from '~/utils/app-routes'
+import { S } from '~/utils/strings'
+import { useBrandSeoConfig } from '~/utils/brand-seo'
+
+definePageMeta({ layout: 'app', layoutMainFlushTop: true })
+
+const brand = useBrandSeoConfig()
+
+usePageSeo({
+  title: S.footerLinkTerms,
+  description: TRUST_TERMS_PAGE.intro,
+  canonicalPath: ROUTES.terms,
+  dateModified: TRUST_TERMS_PAGE.updatedAt,
+})
+</script>

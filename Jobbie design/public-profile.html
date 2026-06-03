@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pavol Dr — Jobbie</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+    <style>
+        .pp-section { padding: 110px 20px 80px; width: 100%; }
+
+        .pp-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 32px;
+            align-items: flex-start;
+        }
+
+        /* ── Back link ── */
+        .pp-back {
+            display: inline-flex; align-items: center; gap: 8px;
+            font-family: "DM Sans", sans-serif; font-size: 16px; font-weight: 600;
+            color: rgba(0,0,0,0.45); text-decoration: none; margin-bottom: 20px;
+            transition: color 0.15s;
+        }
+        .pp-back:hover { color: #22c55e; }
+
+        /* ── Columns ── */
+        .pp-main    { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+        .pp-sidebar { width: 320px; min-width: 320px; display: flex; flex-direction: column; gap: 16px; }
+
+        /* ── Cards ── */
+        .pp-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 28px 32px;
+            box-shadow: 0px 3px 6px 1px rgba(0,0,0,0.12);
+        }
+
+        .pp-card-title {
+            font-family: "DM Sans", sans-serif;
+            font-size: 20px; font-weight: 800; color: #000;
+            margin: 0 0 20px;
+        }
+
+        /* ── Hero card ── */
+        .pp-hero-card {
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0px 3px 6px 1px rgba(0,0,0,0.12);
+            overflow: hidden;
+        }
+
+        .pp-banner {
+            height: 160px;
+            background: linear-gradient(155deg, rgba(21,128,61,1) 0%, rgba(34,197,94,1) 100%);
+            position: relative; overflow: hidden;
+        }
+
+        .pp-banner::before {
+            content: ''; position: absolute;
+            width: 280px; height: 280px; border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+            top: -80px; right: -60px;
+        }
+
+        .pp-banner::after {
+            content: ''; position: absolute;
+            width: 140px; height: 140px; border-radius: 50%;
+            background: rgba(255,255,255,0.06);
+            bottom: -40px; left: 60px;
+        }
+
+        .pp-hero-body { padding: 0 32px 28px; }
+
+        .pp-avatar-row {
+            display: flex; align-items: flex-end;
+            justify-content: space-between;
+            margin-top: -44px; margin-bottom: 16px;
+        }
+
+        .pp-avatar {
+            width: 88px; height: 88px;
+            border-radius: 50%;
+            background: #7c3aed; color: #fff;
+            font-family: "DM Sans", sans-serif;
+            font-size: 30px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            border: 4px solid #fff;
+            box-shadow: 0px 3px 10px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+
+        .pp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        .pp-name-row {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap;
+        }
+
+        .pp-name {
+            font-family: "DM Sans", sans-serif;
+            font-size: 28px; font-weight: 800; color: #000;
+        }
+
+        .pp-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            border-radius: 999px; padding: 4px 12px;
+            font-family: "DM Sans", sans-serif; font-size: 14px; font-weight: 700;
+        }
+
+        .pp-badge.verified { background: #cff0db; color: #15803d; }
+        .pp-badge.company  { background: #ede9fe; color: #7c3aed; }
+
+        .pp-meta-row {
+            display: flex; align-items: center; gap: 18px;
+            margin-bottom: 14px; flex-wrap: wrap;
+        }
+
+        .pp-meta-item {
+            display: flex; align-items: center; gap: 6px;
+            font-family: "DM Sans", sans-serif; font-size: 16px; font-weight: 500;
+            color: rgba(0,0,0,0.5);
+        }
+
+        .pp-meta-item i { color: #22c55e; font-size: 14px; }
+
+        .pp-stars { display: flex; align-items: center; gap: 3px; }
+        .pp-stars i { color: #22c55e; font-size: 15px; }
+        .pp-stars .empty { color: rgba(0,0,0,0.15); }
+        .pp-rating-label { font-family: "DM Sans", sans-serif; font-size: 15px; font-weight: 600; color: rgba(0,0,0,0.5); margin-left: 5px; }
+
+        .pp-bio {
+            font-family: "DM Sans", sans-serif;
+            font-size: 17px; font-weight: 400; color: rgba(0,0,0,0.7);
+            line-height: 1.7; margin-bottom: 16px;
+        }
+
+        .pp-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+
+        .pp-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            border-radius: 999px; padding: 6px 14px;
+            font-family: "DM Sans", sans-serif; font-size: 15px; font-weight: 500;
+        }
+
+        .pp-pill.skill  { background: #f9fcfa; color: rgba(0,0,0,0.65); }
+        .pp-pill.role   { background: #cff0db; color: #15803d; font-weight: 600; }
+        .pp-pill.role i { font-size: 12px; color: #15803d; }
+
+        /* ── About body ── */
+        .pp-about-text {
+            font-family: "DM Sans", sans-serif;
+            font-size: 17px; font-weight: 400;
+            color: rgba(0,0,0,0.72); line-height: 1.75;
+        }
+
+        .pp-about-text p { margin: 0 0 14px; }
+        .pp-about-text p:last-child { margin: 0; }
+
+        /* ── Job listing items ── */
+        .pp-job-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .pp-job-item {
+            display: flex; align-items: center; gap: 16px;
+            padding: 14px 16px; border-radius: 14px;
+            background: #f9fcfa; text-decoration: none;
+            transition: background 0.15s;
+        }
+
+        .pp-job-item:hover { background: #f0faf4; }
+
+        .pp-job-icon {
+            width: 48px; height: 48px; border-radius: 12px;
+            background: #cff0db; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0;
+        }
+
+        .pp-job-icon i { color: #22c55e; font-size: 20px; }
+
+        .pp-job-info { flex: 1; min-width: 0; }
+
+        .pp-job-title {
+            font-family: "DM Sans", sans-serif; font-size: 16px; font-weight: 700;
+            color: #000; margin-bottom: 4px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .pp-job-meta { display: flex; gap: 12px; }
+
+        .pp-job-meta span {
+            font-family: "DM Sans", sans-serif; font-size: 13px; font-weight: 500;
+            color: rgba(0,0,0,0.45); display: flex; align-items: center; gap: 4px;
+        }
+
+        .pp-job-meta i { color: #22c55e; font-size: 11px; }
+        .pp-job-salary { font-family: "DM Sans", sans-serif; font-size: 15px; font-weight: 700; color: #22c55e; white-space: nowrap; }
+
+        /* ── Reviews ── */
+        .pp-review-list { display: flex; flex-direction: column; gap: 0; }
+
+        .pp-review-item {
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+
+        .pp-review-item:first-child { padding-top: 0; }
+        .pp-review-item:last-child  { border-bottom: none; padding-bottom: 0; }
+
+        .pp-review-header {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
+        }
+
+        .pp-review-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: #7c3aed; color: #fff;
+            font-family: "DM Sans", sans-serif; font-size: 14px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+
+        .pp-review-name { font-family: "DM Sans", sans-serif; font-size: 16px; font-weight: 700; color: #000; flex: 1; }
+        .pp-review-date { font-family: "DM Sans", sans-serif; font-size: 14px; color: rgba(0,0,0,0.35); }
+
+        .pp-review-stars { display: flex; gap: 2px; margin-bottom: 8px; }
+        .pp-review-stars i { color: #22c55e; font-size: 14px; }
+
+        .pp-review-text {
+            font-family: "DM Sans", sans-serif; font-size: 16px; font-weight: 400;
+            color: rgba(0,0,0,0.68); line-height: 1.6;
+        }
+
+        /* ── Sidebar cards ── */
+        .pp-cta-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0px 3px 6px 1px rgba(0,0,0,0.12);
+            display: flex; flex-direction: column; gap: 12px;
+        }
+
+        .pp-btn {
+            width: 100%; height: 54px;
+            border-radius: 999px;
+            font-family: "DM Sans", sans-serif; font-size: 17px; font-weight: 700;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            gap: 8px; text-decoration: none; border: none;
+            transition: opacity 0.2s, background 0.15s, color 0.15s;
+        }
+
+        .pp-btn.green  { background: #22c55e; color: #fff; }
+        .pp-btn.green:hover { opacity: 0.88; }
+        .pp-btn.outline { background: #fff; border: 1.5px solid #22c55e; color: #22c55e; }
+        .pp-btn.outline:hover { background: #22c55e; color: #fff; }
+        .pp-btn.ghost { background: #f9fcfa; border: 1.5px solid #e5e7eb; color: rgba(0,0,0,0.6); height: 48px; font-size: 15px; }
+        .pp-btn.ghost:hover { border-color: #22c55e; color: #22c55e; }
+
+        .pp-divider { border: none; border-top: 1px solid rgba(0,0,0,0.07); }
+
+        /* Stats sidebar */
+        .pp-stat-list { display: flex; flex-direction: column; gap: 0; }
+
+        .pp-stat-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+
+        .pp-stat-row:first-child { padding-top: 0; }
+        .pp-stat-row:last-child  { border-bottom: none; padding-bottom: 0; }
+
+        .pp-stat-key {
+            font-family: "DM Sans", sans-serif; font-size: 16px; font-weight: 500;
+            color: rgba(0,0,0,0.5); display: flex; align-items: center; gap: 8px;
+        }
+
+        .pp-stat-key i { color: #22c55e; width: 16px; text-align: center; }
+
+        .pp-stat-val {
+            font-family: "DM Sans", sans-serif; font-size: 16px; font-weight: 700; color: #000;
+        }
+
+        /* Rating summary */
+        .pp-rating-big {
+            display: flex; align-items: center; gap: 20px;
+            padding-bottom: 18px; margin-bottom: 18px;
+            border-bottom: 1px solid rgba(0,0,0,0.07);
+        }
+
+        .pp-rating-num { font-family: "DM Sans", sans-serif; font-size: 52px; font-weight: 800; color: #22c55e; line-height: 1; }
+
+        .pp-rating-right { display: flex; flex-direction: column; gap: 4px; }
+
+        .pp-rating-stars { display: flex; gap: 3px; }
+        .pp-rating-stars i { color: #22c55e; font-size: 18px; }
+
+        .pp-rating-count { font-family: "DM Sans", sans-serif; font-size: 15px; color: rgba(0,0,0,0.4); }
+
+        /* Empty state */
+        .pp-empty {
+            text-align: center; padding: 32px 0;
+            color: rgba(0,0,0,0.25);
+        }
+
+        .pp-empty i { font-size: 36px; margin-bottom: 10px; display: block; }
+        .pp-empty p { font-family: "DM Sans", sans-serif; font-size: 16px; margin: 0; }
+
+        @media (max-width: 900px) {
+            .pp-container { flex-direction: column; }
+            .pp-sidebar { width: 100%; min-width: 0; order: -1; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <img>
+            <nav>
+                <span>Domov</span>
+                <span>Pozrieť ponuky</span>
+                <span>Hľadať firmy</span>
+            </nav>
+            <nav>
+                <button>Registrovať sa</button>
+                <button>Prihlásiť sa</button>
+            </nav>
+        </div>
+    </header>
+
+    <div class="pp-section">
+        <div class="pp-container">
+
+            <!-- ══ MAIN ══ -->
+            <div class="pp-main">
+                <a href="#" class="pp-back"><i class="fa-solid fa-arrow-left"></i> Späť</a>
+
+                <!-- Hero card -->
+                <div class="pp-hero-card">
+                    <div class="pp-banner"></div>
+                    <div class="pp-hero-body">
+                        <div class="pp-avatar-row">
+                            <div class="pp-avatar">PD</div>
+                        </div>
+                        <div class="pp-name-row">
+                            <span class="pp-name">Pavol Dr</span>
+                            <span class="pp-badge verified"><i class="fa-solid fa-circle-check"></i> Overené</span>
+                        </div>
+                        <div class="pp-meta-row">
+                            <div class="pp-meta-item pp-stars">
+                                <i class="fa-solid fa-star"></i>
+                                <i class="fa-solid fa-star"></i>
+                                <i class="fa-solid fa-star"></i>
+                                <i class="fa-solid fa-star"></i>
+                                <i class="fa-regular fa-star empty"></i>
+                                <span class="pp-rating-label">4,0 (6 hodnotení)</span>
+                            </div>
+                            <div class="pp-meta-item"><i class="fa-solid fa-location-dot"></i> Žilina</div>
+                            <div class="pp-meta-item"><i class="fa-solid fa-calendar"></i> Člen od januára 2025</div>
+                        </div>
+                        <p class="pp-bio">Skúsený brigádnik so záujmom o stavebné práce, záhradníctvo a upratovanie. Spoľahlivý, dochvíľny a ochotný pracovať aj na kratšie zákazky.</p>
+                        <div class="pp-pills" style="margin-bottom:12px">
+                            <span class="pp-pill skill">Murárstvo</span>
+                            <span class="pp-pill skill">Kosenie</span>
+                            <span class="pp-pill skill">Upratovanie</span>
+                            <span class="pp-pill skill">Maľovanie</span>
+                            <span class="pp-pill skill">Sťahovanie</span>
+                        </div>
+                        <div class="pp-pills">
+                            <span class="pp-pill role"><i class="fa-solid fa-hammer"></i> Potrebujem pomoc s prácou</span>
+                            <span class="pp-pill role"><i class="fa-solid fa-store"></i> Chcem aby ma klienti našli</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- About -->
+                <div class="pp-card">
+                    <h2 class="pp-card-title">O mne</h2>
+                    <div class="pp-about-text">
+                        <p>Som fyzicky zdatný a zodpovedný človek, ktorý rád pracuje rukami. Mám skúsenosti s rôznymi typmi brigád — od stavebných prác cez záhradníctvo až po upratovanie a sťahovanie.</p>
+                        <p>Pracoval som pre viaceré firmy v Žilinskom kraji a vždy som odovzdal kvalitu v dohodnutom čase. Rád beriem aj kratšie jednorazové zákazky a víkendové brigády.</p>
+                    </div>
+                </div>
+
+                <!-- Active listings -->
+                <div class="pp-card">
+                    <h2 class="pp-card-title">Aktívne ponuky</h2>
+                    <div class="pp-job-list">
+                        <a href="singularjob.html" class="pp-job-item">
+                            <div class="pp-job-icon"><i class="fa-solid fa-trowel-bricks"></i></div>
+                            <div class="pp-job-info">
+                                <div class="pp-job-title">Murárske a pomocné stavebné práce</div>
+                                <div class="pp-job-meta">
+                                    <span><i class="fa-solid fa-location-dot"></i>Žilina</span>
+                                    <span><i class="fa-solid fa-calendar"></i>od 20. 05. 2026</span>
+                                </div>
+                            </div>
+                            <span class="pp-job-salary">9,00 €/hod.</span>
+                        </a>
+                        <a href="singularjob.html" class="pp-job-item">
+                            <div class="pp-job-icon"><i class="fa-solid fa-leaf"></i></div>
+                            <div class="pp-job-info">
+                                <div class="pp-job-title">Kosenie a úprava záhrady</div>
+                                <div class="pp-job-meta">
+                                    <span><i class="fa-solid fa-location-dot"></i>Bytča a okolie</span>
+                                    <span><i class="fa-solid fa-calendar"></i>dohodou</span>
+                                </div>
+                            </div>
+                            <span class="pp-job-salary">8,00 €/hod.</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Reviews -->
+                <div class="pp-card">
+                    <h2 class="pp-card-title">Recenzie</h2>
+                    <div class="pp-rating-big">
+                        <span class="pp-rating-num">4,0</span>
+                        <div class="pp-rating-right">
+                            <div class="pp-rating-stars">
+                                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                                <i class="fa-regular fa-star"></i>
+                            </div>
+                            <span class="pp-rating-count">Priemer z 6 hodnotení</span>
+                        </div>
+                    </div>
+                    <div class="pp-review-list">
+                        <div class="pp-review-item">
+                            <div class="pp-review-header">
+                                <div class="pp-review-avatar">JN</div>
+                                <span class="pp-review-name">Jana Nováková</span>
+                                <span class="pp-review-date">Apríl 2026</span>
+                            </div>
+                            <div class="pp-review-stars">
+                                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                                <i class="fa-solid fa-star"></i>
+                            </div>
+                            <p class="pp-review-text">Výborná práca, prišiel načas, záhradu upravil do detailu. Spokojná na 100%.</p>
+                        </div>
+                        <div class="pp-review-item">
+                            <div class="pp-review-header">
+                                <div class="pp-review-avatar" style="background:#0ea5e9">TK</div>
+                                <span class="pp-review-name">Tomáš Kováč</span>
+                                <span class="pp-review-date">Marec 2026</span>
+                            </div>
+                            <div class="pp-review-stars">
+                                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                                <i class="fa-regular fa-star"></i>
+                            </div>
+                            <p class="pp-review-text">Solídna práca, bez problémov. Komunikácia v poriadku, odporúčam.</p>
+                        </div>
+                        <div class="pp-review-item">
+                            <div class="pp-review-header">
+                                <div class="pp-review-avatar" style="background:#f59e0b">LH</div>
+                                <span class="pp-review-name">Lucia Horváthová</span>
+                                <span class="pp-review-date">Február 2026</span>
+                            </div>
+                            <div class="pp-review-stars">
+                                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                                <i class="fa-solid fa-star"></i>
+                            </div>
+                            <p class="pp-review-text">Pomáhal so sťahovaním, bol veľmi šikovný a ochotný. Určite znova.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ SIDEBAR ══ -->
+            <div class="pp-sidebar">
+
+                <!-- Contact CTA -->
+                <div class="pp-cta-card">
+                    <a href="chat.html" class="pp-btn green"><i class="fa-solid fa-comment"></i> Napísať správu</a>
+                    <a href="addjob.html" class="pp-btn outline"><i class="fa-solid fa-briefcase"></i> Ponúknuť prácu</a>
+                    <hr class="pp-divider">
+                    <button class="pp-btn ghost"><i class="fa-regular fa-bookmark"></i> Uložiť profil</button>
+                    <button class="pp-btn ghost"><i class="fa-solid fa-share-nodes"></i> Zdieľať profil</button>
+                </div>
+
+                <!-- Stats -->
+                <div class="pp-card" style="padding:24px 28px">
+                    <h3 style="font-family:'DM Sans',sans-serif;font-size:18px;font-weight:800;color:#000;margin:0 0 16px">Štatistiky</h3>
+                    <div class="pp-stat-list">
+                        <div class="pp-stat-row">
+                            <span class="pp-stat-key"><i class="fa-solid fa-star"></i> Hodnotenie</span>
+                            <span class="pp-stat-val">4,0 ★</span>
+                        </div>
+                        <div class="pp-stat-row">
+                            <span class="pp-stat-key"><i class="fa-solid fa-comment"></i> Recenzií</span>
+                            <span class="pp-stat-val">6</span>
+                        </div>
+                        <div class="pp-stat-row">
+                            <span class="pp-stat-key"><i class="fa-solid fa-briefcase"></i> Aktívnych ponúk</span>
+                            <span class="pp-stat-val">2</span>
+                        </div>
+                        <div class="pp-stat-row">
+                            <span class="pp-stat-key"><i class="fa-solid fa-calendar"></i> Člen od</span>
+                            <span class="pp-stat-val">jan. 2025</span>
+                        </div>
+                        <div class="pp-stat-row">
+                            <span class="pp-stat-key"><i class="fa-solid fa-circle-check"></i> Overený</span>
+                            <span class="pp-stat-val" style="color:#22c55e">Áno</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ── JS sticky sidebar ── */
+        (function () {
+            const sidebar   = document.querySelector('.pp-sidebar');
+            const container = document.querySelector('.pp-container');
+            const OFFSET    = 100;
+            function update() {
+                const cTop = container.getBoundingClientRect().top;
+                const cH   = container.offsetHeight;
+                const sH   = sidebar.offsetHeight;
+                const t    = Math.min(Math.max(0, -cTop + OFFSET), cH - sH);
+                sidebar.style.transform = `translateY(${t}px)`;
+            }
+            window.addEventListener('scroll', update, { passive: true });
+            window.addEventListener('resize', update);
+        })();
+    </script>
+</body>
+</html>

@@ -18,24 +18,73 @@
  * and engagement-based boosts only.
  * - Scrolled past (impression, no view): -5
  *
- * "Scrolled past" = job has at least one row in job_impressions for this user
- * and no row in job_views for this user (or never opened after being shown).
+ * "Scrolled past" = job has a job_impressions row for this user (within
+ * ENGAGEMENT_RETENTION_DAYS) and no row in job_views for this user.
+ * Impressions are one row per (user_id, job_id); shown_at updates on re-show.
  * We apply a small penalty so such jobs rank lower.
  *
- * Engagement data is cached in-memory per user (TTL 5 min) to reduce DB load.
+ * Engagement data is cached per user (TTL 5 min) in Redis when `REDIS_URL` is set,
+ * otherwise in-memory, to reduce DB load.
  * Cache is invalidated when user records view, impressions, save, or apply.
  */
 
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from '../supabase/supabase.service';
+import { RedisService } from '../redis/redis.service';
+import { feedCacheEntriesGauge } from '../observability/metrics';
+
+const DEFAULT_ENGAGEMENT_RETENTION_DAYS = 90;
 
 /** TTL for engagement cache: 5 minutes. */
 const ENGAGEMENT_CACHE_TTL_MS = 5 * 60 * 1000;
+const ENGAGEMENT_CACHE_TTL_SEC = Math.ceil(ENGAGEMENT_CACHE_TTL_MS / 1000);
+const REDIS_KEY_PREFIX = 'jobbie:feed:eng:v1:';
 
 interface CachedEngagement {
   profile: FeedProfile | null;
   engagement: FeedEngagement;
   expiresAt: number;
+}
+
+interface SerializedEngagement {
+  appliedJobIds: string[];
+  savedJobIds: string[];
+  viewed: Array<{ jobId: string; viewedAt: string }>;
+  chattedJobIds: string[];
+  impressedJobIds: string[];
+  categoriesFromEngagement: string[];
+  jobTypesFromEngagement: string[];
+}
+
+interface RedisEngagementBlob {
+  profile: FeedProfile | null;
+  engagement: SerializedEngagement;
+  expiresAt: number;
+}
+
+function serializeEngagement(e: FeedEngagement): SerializedEngagement {
+  return {
+    appliedJobIds: [...e.appliedJobIds],
+    savedJobIds: [...e.savedJobIds],
+    viewed: e.viewed,
+    chattedJobIds: [...e.chattedJobIds],
+    impressedJobIds: [...e.impressedJobIds],
+    categoriesFromEngagement: [...e.categoriesFromEngagement],
+    jobTypesFromEngagement: [...e.jobTypesFromEngagement],
+  };
+}
+
+function reviveEngagement(s: SerializedEngagement): FeedEngagement {
+  return {
+    appliedJobIds: new Set(s.appliedJobIds),
+    savedJobIds: new Set(s.savedJobIds),
+    viewed: s.viewed,
+    chattedJobIds: new Set(s.chattedJobIds),
+    impressedJobIds: new Set(s.impressedJobIds),
+    categoriesFromEngagement: new Set(s.categoriesFromEngagement),
+    jobTypesFromEngagement: new Set(s.jobTypesFromEngagement),
+  };
 }
 
 /** Weights for scoring (documented in module comment above). */
@@ -83,16 +132,38 @@ export interface JobForScore {
 
 @Injectable()
 export class FeedScoringService {
-  private readonly engagementCache = new Map<
-    string,
-    CachedEngagement
-  >();
+  private readonly engagementCache = new Map<string, CachedEngagement>();
 
-  constructor(private supabase: SupabaseService) {}
+  private readonly maxMemoryEntries: number;
+
+  private readonly cacheTtlMs: number;
+
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly redis: RedisService,
+    private readonly config: ConfigService,
+  ) {
+    this.maxMemoryEntries = Math.max(
+      100,
+      Number(this.config.get<string>('FEED_CACHE_MAX_ENTRIES') ?? 5_000),
+    );
+    const ttlMsRaw = Number(this.config.get<string>('FEED_CACHE_TTL_MS') ?? ENGAGEMENT_CACHE_TTL_MS);
+    this.cacheTtlMs = Number.isFinite(ttlMsRaw) && ttlMsRaw > 0 ? ttlMsRaw : ENGAGEMENT_CACHE_TTL_MS;
+  }
+
+  private engagementRetentionCutoffIso(): string {
+    const raw = this.config.get<string>('ENGAGEMENT_RETENTION_DAYS');
+    const days =
+      raw === undefined || raw === ''
+        ? DEFAULT_ENGAGEMENT_RETENTION_DAYS
+        : Math.max(1, Math.floor(Number(raw)));
+    return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  }
 
   /** Invalidate cached engagement for a user (call after view/impressions/save/apply). */
   invalidateEngagement(userId: string): void {
     this.engagementCache.delete(userId);
+    void this.redis.del(`${REDIS_KEY_PREFIX}${userId}`);
   }
 
   async loadProfile(userId: string): Promise<FeedProfile | null> {
@@ -130,9 +201,30 @@ export class FeedScoringService {
     engagement: FeedEngagement;
   }> {
     const now = Date.now();
-    const cached = this.engagementCache.get(userId);
-    if (cached && cached.expiresAt > now) {
-      return { profile: cached.profile, engagement: cached.engagement };
+    if (this.redis.isEnabled()) {
+      const raw = await this.redis.get(`${REDIS_KEY_PREFIX}${userId}`);
+      if (raw) {
+        try {
+          const blob = JSON.parse(raw) as RedisEngagementBlob;
+          if (
+            blob.expiresAt > now &&
+            blob.engagement &&
+            Array.isArray(blob.engagement.appliedJobIds)
+          ) {
+            return {
+              profile: blob.profile ?? null,
+              engagement: reviveEngagement(blob.engagement),
+            };
+          }
+        } catch {
+          // ignore corrupt cache
+        }
+      }
+    } else {
+      const cached = this.engagementCache.get(userId);
+      if (cached && cached.expiresAt > now) {
+        return { profile: cached.profile, engagement: cached.engagement };
+      }
     }
 
     const profile = await this.loadProfile(userId);
@@ -175,11 +267,33 @@ export class FeedScoringService {
       jobTypesFromEngagement,
     };
 
-    this.engagementCache.set(userId, {
-      profile,
-      engagement,
-      expiresAt: now + ENGAGEMENT_CACHE_TTL_MS,
-    });
+    const expiresAt = now + this.cacheTtlMs;
+    if (this.redis.isEnabled()) {
+      const blob: RedisEngagementBlob = {
+        profile,
+        engagement: serializeEngagement(engagement),
+        expiresAt,
+      };
+      await this.redis.setex(
+        `${REDIS_KEY_PREFIX}${userId}`,
+        Math.ceil(this.cacheTtlMs / 1000),
+        JSON.stringify(blob),
+      );
+    } else {
+      this.engagementCache.set(userId, {
+        profile,
+        engagement,
+        expiresAt,
+      });
+      while (this.engagementCache.size > this.maxMemoryEntries) {
+        const oldest = this.engagementCache.keys().next().value;
+        if (!oldest) {
+          break;
+        }
+        this.engagementCache.delete(oldest);
+        feedCacheEntriesGauge.inc();
+      }
+    }
     return { profile, engagement };
   }
 
@@ -229,7 +343,8 @@ export class FeedScoringService {
       .getClient()
       .from('job_impressions')
       .select('job_id')
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .gte('shown_at', this.engagementRetentionCutoffIso());
     return [...new Set((data ?? []).map((r: { job_id: string }) => r.job_id))];
   }
 

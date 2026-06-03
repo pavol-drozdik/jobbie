@@ -1,82 +1,79 @@
 # JOBBIE
 
-A platform where **companies** post job offers and **job seekers** can browse, apply, and chat. Backend uses **Supabase** (PostgreSQL, Auth), **TypeScript**, and **Socket.IO** for chat.
+A Slovak job marketplace where **companies** post job offers and service listings, and **job seekers** browse, apply, build CVs, receive email alerts, and chat with employers.
 
-- **Backend**: TypeScript (NestJS) — auth (Supabase JWT), jobs, applications, Stripe payments, chat (Socket.IO)
-- **Database & Auth**: Supabase (PostgreSQL, RLS, Realtime for chat)
-- **Mobile / Web app**: Expo (React Native) — `app-rn/`
-- **Payments**: Stripe (subscriptions and job publishing)
+## Stack
+
+| Layer | Technology |
+|-------|------------|
+| **Web / mobile app** | Nuxt 3 PWA ([`app-pwa/`](app-pwa/)), optional Capacitor |
+| **API** | NestJS ([`backend-ts/`](backend-ts/)) |
+| **Database & auth** | Supabase (PostgreSQL, Auth, Storage, Realtime) |
+| **Payments** | Stripe (credit packs and subscriptions) |
+| **Search** | Typesense (jobs) |
+
+Full documentation: **[`docs/README.md`](docs/README.md)**
 
 ## Project structure
 
 ```
 JOBBIE/
-├── app-rn/           # Expo app (React Native + web)
-├── backend-ts/       # NestJS API
+├── app-pwa/          # Nuxt 3 SPA + PWA (primary UI)
+├── backend-ts/       # NestJS API (port 8000)
+├── jobbie-admin/     # Desktop admin panel (Electron, local only)
 ├── supabase/         # SQL migrations
-├── .gitignore
+├── docs/             # Technical documentation
+├── .cursor/rules/    # Cursor agent rules
 └── README.md
 ```
 
-## Backend setup (`backend-ts`)
+## Quick start (local)
 
-1. **Node 18+**. Install and run:
-
-   ```bash
-   cd backend-ts
-   npm install
-   ```
-
-2. **Environment**: copy `backend-ts/.env.example` to `backend-ts/.env` and set:
-
-   - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Settings → API)
-   - `JWT_JWKS_URI` or Supabase JWT verification (see backend auth module)
-   - `STRIPE_*` keys if using payments
-
-3. **Run**:
-
-   ```bash
-   npm run start:dev
-   ```
-
-   API runs at `http://localhost:3000` (or the port in `main.ts`). Global prefix is usually `api` (e.g. `GET /api/jobs`).
-
-## Supabase setup
+### 1. Supabase
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. Run the SQL in `supabase/migrations/` in order (SQL Editor or `supabase db push`):
-   - `20250222000001_initial_schema.sql` — profiles, job_offers, applications, chat_rooms, chat_messages, RLS
-   - Later migrations for profiles, job_offers extensions, subscription_plans, etc.
-3. In Auth → URL Configuration, set Site URL and redirect URLs for your app.
-4. Use the project URL and anon/service keys in `backend-ts/.env` and `app-rn/.env`.
+2. Apply migrations in [`supabase/migrations/`](supabase/migrations/) in timestamp order.
+3. Configure Auth redirect URLs for your PWA origin (e.g. `http://localhost:3001/auth/callback` and `http://localhost:3001/auth/reset-password`). Set Site URL to the origin root. See [docs/auth-security.md](docs/auth-security.md).
 
-## App setup (`app-rn`)
+See [docs/database-schema-conventions.md](docs/database-schema-conventions.md) and [docs/deployment.md](docs/deployment.md).
 
-1. **Node 18+**. Install and run:
+### 2. Backend API
 
-   ```bash
-   cd app-rn
-   npm install
-   ```
+```bash
+cd backend-ts
+npm install
+cp .env.example .env   # set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, etc.
+npm run start:dev
+```
 
-2. **Environment**: copy `app-rn/.env.example` to `app-rn/.env` and set:
+API: `http://localhost:8000` (global prefix `/api`).
 
-   - `EXPO_PUBLIC_API_BASE_URL` — backend API base (e.g. `http://localhost:3000` for dev)
-   - Supabase keys if the app talks to Supabase directly (e.g. auth)
+### 3. PWA
 
-3. **Run**:
+```bash
+cd app-pwa
+npm install
+cp .env.example .env   # set NUXT_PUBLIC_API_BASE_URL, Supabase keys
+npm run dev
+```
 
-   ```bash
-   npm start
-   ```
-
-   Then choose web, iOS simulator, or Android emulator. For web you may need a reachable API URL (e.g. tunnel or same network).
+App: `http://localhost:3001` (proxies `/api` to the backend in dev).
 
 ## Main flows
 
-- **Company**: Register → Post job (with category, compensation, etc.) → Publish (subscription/limits apply) → See applications → Chat with applicants.
-- **Job seeker**: Register → Browse and filter jobs → Apply → Chat with company from applications or job detail.
-- **Chat**: One room per application; backed by Socket.IO and Supabase.
+- **Company:** Register → create job or firm ad → publish (credits / plan limits) → manage applicants → chat.
+- **Job seeker:** Register → browse/search jobs → apply → CV builder → job email alerts → chat.
+- **Billing:** Credit packs and subscription plans via Stripe; ledger in Postgres — see [docs/payments-credits.md](docs/payments-credits.md).
+
+## Documentation
+
+| Topic | Doc |
+|-------|-----|
+| Overview & inventory | [docs/README.md](docs/README.md) |
+| Architecture | [docs/architecture.md](docs/architecture.md) |
+| Security | [docs/auth-security.md](docs/auth-security.md), [docs/SECURITY.md](docs/SECURITY.md) |
+| Deployment | [docs/deployment.md](docs/deployment.md) |
+| Changelog | [docs/changelog.md](docs/changelog.md) |
 
 ## License
 

@@ -76,10 +76,14 @@ create table if not exists public.chat_messages (
   room_id uuid not null references public.chat_rooms(id) on delete cascade,
   sender_id uuid not null references public.profiles(id) on delete cascade,
   content text not null,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  reply_to_message_id uuid null
 );
 
 create index if not exists idx_chat_messages_room_id_created_at on public.chat_messages(room_id, created_at);
+
+create index if not exists idx_chat_messages_reply_to_message_id on public.chat_messages (reply_to_message_id)
+  where reply_to_message_id is not null;
 
 create or replace function public.set_updated_at()
 returns trigger as $$

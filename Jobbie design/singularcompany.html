@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stavebná firma Novák — Jobbie</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+    <style>
+        .sc-section { padding: 110px 20px 80px; width: 100%; }
+
+        .sc-container {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: flex;
+            gap: 36px;
+            align-items: flex-start;
+        }
+
+        .sc-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: rgba(0,0,0,0.45);
+            text-decoration: none;
+            margin-bottom: 20px;
+            transition: color 0.15s;
+        }
+        .sc-back:hover { color: #22c55e; }
+
+        /* ── Columns ── */
+        .sc-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+        .sc-sidebar { width: 360px; min-width: 360px; display: flex; flex-direction: column; gap: 20px; }
+
+        /* ── Cards ── */
+        .sc-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 28px 32px;
+            box-shadow: 0 0 12px rgba(0,0,0,0.07);
+        }
+
+        .sc-section-title {
+            font-family: "DM Sans", sans-serif;
+            font-size: 20px;
+            font-weight: 800;
+            color: #000;
+            margin: 0 0 16px;
+        }
+
+        /* ── Hero banner ── */
+        .sc-hero {
+            width: 100%;
+            height: 200px;
+            border-radius: 20px;
+            background: linear-gradient(155deg, rgba(21,128,61,1) 0%, rgba(34,197,94,1) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sc-hero::before {
+            content: '';
+            position: absolute;
+            width: 300px; height: 300px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+            top: -80px; right: -60px;
+        }
+
+        .sc-hero::after {
+            content: '';
+            position: absolute;
+            width: 160px; height: 160px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.06);
+            bottom: -40px; left: 40px;
+        }
+
+        /* ── Company header card ── */
+        .sc-header-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 24px 32px;
+            box-shadow: 0 0 12px rgba(0,0,0,0.07);
+            display: flex;
+            gap: 22px;
+            align-items: flex-start;
+            margin-top: -48px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .sc-logo {
+            width: 86px;
+            height: 86px;
+            min-width: 86px;
+            border-radius: 999px;
+            background: #7c3aed;
+            color: #fff;
+            font-family: "DM Sans", sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+            margin-top: -42px;
+            flex-shrink: 0;
+        }
+
+        .sc-company-info { flex: 1; }
+
+        .sc-name-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .sc-name {
+            font-family: "DM Sans", sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            color: #000;
+            margin: 0;
+        }
+
+        .sc-verified {
+            background: #cff0db;
+            color: #15803d;
+            border-radius: 999px;
+            padding: 3px 10px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .sc-meta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .sc-meta-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #fafcfb;
+            border-radius: 999px;
+            padding: 5px 14px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(0,0,0,0.65);
+        }
+
+        .sc-meta-pill i { color: #22c55e; font-size: 12px; }
+
+        .sc-rating-row { display: flex; align-items: center; gap: 6px; }
+        .sc-stars { display: flex; gap: 2px; }
+        .sc-stars i { color: #22c55e; font-size: 15px; }
+        .sc-rating-text {
+            font-family: "DM Sans", sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: rgba(0,0,0,0.55);
+        }
+
+        /* ── About ── */
+        .sc-about-body {
+            font-family: "DM Sans", sans-serif;
+            font-size: 17px;
+            font-weight: 400;
+            color: rgba(0,0,0,0.72);
+            line-height: 1.7;
+        }
+
+        .sc-about-body p { margin: 0 0 12px; }
+        .sc-about-body p:last-child { margin: 0; }
+
+        /* ── Job listings ── */
+        .sc-job-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .sc-job-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            background: #fafcfb;
+            text-decoration: none;
+            transition: background 0.15s;
+            cursor: pointer;
+        }
+
+        .sc-job-item:hover { background: #f0faf4; }
+
+        .sc-job-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            background: #cff0db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .sc-job-icon i { color: #22c55e; font-size: 18px; }
+
+        .sc-job-info { flex: 1; min-width: 0; }
+
+        .sc-job-title {
+            font-family: "DM Sans", sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: #000;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sc-job-meta { display: flex; gap: 12px; }
+
+        .sc-job-meta span {
+            font-family: "DM Sans", sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(0,0,0,0.45);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .sc-job-meta i { color: #22c55e; font-size: 11px; }
+
+        .sc-job-salary {
+            font-family: "DM Sans", sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            color: #22c55e;
+            white-space: nowrap;
+        }
+
+        /* ── Sidebar ── */
+        .sc-contact-list { display: flex; flex-direction: column; gap: 14px; }
+
+        .sc-contact-item { display: flex; align-items: center; gap: 12px; }
+
+        .sc-contact-icon {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            border-radius: 10px;
+            background: #f0faf4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sc-contact-icon i { color: #22c55e; font-size: 15px; }
+
+        .sc-contact-label {
+            font-family: "DM Sans", sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(0,0,0,0.4);
+        }
+
+        .sc-contact-value {
+            font-family: "DM Sans", sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: #000;
+        }
+
+        /* ── Stats ── */
+        .sc-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .sc-stat {
+            background: #fafcfb;
+            border-radius: 12px;
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .sc-stat-value {
+            font-family: "DM Sans", sans-serif;
+            font-size: 22px;
+            font-weight: 800;
+            color: #22c55e;
+        }
+
+        .sc-stat-label {
+            font-family: "DM Sans", sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(0,0,0,0.45);
+        }
+
+        /* ── CTA ── */
+        .sc-btn-contact {
+            width: 100%;
+            height: 54px;
+            background: #22c55e;
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .sc-btn-contact:hover { opacity: 0.88; }
+
+        .sc-btn-save {
+            width: 100%;
+            height: 48px;
+            background: #fff;
+            color: rgba(0,0,0,0.65);
+            border: 1.5px solid #e5e7eb;
+            border-radius: 999px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: border-color 0.15s, color 0.15s;
+        }
+
+        .sc-btn-save:hover { border-color: #22c55e; color: #22c55e; }
+
+        /* ── Reviews ── */
+        .sc-review-list { display: flex; flex-direction: column; gap: 16px; }
+
+        .sc-review-item { border-bottom: 1px solid rgba(0,0,0,0.06); padding-bottom: 16px; }
+        .sc-review-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+        .sc-review-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+
+        .sc-review-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #7c3aed;
+            color: #fff;
+            font-family: "DM Sans", sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .sc-review-name { font-family: "DM Sans", sans-serif; font-size: 15px; font-weight: 700; color: #000; flex: 1; }
+        .sc-review-date { font-family: "DM Sans", sans-serif; font-size: 13px; color: rgba(0,0,0,0.35); }
+        .sc-review-stars { display: flex; gap: 2px; margin-bottom: 6px; }
+        .sc-review-stars i { color: #22c55e; font-size: 13px; }
+        .sc-review-text { font-family: "DM Sans", sans-serif; font-size: 15px; font-weight: 400; color: rgba(0,0,0,0.65); line-height: 1.5; }
+
+        @media (max-width: 900px) {
+            .sc-container { flex-direction: column; }
+            .sc-sidebar { width: 100%; min-width: 0; order: -1; }
+            .sc-header-card { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <img>
+            <nav>
+                <span>Domov</span>
+                <span>Pozrieť ponuky</span>
+                <span>Hľadať firmy</span>
+            </nav>
+            <nav>
+                <button>Registrovať sa</button>
+                <button>Prihlásiť sa</button>
+            </nav>
+        </div>
+    </header>
+
+    <div class="sc-section">
+        <div class="sc-container">
+
+            <!-- ══ MAIN ══ -->
+            <div class="sc-main">
+                <a href="#" class="sc-back"><i class="fa-solid fa-arrow-left"></i> Späť na firmy</a>
+
+                <div class="sc-hero"></div>
+
+                <div class="sc-header-card">
+                    <div class="sc-logo">SN</div>
+                    <div class="sc-company-info">
+                        <div class="sc-name-row">
+                            <h1 class="sc-name">Stavebná firma Novák</h1>
+                            <span class="sc-verified"><i class="fa-solid fa-circle-check"></i> Overené</span>
+                        </div>
+                        <div class="sc-meta-row">
+                            <div class="sc-meta-pill"><i class="fa-solid fa-location-dot"></i> Žilina, Slovensko</div>
+                            <div class="sc-meta-pill"><i class="fa-solid fa-briefcase"></i> Stavba &amp; Rekonštrukcia</div>
+                            <div class="sc-meta-pill"><i class="fa-solid fa-building"></i> SZČO / Živnostník</div>
+                        </div>
+                        <div class="sc-rating-row">
+                            <div class="sc-stars">
+                                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                                <i class="fa-regular fa-star"></i>
+                            </div>
+                            <span class="sc-rating-text">4,2 · 18 hodnotení</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sc-card">
+                    <h2 class="sc-section-title">O firme</h2>
+                    <div class="sc-about-body">
+                        <p>Stavebná firma Novák pôsobí na trhu od roku 2014. Špecializujeme sa na realizáciu stavieb na kľúč, rekonštrukcie bytov a domov, murárske práce a zatepľovanie fasád v Žilinskom a okolí.</p>
+                        <p>Naším cieľom je poskytnúť zákazníkom kvalitné stavebné práce za rozumnú cenu a v dohodnutom termíne. Pracujeme so spoľahlivými dodávateľmi a používame certifikované materiály.</p>
+                        <p>Za posledných 10 rokov sme úspešne dokončili viac ako 150 projektov a tešíme sa na ďalšiu spoluprácu.</p>
+                    </div>
+                </div>
+
+                <div class="sc-card">
+                    <h2 class="sc-section-title">Hodnotenia</h2>
+                    <div class="sc-review-list">
+                        <div class="sc-review-item">
+                            <div class="sc-review-header">
+                                <div class="sc-review-avatar">JN</div>
+                                <span class="sc-review-name">Jana Nováková</span>
+                                <span class="sc-review-date">Apríl 2026</span>
+                            </div>
+                            <div class="sc-review-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                            <p class="sc-review-text">Výborná spolupráca, práca hotová načas a v perfektnej kvalite. Rozhodne odporúčam!</p>
+                        </div>
+                        <div class="sc-review-item">
+                            <div class="sc-review-header">
+                                <div class="sc-review-avatar" style="background:#0ea5e9">TK</div>
+                                <span class="sc-review-name">Tomáš Kováč</span>
+                                <span class="sc-review-date">Marec 2026</span>
+                            </div>
+                            <div class="sc-review-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i></div>
+                            <p class="sc-review-text">Spokojný so zrealizovanou prácou. Komunikácia bola na úrovni, cena zodpovedala kvalite.</p>
+                        </div>
+                        <div class="sc-review-item">
+                            <div class="sc-review-header">
+                                <div class="sc-review-avatar" style="background:#f59e0b">PB</div>
+                                <span class="sc-review-name">Peter Blaho</span>
+                                <span class="sc-review-date">Február 2026</span>
+                            </div>
+                            <div class="sc-review-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i></div>
+                            <p class="sc-review-text">Solídna firma, pán Novák je profesionál. Práce prebehli bez problémov.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ SIDEBAR ══ -->
+            <div class="sc-sidebar">
+                <div class="sc-card" style="display:flex;flex-direction:column;gap:12px">
+                    <button class="sc-btn-contact">Kontaktovať firmu</button>
+                    <button class="sc-btn-save"><i class="fa-regular fa-bookmark"></i> Uložiť firmu</button>
+                </div>
+
+                <div class="sc-card">
+                    <h3 class="sc-section-title">Kontakt</h3>
+                    <div class="sc-contact-list">
+                        <div class="sc-contact-item">
+                            <div class="sc-contact-icon"><i class="fa-solid fa-globe"></i></div>
+                            <div><div class="sc-contact-label">Web</div><div class="sc-contact-value">www.novaktorent.sk</div></div>
+                        </div>
+                        <div class="sc-contact-item">
+                            <div class="sc-contact-icon"><i class="fa-solid fa-phone"></i></div>
+                            <div><div class="sc-contact-label">Telefón</div><div class="sc-contact-value">+421 905 123 456</div></div>
+                        </div>
+                        <div class="sc-contact-item">
+                            <div class="sc-contact-icon"><i class="fa-solid fa-envelope"></i></div>
+                            <div><div class="sc-contact-label">E-mail</div><div class="sc-contact-value">novak@stavba.sk</div></div>
+                        </div>
+                        <div class="sc-contact-item">
+                            <div class="sc-contact-icon"><i class="fa-solid fa-location-dot"></i></div>
+                            <div><div class="sc-contact-label">Adresa</div><div class="sc-contact-value">Hlavná 12, 010 01 Žilina</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const sidebar   = document.querySelector('.sc-sidebar');
+            const container = document.querySelector('.sc-container');
+            const OFFSET    = 100;
+            function update() {
+                const cTop = container.getBoundingClientRect().top;
+                const cH   = container.offsetHeight;
+                const sH   = sidebar.offsetHeight;
+                const t    = Math.min(Math.max(0, -cTop + OFFSET), cH - sH);
+                sidebar.style.transform = `translateY(${t}px)`;
+            }
+            window.addEventListener('scroll', update, { passive: true });
+            window.addEventListener('resize', update);
+        })();
+    </script>
+</body>
+</html>

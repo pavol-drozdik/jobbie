@@ -1,0 +1,29 @@
+---
+description: Supabase RLS and public catalog access patterns
+globs: supabase/migrations/**
+alwaysApply: false
+---
+
+# Supabase RLS & migrations
+
+## Public catalog data
+- Anonymous/authenticated clients must read jobs and company ads via **`job_offers_public`** and **`company_ads_public`** views, not base tables with contact/tax columns.
+- Do not grant `SELECT` on sensitive columns of `job_offers` / `company_ads` to `anon`.
+
+## Billing & credits
+- Tables `credit_lots`, `credit_ledger`, `cv_contact_unlocks`, `stripe_credit_fulfillments`, `job_promotions`, `banner_ads`: **deny all** for `anon` and `authenticated`; mutations via `service_role` + RPCs only.
+- RPCs (service_role only): `grant_credits`, `spend_credits`, `expire_due_credit_lots` — see `20260620120000_billing_cennik.sql`, `20260621152000_db_security_rpcs.sql`.
+- Revoke broad DML grants on service-only tables: `20260621151000_revoke_overbroad_grants.sql`.
+- Full checklist: `.cursor/rules/database-engineering.mdc`.
+
+## User data
+- `profiles`: `auth.uid() = id` for read/update own row only.
+- `cv_personal_info`: sensitive columns (`email`, `phone`, `birth_date`, `gender`, street/postal) revoked from `authenticated`/`anon`; employers use Nest + `cv_contact_unlocks` (see `20260622120000_gdpr_privacy_enforcement.sql`).
+- `consent_events`: users `SELECT` own rows; inserts via service_role only.
+
+## New tables
+- Default deny; add explicit policies per role.
+- If a table is marketing-public, use a view with an explicit column list and document it in the migration comment.
+
+## PWA
+- Production app uses Nest API (`useApi`), not direct Supabase for business logic. RLS still matters because `NUXT_PUBLIC_SUPABASE_ANON_KEY` is in the bundle.

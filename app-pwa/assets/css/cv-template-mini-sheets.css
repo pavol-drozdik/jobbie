@@ -1,0 +1,71 @@
+/* Template picker thumbnails — mirrors jobbiecvdesign mini-sheet styles. */
+.mini-sheet {
+  height: 220px;
+  width: 100%;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.mini-sheet.atlas {
+  background: linear-gradient(90deg, #17324a 0 29%, #ffffff 29% 100%);
+}
+
+.mini-sheet.atlas::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(circle at 14% 14%, rgba(255, 255, 255, 0.7) 0 16px, transparent 18px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0 70px, transparent 70px 100%),
+    linear-gradient(180deg, #ffffff 0 100%);
+  background-size: 100% 100%, 100% 100%, 71% 100%;
+  background-position: left top, left top, right top;
+  background-repeat: no-repeat;
+}
+
+.mini-sheet.editorial {
+  background: linear-gradient(180deg, #dcc2a2 0 60px, #ffffff 60px 100%);
+}
+
+.mini-sheet.editorial::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(180deg, rgba(22, 40, 49, 0.9) 0 2px, transparent 2px 100%),
+    linear-gradient(90deg, transparent 0 50%, rgba(22, 40, 49, 0.08) 50% 51%, transparent 51% 100%),
+    linear-gradient(180deg, transparent 0 72px, rgba(22, 40, 49, 0.09) 72px 100%);
+}
+
+.mini-sheet.minimalist {
+  background: #ffffff;
+  border: 1px solid rgba(19, 33, 47, 0.08);
+}
+
+.mini-sheet.minimalist::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(180deg, rgba(19, 33, 47, 0.92) 0 2px, transparent 2px 100%),
+    linear-gradient(180deg, transparent 0 40px, rgba(19, 33, 47, 0.06) 40px 42px, transparent 42px 100%),
+    linear-gradient(90deg, transparent 0 64%, rgba(19, 33, 47, 0.08) 64% 65%, transparent 65% 100%);
+}
+
+.mini-sheet.monochrome {
+  background: linear-gradient(180deg, #111111 0 68px, #ffffff 68px 100%);
+}
+
+.mini-sheet.monochrome::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(90deg, transparent 0 63%, rgba(17, 17, 17, 0.08) 63% 64%, transparent 64% 100%),
+    linear-gradient(180deg, transparent 0 92px, rgba(17, 17, 17, 0.08) 92px 100%);
+}

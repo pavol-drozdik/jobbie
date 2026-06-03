@@ -1,0 +1,47 @@
+---
+description: Database schema, migrations, and credit/billing engineering standards
+globs: supabase/migrations/**,backend-ts/src/**
+alwaysApply: false
+---
+
+# Database engineering checklist
+
+Apply on every migration or backend change touching Postgres data.
+
+## Schema
+
+1. **Filterable data** — use structured columns (`text`, `int`, `timestamptz`, `text[]`), not JSON-only. Add btree or GIN indexes for predicates used in list/search.
+2. **Foreign keys** — reference `profiles`, `cvs`, `job_offers`, or parent entities. Document intentional exceptions (e.g. `chat_messages.reply_to_message_id`).
+3. **Unique external IDs** — partial unique indexes on Stripe `payment_intent_id`, `stripe_invoice_id`, `stripe_subscription_id`, alert dedupe keys.
+4. **Migration naming** — `YYYYMMDDHHMMSS_description.sql`; comment whether table is public catalog, user-owned, or service-only.
+
+## Credits & payments
+
+5. **Balance changes** — only via `grant_credits`, `spend_credits`, `expire_due_credit_lots`, or `reverse_spend_for_ref` RPCs (service_role). Never update `profiles.credits` from app code.
+6. **Ledger** — record purchase, spend, grant, refund (`payment_refund` spend), expiration, and adjustment (`spend_reversal`) with `transaction_type`.
+7. **Idempotency** — `stripe_credit_fulfillments` PK; `idx_credit_ledger_spend_ref_unique`; partial uniques on `payment_intent_id` / `stripe_invoice_id`; `spend_credits` returns existing row on duplicate ref.
+8. **Publish flows** — draft → charge → activate; Nest calls `reverse_spend_for_ref` if activate/update fails after spend.
+9. **RPC reference** — `20260621153000_billing_rpc_idempotent_reverse.sql` (latest `spend_credits` + `grant_credits` + `reverse_spend_for_ref`).
+
+## Security
+
+9. **RLS** — `enable row level security`; default deny; explicit policies. Billing/audit tables: deny `anon`/`authenticated`; Nest uses `service_role` only.
+10. **Grants** — do not grant `INSERT/UPDATE/DELETE` on `anon` for service-only tables (see `20260621151000_revoke_overbroad_grants.sql`).
+11. **Audit** — sensitive mutations log `audit_events` via `AuditService`.
+
+## APIs
+
+12. **Large lists** — keyset cursor on `(created_at, id)` or documented exception; max `limit` 100. Use `backend-ts/src/common/keyset-cursor.ts`.
+13. **Legacy** — do not extend `saved_searches.query_json`; extend `job_email_alerts` structured columns instead.
+
+## Scalability indexes (list/catalog)
+
+15. **Company ads public list** — `idx_company_ads_active_list` on `(created_at desc)` where `status = 'active' and ends_at is not null` (not `now()` in predicate — not immutable).
+16. **Employer CV browse** — `idx_cvs_employer_visible_updated` on `(updated_at desc)` where `visible_to_employers = true`.
+17. **Applicants by job** — `idx_applications_job_created` on `(job_id, created_at desc)`.
+18. See [docs/scalability.md](../../docs/scalability.md) and `.cursor/rules/scalability.mdc` for pagination and list-vs-detail API rules.
+
+## Ops
+
+14. **Backups** — follow [docs/database-operations-runbook.md](../../docs/database-operations-runbook.md); quarterly restore drill.
+19. **Slow queries** — review Supabase Query performance after new list filters; [docs/observability-runbook.md](../../docs/observability-runbook.md).

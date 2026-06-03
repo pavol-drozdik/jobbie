@@ -1,0 +1,11 @@
+[Unit]
+Description=Nightly JOBBIE Typesense and optional Supabase backup
+
+[Timer]
+OnCalendar=*-*-* 03:20:00
+Persistent=true
+RandomizedDelaySec=900
+Unit=nestjs-typesense-backup.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,51 @@
+name: PWA bundle budget
+
+on:
+  pull_request:
+    paths:
+      - 'app-pwa/**'
+      - '.github/workflows/pwa-bundle-budget.yml'
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app-pwa
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: app-pwa/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build with bundle analyzer
+        run: npm run build:analyze
+        env:
+          NUXT_PUBLIC_API_BASE_URL: http://127.0.0.1:8000/api
+          NUXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NUXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+
+      - name: Check largest JS chunk budget
+        run: |
+          set -euo pipefail
+          MAX_CHUNK_BYTES=819200
+          LARGEST=$(find .output/public/_nuxt -name '*.js' -type f -printf '%s %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f1 || echo 0)
+          echo "Largest JS chunk: ${LARGEST} bytes (budget ${MAX_CHUNK_BYTES})"
+          if [ "${LARGEST}" -gt "${MAX_CHUNK_BYTES}" ]; then
+            echo "::warning::Largest JS chunk (${LARGEST} B) exceeds soft budget (${MAX_CHUNK_BYTES} B). See docs/frontend-performance.md"
+          fi
+
+      - name: Upload bundle stats
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pwa-bundle-stats
+          path: app-pwa/stats/bundle-stats.html
+          if-no-files-found: ignore

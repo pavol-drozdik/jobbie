@@ -1,0 +1,114 @@
+{
+  "name": "jobbie-admin",
+  "version": "1.0.0",
+  "private": true,
+  "description": "JOBBIE desktop admin panel (local only)",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev:api": "npm run start:dev --prefix api",
+    "dev:app": "npm run dev --prefix app",
+    "dev": "concurrently -k \"npm run dev:api\" \"npm run dev:app\" \"wait-on http://127.0.0.1:5199 http://127.0.0.1:3099/health && cross-env JOBBIE_ADMIN_SKIP_API_SPAWN=1 electron .\"",
+    "build:api": "npm run build --prefix api",
+    "build:app": "npm run build --prefix app",
+    "build:app:pack": "npm run build:api && npm run build:app",
+    "clean:release": "node scripts/clean-release-run.cjs",
+    "build:win": "npm run build:app:pack && node scripts/win-build.cjs",
+    "build:win:unsigned": "npm run build:app:pack && node scripts/win-build.cjs --unsigned",
+    "build:mac": "npm run build:app:pack && electron-builder --mac",
+    "build:mac:unsigned": "npm run build:app:pack && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac",
+    "icons:generate": "node scripts/generate-icons.mjs",
+    "install:all": "npm install --prefix api && npm install --prefix app",
+    "build:win:force": "npm run build:app:pack && node scripts/win-build.cjs --force"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^34.0.0",
+    "electron-builder": "^25.1.8",
+    "png-to-ico": "^3.0.1",
+    "png2icons": "^2.0.1",
+    "sharp": "^0.34.2",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "sk.jobbie.admin",
+    "productName": "JOBBIE Admin",
+    "directories": {
+      "output": "release",
+      "buildResources": "build",
+      "app": "."
+    },
+    "files": [
+      "electron/**/*",
+      "api/dist/**/*",
+      "api/package.json",
+      "api/node_modules/**/*",
+      "app/dist/**/*",
+      "!release-build-*{,/**/*}",
+      "!release-fresh{,/**/*}"
+    ],
+    "asarUnpack": [
+      "api/dist/**/*",
+      "api/node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "api/.env.example",
+        "to": "api.env.example"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false,
+      "artifactName": "JOBBIE-Admin-${version}-Setup.${ext}"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.business",
+      "artifactName": "JOBBIE-Admin-${version}.${ext}",
+      "hardenedRuntime": false
+    },
+    "dmg": {
+      "title": "JOBBIE Admin ${version}",
+      "icon": "build/icon.icns",
+      "iconSize": 96,
+      "window": {
+        "width": 540,
+        "height": 380
+      },
+      "contents": [
+        {
+          "x": 140,
+          "y": 200
+        },
+        {
+          "x": 400,
+          "y": 200,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "JOBBIE Admin",
+      "uninstallDisplayName": "JOBBIE Admin",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}

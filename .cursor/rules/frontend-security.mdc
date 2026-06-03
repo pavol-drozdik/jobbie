@@ -1,0 +1,54 @@
+---
+description: Frontend security and UX guardrails for app-pwa
+alwaysApply: true
+---
+
+# Frontend security & UX (app-pwa)
+
+## Forms
+- Validate all required fields **before** `api()` / submit. Reuse `app-pwa/utils/validation/` helpers or feature validators (`validateForPublish`, `validateCompanyAdForPublish`).
+- Never rely on HTML5 alone for security-sensitive input.
+
+## Auth & permissions
+- Protected routes: `definePageMeta({ middleware: ['auth'] })` (+ role middleware when needed).
+- **Never trust** `useCan()`, `v-if`, or middleware alone for authorization — backend must enforce ownership and roles.
+- Use `useCan(action)` only to hide/disable UI. Map new actions in `composables/useCan.ts`.
+- Do not add client-only checks for `permissionScopes` without a matching API guard.
+
+## API client
+- Use `useApi()` for Nest calls. Pass `{ skipSessionExpiry: true }` only for token-based public endpoints (preferences, unsubscribe).
+- On 401, session expiry is handled globally — do not swallow 401 on protected routes.
+
+## HTML & rich text
+- Never use `v-html` on user content without `sanitizeJobDescriptionHtml` / `sanitizeRichHtml` from `utils/sanitize-job-description-html.ts`.
+- Sanitize on **save and display**. Prefer plain text when rich formatting is not required.
+
+## Uploads
+- **Never** `supabase.storage.from(...).upload()` without a server signed token — use `useStorageUpload()` (init → `uploadToSignedUrl` → finalize). Do not send file bodies to Nest except legacy CV `data_url` JSON.
+- Call `validateImageUpload(file, opts)` from `utils/image-compression.ts` before compress/upload.
+- Chat documents: `validateChatDocumentUpload` from `utils/upload-policy.ts`.
+- Set explicit `accept` from `upload-policy.ts` constants. Chat size: `CHAT_MEDIA_MAX_BYTES`.
+- See `.cursor/rules/security-storage.mdc` for the full server pipeline.
+
+## Lists & search
+- Long lists: pagination or infinite scroll (cursor/offset), not unbounded fetch.
+- Debounce search/filter with `useDebouncedFn` from `utils/debounce.ts` (not ad-hoc `setTimeout`).
+- Use `AppAsyncListState` for loading, error (with retry), and empty states.
+- Catalog/pricing: prefer `useCatalogBilling()`, `useCreditPacks()`, `usePlans()` — see [docs/scalability.md](../../docs/scalability.md).
+
+## Images
+- Remote list/detail images: `loading="lazy"` and `decoding="async"`. Omit lazy for above-the-fold LCP/hero and local blob previews.
+
+## Destructive actions
+- Use `useConfirm()` / `AppConfirmDialog` — not `window.confirm`.
+- Confirm: delete CV, cancel subscription, remove passkey, unpublish/delete job or ad, bulk irreversible actions.
+
+## Mobile
+- Settings (`nastavenia/*`), payments (`cennik`, Stripe), publish flows (`add.vue`, `CompanyAdForm`): full-width CTAs on small screens, `flex-wrap`, safe-area padding.
+
+## Privacy
+- Do not put tax IDs, billing details, or private contact info in `useState` defaults, SSR payload, or public composables. SPA is client-rendered; still avoid logging sensitive fields.
+- CV editor: expose `visible_to_employers` and `show_contact_details` toggles (`CvVisibilityToggle`, settings in `CvPrototypeShell`).
+- GDPR export: `/nastavenia/export-udajov` → `GET /api/profiles/me/export` (ZIP download).
+- Account delete: `useConfirm()` then phrase confirm in `SettingsDangerZone`; `POST /api/profiles/me/delete`.
+- Unsubscribe page must include `job_email_alerts` in valid categories when adding notification types.

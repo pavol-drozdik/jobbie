@@ -12,6 +12,10 @@ node_modules/
 # Build outputs
 dist/
 build/
+app-pwa/.nuxt/
+app-pwa/.output/
+app-pwa/dist/
+app-pwa/127.0.0.1/
 .next/
 out/
 *.tsbuildinfo
@@ -31,6 +35,8 @@ ios/build/
 *.xcuserstate
 
 # NestJS / Node
+backend-ts/src/**/*.js
+backend-ts/src/**/*.d.ts
 coverage/
 .nyc_output/
 *.log
@@ -55,3 +61,6 @@ Thumbs.db
 # Testing and misc
 *.local
 .cache/
+
+# Local archives (not source)
+JOBBIE.zip

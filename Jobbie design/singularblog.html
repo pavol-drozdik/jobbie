@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ako napísať životopis — Jobbie Blog</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+    <style>
+        .sb-section { padding: 110px 20px 80px; width: 100%; }
+
+        .sb-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 48px;
+            align-items: flex-start;
+        }
+
+        /* ── Back ── */
+        .sb-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: rgba(0,0,0,0.45);
+            text-decoration: none;
+            margin-bottom: 24px;
+            transition: color 0.15s;
+        }
+        .sb-back:hover { color: #22c55e; }
+
+        /* ── Main article ── */
+        .sb-main { flex: 1; min-width: 0; }
+
+        .sb-cat-pill {
+            display: inline-flex;
+            align-items: center;
+            background: #cff0db;
+            border-radius: 999px;
+            padding: 5px 14px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            color: #15803d;
+            margin-bottom: 16px;
+        }
+
+        .sb-title {
+            font-family: "DM Sans", sans-serif;
+            font-size: 46px;
+            font-weight: 800;
+            color: #000;
+            line-height: 1.12;
+            margin: 0 0 22px;
+        }
+
+        /* ── Meta row ── */
+        .sb-meta {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+        }
+
+        .sb-author-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sb-author-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #7c3aed;
+            color: #fff;
+            font-family: "DM Sans", sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sb-author-info {}
+
+        .sb-author-name {
+            font-family: "DM Sans", sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            color: #000;
+        }
+
+        .sb-author-role {
+            font-family: "DM Sans", sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(0,0,0,0.4);
+        }
+
+        .sb-meta-sep { color: rgba(0,0,0,0.15); font-size: 18px; }
+
+        .sb-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            color: rgba(0,0,0,0.45);
+        }
+
+        .sb-meta-item i { color: #22c55e; font-size: 13px; }
+
+        .sb-share-btn {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #fafcfb;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 999px;
+            padding: 7px 16px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(0,0,0,0.55);
+            cursor: pointer;
+            transition: border-color 0.15s, color 0.15s;
+        }
+
+        .sb-share-btn:hover { border-color: #22c55e; color: #22c55e; }
+
+        /* ── Hero image ── */
+        .sb-hero-img {
+            width: 100%;
+            height: 420px;
+            border-radius: 20px;
+            overflow: hidden;
+            background: #cff0db;
+            margin-bottom: 36px;
+        }
+
+        .sb-hero-img img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* ── Article body ── */
+        .sb-article {
+            font-family: "DM Sans", sans-serif;
+            font-size: 18px;
+            font-weight: 400;
+            color: rgba(0,0,0,0.78);
+            line-height: 1.75;
+        }
+
+        .sb-article h2 {
+            font-size: 28px;
+            font-weight: 800;
+            color: #000;
+            margin: 36px 0 14px;
+            line-height: 1.2;
+        }
+
+        .sb-article h3 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #000;
+            margin: 28px 0 10px;
+        }
+
+        .sb-article p { margin: 0 0 18px; }
+
+        .sb-article ul, .sb-article ol {
+            margin: 0 0 18px;
+            padding-left: 24px;
+        }
+
+        .sb-article li { margin-bottom: 8px; }
+
+        .sb-article strong { font-weight: 700; color: #000; }
+
+        .sb-article a { color: #22c55e; text-decoration: underline; }
+
+        .sb-article blockquote {
+            border-left: 4px solid #22c55e;
+            background: #f0faf4;
+            border-radius: 0 12px 12px 0;
+            padding: 18px 22px;
+            margin: 24px 0;
+            font-style: italic;
+            color: rgba(0,0,0,0.65);
+        }
+
+        .sb-article hr {
+            border: none;
+            border-top: 1px solid rgba(0,0,0,0.08);
+            margin: 32px 0;
+        }
+
+        .sb-article .highlight-box {
+            background: #cff0db;
+            border-radius: 16px;
+            padding: 22px 26px;
+            margin: 28px 0;
+        }
+
+        .sb-article .highlight-box p { margin: 0; color: #15803d; font-weight: 600; }
+
+        /* ── Tags ── */
+        .sb-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 40px;
+            padding-top: 28px;
+            border-top: 1px solid rgba(0,0,0,0.08);
+        }
+
+        .sb-tag {
+            background: #fafcfb;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 999px;
+            padding: 6px 14px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(0,0,0,0.5);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .sb-tag:hover { background: #22c55e; border-color: #22c55e; color: #fff; }
+
+        /* ── Author box ── */
+        .sb-author-box {
+            background: #fff;
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 0 12px rgba(0,0,0,0.07);
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            margin-top: 32px;
+        }
+
+        .sb-author-box-avatar {
+            width: 64px;
+            height: 64px;
+            min-width: 64px;
+            border-radius: 50%;
+            background: #7c3aed;
+            color: #fff;
+            font-family: "DM Sans", sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sb-author-box-name {
+            font-family: "DM Sans", sans-serif;
+            font-size: 18px;
+            font-weight: 800;
+            color: #000;
+            margin-bottom: 4px;
+        }
+
+        .sb-author-box-role {
+            font-family: "DM Sans", sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(0,0,0,0.4);
+            margin-bottom: 10px;
+        }
+
+        .sb-author-box-bio {
+            font-family: "DM Sans", sans-serif;
+            font-size: 15px;
+            font-weight: 400;
+            color: rgba(0,0,0,0.6);
+            line-height: 1.55;
+            margin: 0;
+        }
+
+        /* ── Sidebar ── */
+        .sb-sidebar { width: 300px; min-width: 300px; display: flex; flex-direction: column; gap: 20px; }
+
+        .sb-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 0 12px rgba(0,0,0,0.07);
+        }
+
+        .sb-card-title {
+            font-family: "DM Sans", sans-serif;
+            font-size: 17px;
+            font-weight: 800;
+            color: #000;
+            margin: 0 0 16px;
+        }
+
+        /* ── TOC ── */
+        .sb-toc-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .sb-toc-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(0,0,0,0.55);
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.15s, color 0.15s;
+            border-left: 3px solid transparent;
+        }
+
+        .sb-toc-item:hover, .sb-toc-item.active {
+            background: #f0faf4;
+            color: #22c55e;
+            border-left-color: #22c55e;
+        }
+
+        .sb-toc-num {
+            font-size: 12px;
+            font-weight: 700;
+            color: #22c55e;
+            min-width: 18px;
+        }
+
+        /* ── Related sidebar ── */
+        .sb-related-list { display: flex; flex-direction: column; gap: 14px; }
+
+        .sb-related-item {
+            display: flex;
+            gap: 12px;
+            text-decoration: none;
+            transition: opacity 0.15s;
+        }
+
+        .sb-related-item:hover { opacity: 0.75; }
+
+        .sb-related-thumb {
+            width: 60px;
+            height: 60px;
+            min-width: 60px;
+            border-radius: 10px;
+            background: #cff0db;
+            overflow: hidden;
+        }
+
+        .sb-related-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+        .sb-related-title {
+            font-family: "DM Sans", sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: #000;
+            line-height: 1.3;
+            margin-bottom: 4px;
+        }
+
+        .sb-related-date {
+            font-family: "DM Sans", sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(0,0,0,0.35);
+        }
+
+        /* ── Newsletter box ── */
+        .sb-newsletter { background: linear-gradient(155deg, rgba(21,128,61,1) 0%, rgba(34,197,94,1) 100%); border-radius: 20px; padding: 24px; }
+
+        .sb-newsletter-title {
+            font-family: "DM Sans", sans-serif;
+            font-size: 18px;
+            font-weight: 800;
+            color: #fff;
+            margin: 0 0 6px;
+        }
+
+        .sb-newsletter-sub {
+            font-family: "DM Sans", sans-serif;
+            font-size: 14px;
+            font-weight: 400;
+            color: rgba(255,255,255,0.8);
+            margin: 0 0 16px;
+            line-height: 1.4;
+        }
+
+        .sb-newsletter-input {
+            width: 100%;
+            height: 46px;
+            border: none;
+            border-radius: 999px;
+            padding: 0 16px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 15px;
+            outline: none;
+            margin-bottom: 10px;
+        }
+
+        .sb-newsletter-btn {
+            width: 100%;
+            height: 44px;
+            background: #000;
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+
+        .sb-newsletter-btn:hover { opacity: 0.8; }
+
+        @media (max-width: 900px) {
+            .sb-container { flex-direction: column; }
+            .sb-sidebar { width: 100%; min-width: 0; }
+            .sb-title { font-size: 32px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <img>
+            <nav>
+                <span>Domov</span>
+                <span>Pozrieť ponuky</span>
+                <span>Hľadať firmy</span>
+            </nav>
+            <nav>
+                <button>Registrovať sa</button>
+                <button>Prihlásiť sa</button>
+            </nav>
+        </div>
+    </header>
+
+    <div class="sb-section">
+        <div class="sb-container">
+
+            <!-- ══ ARTICLE ══ -->
+            <div class="sb-main">
+                <a href="blogarchive.html" class="sb-back"><i class="fa-solid fa-arrow-left"></i> Späť na blog</a>
+
+                <span class="sb-cat-pill">Tipy</span>
+
+                <h1 class="sb-title">Ako napísať životopis, keď nemáš žiadne skúsenosti</h1>
+
+                <div class="sb-meta">
+                    <div class="sb-author-row">
+                        <div class="sb-author-avatar">JN</div>
+                        <div class="sb-author-info">
+                            <div class="sb-author-name">Jana Nováková</div>
+                            <div class="sb-author-role">Kariérna poradkyňa</div>
+                        </div>
+                    </div>
+                    <span class="sb-meta-sep">|</span>
+                    <span class="sb-meta-item"><i class="fa-regular fa-calendar"></i> 16. 05. 2026</span>
+                    <span class="sb-meta-item"><i class="fa-regular fa-clock"></i> 5 min čítania</span>
+                    <button class="sb-share-btn"><i class="fa-solid fa-share-nodes"></i> Zdieľať</button>
+                </div>
+
+                <div class="sb-hero-img">
+                    <img src="assets/jobbie-def-thumb.webp" alt="Životopis">
+                </div>
+
+                <div class="sb-article">
+                    <p>Hľadáš prvú prácu alebo brigádu, ale nevieš, čo napísať do životopisu? Nevzdávaj to. Aj bez pracovných skúseností môžeš vytvoriť životopis, ktorý zaujme. Stačí vedieť, <strong>čo zdôrazniť a ako sa prezentovať</strong>.</p>
+
+                    <div class="highlight-box"><p>💡 Tip: Firmy nie vždy hľadajú skúsenosti — hľadajú ochotu učiť sa a správny prístup.</p></div>
+
+                    <h2 id="zaciname">1. Začni štruktúrou, nie obsahom</h2>
+                    <p>Predtým, ako začneš písať, rozhodni sa pre štruktúru. Dobrý životopis bez skúseností zvyčajne obsahuje tieto časti:</p>
+                    <ul>
+                        <li><strong>Osobné údaje</strong> — meno, kontakt, LinkedIn alebo portfólio</li>
+                        <li><strong>Krátky profesijný súhrn</strong> — 2–3 vety o tom, kto si a čo hľadáš</li>
+                        <li><strong>Vzdelanie</strong> — škola, odbor, relevantné predmety</li>
+                        <li><strong>Zručnosti</strong> — technické aj mäkké</li>
+                        <li><strong>Projekty a aktivity</strong> — aj školské projekty sa počítajú</li>
+                        <li><strong>Dobrovoľníctvo alebo záujmy</strong> — ak sú relevantné</li>
+                    </ul>
+
+                    <h2 id="skusenosti">2. Nahraď pracovné skúsenosti niečím iným</h2>
+                    <p>Nemáš pracovné skúsenosti? Skvelé — teda, nie skvelé, ale riešiteľné. Nahraď túto sekciu projektmi, aktivitami alebo vzdelávaním. Napríklad:</p>
+                    <ul>
+                        <li>Školský projekt alebo bakalárska práca relevantná pre pozíciu</li>
+                        <li>Freelance alebo dobrovoľnícka práca</li>
+                        <li>Online kurzy (Coursera, Udemy, Google certificates)</li>
+                        <li>Vlastný blog, YouTube kanál alebo GitHub repozitár</li>
+                    </ul>
+
+                    <blockquote>„Každý začínal niekde. Zamestnávatelia vedia, že prvú prácu nemôžeš mať bez toho, aby ti niekto dal šancu."</blockquote>
+
+                    <h2 id="zrucnosti">3. Zručnosti sú tvoja hlavná zbraň</h2>
+                    <p>Bez skúseností je sekcia zručností najdôležitejšou časťou tvojho životopisu. Rozdeľ ich na:</p>
+                    <ul>
+                        <li><strong>Technické zručnosti</strong> — MS Office, základy programovania, práca s nástrojmi</li>
+                        <li><strong>Jazyky</strong> — slovenčina, angličtina, nemčina… s úrovňou (A1–C2)</li>
+                        <li><strong>Mäkké zručnosti</strong> — komunikácia, tímová práca, riešenie problémov</li>
+                    </ul>
+
+                    <hr>
+
+                    <h2 id="format">4. Dbaj na formát a prehľadnosť</h2>
+                    <p>Personalisti strávia nad životopisom v priemere <strong>7 sekúnd</strong>. Preto musí byť tvoj životopis prehľadný, čistý a ľahko čitateľný.</p>
+                    <ul>
+                        <li>Maximálne 1 strana A4</li>
+                        <li>Čitateľné písmo (Arial, Calibri) veľkosť 10–12</li>
+                        <li>Dostatok bielej plochy — neplň každý centimeter textom</li>
+                        <li>Uložiť ako PDF pred odoslaním</li>
+                    </ul>
+
+                    <h2 id="chyby">5. Najčastejšie chyby, ktorých sa vyvaruj</h2>
+                    <p>Aj skvelý obsah môže pokaziť zlé podanie. Na čo si dať pozor:</p>
+                    <ul>
+                        <li>Preklepy a gramatické chyby — používaj kontrolu pravopisu</li>
+                        <li>Generický súhrn — „Som komunikatívny tímový hráč" nehovorí nič</li>
+                        <li>Fotka v neformálnom prostredí</li>
+                        <li>Nepravdivé informácie — firmy si vždy overia</li>
+                    </ul>
+
+                    <div class="highlight-box"><p>✅ Hotovo? Pošli životopis niekomu na prečítanie pred odoslaním. Cudzie oči zachytia to, čo ty prehliadneš.</p></div>
+                </div>
+
+                <!-- Tags -->
+                <div class="sb-tags">
+                    <span class="sb-tag">#životopis</span>
+                    <span class="sb-tag">#prvápráca</span>
+                    <span class="sb-tag">#tipy</span>
+                    <span class="sb-tag">#kariéra</span>
+                    <span class="sb-tag">#brigáda</span>
+                </div>
+
+                <!-- Author box -->
+                <div class="sb-author-box">
+                    <div class="sb-author-box-avatar">JN</div>
+                    <div>
+                        <div class="sb-author-box-name">Jana Nováková</div>
+                        <div class="sb-author-box-role">Kariérna poradkyňa · Jobbie</div>
+                        <p class="sb-author-box-bio">Jana sa venuje kariérnemu poradenstvu už viac ako 8 rokov. Pomohla stovkám mladých ľudí nájsť ich prvú prácu alebo brigádu. Na Jobbie pravidelne píše o trhu práce a kariérnom rozvoji.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ SIDEBAR ══ -->
+            <div class="sb-sidebar">
+
+                <!-- TOC -->
+                <div class="sb-card">
+                    <h3 class="sb-card-title">Obsah článku</h3>
+                    <div class="sb-toc-list">
+                        <a href="#zaciname" class="sb-toc-item active"><span class="sb-toc-num">1</span> Začni štruktúrou</a>
+                        <a href="#skusenosti" class="sb-toc-item"><span class="sb-toc-num">2</span> Nahraď skúsenosti</a>
+                        <a href="#zrucnosti" class="sb-toc-item"><span class="sb-toc-num">3</span> Zručnosti</a>
+                        <a href="#format" class="sb-toc-item"><span class="sb-toc-num">4</span> Formát</a>
+                        <a href="#chyby" class="sb-toc-item"><span class="sb-toc-num">5</span> Chyby</a>
+                    </div>
+                </div>
+
+                <!-- Related -->
+                <div class="sb-card">
+                    <h3 class="sb-card-title">Súvisiace články</h3>
+                    <div class="sb-related-list">
+                        <a href="#" class="sb-related-item">
+                            <div class="sb-related-thumb"><img src="assets/jobbie-def-thumb.webp" alt=""></div>
+                            <div>
+                                <div class="sb-related-title">10 otázok na pohovore a ako na ne odpovedať</div>
+                                <div class="sb-related-date">12. 05. 2026</div>
+                            </div>
+                        </a>
+                        <a href="#" class="sb-related-item">
+                            <div class="sb-related-thumb"><img src="assets/jobbie-def-thumb.webp" alt=""></div>
+                            <div>
+                                <div class="sb-related-title">Ako si pýtať vyššiu mzdu bez strachu</div>
+                                <div class="sb-related-date">28. 04. 2026</div>
+                            </div>
+                        </a>
+                        <a href="#" class="sb-related-item">
+                            <div class="sb-related-thumb"><img src="assets/jobbie-def-thumb.webp" alt=""></div>
+                            <div>
+                                <div class="sb-related-title">5 zručností žiadaných na trhu práce</div>
+                                <div class="sb-related-date">15. 04. 2026</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Newsletter -->
+                <div class="sb-newsletter">
+                    <h3 class="sb-newsletter-title">Novinky do e-mailu</h3>
+                    <p class="sb-newsletter-sub">Dostávaj nové články a tipy priamo do schránky.</p>
+                    <input class="sb-newsletter-input" type="email" placeholder="tvoj@email.sk">
+                    <button class="sb-newsletter-btn">Odoberať</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ── JS sticky sidebar ── */
+        (function () {
+            const sidebar   = document.querySelector('.sb-sidebar');
+            const container = document.querySelector('.sb-container');
+            const OFFSET    = 100;
+            function update() {
+                const cTop = container.getBoundingClientRect().top;
+                const cH   = container.offsetHeight;
+                const sH   = sidebar.offsetHeight;
+                const t    = Math.min(Math.max(0, -cTop + OFFSET), cH - sH);
+                sidebar.style.transform = `translateY(${t}px)`;
+            }
+            window.addEventListener('scroll', update, { passive: true });
+            window.addEventListener('resize', update);
+        })();
+
+        /* ── TOC active highlight ── */
+        const headings = document.querySelectorAll('.sb-article h2[id]');
+        const tocItems = document.querySelectorAll('.sb-toc-item');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            headings.forEach(h => {
+                if (window.scrollY >= h.offsetTop - 130) current = h.id;
+            });
+            tocItems.forEach(item => {
+                item.classList.toggle('active', item.getAttribute('href') === '#' + current);
+            });
+        }, { passive: true });
+    </script>
+</body>
+</html>

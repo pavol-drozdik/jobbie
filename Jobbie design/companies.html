@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div>
+            <img>
+            <nav>
+                <span>Domov</span>
+                <span>Pozrieť ponuky</span>
+                <span>Hľadať firmy</span>
+            </nav>
+            <nav>
+                <button>Registrovať sa</button>
+                <button>Prihlásiť sa</button>
+            </nav>
+        </div>
+    </header>
+    <section>
+        <div class="search-container">
+            <div class="col-flex">
+                    <div class="search w-50">
+                    <form id="search-bar">
+                        <input type="text" placeholder="Aká brigáda ?">
+                        <div class="search-circle">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </div>
+                    </form>
+                </div>
+                <div class="w-50 justify-content-end" style="gap: 12px;">
+                    <button class="tier-btn tier-gold"><i class="fa-solid fa-medal"></i></button>
+                    <button class="tier-btn tier-silver"><i class="fa-solid fa-medal"></i></button>
+                    <button class="tier-btn tier-bronze"><i class="fa-solid fa-medal"></i></button>
+                    <button>
+                        Len urgentné
+                    </button>
+                </div>
+            </div>
+            <div class="filter-selectors">
+                <div class="custom-dropdown filter-dropdown">
+                    <div class="custom-dropdown-trigger">
+                        <span>Kategória</span>
+                        <i class="fa-solid fa-chevron-down odmena-chevron"></i>
+                    </div>
+                    <div class="custom-dropdown-panel">
+                        <div class="dropdown-option" data-value="stavba">Stavba</div>
+                        <div class="dropdown-option" data-value="upratovanie">Upratovanie</div>
+                        <div class="dropdown-option" data-value="zahrada">Záhrada</div>
+                        <div class="dropdown-option" data-value="doprava">Doprava</div>
+                        <div class="dropdown-option" data-value="skladovanie">Skladovanie</div>
+                    </div>
+                </div>
+                <div class="custom-dropdown filter-dropdown">
+                    <div class="custom-dropdown-trigger">
+                        <span>Lokalita</span>
+                        <i class="fa-solid fa-chevron-down odmena-chevron"></i>
+                    </div>
+                    <div class="custom-dropdown-panel">
+                        <div class="dropdown-option" data-value="bratislava">Bratislava</div>
+                        <div class="dropdown-option" data-value="zilina">Žilina</div>
+                        <div class="dropdown-option" data-value="kosice">Košice</div>
+                        <div class="dropdown-option" data-value="presov">Prešov</div>
+                        <div class="dropdown-option" data-value="banska-bystrica">Banská Bystrica</div>
+                    </div>
+                </div>
+                <div class="custom-dropdown filter-dropdown">
+                    <div class="custom-dropdown-trigger">
+                        <span>Zoradiť</span>
+                        <i class="fa-solid fa-chevron-down odmena-chevron"></i>
+                    </div>
+                    <div class="custom-dropdown-panel">
+                        <div class="dropdown-option" data-value="najnovsie">Najnovšie</div>
+                        <div class="dropdown-option" data-value="odmena">Odmena</div>
+                        <div class="dropdown-option" data-value="relevancia">Relevancia</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+<section class="job-posts">
+        <div class="grid">
+            <div class="card">
+                <div class="image-cont">
+                    <div class="category-pill">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Stavba</span>
+                    </div>
+                    <div class="new-pill">Nové</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Vypratanie garáže a kosenie trávnika</h3>
+                    <div class="card-detail">
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>Dlhé pole</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-calendar"></i>
+                            <span>16. 05. 2026 - 18. 05. 2026</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                            <span>6,70 €/hod.</span>
+                        </div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="profile">
+                            <div class="profile-picture">
+                                MP
+                            </div>
+                            <span class="profile-name">Martin Paček</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+<div class="card">
+                <div class="image-cont">
+                    <div class="category-pill">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Stavba</span>
+                    </div>
+                    <div class="new-pill">Nové</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Vypratanie garáže a kosenie trávnika</h3>
+                    <div class="card-detail">
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>Dlhé pole</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-calendar"></i>
+                            <span>16. 05. 2026 - 18. 05. 2026</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                            <span>6,70 €/hod.</span>
+                        </div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="profile">
+                            <div class="profile-picture">
+                                MP
+                            </div>
+                            <span class="profile-name">Martin Paček</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+<div class="card">
+                <div class="image-cont">
+                    <div class="category-pill">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Stavba</span>
+                    </div>
+                    <div class="new-pill">Nové</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Vypratanie garáže a kosenie trávnika</h3>
+                    <div class="card-detail">
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>Dlhé pole</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-calendar"></i>
+                            <span>16. 05. 2026 - 18. 05. 2026</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                            <span>6,70 €/hod.</span>
+                        </div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="profile">
+                            <div class="profile-picture">
+                                MP
+                            </div>
+                            <span class="profile-name">Martin Paček</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+<div class="card">
+                <div class="image-cont">
+                    <div class="category-pill">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Stavba</span>
+                    </div>
+                    <div class="new-pill">Nové</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Vypratanie garáže a kosenie trávnika</h3>
+                    <div class="card-detail">
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>Dlhé pole</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-calendar"></i>
+                            <span>16. 05. 2026 - 18. 05. 2026</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                            <span>6,70 €/hod.</span>
+                        </div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="profile">
+                            <div class="profile-picture">
+                                MP
+                            </div>
+                            <span class="profile-name">Martin Paček</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+<div class="card">
+                <div class="image-cont">
+                    <div class="category-pill">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Stavba</span>
+                    </div>
+                    <div class="new-pill">Nové</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Vypratanie garáže a kosenie trávnika</h3>
+                    <div class="card-detail">
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>Dlhé pole</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-calendar"></i>
+                            <span>16. 05. 2026 - 18. 05. 2026</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                            <span>6,70 €/hod.</span>
+                        </div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="profile">
+                            <div class="profile-picture">
+                                MP
+                            </div>
+                            <span class="profile-name">Martin Paček</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+<div class="card">
+                <div class="image-cont">
+                    <div class="category-pill">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Stavba</span>
+                    </div>
+                    <div class="new-pill">Nové</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Vypratanie garáže a kosenie trávnika</h3>
+                    <div class="card-detail">
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>Dlhé pole</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-calendar"></i>
+                            <span>16. 05. 2026 - 18. 05. 2026</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                            <span>6,70 €/hod.</span>
+                        </div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="profile">
+                            <div class="profile-picture">
+                                MP
+                            </div>
+                            <span class="profile-name">Martin Paček</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+<div class="card">
+                <div class="image-cont">
+                    <div class="category-pill">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Stavba</span>
+                    </div>
+                    <div class="new-pill">Nové</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Vypratanie garáže a kosenie trávnika</h3>
+                    <div class="card-detail">
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>Dlhé pole</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-calendar"></i>
+                            <span>16. 05. 2026 - 18. 05. 2026</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                            <span>6,70 €/hod.</span>
+                        </div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="profile">
+                            <div class="profile-picture">
+                                MP
+                            </div>
+                            <span class="profile-name">Martin Paček</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+<div class="card">
+                <div class="image-cont">
+                    <div class="category-pill">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Stavba</span>
+                    </div>
+                    <div class="new-pill">Nové</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Vypratanie garáže a kosenie trávnika</h3>
+                    <div class="card-detail">
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>Dlhé pole</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-calendar"></i>
+                            <span>16. 05. 2026 - 18. 05. 2026</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                            <span>6,70 €/hod.</span>
+                        </div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="profile">
+                            <div class="profile-picture">
+                                MP
+                            </div>
+                            <span class="profile-name">Martin Paček</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+                        <div class="card">
+                <div class="image-cont">
+                    <div class="category-pill">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Stavba</span>
+                    </div>
+                    <div class="new-pill">Nové</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Vypratanie garáže a kosenie trávnika</h3>
+                    <div class="card-detail">
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>Dlhé pole</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-calendar"></i>
+                            <span>16. 05. 2026 - 18. 05. 2026</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                            <span>6,70 €/hod.</span>
+                        </div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="profile">
+                            <div class="profile-picture">
+                                MP
+                            </div>
+                            <span class="profile-name">Martin Paček</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+<div class="card">
+                <div class="image-cont">
+                    <div class="category-pill">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Stavba</span>
+                    </div>
+                    <div class="new-pill">Nové</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Vypratanie garáže a kosenie trávnika</h3>
+                    <div class="card-detail">
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>Dlhé pole</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-calendar"></i>
+                            <span>16. 05. 2026 - 18. 05. 2026</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                            <span>6,70 €/hod.</span>
+                        </div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="profile">
+                            <div class="profile-picture">
+                                MP
+                            </div>
+                            <span class="profile-name">Martin Paček</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+<div class="card">
+                <div class="image-cont">
+                    <div class="category-pill">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Stavba</span>
+                    </div>
+                    <div class="new-pill">Nové</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Vypratanie garáže a kosenie trávnika</h3>
+                    <div class="card-detail">
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>Dlhé pole</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-calendar"></i>
+                            <span>16. 05. 2026 - 18. 05. 2026</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                            <span>6,70 €/hod.</span>
+                        </div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="profile">
+                            <div class="profile-picture">
+                                MP
+                            </div>
+                            <span class="profile-name">Martin Paček</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+<div class="card">
+                <div class="image-cont">
+                    <div class="category-pill">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Stavba</span>
+                    </div>
+                    <div class="new-pill">Nové</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Vypratanie garáže a kosenie trávnika</h3>
+                    <div class="card-detail">
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>Dlhé pole</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-calendar"></i>
+                            <span>16. 05. 2026 - 18. 05. 2026</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                            <span>6,70 €/hod.</span>
+                        </div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="profile">
+                            <div class="profile-picture">
+                                MP
+                            </div>
+                            <span class="profile-name">Martin Paček</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+<div class="card">
+                <div class="image-cont">
+                    <div class="category-pill">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Stavba</span>
+                    </div>
+                    <div class="new-pill">Nové</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Vypratanie garáže a kosenie trávnika</h3>
+                    <div class="card-detail">
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>Dlhé pole</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-calendar"></i>
+                            <span>16. 05. 2026 - 18. 05. 2026</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                            <span>6,70 €/hod.</span>
+                        </div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="profile">
+                            <div class="profile-picture">
+                                MP
+                            </div>
+                            <span class="profile-name">Martin Paček</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+<div class="card">
+                <div class="image-cont">
+                    <div class="category-pill">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Stavba</span>
+                    </div>
+                    <div class="new-pill">Nové</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Vypratanie garáže a kosenie trávnika</h3>
+                    <div class="card-detail">
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>Dlhé pole</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-calendar"></i>
+                            <span>16. 05. 2026 - 18. 05. 2026</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                            <span>6,70 €/hod.</span>
+                        </div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="profile">
+                            <div class="profile-picture">
+                                MP
+                            </div>
+                            <span class="profile-name">Martin Paček</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+<div class="card">
+                <div class="image-cont">
+                    <div class="category-pill">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Stavba</span>
+                    </div>
+                    <div class="new-pill">Nové</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Vypratanie garáže a kosenie trávnika</h3>
+                    <div class="card-detail">
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>Dlhé pole</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-calendar"></i>
+                            <span>16. 05. 2026 - 18. 05. 2026</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                            <span>6,70 €/hod.</span>
+                        </div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="profile">
+                            <div class="profile-picture">
+                                MP
+                            </div>
+                            <span class="profile-name">Martin Paček</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+<div class="card">
+                <div class="image-cont">
+                    <div class="category-pill">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Stavba</span>
+                    </div>
+                    <div class="new-pill">Nové</div>
+                    <img src="assets/jobbie-def-thumb.webp">
+                </div>
+                <div class="card-content">
+                    <h3>Vypratanie garáže a kosenie trávnika</h3>
+                    <div class="card-detail">
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>Dlhé pole</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-calendar"></i>
+                            <span>16. 05. 2026 - 18. 05. 2026</span>
+                        </div>
+                        <div class="card-detail-item">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                            <span>6,70 €/hod.</span>
+                        </div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="footer">
+                        <div class="profile">
+                            <div class="profile-picture">
+                                MP
+                            </div>
+                            <span class="profile-name">Martin Paček</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>
+        function initFilterDropdown(dropdown) {
+            const trigger = dropdown.querySelector('.custom-dropdown-trigger');
+            const label   = trigger.querySelector('span');
+            const options = dropdown.querySelectorAll('.dropdown-option');
+            const defaultLabel = label.textContent;
+
+            trigger.addEventListener('click', e => {
+                e.stopPropagation();
+                document.querySelectorAll('.custom-dropdown.open').forEach(d => {
+                    if (d !== dropdown) d.classList.remove('open');
+                });
+                dropdown.classList.toggle('open');
+            });
+
+            options.forEach(option => {
+                option.addEventListener('click', () => {
+                    options.forEach(o => o.classList.remove('active'));
+                    option.classList.add('active');
+                    label.textContent = option.textContent;
+                    dropdown.classList.remove('open');
+                });
+            });
+        }
+
+        document.addEventListener('click', e => {
+            document.querySelectorAll('.custom-dropdown.open').forEach(d => {
+                if (!d.contains(e.target)) d.classList.remove('open');
+            });
+        });
+
+        // Init all simple dropdowns
+        document.querySelectorAll('.filter-dropdown:not(#odmena-dropdown)').forEach(initFilterDropdown);
+
+        // Init odmena dropdown with extra plat od logic
+        const odmenaDropdown = document.getElementById('odmena-dropdown');
+        const odmenaLabel    = document.getElementById('odmena-label');
+        const platDiv        = document.getElementById('dropdown-plat');
+        const platInput      = document.getElementById('plat-od');
+        let selectedValue    = '';
+
+        odmenaDropdown.querySelector('.custom-dropdown-trigger').addEventListener('click', e => {
+            e.stopPropagation();
+            document.querySelectorAll('.custom-dropdown.open').forEach(d => {
+                if (d !== odmenaDropdown) d.classList.remove('open');
+            });
+            odmenaDropdown.classList.toggle('open');
+        });
+
+        odmenaDropdown.querySelectorAll('.dropdown-option').forEach(option => {
+            option.addEventListener('click', () => {
+                odmenaDropdown.querySelectorAll('.dropdown-option').forEach(o => o.classList.remove('active'));
+                option.classList.add('active');
+                selectedValue = option.dataset.value;
+
+                const showPlat = selectedValue === 'hodinova' || selectedValue === 'fixna';
+                platDiv.classList.toggle('visible', showPlat);
+                if (!showPlat) { platInput.value = ''; updateOdmenaLabel(); odmenaDropdown.classList.remove('open'); }
+                else { updateOdmenaLabel(); platInput.focus(); }
+            });
+        });
+
+        platInput.addEventListener('input', updateOdmenaLabel);
+
+        document.querySelectorAll('.tier-btn').forEach(btn => {
+            btn.addEventListener('click', () => btn.classList.toggle('active'));
+        });
+
+        function updateOdmenaLabel() {
+            const names = { hodinova: 'Hodinová', fixna: 'Fixná', dohodou: 'Dohodou' };
+            if (!selectedValue) { odmenaLabel.textContent = 'Typ odmeny'; return; }
+            const amount = platInput.value;
+            odmenaLabel.textContent = amount ? `${names[selectedValue]} · ${amount} €` : names[selectedValue];
+        }
+    </script>

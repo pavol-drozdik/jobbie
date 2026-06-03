@@ -1,9 +1,20 @@
-import { Controller, Get, Query, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  Res,
+  Req,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { SupabaseService } from './supabase/supabase.service';
+import { metricsRegistry } from './observability/metrics';
+import { timingSafeStringEqual } from './common/timing-safe.util';
+import { Public } from './auth/public.decorator';
 
 @Controller()
+@Public()
 export class AppController {
   constructor(
     private config: ConfigService,
@@ -47,14 +58,70 @@ export class AppController {
     return { status: 'ok' };
   }
 
-  /** Returns the Supabase project ref and a quick check if the backend can read profiles (service_role bypasses RLS; anon would get 0 rows). */
+  /**
+   * Prometheus scrape endpoint.
+   *
+   * METRICS_BEARER_TOKEN is required in every environment (not only
+   * production). Preview / staging deployments inherit prod-like data and
+   * leaving the endpoint open in non-production exposes request paths,
+   * user counts, and latency histograms for reconnaissance.
+   */
+  @Get('metrics')
+  async metrics(@Req() req: Request, @Res() res: Response): Promise<void> {
+    const token = this.config.get<string>('METRICS_BEARER_TOKEN')?.trim();
+    if (!token) {
+      res.status(503).send('Metrics disabled: set METRICS_BEARER_TOKEN');
+      return;
+    }
+    const auth = req.headers.authorization?.trim() ?? '';
+    const expected = `Bearer ${token}`;
+    if (!timingSafeStringEqual(auth, expected)) {
+      res.status(401).send('Unauthorized');
+      return;
+    }
+    res.setHeader('Content-Type', metricsRegistry.contentType);
+    res.send(await metricsRegistry.metrics());
+  }
+
+  /** Aggregate counts for marketing / home (no auth). */
+  @Get('stats/public')
+  async publicStats(): Promise<{ workers_looking_for_work: number }> {
+    const { count, error } = await this.supabase
+      .getClient()
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('worker_role', true);
+    if (error) {
+      return { workers_looking_for_work: 0 };
+    }
+    return { workers_looking_for_work: count ?? 0 };
+  }
+
+  /**
+   * Returns the Supabase project ref and a quick DB probe. Requires header
+   * `x-debug-supabase-secret` matching DEBUG_SUPABASE_PROJECT_SECRET in every
+   * environment (used to be open in non-production, which leaked project
+   * info from preview / staging deployments).
+   */
   @Get('debug/supabase-project')
-  async debugSupabaseProject(): Promise<{
+  async debugSupabaseProject(
+    @Req() req: Request,
+  ): Promise<{
     projectRef: string;
     urlHost: string;
     profilesReadable: 'ok' | 'no_rows' | 'error';
     message?: string;
   }> {
+    const expected = this.config
+      .get<string>('DEBUG_SUPABASE_PROJECT_SECRET')
+      ?.trim();
+    const got =
+      typeof req.headers['x-debug-supabase-secret'] === 'string'
+        ? req.headers['x-debug-supabase-secret'].trim()
+        : '';
+    if (!expected || !timingSafeStringEqual(got, expected)) {
+      throw new NotFoundException();
+    }
     const url = this.config.get<string>('SUPABASE_URL') ?? '';
     const urlHost = url ? new URL(url).hostname : '';
     const projectRef =

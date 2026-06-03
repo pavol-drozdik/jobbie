@@ -1,0 +1,39 @@
+---
+description: Storage upload and RLS security
+globs: supabase/migrations/*storage*,backend-ts/src/storage/**,backend-ts/src/chat/**,app-pwa/**/upload*
+alwaysApply: false
+---
+
+# File uploads & storage
+
+## Architecture
+
+- PWA: **`uploadToSignedUrl` only** with tokens from `POST /api/storage/uploads/init`. Never `supabase.storage.upload()` without a signed token. Never use service role in the client.
+- Nest: validate metadata on init; `createSignedUploadUrl` (service role); finalize downloads object, sniffs MIME, Sharp for images.
+- Private chat: **`chat-media`** + `GET /api/chat/rooms/:id/media-url` for read.
+
+## Server pipeline
+
+1. Authenticate (`GlobalAuthGuard` / `SessionAuthGuard`) + ownership.
+2. `@Throttle()` on init/finalize (~10/min).
+3. Init: `file-allowlist.ts` (extension + MIME + size); server path; `storage_pending_uploads` row.
+4. Finalize: magic-byte sniff (`file-sniff.util.ts`); block SVG; Sharp re-encode images.
+5. Paths: `{userId}/…` or `{roomId}/{userId}/…` — never client-provided paths.
+
+## Buckets
+
+| Bucket | Access | Path |
+|--------|--------|------|
+| `job-photos` | Public read | `{userId}/{cover\|extra}/{uuid}.ext` |
+| `profile-avatars` | Public read | `{userId}/avatar.jpg` or `{userId}/cv/{cvId}/{uuid}.ext` |
+| `chat-media` | Private signed read | `{roomId}/{userId}/{uuid}.ext` |
+
+## Client (app-pwa)
+
+- `useStorageUpload()` — init → `uploadToSignedUrl` → finalize.
+- Mirror limits in `app-pwa/utils/upload-policy.ts`.
+- `validateStorageUploadMetadata` / `validateImageUpload` (UX); server finalize is authoritative.
+
+## Malware scanning
+
+Hook in `FileScanService.scan()` when production scanning is wired.

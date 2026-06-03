@@ -1,0 +1,68 @@
+<svg width="560" height="420" viewBox="0 0 560 420" xmlns="http://www.w3.org/2000/svg" font-family="'DM Sans', Arial, sans-serif">
+  <defs>
+    <filter id="s1" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="10" flood-color="#000" flood-opacity="0.07"/>
+    </filter>
+    <clipPath id="bg-clip">
+      <rect width="560" height="420" rx="24"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="560" height="420" rx="24" fill="#f0faf4"/>
+  <!-- Decorative blob -->
+  <circle cx="500" cy="-30" r="200" fill="#22c55e" opacity="0.07"/>
+  <circle cx="-30" cy="390" r="120" fill="#22c55e" opacity="0.05"/>
+
+  <!-- ── Search bar ── -->
+  <rect x="60" y="36" width="440" height="56" rx="28" fill="white" filter="url(#s1)"/>
+  <!-- Search icon -->
+  <circle cx="93" cy="64" r="9" fill="none" stroke="#22c55e" stroke-width="2.2"/>
+  <line x1="99" y1="70" x2="106" y2="77" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Placeholder text -->
+  <text x="120" y="69" font-size="14" fill="rgba(0,0,0,0.32)" font-weight="400">Kosenie trávnika, Žilina...</text>
+  <!-- Arrow button -->
+  <circle cx="468" cy="64" r="18" fill="#22c55e"/>
+  <path d="M461 64h14M469 58l6 6-6 6" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- ── Card 1 ── -->
+  <rect x="60" y="112" width="440" height="76" rx="16" fill="white" filter="url(#s1)"/>
+  <!-- Icon bg -->
+  <rect x="80" y="128" width="44" height="44" rx="10" fill="#cff0db"/>
+  <!-- Trowel icon (simplified) -->
+  <path d="M102 140 l8 10 M95 143 l14 0 M102 137 l0 6" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round"/>
+  <rect x="99" y="135" width="6" height="8" rx="1" fill="#22c55e"/>
+  <path d="M94 148 l16 0 l-3 6 l-10 0 z" fill="#22c55e" opacity="0.6"/>
+  <!-- Title -->
+  <text x="138" y="147" font-size="15" font-weight="700" fill="#000">Kosenie trávnika</text>
+  <!-- Meta -->
+  <circle cx="140" cy="163" r="3" fill="#22c55e"/>
+  <text x="148" y="167" font-size="13" fill="rgba(0,0,0,0.4)">Žilina · 16.–18. 05. 2026</text>
+  <!-- Salary -->
+  <text x="482" y="153" font-size="14" font-weight="800" fill="#22c55e" text-anchor="end">7,00 €/h</text>
+
+  <!-- ── Card 2 ── -->
+  <rect x="60" y="206" width="440" height="76" rx="16" fill="white" filter="url(#s1)"/>
+  <!-- Icon bg -->
+  <rect x="80" y="222" width="44" height="44" rx="10" fill="#cff0db"/>
+  <!-- Broom icon -->
+  <line x1="96" y1="228" x2="110" y2="256" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M92 248 l8-8 l12 4 l-8 10 z" fill="#22c55e" opacity="0.7"/>
+  <!-- Title -->
+  <text x="138" y="241" font-size="15" font-weight="700" fill="#000">Upratovanie kancelárií</text>
+  <!-- Meta -->
+  <circle cx="140" cy="257" r="3" fill="#22c55e"/>
+  <text x="148" y="261" font-size="13" fill="rgba(0,0,0,0.4)">Martin · 20. 05. 2026</text>
+  <!-- Salary -->
+  <text x="482" y="247" font-size="14" font-weight="800" fill="#22c55e" text-anchor="end">6,50 €/h</text>
+
+  <!-- ── Stat row ── -->
+  <rect x="60" y="302" width="206" height="80" rx="14" fill="#22c55e"/>
+  <rect x="294" y="302" width="206" height="80" rx="14" fill="#cff0db"/>
+  <!-- Stat 1 -->
+  <text x="82" y="338" font-size="26" font-weight="800" fill="white">1 200+</text>
+  <text x="82" y="360" font-size="13" fill="rgba(255,255,255,0.8)">brigád online</text>
+  <!-- Stat 2 -->
+  <text x="316" y="338" font-size="26" font-weight="800" fill="#15803d">48h</text>
+  <text x="316" y="360" font-size="13" fill="rgba(21,128,61,0.7)">priemerný nástup</text>
+</svg>

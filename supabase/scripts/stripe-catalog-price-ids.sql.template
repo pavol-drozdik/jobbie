@@ -1,0 +1,22 @@
+-- Stripe catalog: link Stripe Price IDs to JOBBIE billing tables (per environment).
+-- 1. In Stripe Dashboard (test mode first): create Products + Prices matching unit_amount / price_monthly_cents.
+-- 2. Replace every price_... placeholder below with your Stripe Price id.
+-- 3. Run in Supabase SQL editor (local, staging, production separately).
+-- 4. Flush Redis catalog keys or restart backend if REDIS_URL is set.
+
+-- Credit packs (one-time EUR; agentura pack is inactive)
+-- starter  €5.00  (500)  | popular €10.00 (1000) | value €20.00 (2000) | firmy €45.00 (4500)
+update public.credit_packs set stripe_price_id = 'price_REPLACE_STARTER', updated_at = now() where slug = 'starter';
+update public.credit_packs set stripe_price_id = 'price_REPLACE_POPULAR', updated_at = now() where slug = 'popular';
+update public.credit_packs set stripe_price_id = 'price_REPLACE_VALUE', updated_at = now() where slug = 'value';
+update public.credit_packs set stripe_price_id = 'price_REPLACE_FIRMY', updated_at = now() where slug = 'firmy';
+
+-- Subscription plans (recurring monthly EUR)
+-- start €4.99 (499) | plus €9.99 (999) | pro €19.99 (1999)
+update public.subscription_plans set stripe_price_id = 'price_REPLACE_START', updated_at = now() where slug = 'start';
+update public.subscription_plans set stripe_price_id = 'price_REPLACE_PLUS', updated_at = now() where slug = 'plus';
+update public.subscription_plans set stripe_price_id = 'price_REPLACE_PRO', updated_at = now() where slug = 'pro';
+
+-- Verify (every active pack / paid plan should have price_...)
+select slug, unit_amount, stripe_price_id from public.credit_packs where active = true order by sort_order;
+select slug, price_monthly_cents, stripe_price_id from public.subscription_plans where slug in ('zadarmo', 'start', 'plus', 'pro');

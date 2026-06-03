@@ -1,0 +1,31 @@
+---
+description: JOBBIE backend security checklist (auth, billing, uploads, audit)
+alwaysApply: true
+---
+
+# JOBBIE backend security
+
+Authoritative API: `backend-ts` (NestJS) with Supabase service role. RLS does **not** protect Nest routes.
+
+## Required for every change
+
+- Protected routes: authenticated by default (`GlobalAuthGuard`). Mark exceptions with `@Public()` or `@OptionalAuth()` only.
+- Resource access: verify ownership or role in the **service layer** (`assertResourceOwner`, `assertCompanyUser`, `AppRoleGuard`, `PermissionsGuard`).
+- Request bodies: DTO + `class-validator`; global `ValidationPipe` with `whitelist: true`.
+- User HTML: sanitize server-side via `sanitizeRichTextHtml` before persist (never trust PWA-only DOMPurify).
+- Credits: only `CreditsService` → `grant_credits` / `spend_credits` RPC. Never update `profiles.credits` from clients or controllers.
+- Payments: verify with Stripe API (`paymentIntents.retrieve`, `status === 'succeeded'`). Fulfill via `stripe_credit_fulfillments` PK. Validate pack amount vs `credit_packs`.
+- Storage: Supabase insert policies must scope paths to `auth.uid()` folder.
+- Auth UX: generic login/reset errors; do not leak whether an email exists.
+- Sensitive endpoints: add `@Throttle()` (auth, chat, payments, SMS, uploads).
+- Mutations: `audit.recordAuditEvent` for billing, moderation, and account-risk actions.
+
+## Forbidden patterns
+
+- Granting credits from client success callbacks or PWA code.
+- `authenticated` INSERT on `stripe_credit_fulfillments` or direct `profiles.credits` updates from the client.
+- New public endpoints without `@Public()` review and rate limits.
+- Cookie session auth without CSRF tokens.
+- Persisting Supabase access/refresh tokens in `localStorage` for Nest API calls (use BFF cookies).
+
+See [docs/SECURITY.md](docs/SECURITY.md) for architecture and new-endpoint template.

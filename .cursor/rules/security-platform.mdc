@@ -1,0 +1,44 @@
+---
+description: Platform security checklist (HTTPS, cookies, CSP, MFA, abuse, audit)
+alwaysApply: true
+---
+
+# Platform security (JOBBIE)
+
+## Transport & headers
+
+- Production: HTTPS only at CDN/LB; redirect HTTP→HTTPS; HSTS on PWA and API responses.
+- Nest: `helmet` in `main.ts`; PWA: security headers + CSP in `nuxt.config.ts` `nitro.routeRules`.
+- CSP must allowlist Stripe, Turnstile, Supabase, Sentry, PostHog only when those integrations are enabled.
+
+## Secrets
+
+- Never commit `.env`, service role keys, `AUDIT_CHAIN_SECRET`, `SESSION_COOKIE_SECRET`, or Stripe secrets.
+- All secrets via environment variables or host secret manager; document rotation in `docs/database-operations-runbook.md`.
+
+## BFF session cookies (Nest API)
+
+- Browser→API auth: HttpOnly `jb_at` / `jb_sid` cookies set by `POST /api/auth/session` after Supabase login.
+- Cookie flags in production: `Secure`, `SameSite=Lax` (or `Strict` if same-site only), `Path=/api`.
+- CSRF: readable `jb_csrf` cookie + `X-CSRF-Token` header on `POST`/`PATCH`/`DELETE`; never ship cookie auth without CSRF.
+- PWA `useApi()`: `credentials: 'include'`; do not send `Authorization: Bearer` to Nest after session bootstrap.
+- Supabase Realtime/storage may use in-memory tokens only; do not persist access/refresh in `localStorage` for API.
+
+## Auth & account risk
+
+- Failed logins: `POST /api/auth/security/login-attempt` + `auth_security_events`; Turnstile on failures when configured.
+- Admin routes: `AppRoleGuard` + `AdminMfaGuard` (JWT `aal === aal2`).
+- Sensitive mutations: `@RequireRecentLogin()` (step-up within 15 min) — billing, account delete, admin moderation, passkeys.
+- Account enforcement: `profiles.account_status`; admin suspend via service role only; audit `account.suspended` / `account.unsuspended`.
+
+## Abuse & audit
+
+- User reports: `POST /api/reports` → `content_reports` + audit event.
+- Admin moderation and enforcement: `audit.recordAuditEvent` on every decision.
+- Never grant `authenticated` DML on `audit_events`, `auth_security_events`, `login_attempt_counters`, `api_user_sessions`.
+
+## Database
+
+- Follow `.cursor/rules/database-engineering.mdc` and `supabase-rls.mdc` for new tables and grants.
+
+See [docs/SECURITY.md](../../docs/SECURITY.md).

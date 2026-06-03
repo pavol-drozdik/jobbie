@@ -1,0 +1,14 @@
+[Unit]
+Description=JOBBIE Typesense and optional Supabase backup to Cloudflare R2
+Wants=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/nestjs-typesense/backup.env
+WorkingDirectory=/srv/nestjs-typesense
+ExecStart=/opt/nestjs-typesense-backup-venv/bin/python /srv/nestjs-typesense/scripts/backup_manager.py backup-all
+User=root
+Group=root
+NoNewPrivileges=true
+PrivateTmp=true

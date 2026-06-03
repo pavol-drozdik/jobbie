@@ -1,0 +1,11 @@
+.env
+.env.backend
+backup.env
+data/
+*.tar.gz
+*.tar.gz.age
+*.age
+*.pem
+*.key
+age-identity*
+supabase-restore/

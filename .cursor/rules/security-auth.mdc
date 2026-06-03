@@ -1,0 +1,15 @@
+---
+description: Authentication and authorization conventions
+globs: backend-ts/src/auth/**,app-pwa/pages/auth/**
+alwaysApply: false
+---
+
+# Auth security
+
+- API auth: HttpOnly session cookies (`jb_at`, `jb_sid`) via `POST /api/auth/session`; CSRF on mutations.
+- JWT verified via JWKS (`SessionAuthGuard` / `GlobalAuthGuard`); Bearer accepted during transition only.
+- `login-attempt` / `login-status`: rate-limited, CAPTCHA on failures when Turnstile configured.
+- Never return distinct errors for "unknown email" vs "wrong password".
+- `app_role`, `credits`, `extra_permission_scopes`, `account_status`: only service role or triggers may change.
+- Admin routes: `AppRoleGuard` + `@RequireAppRoles('admin')` + `AdminMfaGuard` (AAL2).
+- Sensitive routes: `@RequireRecentLogin()` (billing, account delete, admin moderation).

@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vypratanie garáže a kosenie trávnika — Jobbie</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+    <style>
+        .sj-section {
+            padding: 110px 20px 80px;
+            width: 100%;
+        }
+
+        .sj-container {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: flex;
+            gap: 36px;
+            align-items: flex-start;
+        }
+
+        /* ── Back link ── */
+        .sj-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: rgba(0,0,0,0.45);
+            text-decoration: none;
+            margin-bottom: 20px;
+            transition: color 0.15s;
+        }
+
+        .sj-back:hover { color: #22c55e; }
+
+        /* ── Main column ── */
+        .sj-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+
+        /* ── Hero image ── */
+        .sj-hero {
+            width: 100%;
+            height: 320px;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            background: #cff0db;
+        }
+
+        .sj-hero img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .sj-hero-badges {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .sj-category-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.92);
+            border-radius: 999px;
+            padding: 6px 14px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: #000;
+            backdrop-filter: blur(4px);
+        }
+
+        .sj-category-pill i { color: #22c55e; font-size: 13px; }
+
+        .sj-new-pill {
+            background: #22c55e;
+            color: #fff;
+            border-radius: 999px;
+            padding: 6px 14px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        /* ── Title card ── */
+        .sj-title-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 32px 36px;
+            box-shadow: 0 0 12px rgba(0,0,0,0.07);
+        }
+
+        .sj-title {
+            font-family: "DM Sans", sans-serif;
+            font-size: 36px;
+            font-weight: 800;
+            color: #000;
+            margin: 0 0 20px;
+            line-height: 1.15;
+        }
+
+        .sj-meta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .sj-meta-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: #fafcfb;
+            border-radius: 999px;
+            padding: 8px 16px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            color: rgba(0,0,0,0.7);
+        }
+
+        .sj-meta-item i { color: #22c55e; font-size: 14px; }
+
+        /* ── Poster card ── */
+        .sj-poster-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 24px 28px;
+            box-shadow: 0 0 12px rgba(0,0,0,0.07);
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .sj-poster-avatar {
+            width: 58px;
+            height: 58px;
+            min-width: 58px;
+            border-radius: 50%;
+            background: #7c3aed;
+            color: #fff;
+            font-family: "DM Sans", sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sj-poster-info { flex: 1; }
+
+        .sj-poster-label {
+            font-family: "DM Sans", sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(0,0,0,0.4);
+            margin-bottom: 3px;
+        }
+
+        .sj-poster-name {
+            font-family: "DM Sans", sans-serif;
+            font-size: 19px;
+            font-weight: 700;
+            color: #000;
+            margin-bottom: 5px;
+        }
+
+        .sj-poster-stars { display: flex; gap: 3px; }
+        .sj-poster-stars i { color: #22c55e; font-size: 14px; }
+        .sj-poster-stars span {
+            font-family: "DM Sans", sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(0,0,0,0.5);
+            margin-left: 4px;
+        }
+
+        .sj-profile-btn {
+            background: #fafcfb;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 999px;
+            padding: 9px 20px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: #000;
+            cursor: pointer;
+            transition: border-color 0.15s, color 0.15s;
+            white-space: nowrap;
+        }
+
+        .sj-profile-btn:hover { border-color: #22c55e; color: #22c55e; }
+
+        /* ── Description card ── */
+        .sj-desc-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 32px 36px;
+            box-shadow: 0 0 12px rgba(0,0,0,0.07);
+        }
+
+        .sj-section-title {
+            font-family: "DM Sans", sans-serif;
+            font-size: 22px;
+            font-weight: 800;
+            color: #000;
+            margin: 0 0 18px;
+        }
+
+        .sj-desc-body {
+            font-family: "DM Sans", sans-serif;
+            font-size: 17px;
+            font-weight: 400;
+            color: rgba(0,0,0,0.75);
+            line-height: 1.7;
+        }
+
+        .sj-desc-body p  { margin: 0 0 14px; }
+        .sj-desc-body ul { margin: 0 0 14px; padding-left: 22px; }
+        .sj-desc-body li { margin-bottom: 6px; }
+        .sj-desc-body strong { font-weight: 700; color: #000; }
+
+        .sj-divider {
+            border: none;
+            border-top: 1px solid rgba(0,0,0,0.07);
+            margin: 24px 0;
+        }
+
+        /* ── Sidebar ── */
+        .sj-sidebar {
+            width: 380px;
+            min-width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* ── Apply card ── */
+        .sj-apply-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 0 12px rgba(0,0,0,0.07);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .sj-salary-label {
+            font-family: "DM Sans", sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(0,0,0,0.4);
+        }
+
+        .sj-salary-amount {
+            font-family: "DM Sans", sans-serif;
+            font-size: 42px;
+            font-weight: 800;
+            color: #22c55e;
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+
+        .sj-salary-type {
+            font-family: "DM Sans", sans-serif;
+            font-size: 16px;
+            font-weight: 500;
+            color: rgba(0,0,0,0.4);
+        }
+
+        .sj-apply-divider {
+            border: none;
+            border-top: 1px solid rgba(0,0,0,0.07);
+        }
+
+        .sj-deadline-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(0,0,0,0.5);
+        }
+
+        .sj-deadline-row i { color: #22c55e; }
+
+        .sj-btn-apply {
+            width: 100%;
+            height: 56px;
+            background: #22c55e;
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .sj-btn-apply:hover { opacity: 0.88; }
+
+        .sj-btn-save {
+            width: 100%;
+            height: 50px;
+            background: #fff;
+            color: rgba(0,0,0,0.65);
+            border: 1.5px solid #e5e7eb;
+            border-radius: 999px;
+            font-family: "DM Sans", sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: border-color 0.15s, color 0.15s;
+        }
+
+        .sj-btn-save:hover { border-color: #22c55e; color: #22c55e; }
+
+        /* ── Related posts ── */
+        .sj-related-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 0 12px rgba(0,0,0,0.07);
+        }
+
+        .sj-related-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .sj-related-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background 0.15s;
+            text-decoration: none;
+        }
+
+        .sj-related-item:hover { background: #f7fdf9; }
+
+        .sj-related-thumb {
+            width: 56px;
+            height: 56px;
+            min-width: 56px;
+            border-radius: 12px;
+            object-fit: cover;
+            background: #cff0db;
+        }
+
+        .sj-related-info { flex: 1; min-width: 0; }
+
+        .sj-related-title {
+            font-family: "DM Sans", sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            color: #000;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sj-related-meta {
+            display: flex;
+            gap: 10px;
+        }
+
+        .sj-related-meta span {
+            font-family: "DM Sans", sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(0,0,0,0.45);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .sj-related-meta i { color: #22c55e; font-size: 11px; }
+
+        /* ── Gallery ── */
+        .sj-gallery {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .sj-gallery-main {
+            width: 100%;
+            height: 340px;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #fafcfb;
+        }
+
+        .sj-gallery-main img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: opacity 0.2s;
+        }
+
+        .sj-gallery-thumbs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .sj-thumb {
+            width: 80px;
+            height: 80px;
+            min-width: 80px;
+            border-radius: 10px;
+            object-fit: cover;
+            cursor: pointer;
+            border: 2.5px solid transparent;
+            transition: border-color 0.15s, opacity 0.15s;
+            opacity: 0.6;
+        }
+
+        .sj-thumb:hover { opacity: 0.85; }
+        .sj-thumb.active { border-color: #22c55e; opacity: 1; }
+
+        .sj-related-arrow {
+            color: rgba(0,0,0,0.2);
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 900px) {
+            .sj-container {
+                flex-direction: column;
+            }
+
+            .sj-sidebar {
+                width: 100%;
+                min-width: 0;
+                position: static;
+                order: -1;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .sj-section { padding: 90px 14px 60px; }
+            .sj-title { font-size: 26px; }
+            .sj-title-card, .sj-desc-card { padding: 22px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <img>
+            <nav>
+                <span>Domov</span>
+                <span>Pozrieť ponuky</span>
+                <span>Hľadať firmy</span>
+            </nav>
+            <nav>
+                <button>Registrovať sa</button>
+                <button>Prihlásiť sa</button>
+            </nav>
+        </div>
+    </header>
+
+    <div class="sj-section">
+        <div class="sj-container">
+
+            <!-- ══════════════ MAIN ══════════════ -->
+            <div class="sj-main">
+
+                <a href="jobposts.html" class="sj-back">
+                    <i class="fa-solid fa-arrow-left"></i> Späť na ponuky
+                </a>
+
+                <!-- Hero image -->
+                <div class="sj-hero">
+                    <img src="assets/jobbie-def-thumb.webp" alt="Thumbnail">
+                    <div class="sj-hero-badges">
+                        <div class="sj-category-pill">
+                            <i class="fa-solid fa-trowel-bricks"></i> Stavba
+                        </div>
+                        <div class="sj-new-pill">Nové</div>
+                    </div>
+                </div>
+
+                <!-- Title + meta -->
+                <div class="sj-title-card">
+                    <h1 class="sj-title">Vypratanie garáže a kosenie trávnika</h1>
+                    <div class="sj-meta-row">
+                        <div class="sj-meta-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            Dlhé Pole, Žilinský kraj
+                        </div>
+                        <div class="sj-meta-item">
+                            <i class="fa-solid fa-calendar"></i>
+                            16. 05. 2026 – 18. 05. 2026
+                        </div>
+                        <div class="sj-meta-item">
+                            <i class="fa-solid fa-briefcase"></i>
+                            Brigáda
+                        </div>
+                        <div class="sj-meta-item">
+                            <i class="fa-solid fa-clock"></i>
+                            Skrátený úväzok
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Poster -->
+                <div class="sj-poster-card">
+                    <div class="sj-poster-avatar">MP</div>
+                    <div class="sj-poster-info">
+                        <div class="sj-poster-label">Zverejnil</div>
+                        <div class="sj-poster-name">Martin Paček</div>
+                        <div class="sj-poster-stars">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-regular fa-star"></i>
+                            <span>4,0 (12 hodnotení)</span>
+                        </div>
+                    </div>
+                    <button class="sj-profile-btn">Zobraziť profil</button>
+                </div>
+
+                <!-- Description -->
+                <div class="sj-desc-card">
+                    <h2 class="sj-section-title">Popis práce</h2>
+                    <div class="sj-desc-body">
+                        <p>Hľadáme šikovného a spoľahlivého brigádnika na vypratanie garáže a kosenie trávnika pri rodinnom dome v Dlhom Poli. Práca je fyzicky nenáročná, ale vyžaduje si dochvíľnosť a zodpovedný prístup.</p>
+
+                        <p><strong>Čo bude Vaša práca zahŕňať:</strong></p>
+                        <ul>
+                            <li>Vypratanie obsahu garáže a triedenie odpadu</li>
+                            <li>Vynášanie vecí na určené miesto na dvore</li>
+                            <li>Kosenie trávnika motorovou kosačkou (kosačka je k dispozícii)</li>
+                            <li>Upratanie poseknutej trávy a jej odnesenie do kompostu</li>
+                        </ul>
+
+                        <p><strong>Čo od Vás očakávame:</strong></p>
+                        <ul>
+                            <li>Dochvíľnosť a spoľahlivosť</li>
+                            <li>Fyzická zdatnosť (zdvíhanie ľahšieho nábytku)</li>
+                            <li>Skúsenosť s kosačkou výhodou, nie podmienkou</li>
+                        </ul>
+
+                        <hr class="sj-divider">
+
+                        <p><strong>Miesto výkonu práce:</strong> Dlhé Pole 42, 013 06</p>
+                        <p><strong>Trvanie:</strong> 2–3 dni, podľa dohody</p>
+                        <p><strong>Nástup:</strong> 16. 05. 2026 alebo dohodou</p>
+                    </div>
+                </div>
+
+                <!-- Gallery -->
+                <div class="sj-desc-card">
+                    <h2 class="sj-section-title">Galéria</h2>
+                    <div class="sj-gallery">
+                        <div class="sj-gallery-main" id="sj-gallery-main">
+                            <img src="assets/jobbie-def-thumb.webp" alt="Fotka 1" id="sj-main-img">
+                        </div>
+                        <div class="sj-gallery-thumbs" id="sj-gallery-thumbs">
+                            <img src="assets/jobbie-def-thumb.webp" alt="Fotka 1" class="sj-thumb active" data-src="assets/jobbie-def-thumb.webp">
+                            <img src="assets/jobbie-def-thumb.webp" alt="Fotka 2" class="sj-thumb" data-src="assets/jobbie-def-thumb.webp">
+                            <img src="assets/jobbie-def-thumb.webp" alt="Fotka 3" class="sj-thumb" data-src="assets/jobbie-def-thumb.webp">
+                            <img src="assets/jobbie-def-thumb.webp" alt="Fotka 4" class="sj-thumb" data-src="assets/jobbie-def-thumb.webp">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ══════════════ SIDEBAR ══════════════ -->
+            <div class="sj-sidebar">
+
+                <!-- Apply card -->
+                <div class="sj-apply-card">
+                    <div>
+                        <div class="sj-salary-label">Hodinová mzda</div>
+                        <div class="sj-salary-amount">6,70 €</div>
+                        <div class="sj-salary-type">za hodinu</div>
+                    </div>
+
+                    <hr class="sj-apply-divider">
+
+                    <div class="sj-deadline-row">
+                        <i class="fa-solid fa-hourglass-half"></i>
+                        Prihlásiť sa do: <strong style="color:#000">20. 05. 2026</strong>
+                    </div>
+
+                    <button class="sj-btn-apply">
+                        Prihlásiť sa
+                    </button>
+                    <button class="sj-btn-save">
+                        <i class="fa-regular fa-bookmark"></i> Uložiť ponuku
+                    </button>
+                </div>
+
+                <!-- Related posts -->
+                <div class="sj-related-card">
+                    <h3 class="sj-section-title" style="font-size:18px;margin:0">Podobné ponuky</h3>
+                    <div class="sj-related-list">
+
+                        <a href="#" class="sj-related-item">
+                            <img class="sj-related-thumb" src="assets/jobbie-def-thumb.webp" alt="">
+                            <div class="sj-related-info">
+                                <div class="sj-related-title">Upratovanie záhrady a strihanie živého plotu</div>
+                                <div class="sj-related-meta">
+                                    <span><i class="fa-solid fa-location-dot"></i> Žilina</span>
+                                    <span><i class="fa-solid fa-money-bill-wave"></i> 7,00 €/hod.</span>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-arrow-right sj-related-arrow"></i>
+                        </a>
+
+                        <a href="#" class="sj-related-item">
+                            <img class="sj-related-thumb" src="assets/jobbie-def-thumb.webp" alt="">
+                            <div class="sj-related-info">
+                                <div class="sj-related-title">Sťahovanie nábytku — rodinný dom</div>
+                                <div class="sj-related-meta">
+                                    <span><i class="fa-solid fa-location-dot"></i> Bytča</span>
+                                    <span><i class="fa-solid fa-money-bill-wave"></i> 8,00 €/hod.</span>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-arrow-right sj-related-arrow"></i>
+                        </a>
+
+                        <a href="#" class="sj-related-item">
+                            <img class="sj-related-thumb" src="assets/jobbie-def-thumb.webp" alt="">
+                            <div class="sj-related-info">
+                                <div class="sj-related-title">Murárske práce — základy domu</div>
+                                <div class="sj-related-meta">
+                                    <span><i class="fa-solid fa-location-dot"></i> Martin</span>
+                                    <span><i class="fa-solid fa-money-bill-wave"></i> 9,50 €/hod.</span>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-arrow-right sj-related-arrow"></i>
+                        </a>
+
+                        <a href="jobposts.html" class="sj-related-item" style="justify-content:center;color:#22c55e;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;gap:6px">
+                            Zobraziť všetky ponuky <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        /* ── JS sticky sidebar ── */
+        (function () {
+            const sidebar   = document.querySelector('.sj-sidebar');
+            const container = document.querySelector('.sj-container');
+            const OFFSET    = 100;
+
+            function update() {
+                const containerTop    = container.getBoundingClientRect().top;
+                const containerHeight = container.offsetHeight;
+                const sidebarHeight   = sidebar.offsetHeight;
+                const maxTranslate    = containerHeight - sidebarHeight;
+                const translate       = Math.min(Math.max(0, -containerTop + OFFSET), maxTranslate);
+                sidebar.style.transform = `translateY(${translate}px)`;
+            }
+
+            window.addEventListener('scroll', update, { passive: true });
+            window.addEventListener('resize', update);
+        })();
+
+        document.querySelectorAll('.sj-thumb').forEach(thumb => {
+            thumb.addEventListener('click', () => {
+                document.querySelectorAll('.sj-thumb').forEach(t => t.classList.remove('active'));
+                thumb.classList.add('active');
+                const mainImg = document.getElementById('sj-main-img');
+                mainImg.style.opacity = '0';
+                setTimeout(() => {
+                    mainImg.src = thumb.dataset.src;
+                    mainImg.style.opacity = '1';
+                }, 150);
+            });
+        });
+    </script>
+</body>
+</html>

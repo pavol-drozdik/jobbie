@@ -1,4 +1,4 @@
-import {
+﻿import {
   Controller,
   Get,
   Post,
@@ -83,6 +83,9 @@ export class ApplicationsController {
       .select('*, job_offers (title)')
       .order('created_at', { ascending: false })
       .range(offsetNum, offsetNum + limitNum - 1);
+    // Security: list endpoint must always be scoped. Default to the caller's
+    // own applications when no explicit scope is supplied to prevent cross-
+    // tenant enumeration via the service-role client.
     if (jobId) {
       const { data: job } = await this.supabase
         .getClient()
@@ -94,12 +97,13 @@ export class ApplicationsController {
         throw new ForbiddenException('Not your job');
       }
       q = q.eq('job_id', jobId);
-    }
-    if (individualId) {
+    } else if (individualId) {
       if (individualId !== user.id) {
         throw new ForbiddenException('Can only list own applications');
       }
       q = q.eq('individual_id', individualId);
+    } else {
+      q = q.eq('individual_id', user.id);
     }
     const { data } = await q;
     const rows = (data ?? []) as (ApplicationResponseDto & { job_offers?: { title?: string } | null })[];
