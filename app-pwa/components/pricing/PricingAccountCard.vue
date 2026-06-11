@@ -34,7 +34,7 @@
 
         <dt class="text-black/45">{{ S.pricingMonthlyCredits }}</dt>
 
-        <dd class="m-0 text-black">{{ account.monthlyCredits }} {{ S.credits }} / mesiac</dd>
+        <dd class="m-0 text-black">{{ account.monthlyCredits }} {{ creditWordLabel(account.monthlyCredits) }} / mesiac</dd>
 
       </div>
 
@@ -82,7 +82,9 @@
 
           <dd class="m-0 grid gap-1 text-black sm:grid-cols-3">
 
-            <span v-for="row in cvUsageRows" :key="row.label">{{ row.label }}: {{ row.value }}</span>
+            <span v-for="row in cvUsageRows" :key="row.label">
+              <span class="mr-1">{{ row.label }}:</span>{{ row.value }}
+            </span>
 
           </dd>
 
@@ -100,7 +102,9 @@
 
 <script setup lang="ts">
 
+import { creditWordLabel } from '~/utils/sk-plural'
 import { S } from '~/utils/strings'
+import { buildCvDatabaseUsageRows } from '~/utils/cv-database-usage-display'
 
 
 
@@ -135,25 +139,16 @@ type CvUsage = {
 
 
 type BillingAccount = {
-
   credits: number
-
   planNameSk: string
-
+  planSlug: string
   monthlyCredits: number
-
   maxActiveOffers: number
-
   activeOffersCount: number
-
   subscriptionStatus: string | null
-
   currentPeriodEnd: string | null
-
   cvLimits?: CvLimits
-
   cvUsage?: CvUsage
-
 }
 
 
@@ -165,29 +160,13 @@ const account = ref<BillingAccount | null>(null)
 
 
 const cvUsageRows = computed(() => {
-
   const acc = account.value
-
   if (!acc?.cvUsage || !acc.cvLimits) return []
-
-  const rows: { label: string; value: string }[] = []
-
-  const push = (label: string, used: number, max: number | null | undefined) => {
-
-    const cap = max === null || max === undefined ? '∞' : String(max)
-
-    rows.push({ label, value: `${used} / ${cap}` })
-
-  }
-
-  push(S.pricingCvUnlock, acc.cvUsage.unlocksCount, acc.cvLimits.maxCvUnlocksMonthly)
-
-  push(S.pricingCvContact, acc.cvUsage.contactsCount, acc.cvLimits.maxCvContactsMonthly)
-
-  push(S.pricingCvPdf, acc.cvUsage.pdfDownloadsCount, acc.cvLimits.maxCvPdfDownloadsMonthly)
-
-  return rows
-
+  return buildCvDatabaseUsageRows({
+    cvUsage: acc.cvUsage,
+    cvLimits: acc.cvLimits,
+    planSlug: acc.planSlug,
+  })
 })
 
 

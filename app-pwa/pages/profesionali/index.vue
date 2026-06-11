@@ -134,14 +134,15 @@ import {
 } from '~/components/firmy/firm-list-filters-context'
 import CompanyAdListCard from '~/components/firmy/CompanyAdListCard.vue'
 import type { CompanyAdListItem } from '~/utils/company-ad'
+import { fetchPublicCompanyAdsCatalog } from '~/composables/fetch-public-company-ads-catalog'
+import { buildProfessionalsCatalogSeoDescription } from '~/utils/find-catalog-seo'
+import { normalizeSiteUrl } from '~/utils/seo-config'
+import { buildAdsAlternateFeeds } from '~/utils/seo-feed-links'
+import { buildProfessionalAdCatalogItemListJsonLd } from '~/utils/seo-json-ld'
 
 definePageMeta({ layout: 'app' })
 
-usePageSeo({
-  title: S.firmyTitle,
-  description: 'Katalóg profesionálov a poskytovateľov služieb na Jobbie — vyhľadaj podľa kategórie a lokality.',
-  canonicalPath: ROUTES.professionalsCatalog,
-})
+const PAGE_SIZE = 24
 
 const route = useRoute()
 const router = useRouter()
@@ -218,9 +219,45 @@ function filtersEqual(
   )
 }
 
-const PAGE_SIZE = 24
 const companyAds = ref<CompanyAdListItem[]>([])
 const loading = ref(true)
+
+const runtimeConfig = useRuntimeConfig()
+const siteUrl = computed(() =>
+  normalizeSiteUrl(String(runtimeConfig.public.siteUrl || '')),
+)
+
+const { data: initialAds } = await useAsyncData(
+  () =>
+    `professionals-catalog-${String(route.query.q ?? '')}-${String(route.query.category ?? '')}-${String(route.query.location ?? '')}`,
+  () =>
+    fetchPublicCompanyAdsCatalog({
+      limit: PAGE_SIZE,
+      q: filters.search,
+      category: filters.category,
+      location: filters.location,
+    }),
+  { watch: [() => route.query] },
+)
+
+if (initialAds.value?.length) {
+  companyAds.value = initialAds.value
+  loading.value = false
+}
+
+usePageSeo(() => {
+  const site = siteUrl.value
+  const itemList = site
+    ? buildProfessionalAdCatalogItemListJsonLd(companyAds.value, site)
+    : null
+  return {
+    title: S.firmyTitle,
+    description: buildProfessionalsCatalogSeoDescription(),
+    canonicalPath: ROUTES.professionalsCatalog,
+    alternateFeeds: site ? buildAdsAlternateFeeds(site) : [],
+    jsonLd: itemList,
+  }
+})
 const loadingMore = ref(false)
 const listOffset = ref(0)
 const hasMore = ref(false)
@@ -436,6 +473,12 @@ function clearFilters(): void {
   void fetchAds(true)
 }
 
+watch(initialAds, (data) => {
+  if (!data) return
+  companyAds.value = data
+  loading.value = false
+})
+
 watch(
   () => route.query,
   () => {
@@ -444,14 +487,16 @@ watch(
       return
     }
     Object.assign(filters, next)
-    void fetchAds(false)
+    void fetchAds(true, false)
   },
   { deep: true },
 )
 
 onMounted(() => {
   document.addEventListener('click', onDocClick, true)
-  void fetchAds()
+  if (!initialAds.value) {
+    void fetchAds()
+  }
 })
 
 onBeforeUnmount(() => {

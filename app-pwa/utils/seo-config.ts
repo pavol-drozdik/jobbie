@@ -30,7 +30,7 @@ export function normalizeSiteUrl(raw: string | undefined): string {
 
 export const SEO_DEFAULT_TITLE = 'Nájdi prácu. Nájdi pomoc.'
 export const SEO_DEFAULT_DESCRIPTION =
-  'Jobbie spája ľudí s firmami rýchlo a jednoducho. Brigády, zahraničné ponuky a služby profesionálov na jednom mieste.'
+  'Jobbie spája uchádzačov s firmami na Slovensku — brigády, sezónne práce (kosenie trávy, pomoc v záhrade), pracovné ponuky a služby profesionálov.'
 /** Matches `BRAND_ICON_512_PATH` in `brand-assets.ts` (no alias — safe for `nuxt.config` jiti). */
 export const SEO_DEFAULT_OG_IMAGE_PATH = '/icon-512.png'
 export const SEO_BRAND_SUFFIX = 'JOBBIE'

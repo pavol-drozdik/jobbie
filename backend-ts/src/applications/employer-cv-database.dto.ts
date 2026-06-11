@@ -385,6 +385,8 @@ export interface EmployerCvDatabaseListItemDto {
   contacts_visible: boolean;
   contact_email: string | null;
   contact_phone: string | null;
+  /** Locked CV with e-mail, phone, or LinkedIn on file — employer may unlock. */
+  has_contact_to_unlock: boolean;
 }
 
 export interface EmployerCvDatabaseListResponseDto {

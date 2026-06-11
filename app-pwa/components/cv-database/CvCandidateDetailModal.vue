@@ -42,20 +42,20 @@
                 loading="lazy"
               >
             </div>
-            <section class="mb-6">
+            <section v-if="contactsVisible || hasContactToUnlock" class="mb-6">
               <h3 class="mt-0 text-base font-bold text-black/80">{{ S.cvDbContactSectionTitle }}</h3>
               <template v-if="contactsVisible">
                 <ul class="m-0 list-none space-y-2 p-0 text-sm text-black/75">
                   <li v-if="contactEmail">
-                    <span class="font-semibold text-black">E-mail:</span>
+                    <span class="mr-1 font-semibold text-black">E-mail:</span>
                     <a :href="`mailto:${contactEmail}`" class="text-marketing-green hover:underline">{{ contactEmail }}</a>
                   </li>
                   <li v-if="contactPhone">
-                    <span class="font-semibold text-black">Telefón:</span>
+                    <span class="mr-1 font-semibold text-black">Telefón:</span>
                     <a :href="`tel:${contactPhone}`" class="text-marketing-green hover:underline">{{ contactPhone }}</a>
                   </li>
                   <li v-if="contactLinkedinHref">
-                    <span class="font-semibold text-black">LinkedIn:</span>
+                    <span class="mr-1 font-semibold text-black">LinkedIn:</span>
                     <a
                       :href="contactLinkedinHref"
                       target="_blank"
@@ -71,7 +71,7 @@
                   {{ S.cvDbContactNoneAfterUnlock }}
                 </p>
               </template>
-              <template v-else>
+              <template v-else-if="hasContactToUnlock">
                 <p class="m-0 mb-3 text-sm leading-relaxed text-black/55">
                   {{ S.cvDbContactLockedHint }}
                 </p>
@@ -88,7 +88,12 @@
             </section>
             <section v-if="aboutText" class="mb-6">
               <h3 class="mt-0 text-base font-bold text-black/80">O mne</h3>
-              <p class="whitespace-pre-wrap text-[15px] leading-relaxed text-black/70">{{ aboutText }}</p>
+              <div
+                v-if="aboutUsesHtml"
+                class="rich-html-content min-w-0 break-words text-[15px] leading-relaxed text-black/70"
+                v-html="aboutSanitized"
+              />
+              <p v-else class="whitespace-pre-wrap text-[15px] leading-relaxed text-black/70">{{ aboutText }}</p>
             </section>
             <section v-if="detail.experience?.length" class="mb-6">
               <h3 class="text-base font-bold text-black/80">Prax</h3>
@@ -101,7 +106,15 @@
                   <div class="font-bold text-black">{{ e.position }}</div>
                   <div class="text-sm text-black/60">{{ e.company }}</div>
                   <div class="mt-1 text-xs text-black/45">{{ formatRange(e.start_date, e.end_date, e.current) }}</div>
-                  <p v-if="e.description" class="mt-2 whitespace-pre-wrap text-sm text-black/65">{{ e.description }}</p>
+                  <div
+                    v-if="e.description && cvRichFieldUsesHtml(e.description)"
+                    class="rich-html-content mt-2 min-w-0 break-words text-sm text-black/65"
+                    v-html="cvRichFieldSanitized(e.description)"
+                  />
+                  <p
+                    v-else-if="e.description"
+                    class="mt-2 whitespace-pre-wrap text-sm text-black/65"
+                  >{{ e.description }}</p>
                 </li>
               </ul>
             </section>
@@ -190,6 +203,10 @@ import { S } from '~/utils/strings'
 import { sanitizeExternalHref } from '~/utils/safe-navigation'
 import { insufficientCreditsUserMessage } from '~/utils/api-errors'
 import { CV_MONTHLY_QUOTA_EXCEEDED_MESSAGE } from '~/utils/billing-errors'
+import {
+  jobDescriptionLooksLikeHtml,
+  sanitizeRichHtml,
+} from '~/utils/sanitize-job-description-html'
 
 const props = withDefaults(
   defineProps<{
@@ -203,6 +220,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
+  unlocked: [payload: { cvId: string; email: string | null; phone: string | null }]
 }>()
 
 const { fetchDetail, postUnlockContact, postOpenChat, downloadCvPdf } =
@@ -230,7 +248,31 @@ const aboutText = computed(() => {
   return typeof raw === 'string' && raw.trim() ? raw.trim() : ''
 })
 
-const contactsVisible = computed(() => detail.value?.cv?.show_contact_details === true)
+const aboutUsesHtml = computed(() => jobDescriptionLooksLikeHtml(aboutText.value))
+
+const aboutSanitized = computed(() => sanitizeRichHtml(aboutText.value))
+
+function cvRichFieldUsesHtml(raw: string | null | undefined): boolean {
+  return jobDescriptionLooksLikeHtml(raw)
+}
+
+function cvRichFieldSanitized(raw: string | null | undefined): string {
+  return sanitizeRichHtml(typeof raw === 'string' ? raw : '')
+}
+
+const contactsVisible = computed(() => {
+  const cv = detail.value?.cv
+  if (!cv) return false
+  if (cv.contacts_visible === true) return true
+  if (cv.contact_unlocked === true) return true
+  return Boolean(contactEmail.value || contactPhone.value || contactLinkedinHref.value)
+})
+
+const hasContactToUnlock = computed(() => {
+  const cv = detail.value?.cv
+  if (!cv || contactsVisible.value) return false
+  return cv.has_contact_to_unlock === true
+})
 
 const contactEmail = computed(() => {
   const v = detail.value?.cv?.email
@@ -325,6 +367,19 @@ function formatDate(iso: string | null): string {
   }
 }
 
+function readContactFromAggregate(cv: {
+  email?: unknown
+  phone?: unknown
+}): { email: string | null; phone: string | null } {
+  const emailRaw = cv.email
+  const phoneRaw = cv.phone
+  const email =
+    typeof emailRaw === 'string' && emailRaw.trim() ? emailRaw.trim() : null
+  const phone =
+    typeof phoneRaw === 'string' && phoneRaw.trim() ? phoneRaw.trim() : null
+  return { email, phone }
+}
+
 async function onUnlockContact(): Promise<void> {
   if (!props.cvId) return
   chatError.value = null
@@ -338,6 +393,10 @@ async function onUnlockContact(): Promise<void> {
   loading.value = true
   await reloadDetail()
   loading.value = false
+  if (detail.value && props.cvId) {
+    const { email, phone } = readContactFromAggregate(detail.value.cv)
+    emit('unlocked', { cvId: props.cvId, email, phone })
+  }
 }
 
 async function onContact(): Promise<void> {

@@ -4,8 +4,6 @@
       <div class="mx-auto box-border w-full min-w-0 max-w-full overflow-visible px-3.5 pb-16 pt-[30px] marketing:pb-20 sm:px-5">
         <AppDetailPageSkeleton v-if="loading" />
         <template v-else-if="ad">
-          <AppBreadcrumbs :items="adBreadcrumbs" class="mb-4" />
-          <PublicContentAeoSummary :facts="aeoFacts" heading="Súhrn služby" />
           <FirmyCompanyAdDetailView
             :ad="ad"
             :is-owner="isOwner"
@@ -73,7 +71,7 @@ watch(initialAd, (value) => {
   ad.value = value
 })
 
-const { breadcrumbs: adBreadcrumbs, aeoFacts } = useProfessionalAdDetailSeo(ad, {
+useProfessionalAdDetailSeo(ad, {
   fallbackTitle: S.firmyHubTitle,
 })
 

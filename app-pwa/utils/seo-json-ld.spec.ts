@@ -37,6 +37,20 @@ describe('buildJobPostingJsonLd', () => {
     const ld = buildJobPostingJsonLd(job, siteUrl)
     expect(ld.baseSalary).toBeDefined()
   })
+
+  it('includes identifier and application contact', () => {
+    const job = {
+      id: 'job-3',
+      title: 'Kosenie',
+      description: 'Popis',
+      created_at: '2026-01-01T00:00:00Z',
+      application_url: 'https://example.test/apply',
+    } as Job
+    const ld = buildJobPostingJsonLd(job, siteUrl)
+    expect(ld.identifier).toMatchObject({ value: 'job-3' })
+    expect(ld.directApply).toBe(true)
+    expect(ld.applicationContact).toMatchObject({ url: 'https://example.test/apply' })
+  })
 })
 
 describe('buildFaqPageJsonLd', () => {

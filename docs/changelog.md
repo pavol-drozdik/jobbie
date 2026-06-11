@@ -1,4 +1,231 @@
-﻿## 2026-06-03 — backend-ts npm audit (0 vulnerabilities)
+﻿## 2026-06-11 — Security: employer CV database GDPR redaction
+
+Fixed:
+- `GET /api/employer/cv-database/:cvId` no longer exposes `has_disability` (including `false`) on the CV shell; `sanitizeHeaderForEmployerDatabaseView` omits the field instead of sending a boolean.
+
+## 2026-06-11 — SEO/AEO: llms.txt, feeds, SSR, IndexNow
+
+Added:
+- Site-level `/llms.txt` (Slovak curated index) and `# LLMs:` hint in `robots.txt`.
+- RSS + JSON Feed for jobs and company ads (`/feeds/jobs.rss`, `/feeds/jobs.json`, `/feeds/ads.rss`, `/feeds/ads.json`) backed by `GET /api/seo/feeds/*`.
+- IndexNow: `INDEXNOW_KEY` on API (publish hooks), `NUXT_PUBLIC_INDEXNOW_KEY` + `/{key}.txt` on PWA; GSC/Bing verification meta env vars.
+
+Changed:
+- Homepage and `/profesionali` catalog SSR for job/ad listings; `FAQPage` on `/`, `ItemList` on catalogs; richer Slovak default meta copy.
+- `JobPosting` JSON-LD: `identifier`, `directApply` / `applicationContact`.
+
+Docs:
+- `docs/seo-implementation.md`, `docs/aeo-geo-implementation-summary.md`, `.env.example` files.
+
+## 2026-06-09 — Login: passkey autofill (Conditional UI)
+
+Changed:
+- `/auth/login` — passkey sign-in via WebAuthn Conditional UI in the email field (`autocomplete="username webauthn"`); no dedicated passkey button or discoverable prompt on submit. Aborts pending autofill when password/OAuth/forgot-password flows start.
+
+## 2026-06-09 — GDPR privacy policy PDF
+
+Added:
+- Official GDPR document (`public/docs/gdpr-jobbie.pdf`) on `/ochrana-osobnych-udajov` (footer **Ochrana súkromia**) with inline viewer and PDF download.
+
+## 2026-06-09 — Homepage: CTA zamestnávateľa
+
+Changed:
+- Employer CTA subtext: „1 inzerát zadarmo mesačne“ (namiesto 5 inzerátov).
+
+## 2026-06-09 — Cenník: oprava cien a zjednodušenie kreditov
+
+Changed:
+- `/cennik` — záložka **Jednorazové kredity**: kompaktná `PricingCreditsUsageSection` so 4 skutočnými platiteľnými akciami a cenami z `planTierCreditCosts` (zhodné s wizardmi); odstránený nadbytočný text (Stripe poznámka, „Prihláste sa“, nesprávne `CREDIT_COSTS` položky).
+
+## 2026-06-09 — Terminology: poskytovateľ → profesionál
+
+Changed:
+- PWA user-facing copy, home carousel/FAQ role keys, and provider dashboard route `/dashboard/poskytovatel` → `/dashboard/profesional` (301 redirect from old path). Middleware renamed to `dashboard-profesional`.
+
+## 2026-06-09 — Uchádzač terminology (PWA copy)
+
+Changed:
+- User-facing copy: „brigádnik / brigádnici“ → „uchádzač / uchádzači“ across PWA strings, FAQ, registration, trust pages, and pricing copy. Legal employment labels (e.g. „Brigáda (dohoda)“) unchanged.
+
+## 2026-06-09 — Supabase Auth SMTP troubleshooting doc
+
+Docs:
+- `docs/email-smtp.md` — Supabase Auth SMTP setup, `535` auth failure checklist (password reset vs Nest `SMTP_*`).
+
+## 2026-06-09 — Forgot-password send reliability
+
+Fixed:
+- PWA forgot-password — `resetPasswordForEmail` `{ error }` is now checked (previously ignored because Supabase JS does not throw); rate limit, captcha, and validation failures show actionable errors instead of a false “check your email” screen.
+- Auth `redirectTo` uses `NUXT_PUBLIC_SITE_URL` when set (canonical production origin) instead of only `window.location.origin`.
+
+Changed:
+- [`reset-password.html`](../supabase/email-templates/reset-password.html) — simpler `or`/`printf` link template (re-paste into Supabase Dashboard if already deployed).
+
+## 2026-06-09 — Unified contact email
+
+Changed:
+- All platform contact/support defaults (`info@`, `podpora@`, `support@`) → `ahoj@jobbie.sk` in PWA strings, SEO JSON-LD, trust pages, pricing FAQ, backend pricing inquiries, data export README, VAPID subject, and `.env.example` files.
+
+## 2026-06-09 — Supabase Auth email templates (JOBBIE brand)
+
+Added:
+- [`supabase/email-templates/`](../supabase/email-templates/) — branded HTML for all six Supabase Auth templates (confirm signup, invite, magic link/OTP, change email, reset password, reauthentication); Slovak copy; login-card visual language (mint bg, gradient header, white wordmark, pill CTA).
+
+Changed:
+- [`supabase/AUTH-EMAIL-TEMPLATES.md`](../supabase/AUTH-EMAIL-TEMPLATES.md) — full dashboard mapping, subjects, PKCE `token_hash` paths, testing checklist.
+- PWA `/auth/callback` — `verifyOtp({ token_hash, type })` for signup, invite, magic link, and email change handoffs.
+
+Docs:
+- `docs/auth-security.md` — link to full Auth email template set.
+
+## 2026-06-05 — CV PDF: CSS print pagination (no JS packer)
+
+Changed:
+- CV PDF — replaced JS DOM-packer on the PDF path with direct CSS print (`buildCvDocumentPrint` → `renderPdfDirect`). Chromium breaks at A4 naturally; `break-inside: avoid` keeps entries intact; Atlas blue sidebar painted on all pages via `background-attachment: fixed`. HTML náhľad (debug) still uses the packer. Renderer revision 13.
+
+## 2026-06-05 — Passkeys after BFF bearer fallback
+
+Fixed:
+- `ensureSupabaseAuthSession`: try `supabase.auth.refreshSession()` before BFF cookie refresh; `applySupabaseSessionTokens` after login when BFF cookies are not bound (settings enroll/list/sign-in).
+## 2026-06-05 — Login: no forced passkey + stale cookie 401 fix
+
+Fixed:
+- Login form and navbar **Prihlásiť sa** use email/password (or Google) only — no automatic discoverable passkey prompt on submit.
+- Post-login bootstrap: clear BFF cookies before `GET /api/auth/me`; omit cookies on Bearer-only bootstrap requests (fixes 401 from conflicting `jb_*` + fresh Supabase JWT on localhost).
+- Post-login logout (~1s): all `useApi` Bearer requests use `credentials: 'omit'`; verify BFF cookies after `establishSession` (dev proxy fallback to Bearer); auth plugin skips sign-out on token profile fetch 401; brief login-bootstrap guard for deferred Supabase `onAuthStateChange`.
+
+## 2026-06-05 — OAuth callback localhost handoff
+
+Fixed:
+- PWA `/auth/callback`: `loginBootstrap` + `finishAuthAfterSignIn` (same as password login); handle `exchangeCodeForSession` / OAuth errors; redirect to login with message on failure.
+- Auth plugin: skip aggressive sign-out on `/auth/callback` during PKCE handoff (`isAuthCallbackRoute`).
+- Login: show `auth_callback_failed` query error; surface post-auth bootstrap failure when Supabase session exists without Nest user.
+
+## 2026-06-05 — Google Sign-In OAuth branding runbook
+
+Docs:
+- [`supabase/AUTH-GOOGLE-OAUTH.md`](../supabase/AUTH-GOOGLE-OAUTH.md) — Google Cloud brand verification (free tier), OAuth client URIs, Supabase URL config, production test checklist; Pro+ Custom Domain (`auth.jobbie.sk`) notes.
+- `docs/auth-security.md` — Google OAuth branding subsection; production redirect URLs in Supabase URL configuration.
+- `docs/deployment.md` — link to Google OAuth runbook; `NUXT_PUBLIC_SUPABASE_URL` custom-domain note.
+
+## 2026-06-05 — Password recovery link + forgot-password UX
+
+Fixed:
+- PWA `/auth/reset-password`: recovery session via `verifyOtp({ token_hash, type: 'recovery' })` so reset links work when opened outside the requesting browser; PKCE `code` kept as fallback.
+
+Changed:
+- Login **Zabudol som heslo**: email-only step when empty; sent confirmation with optional webmail button (`email-webmail-url.ts`).
+
+Added:
+- `bootstrap-password-recovery-session.ts`, `auth-recovery.spec.ts`, `email-webmail-url.spec.ts`.
+- [`supabase/AUTH-EMAIL-TEMPLATES.md`](../supabase/AUTH-EMAIL-TEMPLATES.md) — Reset password template must use `TokenHash` + `RedirectTo`.
+
+Docs:
+- `docs/auth-security.md` — password reset + email template section.
+
+## 2026-06-04 — PWA Windows install & Cloudflare build scripts
+
+Changed:
+- PWA: `npm run build:cloudflare` uses local Nuxt (not `npx nuxi`); `NUXT_IGNORE_LOCK=1` for deploy builds.
+- PWA: `npm run ci:win` / `ci:win:quarantine` / `clean:win-native` for Windows EPERM cleanup; README documents dev-server lock on `esbuild.exe`.
+
+## 2026-06-04 — Homepage hero & app download art
+
+Changed:
+- PWA homepage hero phone column: `jobbie-mobile-hero.webp` (`HomeHeroSection`).
+- PWA “Jobbie vždy po ruke” download block: `jobbie-app.webp` (`HomeMarketingBlogFaqNewsletter`).
+
+## 2026-06-04 — Activity roles gate features (not account type)
+
+Changed:
+- **Feature access** uses profile activity flags (`customer_role`, `worker_role`, `provider_role`), not `profiles.role` (individual vs company). Account type remains for firma settings (IČO, `/nastavenia/firma`) only.
+- PWA nav (`account-nav-access`), `customer-only` middleware (replaces `company-only` on employer routes), `useCan`, job-alert redirects.
+- Backend: `ProfileActivityAuthorizationService`; job create + employer CV DB require `customer_role`; job email alerts require `worker_role` for all account types. Profile auth cache invalidated when activity flags change.
+
+Changed (same release):
+- PWA **Nastavenia → Profil**: account type (Jednotlivec / Firma · SZČO) is editable; link to firemný profil when company.
+- PWA role checkboxes: debounced multi-save fixes only-first-toggle persisting.
+
+Fixed:
+- `PATCH /api/profiles/me`: `role` whitelisted (`individual` | `company`); profile auth cache invalidated on change.
+
+## 2026-06-03 — Login passkey on Prihlásiť sa
+
+Changed:
+- Login: **Prihlásiť sa** tries passkey (discoverable WebAuthn) first when the browser supports it; cancel or no passkey falls back to e-mail + password. No separate passkey button.
+- Fix: passkey login no longer gets wiped by stale-session `signOut` on `/auth/login` reload; explicit `setSession` + BFF `establishSession` retry; login bootstrap flag held through handoff so auth plugin does not sign out mid-flow.
+- Navbar **Prihlásiť sa** (desktop + mobile drawer) tries passkey first via `usePasskeySignInFlow`; cancel or unsupported browser opens `/auth/login` with redirect preserved.
+
+## 2026-06-03 — Supabase auth bridge (MFA / passkeys)
+
+Fixed:
+- `ensureSupabaseAuthSession()`: BFF cookie refresh now calls `supabase.auth.setSession` (`syncSupabase: true`) so security settings (TOTP, passkeys, email/password) work after production login without persisted Supabase tokens.
+- BFF refresh sync: avoid `useAuth()` in `bff-session-refresh.ts` (ReferenceError / circular import with `useAuth`); use `auth-session-state.ts` + dynamic `useSupabase` import.
+- TOTP disable: `challenge` + `verify` + `refreshSession` (not `challengeAndVerify`); always verify code before unenroll; sync BFF after disable; read factors from `data.totp` fallback.
+- TOTP disable UX: drop broken global confirm modal step — first click opens inline OTP form; success message; do not clear OTP UI during `refreshTotpState` while disabling.
+- `AppButton`: emit `click` explicitly (`inheritAttrs: false` dropped listener forwarding) — fixes security settings TOTP/passkey buttons that appeared dead.
+- Passkeys: map `Credential verification failed` to setup hints after API failure only (removed erroneous localhost pre-flight block that prevented `registerPasskey` even when Supabase was configured); TOTP code step before enroll when 2FA is on.
+
+## 2026-06-03 — Account roles nav + settings redirect
+
+Fixed:
+- PWA app nav: signed-in users only see destinations they can use — `worker_role` (životopisy, ponuky na e-mail), `provider_role` (moje reklamy), company account type (ponuky, uchádzači, databáza CV); empty nav groups are hidden. Guests still see full marketing nav.
+- Role/account denials redirect to **Nastavenia → Profil** with banner + scroll (roles section or account type for employer-only).
+- `moje-reklamy` wizard routes use `provider-only` middleware (not `company-only`); profile **Štatistiky** link serves both `customer_role` and `provider_role` (one button, dashboard tabs when both).
+
+## 2026-06-03 — Cookie banner copy
+
+Changed:
+- PWA cookie banner: user-friendly Slovak intro (`Ahoj, používame súbory cookie`) without vendor names on first screen; analytics vendors remain in preferences modal and cookie inventory.
+
+## 2026-06-03 — Applicant auto-reply without confirm dialog
+
+Fixed:
+- `spravca-uchadzacov/[jobId]`: when company auto-replies are enabled (Plus/Pro), changing status to **Pozvať na pohovor** or **Zamietnutí** sends the template immediately — no “Presunúť a odoslať” confirmation. Confirm dialog remains only for explicit resend (`forceResend`).
+
+## 2026-06-03 — Remove /navody guide pages
+
+Changed:
+- Deleted all `/navody/*` guide pages (`pages/navody/[slug].vue`, `utils/guide-page-content.ts`); footer **NÁVODY** labels kept as non-navigating text (no URLs).
+- Removed guide paths from sitemap/SEO policy (`seo-route-policy.ts`, `backend-ts` `SeoService`).
+
+## 2026-06-03 — Remove visible SEO breadcrumb / AEO summary blocks
+
+Changed:
+- Job, blog, and professional detail pages no longer render on-page breadcrumbs (`Domov / …`) or the “Súhrn ponuky” fact panel; meta tags and `BreadcrumbList` / `JobPosting` JSON-LD remain via `usePublicContentSeo`.
+- Removed `components/seo/AppBreadcrumbs.vue`, `PublicContentAeoSummary.vue`, and AEO fact builders from `utils/public-content-seo.ts`.
+
+## 2026-06-03 — Subscription cancel (BFF step-up + incomplete Stripe)
+
+Fixed:
+- Billing step-up when Supabase tokens were cleared after BFF login (production): resolve access via `POST /api/auth/session/refresh` (`resolveBillingBffTokens`).
+- BFF probe for billing: `GET /api/auth/session/bound` (requires `jb_sid`) replaces `/api/auth/me` — step-up no longer skipped when only `jb_at` cookie was present.
+- Step-up / `@RequireRecentLogin`: match `api_user_sessions` by `access_token_jti` when `jb_sid` cookie is missing but `jb_at` is present.
+- Step-up retries after session refresh (CSRF sync); billing re-establish calls `logoutSession` before a fresh `establishSession`.
+- Cancel/resume billing mutations: step-up re-bootstraps BFF session + CSRF before `POST /api/payments/cancel-subscription`.
+- `POST /api/payments/cancel-subscription`: Stripe subscriptions in `incomplete` / `incomplete_expired` are canceled immediately instead of `cancel_at_period_end` (which Stripe rejects).
+- PWA: clearer message when step-up fails before cancel (`settingsBillingStepUpFailed`).
+
+## 2026-06-03 — app-pwa Nuxt dev (`rollupOptions.input`)
+
+Fixed:
+- `experimental.viteEnvironmentApi: true` in `nuxt.config.ts` — fixes dev crash `No entry found in rollupOptions.input` on Nuxt 3.21 + Vite 7 when `ssr` is false (local / non-indexing).
+
+## 2026-06-03 — Subscription free trial (Stripe Price, toggleable in Dashboard)
+
+Added:
+- Paid-plan free trial driven by **Stripe Price** `recurring.trial_period_days` (disable by removing trial on the Price in Dashboard). First-time Stripe subscribers only; card collected up front, charge after trial.
+- Migration `20260630120000_subscription_trial.sql` (`trialing` status, `profiles.subscription_trial_used_at`).
+- API: `subscriptionTrial` on `GET /api/billing/config`; `subscriptionTrialEligible` on `GET /api/billing/account`; setup-intent path on `POST /api/payments/confirm-subscription`.
+- PWA: trial badge on `/cennik` plans; checkout copy on `/platba`.
+
+Changed:
+- [`docs/payments-credits.md`](payments-credits.md) — trial env and flows.
+
+Database:
+- `user_subscriptions.status` allows `trialing`; `profiles.subscription_trial_used_at`.
+
+## 2026-06-03 — backend-ts npm audit (0 vulnerabilities)
 
 Security:
 - Upgraded NestJS stack to **11.1.24** (`@nestjs/common`, `core`, `platform-express`, `websockets`, `platform-socket.io`), `@nestjs/config` **4.x**, `@nestjs/schedule` **6.x**, `@nestjs/cli` **11.x**; **Express 5.2.1**.
@@ -221,6 +448,7 @@ Fixed:
 ## 2026-06-02 — CV PDF page count (pagination packer)
 
 Fixed:
+- Atlas CV — profile photo 40×40 mm circle without border; flatter main column markup; pagination measures A4-sized sheets, rebuilds breakable sections on output pages (renderer revision 12).
 - CV builder — temporary **HTML náhľad** button (`POST /api/cv/:cvId/document/preview-html`) for template/CSS work; main **Náhľad** stays PDF.
 - CV preview — `POST /api/cv/:cvId/document/preview` returns inline PDF (same Playwright pipeline as export); PWA opens PDF in a new tab. Draft download uses `POST …/pdf/render` with editor payload. Pagination measure host matches print sheet size; PDF renderer revision 11.
 - CV export — Znalosti and Vodičský preukaz use horizontal chip rows on all templates (driving no longer uses vertical `contact-stack`); PDF renderer revision 10.

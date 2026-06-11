@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -12,7 +13,7 @@ import { Request, Response } from 'express';
 import { Public } from '../public.decorator';
 import { CreateSessionDto, StepUpSessionDto } from './session.dto';
 import { SessionService } from './session.service';
-import { SessionAuthGuard } from '../session-auth.guard';
+import { SessionAuthGuard, AuthenticatedRequest } from '../session-auth.guard';
 import { UseGuards } from '@nestjs/common';
 
 function clientIp(req: Request): string | null {
@@ -48,6 +49,19 @@ export class SessionController {
       userAgent: body.user_agent?.trim() || headerUa || undefined,
       ip: clientIp(req),
     });
+  }
+
+  /**
+   * Whether the browser sent a `jb_sid` cookie (required for billing step-up).
+   * `GET /api/auth/me` can succeed with `jb_at` alone — do not use it as a BFF probe.
+   */
+  @Get('bound')
+  @UseGuards(SessionAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  sessionBound(@Req() req: Request): { ok: true; session_bound: boolean } {
+    const sessionId = (req as AuthenticatedRequest).sessionId;
+    return { ok: true, session_bound: Boolean(sessionId?.trim()) };
   }
 
   @Post('refresh')

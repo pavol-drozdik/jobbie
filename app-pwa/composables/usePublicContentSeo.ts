@@ -5,19 +5,15 @@ import type { BreadcrumbJsonLdItem } from '~/utils/seo-json-ld'
 import { normalizeSiteUrl } from '~/utils/seo-config'
 import { useBrandSeoConfig } from '~/utils/brand-seo'
 import {
-  buildBlogAeoFacts,
   buildBlogPostDetailBreadcrumbs,
   buildBlogPostDetailJsonLd,
   buildBlogPostDetailSeoMeta,
-  buildCompanyAdAeoFacts,
-  buildJobAeoFacts,
   buildJobDetailBreadcrumbs,
   buildJobDetailJsonLd,
   buildJobDetailSeoMeta,
   buildProfessionalAdDetailBreadcrumbs,
   buildProfessionalAdDetailJsonLd,
   buildProfessionalAdDetailSeoMeta,
-  type PublicContentAeoFact,
 } from '~/utils/public-content-seo'
 
 type ContentRef<T> = Ref<T | null | undefined> | ComputedRef<T | null | undefined>
@@ -34,10 +30,7 @@ function resolveContent<T>(source: ContentRef<T>): T | null {
 export function useJobDetailSeo(
   job: ContentRef<Job>,
   options: { fallbackTitle?: string } = {},
-): {
-  breadcrumbs: ComputedRef<BreadcrumbJsonLdItem[]>
-  aeoFacts: ComputedRef<readonly PublicContentAeoFact[]>
-} {
+): void {
   const route = useRoute()
   const config = useRuntimeConfig()
   const siteUrl = computed(() =>
@@ -46,10 +39,6 @@ export function useJobDetailSeo(
   const breadcrumbs = computed(() => {
     const j = resolveContent(job)
     return j ? buildJobDetailBreadcrumbs(j) : []
-  })
-  const aeoFacts = computed(() => {
-    const j = resolveContent(job)
-    return j ? buildJobAeoFacts(j) : []
   })
   usePageSeo(() => {
     const j = resolveContent(job)
@@ -73,16 +62,10 @@ export function useJobDetailSeo(
       jsonLd: site ? buildJobDetailJsonLd(j, site, breadcrumbs.value) : null,
     }
   })
-  return { breadcrumbs, aeoFacts }
 }
 
 /** Full SEO for a public blog article. */
-export function useBlogPostDetailSeo(
-  post: ContentRef<BlogPostDetail>,
-): {
-  breadcrumbs: ComputedRef<BreadcrumbJsonLdItem[]>
-  aeoFacts: ComputedRef<readonly PublicContentAeoFact[]>
-} {
+export function useBlogPostDetailSeo(post: ContentRef<BlogPostDetail>): void {
   const route = useRoute()
   const brand = useBrandSeoConfig()
   const config = useRuntimeConfig()
@@ -92,10 +75,6 @@ export function useBlogPostDetailSeo(
   const breadcrumbs = computed(() => {
     const p = resolveContent(post)
     return p ? buildBlogPostDetailBreadcrumbs(p) : []
-  })
-  const aeoFacts = computed(() => {
-    const p = resolveContent(post)
-    return p ? buildBlogAeoFacts(p) : []
   })
   usePageSeo(() => {
     const p = resolveContent(post)
@@ -116,17 +95,13 @@ export function useBlogPostDetailSeo(
         : null,
     }
   })
-  return { breadcrumbs, aeoFacts }
 }
 
 /** Full SEO for a public professional / company ad detail. */
 export function useProfessionalAdDetailSeo(
   ad: ContentRef<CompanyAd>,
   options: { fallbackTitle?: string } = {},
-): {
-  breadcrumbs: ComputedRef<BreadcrumbJsonLdItem[]>
-  aeoFacts: ComputedRef<readonly PublicContentAeoFact[]>
-} {
+): void {
   const route = useRoute()
   const config = useRuntimeConfig()
   const siteUrl = computed(() =>
@@ -135,10 +110,6 @@ export function useProfessionalAdDetailSeo(
   const breadcrumbs = computed(() => {
     const a = resolveContent(ad)
     return a ? buildProfessionalAdDetailBreadcrumbs(a) : []
-  })
-  const aeoFacts = computed(() => {
-    const a = resolveContent(ad)
-    return a ? buildCompanyAdAeoFacts(a) : []
   })
   usePageSeo(() => {
     const a = resolveContent(ad)
@@ -162,5 +133,4 @@ export function useProfessionalAdDetailSeo(
       jsonLd: site ? buildProfessionalAdDetailJsonLd(a, site, breadcrumbs.value) : null,
     }
   })
-  return { breadcrumbs, aeoFacts }
 }

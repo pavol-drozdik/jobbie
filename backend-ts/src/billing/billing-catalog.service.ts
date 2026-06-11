@@ -1,8 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 import { SupabaseService } from '../supabase/supabase.service';
 
 import { CatalogCacheService } from '../redis/catalog-cache.service';
+import { StripeService } from '../payments/stripe.service';
+import { resolveSubscriptionStripePriceId } from '../payments/stripe-catalog-prices';
+import { SubscriptionTrialService } from './subscription-trial.service';
 
 import {
   CREDIT_PACKAGES,
@@ -59,6 +63,9 @@ export type MarketingSubscriptionPlan = {
 
   badge: 'recommended' | null;
 
+  /** From Stripe Price `recurring.trial_period_days` (0 = no trial on that price). */
+  trialPeriodDays: number;
+
 };
 
 
@@ -74,11 +81,12 @@ export class BillingCatalogService {
 
 
   constructor(
-
     private readonly supabase: SupabaseService,
-
     private readonly catalogCache: CatalogCacheService,
-
+    private readonly config: ConfigService,
+    private readonly subscriptionTrial: SubscriptionTrialService,
+    @Inject(forwardRef(() => StripeService))
+    private readonly stripeService: StripeService,
   ) {}
 
 
@@ -239,7 +247,7 @@ export class BillingCatalogService {
 
       .select(
 
-        'slug, name_sk, price_monthly_cents, monthly_credits, max_active_jobs, max_cv_unlocks_monthly, max_cv_contacts_monthly, max_cv_pdf_downloads_monthly, sort_order, active',
+        'slug, name_sk, price_monthly_cents, monthly_credits, max_active_jobs, max_cv_unlocks_monthly, max_cv_contacts_monthly, max_cv_pdf_downloads_monthly, sort_order, active, stripe_price_id',
 
       )
 
@@ -279,6 +287,8 @@ export class BillingCatalogService {
 
       max_cv_pdf_downloads_monthly: number | null;
 
+      stripe_price_id: string | null;
+
     }>;
 
 
@@ -289,46 +299,49 @@ export class BillingCatalogService {
 
     }
 
-
-
-    return filterPublicSubscriptionPlans(rows).map((row) => {
-
-      const fallback = cvLimitsBySlug[row.slug];
-
-      return {
-
-        slug: row.slug,
-
-        nameSk: row.name_sk,
-
-        priceMonthlyCents: row.price_monthly_cents,
-
-        monthlyCredits: row.monthly_credits,
-
-        maxActiveOffers: row.max_active_jobs,
-
-        maxCvUnlocksMonthly:
-
-          row.max_cv_unlocks_monthly ?? fallback?.maxCvUnlocksMonthly ?? null,
-
-        maxCvContactsMonthly:
-
-          row.max_cv_contacts_monthly ?? fallback?.maxCvContactsMonthly ?? null,
-
-        maxCvPdfDownloadsMonthly:
-
-          row.max_cv_pdf_downloads_monthly ??
-
-          fallback?.maxCvPdfDownloadsMonthly ??
-
-          null,
-
-        badge: badgeBySlug[row.slug] ?? null,
-
-      };
-
-    });
-
+    let stripe: ReturnType<StripeService['getStripeClientForTrialChecks']> | null =
+      null;
+    try {
+      stripe = this.stripeService.getStripeClientForTrialChecks();
+    } catch {
+      stripe = null;
+    }
+    const filtered = filterPublicSubscriptionPlans(rows);
+    const plans = await Promise.all(
+      filtered.map(async (row) => {
+        const fallback = cvLimitsBySlug[row.slug];
+        const stripePriceId = resolveSubscriptionStripePriceId(
+          this.config,
+          row.slug,
+          row.stripe_price_id,
+        );
+        const trialPeriodDays =
+          stripe && stripePriceId
+            ? await this.subscriptionTrial.getTrialPeriodDaysForPrice(
+                stripe,
+                stripePriceId,
+              )
+            : 0;
+        return {
+          slug: row.slug,
+          nameSk: row.name_sk,
+          priceMonthlyCents: row.price_monthly_cents,
+          monthlyCredits: row.monthly_credits,
+          maxActiveOffers: row.max_active_jobs,
+          maxCvUnlocksMonthly:
+            row.max_cv_unlocks_monthly ?? fallback?.maxCvUnlocksMonthly ?? null,
+          maxCvContactsMonthly:
+            row.max_cv_contacts_monthly ?? fallback?.maxCvContactsMonthly ?? null,
+          maxCvPdfDownloadsMonthly:
+            row.max_cv_pdf_downloads_monthly ??
+            fallback?.maxCvPdfDownloadsMonthly ??
+            null,
+          badge: badgeBySlug[row.slug] ?? null,
+          trialPeriodDays,
+        };
+      }),
+    );
+    return plans;
   }
 
 
@@ -379,6 +392,8 @@ export class BillingCatalogService {
 
       badge: p.badge,
 
+      trialPeriodDays: 0,
+
     }));
 
   }
@@ -386,15 +401,23 @@ export class BillingCatalogService {
 
 
   async getPublicBillingConfig(): Promise<Record<string, unknown>> {
-    return this.catalogCache.getOrSet('catalog:billing-config:v5', async () => {
+    return this.catalogCache.getOrSet('catalog:billing-config:v8', async () => {
       const [creditPackages, subscriptionPlans] = await Promise.all([
         this.getCreditPackages(),
         this.getSubscriptionPlans(),
       ]);
+      const trialFromPlans = subscriptionPlans.reduce(
+        (max, p) => (p.trialPeriodDays > max ? p.trialPeriodDays : max),
+        0,
+      );
       return {
         creditPackages,
         subscriptionPlans,
         planTierCreditCosts: getPublicPlanTierCreditCosts(),
+        subscriptionTrial: {
+          enabled: trialFromPlans > 0,
+          periodDays: trialFromPlans,
+        },
       };
     }, 600);
   }

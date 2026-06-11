@@ -343,9 +343,7 @@ const previewCount = ref<number | null>(null)
 const previewLoading = ref(false)
 
 const employerBlocked = computed(() => {
-  const isCompany =
-    profile.value?.role === 'company' || user.value?.role === 'company'
-  return isCompany && !profile.value?.worker_role
+  return Boolean(profile.value?.customer_role) && !profile.value?.worker_role
 })
 
 const previewFindQuery = computed(() => {

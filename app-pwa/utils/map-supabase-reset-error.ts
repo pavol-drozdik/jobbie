@@ -53,6 +53,28 @@ export function mapSupabaseResetError(
   return S.resetPasswordSaveFailed
 }
 
+function isPkceVerifierMissing(code?: string | null, message?: string | null): boolean {
+  const normalizedCode = (code ?? '').toLowerCase()
+  const msg = (message ?? '').toLowerCase()
+  return (
+    normalizedCode === 'pkce_code_verifier_missing' ||
+    (msg.includes('code') && msg.includes('verifier')) ||
+    msg.includes('both auth code and code verifier') ||
+    msg.includes('pkce code verifier not found')
+  )
+}
+
+/** Maps errors from verifyOtp during recovery link open. */
+export function mapSupabaseRecoveryVerifyError(
+  code?: string | null,
+  message?: string | null,
+): string {
+  if (isPkceVerifierMissing(code, message)) {
+    return S.resetPasswordPkceVerifierMissing
+  }
+  return mapSupabaseRecoveryExchangeError(code, message)
+}
+
 /** Maps errors from exchangeCodeForSession during recovery link open. */
 export function mapSupabaseRecoveryExchangeError(
   code?: string | null,
@@ -60,6 +82,9 @@ export function mapSupabaseRecoveryExchangeError(
 ): string {
   const normalizedCode = (code ?? '').toLowerCase()
   const msg = (message ?? '').toLowerCase()
+  if (isPkceVerifierMissing(code, message)) {
+    return S.resetPasswordPkceVerifierMissing
+  }
   if (
     normalizedCode === 'flow_state_expired' ||
     normalizedCode === 'otp_expired' ||
@@ -68,11 +93,7 @@ export function mapSupabaseRecoveryExchangeError(
   ) {
     return S.resetPasswordExpired
   }
-  if (
-    msg.includes('code') && msg.includes('verifier') ||
-    msg.includes('both auth code and code verifier') ||
-    msg.includes('invalid flow state')
-  ) {
+  if (msg.includes('invalid flow state')) {
     return S.resetPasswordExpired
   }
 

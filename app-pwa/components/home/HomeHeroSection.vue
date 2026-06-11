@@ -170,7 +170,7 @@ import {
   type RecentFindFilterSnapshot,
 } from '~/utils/recent-find-filters'
 
-const HERO_PHONE_SRC = '/img/jobbie-mobile-mockup.webp'
+const HERO_PHONE_SRC = '/img/jobbie-mobile-hero.webp'
 const heroPhoneSrc = HERO_PHONE_SRC
 
 useHead({

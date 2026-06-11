@@ -15,7 +15,7 @@ Súbor data.json je strojovo čitateľný prenos údajov.
 Po zmazaní účtu sú osobné údaje profilu anonymizované; niektoré záznamy
 (metadáta transakcií, audit) môžu byť uchované po zákonne požadovanú dobu.
 
-Otázky: podpora@jobbie.sk
+Otázky: ahoj@jobbie.sk
 `;
 
 /** GDPR ZIP — add new personal data tables/fields to buildExportPayload when schema grows. */

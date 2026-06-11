@@ -26,7 +26,7 @@ import { S } from '~/utils/strings'
 import JobEmailAlertCreateWizard from '~/components/job-alerts/JobEmailAlertCreateWizard.vue'
 import LoggedOutFeatureHero from '~/components/marketing/LoggedOutFeatureHero.vue'
 
-definePageMeta({ layout: 'app' })
+definePageMeta({ layout: 'app', middleware: ['worker-only'] })
 usePageSeo({ noindex: true })
 
 const route = useRoute()

@@ -28,7 +28,8 @@ import { JwksAuthGuard } from '../auth/jwks-auth.guard';
 
 import { CurrentUserDecorator } from '../auth/current-user.decorator';
 
-import { CurrentUser, UserRole } from '../auth/auth.types';
+import { CurrentUser } from '../auth/auth.types';
+import { ProfileActivityAuthorizationService } from '../profiles/profile-activity-authorization.service';
 
 import { EmployerCvDatabaseService } from './employer-cv-database.service';
 
@@ -50,7 +51,7 @@ import {
 
 
 
-// SECURITY: Company role only; contact/unlock rules enforced in EmployerCvDatabaseService.
+// SECURITY: customer_role required; contact/unlock rules enforced in EmployerCvDatabaseService.
 
 @Controller('employer')
 
@@ -70,17 +71,15 @@ export class EmployerCvDatabaseController {
 
     private readonly cvPdf: CvPdfService,
 
+    private readonly profileActivity: ProfileActivityAuthorizationService,
+
   ) {}
 
 
 
-  private assertCompany(user: CurrentUser): void {
+  private async assertCustomer(user: CurrentUser): Promise<void> {
 
-    if (user.role !== UserRole.company) {
-
-      throw new ForbiddenException('Len účty zamestnávateľa môžu používať databázu životopisov');
-
-    }
+    await this.profileActivity.assertActivityRole(user.id, 'customer');
 
   }
 
@@ -96,7 +95,7 @@ export class EmployerCvDatabaseController {
 
   ) {
 
-    this.assertCompany(user);
+    await this.assertCustomer(user);
 
     return this.cvDatabase.list(user.id, query);
 
@@ -114,7 +113,7 @@ export class EmployerCvDatabaseController {
 
   ) {
 
-    this.assertCompany(user);
+    await this.assertCustomer(user);
 
     await this.cvQuota.consumeIncludedPdfAccess(user.id, cvId);
 
@@ -134,7 +133,7 @@ export class EmployerCvDatabaseController {
 
   ) {
 
-    this.assertCompany(user);
+    await this.assertCustomer(user);
 
     // SECURITY: Verify the CV is actually eligible for the employer database
     // BEFORE consuming quota / inserting an unlock row. Without this guard a
@@ -205,7 +204,7 @@ export class EmployerCvDatabaseController {
 
   ) {
 
-    this.assertCompany(user);
+    await this.assertCustomer(user);
 
     await this.cvQuota.consumeIncludedQuota(user.id, 'contact');
 
@@ -231,7 +230,7 @@ export class EmployerCvDatabaseController {
 
   ): Promise<void> {
 
-    this.assertCompany(user);
+    await this.assertCustomer(user);
 
     await this.cvQuota.consumeIncludedPdfAccess(user.id, cvId);
 

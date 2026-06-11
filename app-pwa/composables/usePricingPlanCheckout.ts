@@ -72,7 +72,7 @@ export function usePricingPlanCheckout(options: {
 
   async function load(): Promise<void> {
     loadError.value = null
-    const rows = await loadPlansCatalog()
+    const rows = await loadPlansCatalog(true)
     plans.value = filterPublicSubscriptionPlans(rows)
     const token = session.value?.access_token
     if (!token) {

@@ -215,7 +215,7 @@
       'Zobrazenie ponuky relevantným uchádzačom',
       'Jednoduchá správa inzerátu',
     ]"
-    image-src="/home-design/job-post-illustration.png"
+    image-src="/home-design/foreign-job-illustration.png"
     image-alt="Vytvorenie zahraničnej pracovnej ponuky"
     :redirect-path="redirectPath"
   />
@@ -228,7 +228,7 @@ import type { Job } from '~/utils/job'
 import LoggedOutFeatureHero from '~/components/marketing/LoggedOutFeatureHero.vue'
 import JobHubRow from '~/components/job-post/JobHubRow.vue'
 
-definePageMeta({ layout: 'app' })
+definePageMeta({ layout: 'app', middleware: ['customer-only'] })
 
 const route = useRoute()
 const router = useRouter()

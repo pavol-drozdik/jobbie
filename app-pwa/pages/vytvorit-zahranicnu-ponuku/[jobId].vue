@@ -33,7 +33,7 @@ import { ROUTES } from '~/utils/app-routes'
 import { S } from '~/utils/strings'
 import LoggedOutFeatureHero from '~/components/marketing/LoggedOutFeatureHero.vue'
 
-definePageMeta({ layout: 'app', middleware: ['company-only'] })
+definePageMeta({ layout: 'app', middleware: ['customer-only'] })
 
 const route = useRoute()
 const redirectPath = computed(() => route.fullPath || ROUTES.foreignJobHub)

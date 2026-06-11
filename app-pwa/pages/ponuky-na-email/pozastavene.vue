@@ -54,7 +54,7 @@
 <script setup lang="ts">
 import { S } from '~/utils/strings'
 
-definePageMeta({ layout: 'app' })
+definePageMeta({ layout: 'app', middleware: ['worker-only'] })
 usePageSeo({ noindex: true })
 
 const route = useRoute()

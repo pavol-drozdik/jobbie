@@ -4,7 +4,7 @@
   >
     <div class="mx-auto w-full max-w-[1320px] px-5 marketing:px-12">
       <div
-        class="grid grid-cols-1 gap-10 sm:grid-cols-2 marketing:grid-cols-[1.15fr_1fr_1.1fr_1.35fr] marketing:gap-x-12 marketing:gap-y-10"
+        class="grid grid-cols-1 gap-10 sm:grid-cols-2 marketing:grid-cols-[1.05fr_0.95fr_1fr_1.6fr] marketing:gap-x-12 marketing:gap-y-10"
       >
         <div class="flex min-w-0 flex-col gap-5 sm:col-span-2 marketing:col-span-1">
           <AppBrandLogo
@@ -87,10 +87,10 @@
             {{ S.footerGuides }}
           </h3>
           <ul class="m-0 flex list-none flex-col gap-2.5 p-0">
-            <li v-for="(item, index) in tutorialLinks" :key="index">
-              <NuxtLink :to="item.to" :class="footerLinkClass">
-                {{ item.label }}
-              </NuxtLink>
+            <li v-for="(label, index) in tutorialLinkLabels" :key="index">
+              <span :class="footerGuideLabelClass">
+                {{ label }}
+              </span>
             </li>
           </ul>
         </nav>
@@ -223,6 +223,9 @@ const footerHeadingClass =
 const footerLinkClass =
   'font-dmSans text-[15px] font-medium leading-normal text-marketing-abLink no-underline transition-colors hover:text-marketing-abGreen focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marketing-green/40'
 
+const footerGuideLabelClass =
+  'font-dmSans text-[15px] font-medium leading-normal text-marketing-abLink'
+
 const newsletterInputClass =
   'h-11 min-h-[44px] w-full min-w-0 rounded-xl border border-black/10 bg-white px-4 font-dmSans text-[15px] font-normal text-marketing-abInk outline-none placeholder:font-dmSans placeholder:font-normal placeholder:text-black/30 focus-visible:border-marketing-abGreen focus-visible:ring-2 focus-visible:ring-marketing-green/20'
 
@@ -265,15 +268,15 @@ function onRejectAllCookies(): void {
 const { phase: newsletterPhase, submit: submitNewsletter, resetPhase: resetNewsletterPhase } =
   useNewsletterSubscribe()
 
-const tutorialLinks = [
-  { to: ROUTES.guideEmailAlerts, label: S.footerGuideJobEmailAlerts },
-  { to: ROUTES.guideHowItWorks, label: S.footerGuideHowItWorks },
-  { to: ROUTES.guideRegister, label: S.footerGuideHowToRegister },
-  { to: ROUTES.guideCreateService, label: S.footerGuideCreateService },
-  { to: ROUTES.guideCreateProfile, label: S.footerGuideCreateProfile },
-  { to: ROUTES.guideTopService, label: S.footerGuideTopService },
-  { to: ROUTES.guideAddVoucher, label: S.footerGuideAddVoucher },
-  { to: ROUTES.authRegister, label: S.footerGuideSignUpCta },
+const tutorialLinkLabels = [
+  S.footerGuideJobEmailAlerts,
+  S.footerGuideHowItWorks,
+  S.footerGuideHowToRegister,
+  S.footerGuideCreateService,
+  S.footerGuideCreateProfile,
+  S.footerGuideTopService,
+  S.footerGuideAddVoucher,
+  S.footerGuideSignUpCta,
 ] as const
 
 const newsletterName = ref<string>('')

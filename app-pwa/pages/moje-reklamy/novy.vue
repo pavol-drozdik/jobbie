@@ -21,7 +21,12 @@
   <div v-else-if="!isProvider" class="min-h-screen bg-marketing-mint px-5 py-16 font-dmSans">
     <div class="mx-auto max-w-lg rounded-[20px] bg-white p-6 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.1)]">
       <p class="m-0 text-sm text-black/70">{{ S.firmyProviderRequired }}</p>
-      <AppButton variant="primary" size="lg" class="mt-4 max-w-xs" :to="ROUTES.profile">
+      <AppButton
+        variant="primary"
+        size="lg"
+        class="mt-4 max-w-xs"
+        :to="ROUTES.settingsProfilDenied('provider')"
+      >
         {{ S.firmyGoToProfile }}
       </AppButton>
     </div>
@@ -42,7 +47,7 @@ import { useFirmyWizardBootstrap } from '~/utils/company-ad-hub'
 import { waitForAuthReady } from '~/utils/wait-for-auth'
 import LoggedOutFeatureHero from '~/components/marketing/LoggedOutFeatureHero.vue'
 
-definePageMeta({ layout: 'app', middleware: ['company-only'] })
+definePageMeta({ layout: 'app', middleware: ['provider-only'] })
 
 const route = useRoute()
 const redirectPath = computed(() => route.fullPath || ROUTES.myAdsNew)

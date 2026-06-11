@@ -122,19 +122,24 @@ export function useApplicantStatusAction(jobId: Ref<string> | ComputedRef<string
           truncated ? S.applicantsBulkLimitWarning : S.applicantsAutoReplyDisabledHint
         return 'done'
       }
-      pendingAction.value = {
-        ids: limited,
-        status,
-        forceResend: opts?.forceResend,
+      if (opts?.forceResend) {
+        pendingAction.value = {
+          ids: limited,
+          status,
+          forceResend: true,
+        }
+        autoReplyTitle.value = autoReplyTitleFor(status, limited.length)
+        autoReplyMessage.value = S.applicantsAutoReplyResendHint
+        autoReplyPreview.value =
+          template?.trim() ?
+            `${S.applicantsAutoReplyPreviewPrefix} ${previewLine(template)}`
+          : ''
+        autoReplyOpen.value = true
+        return 'confirm'
       }
-      autoReplyTitle.value = autoReplyTitleFor(status, limited.length)
-      autoReplyMessage.value = opts?.forceResend ? S.applicantsAutoReplyResendHint : ''
-      autoReplyPreview.value =
-        template?.trim() ?
-          `${S.applicantsAutoReplyPreviewPrefix} ${previewLine(template)}`
-        : ''
-      autoReplyOpen.value = true
-      return 'confirm'
+      await executeStatusChange(limited, status, true)
+      if (truncated) feedback.value = S.applicantsBulkLimitWarning
+      return 'done'
     }
 
     await executeStatusChange(limited, status, false)

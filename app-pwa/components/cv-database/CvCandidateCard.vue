@@ -85,14 +85,26 @@
         <p class="m-0 mb-1.5 font-dmSans text-xs font-bold uppercase tracking-wide text-black/45">
           {{ S.cvDbContactSectionTitle }}
         </p>
-        <p v-if="item.contact_email" class="m-0 font-dmSans text-sm text-black/80">
-          <span class="font-semibold text-black">E-mail:</span>
-          <a :href="`mailto:${item.contact_email}`" class="text-marketing-green hover:underline">{{ item.contact_email }}</a>
-        </p>
-        <p v-if="item.contact_phone" class="m-0 mt-1 font-dmSans text-sm text-black/80">
-          <span class="font-semibold text-black">Telefón:</span>
-          <a :href="`tel:${item.contact_phone}`" class="text-marketing-green hover:underline">{{ item.contact_phone }}</a>
-        </p>
+        <dl class="m-0 space-y-1 p-0 font-dmSans text-sm text-black/80">
+          <div v-if="item.contact_email" class="grid grid-cols-[auto,minmax(0,1fr)] items-baseline gap-x-2">
+            <dt class="m-0 font-semibold text-black">E-mail:</dt>
+            <dd class="m-0 min-w-0">
+              <a
+                :href="`mailto:${item.contact_email}`"
+                class="break-all text-marketing-green hover:underline"
+              >{{ item.contact_email }}</a>
+            </dd>
+          </div>
+          <div v-if="item.contact_phone" class="grid grid-cols-[auto,minmax(0,1fr)] items-baseline gap-x-2">
+            <dt class="m-0 font-semibold text-black">Telefón:</dt>
+            <dd class="m-0 min-w-0">
+              <a
+                :href="`tel:${item.contact_phone}`"
+                class="break-all text-marketing-green hover:underline"
+              >{{ item.contact_phone }}</a>
+            </dd>
+          </div>
+        </dl>
       </div>
 
       <div v-if="item.education_summary" class="hidden min-w-0 min-[380px]:block">
@@ -109,7 +121,7 @@
           {{ S.cvDbCardViewCv }}
         </AppButton>
         <AppButton
-          v-if="!item.contacts_visible"
+          v-if="showUnlockButton"
           variant="outline"
           size="md"
           block
@@ -136,7 +148,7 @@
         {{ S.cvDbCardViewCv }}
       </AppButton>
       <AppButton
-        v-if="!item.contacts_visible"
+        v-if="showUnlockButton"
         variant="outline"
         size="md"
         class="w-full min-[480px]:w-auto"
@@ -186,6 +198,8 @@ const emit = defineEmits<{
 }>()
 
 const actionBusy = computed(() => props.contactBusy || props.unlockBusy)
+
+const showUnlockButton = computed(() => props.item.has_contact_to_unlock === true)
 
 const unlockLabel = computed(() =>
   props.unlockBusy ? S.cvUnlockLoading : S.cvUnlockLabel,

@@ -87,6 +87,18 @@ export class CvHtmlPdfRenderer {
     })
   }
 
+  /**
+   * Direct CSS print — no JS packer. Load content, wait for fonts, print.
+   * Relies on `@page { size: A4; margin: 0 }` and `break-inside: avoid` in the document CSS.
+   */
+  async renderPdfDirect(html: string): Promise<Buffer> {
+    return this.withPage(async (page) => {
+      await page.setContent(html, { waitUntil: 'networkidle', timeout: 60_000 })
+      await this.ensureDocumentFontsReady(page)
+      return this.printPageToPdf(page)
+    })
+  }
+
   /** PDF from already-paginated HTML (no bootstrap script). */
   async renderPdfFromPaginatedHtml(html: string): Promise<Buffer> {
     return this.withPage(async (page) => {

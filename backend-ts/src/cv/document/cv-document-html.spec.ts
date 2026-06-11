@@ -7,7 +7,7 @@ jest.mock('../../common/sanitize-html.util', () => ({
 
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { buildCvDocument, CV_DOCUMENT_FONT_LINK } from './cv-document-html'
+import { buildCvDocument, buildCvDocumentPrint, CV_DOCUMENT_FONT_LINK } from './cv-document-html'
 import { buildCvPdfPrintDocument } from './cv-document-preview-html'
 import { buildCvDocumentStyles } from './cv-document-styles'
 import type { CvDocumentExportData, CvDocumentUiTemplate } from './cv-document.types'
@@ -131,6 +131,31 @@ describe('buildCvDocument', () => {
   it('marks experience and education sections as breakable', () => {
     const html = buildCvDocument(sampleData('atlas'))
     expect(html).toContain('class="atlas-intro cv-breakable-section"')
+  })
+
+  it('buildCvDocumentPrint produces direct-print HTML (no packer, has @page)', () => {
+    const templates: CvDocumentUiTemplate[] = ['atlas', 'editorial', 'minimalist', 'monochrome']
+    for (const template of templates) {
+      const html = buildCvDocumentPrint(sampleData(template))
+      expect(html).toContain('@page')
+      expect(html).toContain('cv-export-pdf')
+      // Must not have the packer DOM structure (CSS selectors referencing them are OK)
+      expect(html).not.toContain('id="cv-pagination-source"')
+      expect(html).not.toContain('id="cv-pagination-output"')
+      expect(html).not.toContain('__cvPaginationDone')
+      expect(html).toContain(`${template}-page`)
+    }
+  })
+
+  it('atlas profile photo is 40mm circle without border class hook', () => {
+    const data = sampleData('atlas')
+    data.profilePhoto = 'https://example.com/photo.jpg'
+    const html = buildCvDocument(data)
+    expect(html).toContain('atlas-profile-photo')
+    const styles = buildCvDocumentStyles('pdf')
+    expect(styles).toContain('width: 40mm')
+    expect(styles).toContain('border-radius: 50%')
+    expect(styles).toContain('.atlas-sidebar .atlas-profile-photo')
   })
 
   function atlasPaginationFixture(): CvDocumentExportData {

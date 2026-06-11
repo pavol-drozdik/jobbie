@@ -247,7 +247,13 @@ export class SessionService {
     }
 
     const cookieSessionId = this.cookies.readCookies(req).sessionId;
-    const row = await this.resolveActiveSessionRow(user.id, cookieSessionId);
+    let row = await this.resolveActiveSessionRow(user.id, cookieSessionId);
+    if (!row) {
+      const accessJti = await this.deriveJti(accessToken);
+      if (accessJti) {
+        row = await this.resolveActiveSessionRowByAccessJti(user.id, accessJti);
+      }
+    }
     if (!row) {
       throw new UnauthorizedException('Missing session');
     }
@@ -304,6 +310,31 @@ export class SessionService {
    * matching session row and force the caller to re-establish a cookie
    * session if they want to perform step-up-protected actions.
    */
+  private async resolveActiveSessionRowByAccessJti(
+    userId: string,
+    accessJti: string,
+  ): Promise<{
+    id: string;
+    last_step_up_at: string | null;
+    revoked_at: string | null;
+    created_at: string;
+    last_seen_at: string;
+  } | null> {
+    const select =
+      'id, last_step_up_at, revoked_at, created_at, last_seen_at' as const;
+    const { data } = await this.supabase
+      .getClient()
+      .from('api_user_sessions')
+      .select(select)
+      .eq('user_id', userId)
+      .eq('access_token_jti', accessJti)
+      .is('revoked_at', null)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    const row = Array.isArray(data) ? data[0] : data;
+    return row && !row.revoked_at ? row : null;
+  }
+
   private async resolveActiveSessionRow(
     userId: string,
     preferredSessionId: string | null,
@@ -356,6 +387,31 @@ export class SessionService {
       .eq('id', sessionRowId);
 
     return !error;
+  }
+
+  /**
+   * Resolves `api_user_sessions.id` for @RequireRecentLogin when `jb_sid` is missing
+   * but `jb_at` still matches a row (cookie path drift on some browsers).
+   */
+  async resolveSessionIdForRecentLogin(
+    userId: string,
+    sessionIdFromCookie: string | null,
+    accessTokenFromCookie: string | null,
+  ): Promise<string | null> {
+    const trimmed = sessionIdFromCookie?.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+    const access = accessTokenFromCookie?.trim();
+    if (!access) {
+      return null;
+    }
+    const jti = await this.deriveJti(access);
+    if (!jti) {
+      return null;
+    }
+    const row = await this.resolveActiveSessionRowByAccessJti(userId, jti);
+    return row?.id ?? null;
   }
 
   /** Step-up window for billing, account delete, admin moderation (@RequireRecentLogin). */

@@ -9,6 +9,7 @@ import {
 import { pathShouldNoindex } from '~/utils/seo-route-policy'
 import { useBrandSeoConfig } from '~/utils/brand-seo'
 import type { JsonLdObject } from '~/utils/seo-json-ld'
+import type { SeoAlternateFeed } from '~/utils/seo-feed-links'
 
 export type PageSeoInput = {
   title?: string
@@ -28,6 +29,7 @@ export type PageSeoInput = {
   pagination?: { prev?: string; next?: string }
   dateModified?: string
   articlePublishedTime?: string
+  alternateFeeds?: SeoAlternateFeed[]
 }
 
 const JSON_LD_SCRIPT_KEYS = [
@@ -152,6 +154,15 @@ export function usePageSeo(input: MaybeRefOrGetter<PageSeoInput>): void {
     }
     if (pagination?.next) {
       links.push({ rel: 'next', href: pagination.next })
+    }
+    for (const feed of resolved.value.alternateFeeds ?? []) {
+      if (!feed.href?.trim()) continue
+      links.push({
+        rel: 'alternate',
+        type: feed.type,
+        href: feed.href,
+        ...(feed.title ? { title: feed.title } : {}),
+      })
     }
     return {
       link: links,

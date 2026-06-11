@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div :id="ACCOUNT_ROLES_SECTION_ID">
     <h2
       :class="
         compact
@@ -16,63 +16,45 @@
     >
       {{ compact ? S.settingsRolesDescription : S.rolesQuestion }}
     </p>
-    <div class="flex flex-col">
+    <div class="flex flex-col gap-1">
       <label
-        class="flex cursor-pointer items-center gap-3.5 rounded-full py-3.5 pl-[18px] pr-[18px] font-dmSans font-medium text-black transition-colors hover:bg-marketing-mint"
-        :class="compact ? 'text-[17px]' : 'text-[13px]'"
-        style="color: var(--ink2)"
+        for="settings-role-customer"
+        class="flex cursor-pointer items-start gap-2.5 font-dmSans font-medium text-black/80"
+        :class="compact ? 'py-2 text-[17px]' : 'py-1.5 text-sm'"
       >
-        <span
-          class="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md border-[1.5px] border-[#d1d5db] bg-white transition-colors"
-          :class="customerRoleLocal ? 'border-marketing-green bg-marketing-green' : ''"
-        >
-          <AppIcon
-            v-if="customerRoleLocal"
-            name="check-circle"
-            :size="12"
-            class="text-white [&>svg]:text-white"
-          />
-        </span>
-        <input v-model="customerRoleLocal" type="checkbox" class="sr-only" @change="saveRoles">
-        {{ S.roleCustomerCard }}
+        <AppCheckbox
+          id="settings-role-customer"
+          :model-value="customerRoleLocal"
+          class="mt-0.5"
+          @update:model-value="onCustomerRoleChange"
+        />
+        <span>{{ S.roleCustomerCard }}</span>
       </label>
       <label
-        class="flex cursor-pointer items-center gap-3.5 rounded-full py-3.5 pl-[18px] pr-[18px] font-dmSans font-medium text-black transition-colors hover:bg-marketing-mint"
-        :class="compact ? 'text-[17px]' : 'text-[13px]'"
-        style="color: var(--ink2)"
+        for="settings-role-worker"
+        class="flex cursor-pointer items-start gap-2.5 font-dmSans font-medium text-black/80"
+        :class="compact ? 'py-2 text-[17px]' : 'py-1.5 text-sm'"
       >
-        <span
-          class="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md border-[1.5px] border-[#d1d5db] bg-white transition-colors"
-          :class="workerRoleLocal ? 'border-marketing-green bg-marketing-green' : ''"
-        >
-          <AppIcon
-            v-if="workerRoleLocal"
-            name="check-circle"
-            :size="12"
-            class="text-white [&>svg]:text-white"
-          />
-        </span>
-        <input v-model="workerRoleLocal" type="checkbox" class="sr-only" @change="saveRoles">
-        {{ S.roleWorkerCard }}
+        <AppCheckbox
+          id="settings-role-worker"
+          :model-value="workerRoleLocal"
+          class="mt-0.5"
+          @update:model-value="onWorkerRoleChange"
+        />
+        <span>{{ S.roleWorkerCard }}</span>
       </label>
       <label
-        class="flex cursor-pointer items-center gap-3.5 rounded-full py-3.5 pl-[18px] pr-[18px] font-dmSans font-medium text-black transition-colors hover:bg-marketing-mint"
-        :class="compact ? 'text-[17px]' : 'text-[13px]'"
-        style="color: var(--ink2)"
+        for="settings-role-provider"
+        class="flex cursor-pointer items-start gap-2.5 font-dmSans font-medium text-black/80"
+        :class="compact ? 'py-2 text-[17px]' : 'py-1.5 text-sm'"
       >
-        <span
-          class="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md border-[1.5px] border-[#d1d5db] bg-white transition-colors"
-          :class="providerRoleLocal ? 'border-marketing-green bg-marketing-green' : ''"
-        >
-          <AppIcon
-            v-if="providerRoleLocal"
-            name="check-circle"
-            :size="12"
-            class="text-white [&>svg]:text-white"
-          />
-        </span>
-        <input v-model="providerRoleLocal" type="checkbox" class="sr-only" @change="saveRoles">
-        {{ S.roleProviderCard }}
+        <AppCheckbox
+          id="settings-role-provider"
+          :model-value="providerRoleLocal"
+          class="mt-0.5"
+          @update:model-value="onProviderRoleChange"
+        />
+        <span>{{ S.roleProviderCard }}</span>
       </label>
     </div>
     <p v-if="rolesError" class="mt-2 text-xs text-red-600">{{ rolesError }}</p>
@@ -80,6 +62,8 @@
 </template>
 
 <script setup lang="ts">
+import { ACCOUNT_ROLES_SECTION_ID } from '~/utils/dashboard-role-denied'
+import { useDebouncedFn } from '~/utils/debounce'
 import { S } from '~/utils/strings'
 
 withDefaults(
@@ -89,16 +73,20 @@ withDefaults(
   { compact: false },
 )
 
-const { profile, load } = useSettingsProfile()
-const { updateRoles } = useAuth()
+const { profile, load, patch } = useSettingsProfile()
 
 const customerRoleLocal = ref(false)
 const workerRoleLocal = ref(false)
 const providerRoleLocal = ref(false)
 const rolesError = ref<string | null>(null)
 const savingRoles = ref(false)
+const saveQueued = ref(false)
+const suppressApplyRoles = ref(false)
 
 function applyRoles(): void {
+  if (suppressApplyRoles.value) {
+    return
+  }
   const d = profile.value
   if (!d) {
     return
@@ -108,33 +96,79 @@ function applyRoles(): void {
   providerRoleLocal.value = Boolean(d.provider_role)
 }
 
-async function saveRoles(): Promise<void> {
+function currentRolesPayload(): {
+  customer_role: boolean
+  worker_role: boolean
+  provider_role: boolean
+} {
+  return {
+    customer_role: customerRoleLocal.value,
+    worker_role: workerRoleLocal.value,
+    provider_role: providerRoleLocal.value,
+  }
+}
+
+async function flushRolesSave(): Promise<void> {
   if (savingRoles.value) {
+    saveQueued.value = true
     return
   }
-  if (!customerRoleLocal.value && !workerRoleLocal.value && !providerRoleLocal.value) {
+  const payload = currentRolesPayload()
+  if (!payload.customer_role && !payload.worker_role && !payload.provider_role) {
     rolesError.value = S.rolesValidationAtLeastOne
     return
   }
   rolesError.value = null
   savingRoles.value = true
+  suppressApplyRoles.value = true
   try {
-    const ok = await updateRoles({
-      customer_role: customerRoleLocal.value,
-      worker_role: workerRoleLocal.value,
-      provider_role: providerRoleLocal.value,
-    })
-    if (!ok) {
-      rolesError.value = S.saveFailed
+    const result = await patch(payload)
+    if (!result.ok) {
+      rolesError.value = result.message ?? S.saveFailed
+      suppressApplyRoles.value = false
+      applyRoles()
+      return
     }
   } finally {
     savingRoles.value = false
+    suppressApplyRoles.value = false
+    if (saveQueued.value) {
+      saveQueued.value = false
+      await flushRolesSave()
+    }
   }
+}
+
+const scheduleRolesSave = useDebouncedFn(() => {
+  void flushRolesSave()
+}, 350)
+
+function onRoleChange(): void {
+  scheduleRolesSave()
+}
+
+function onCustomerRoleChange(checked: boolean): void {
+  customerRoleLocal.value = checked
+  onRoleChange()
+}
+
+function onWorkerRoleChange(checked: boolean): void {
+  workerRoleLocal.value = checked
+  onRoleChange()
+}
+
+function onProviderRoleChange(checked: boolean): void {
+  providerRoleLocal.value = checked
+  onRoleChange()
 }
 
 watch(profile, applyRoles, { immediate: true })
 
 onMounted(() => {
   void load()
+})
+
+onBeforeUnmount(() => {
+  scheduleRolesSave.cancel()
 })
 </script>

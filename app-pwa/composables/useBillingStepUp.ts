@@ -3,6 +3,10 @@ import {
   parseApiErrorMessage,
   type ApiResultLike,
 } from '~/utils/api-errors'
+import { resolveBillingBffTokens } from '~/utils/billing-bff-auth'
+import { resolvePublicApiBase } from '~/utils/api-base-url'
+import { ensureBffCsrfForMutation, shouldPreferBffCookieAuth } from '~/utils/bff-csrf-state'
+import { S } from '~/utils/strings'
 
 export type BillingStepUpGate =
   | { ok: true }
@@ -17,7 +21,8 @@ export function useBillingStepUp() {
   const supabase = useSupabase()
   const route = useRoute()
   const { user, session } = useAuth()
-  const { stepUp, establishSession, ensureBffSessionFromSupabase } = useBffSession()
+  const { stepUp, establishSession, ensureBffSessionFromSupabase, logoutSession } =
+    useBffSession()
 
   async function ensureRecentLoginForBilling(): Promise<BillingStepUpGate> {
     if (!import.meta.client) {
@@ -71,11 +76,16 @@ export function useBillingStepUp() {
    * Stale in-memory jb_csrf alone must not skip BFF bootstrap (common on localhost dev).
    */
   async function ensureBillingStepUpBeforeMutation(): Promise<boolean> {
-    const { data } = await supabase.auth.getSession()
-    const accessToken = data.session?.access_token?.trim()
-    const refreshToken = data.session?.refresh_token?.trim()
-    if (!accessToken || !refreshToken) {
+    const configuredApi = String(useRuntimeConfig().public.apiBaseUrl ?? '')
+    const apiBase = resolvePublicApiBase(configuredApi)
+    const tokens = await resolveBillingBffTokens(supabase, configuredApi)
+    if (!tokens?.accessToken) {
       return false
+    }
+    const { accessToken, refreshToken } = tokens
+    await ensureBffSessionFromSupabase({ force: false })
+    if (shouldPreferBffCookieAuth()) {
+      await ensureBffCsrfForMutation(apiBase)
     }
     try {
       await stepUp(accessToken)
@@ -84,10 +94,21 @@ export function useBillingStepUp() {
       /* missing api_user_sessions row or expired step-up window */
     }
     try {
-      await establishSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      })
+      if (refreshToken) {
+        await logoutSession()
+        await establishSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        })
+      } else {
+        const booted = await ensureBffSessionFromSupabase({ force: true })
+        if (!booted) {
+          throw new Error('BFF session not available')
+        }
+      }
+      if (shouldPreferBffCookieAuth()) {
+        await ensureBffCsrfForMutation(apiBase)
+      }
       await stepUp(accessToken)
       return true
     } catch {
@@ -111,6 +132,10 @@ export function useBillingStepUp() {
     return ensureBillingStepUpBeforeMutation()
   }
 
+  function billingStepUpFailureMessage(): string {
+    return S.settingsBillingStepUpFailed
+  }
+
   async function billingStepUpUserMessage(res: ApiResultLike): Promise<string> {
     if (isStepUpRequiredResponse(res)) {
       if (await tryRecoverFromStepUpRequired()) {
@@ -128,6 +153,7 @@ export function useBillingStepUp() {
     ensureRecentLoginForBilling,
     ensureBillingStepUpBeforeMutation,
     tryRecoverFromStepUpRequired,
+    billingStepUpFailureMessage,
     billingStepUpUserMessage,
     isStepUpRequiredResponse,
   }

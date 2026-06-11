@@ -33,6 +33,7 @@ JOBBIE is a Slovak job marketplace where **companies** publish job offers and se
 | [stripe-invoice-emails.md](./stripe-invoice-emails.md) | Stripe billing emails |
 | [SECURITY_VERIFICATION.md](./SECURITY_VERIFICATION.md) | Security verification checklist |
 | [SETTINGS_QA_CHECKLIST.md](./SETTINGS_QA_CHECKLIST.md) | Settings QA |
+| [../supabase/AUTH-GOOGLE-OAUTH.md](../supabase/AUTH-GOOGLE-OAUTH.md) | Google Sign-In consent screen branding (free tier + Custom Domain) |
 | [firmy-testing.md](./firmy-testing.md) | Company ads testing |
 | [profile-deferred.md](./profile-deferred.md) | Deferred profile features |
 

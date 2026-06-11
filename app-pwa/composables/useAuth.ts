@@ -6,7 +6,10 @@ import {
   writeCachedAuthSnapshot,
 } from '~/utils/auth-cache'
 import { getOrCreateDeviceId } from '~/utils/device-id'
-import { ensureSupabaseAuthSession } from '~/utils/ensure-supabase-auth-session'
+import {
+  applySupabaseSessionTokens,
+  ensureSupabaseAuthSession,
+} from '~/utils/ensure-supabase-auth-session'
 import { bootstrapAuthMe } from '~/utils/bootstrap-auth-me'
 import { hasActiveBffSession, shouldRestoreBffOnColdBoot } from '~/utils/bff-csrf-state'
 import { refreshBffSessionSingleFlight } from '~/utils/bff-refresh-single-flight'
@@ -15,6 +18,19 @@ import {
   isPublicApiSameOriginAsPage,
   resolvePublicApiBase,
 } from '~/utils/api-base-url'
+import { AUTH_SESSION_STATE_KEY } from '~/utils/auth-session-state'
+import { formatPasskeyAuthError } from '~/utils/mfa-auth-errors'
+import { isPasskeyUserCancellation } from '~/utils/passkey-login'
+import { isPasskeyConditionalUiAvailable, isWebAuthnAbortError } from '~/utils/passkey-conditional-ui'
+import {
+  deserializePasskeyRequestOptions,
+  serializePasskeyAuthenticationCredential,
+} from '~/utils/passkey-webauthn-serialize'
+import {
+  collectMfaFactors,
+  elevateToAal2WithTotpCode,
+  findTotpFactor,
+} from '~/utils/mfa-aal2'
 import { resolveApiBearerToken, setApiBearerToken } from '~/utils/api-bearer-token'
 
 export type UserRole = 'company' | 'individual'
@@ -52,6 +68,11 @@ export type PasskeyResult = {
   ok: boolean
   message?: string
   error?: string
+  /** User closed the passkey / platform picker without signing in. */
+  cancelled?: boolean
+  /** Set when TOTP code is required before passkey enrollment. */
+  needsTotpCode?: boolean
+  session?: Session
 }
 
 export type SyncSessionOptions = {
@@ -71,7 +92,7 @@ export function useAuth() {
   const config = useRuntimeConfig().public
   const user = useState<CurrentUser | null>('auth-user', () => null)
   const profile = useState<CurrentProfile | null>('auth-profile', () => null)
-  const session = useState<{ access_token: string } | null>('auth-session', () => null)
+  const session = useState<{ access_token: string } | null>(AUTH_SESSION_STATE_KEY, () => null)
   const loading = useState('auth-loading', () => true)
   const passkeys = useState<PasskeyCredential[]>('auth-passkeys', () => [])
 
@@ -309,6 +330,11 @@ export function useAuth() {
         profile.value = null
         return false
       }
+      const { establishSession, logoutSession, verifyBffSessionBound } =
+        useBffSession()
+      const { clearBffSessionClientState } = await import('~/utils/bff-csrf-state')
+      // Drop stale jb_* before /api/auth/me — Bearer + old session cookies → 401 conflict.
+      await logoutSession()
       const loaded = await fetchUser(accessToken, { skipSessionExpiry: true })
       if (!loaded) {
         if (import.meta.dev) {
@@ -316,18 +342,31 @@ export function useAuth() {
         }
         return false
       }
-      const { establishSession, logoutSession } = useBffSession()
-      await logoutSession()
       let bffEstablished = false
-      try {
-        await establishSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        })
-        bffEstablished = true
-      } catch (err) {
-        if (import.meta.dev) {
-          console.warn('[auth] establishSession failed (Bearer fallback)', err)
+      for (let attempt = 0; attempt < 2 && !bffEstablished; attempt += 1) {
+        try {
+          await establishSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
+          if (await verifyBffSessionBound()) {
+            bffEstablished = true
+          } else {
+            clearBffSessionClientState()
+            if (import.meta.dev) {
+              console.warn(
+                '[auth] BFF cookies not bound after establishSession — Bearer fallback',
+              )
+            }
+          }
+        } catch (err) {
+          clearBffSessionClientState()
+          if (import.meta.dev) {
+            console.warn('[auth] establishSession failed (Bearer fallback)', {
+              attempt: attempt + 1,
+              err,
+            })
+          }
         }
       }
       try {
@@ -348,6 +387,11 @@ export function useAuth() {
           '~/utils/supabase-auth-storage'
         )
         clearPersistedSupabaseAuth()
+      } else {
+        // Bearer-only / dev proxy fallback — passkeys and MFA need a Supabase JS session.
+        await applySupabaseSessionTokens(accessToken, refreshToken)
+        session.value = { access_token: accessToken }
+        setApiBearerToken(accessToken)
       }
       return true
     } finally {
@@ -455,7 +499,7 @@ export function useAuth() {
     const { data, error } = await supabase.auth.passkey.list()
     if (error) {
       passkeys.value = []
-      return { ok: false, error: error.message ?? 'Nepodarilo sa načítať passkeys.' }
+      return { ok: false, error: formatPasskeyAuthError(error.message) }
     }
     const list = Array.isArray(data) ? data : []
     passkeys.value = list.map((row) => ({
@@ -466,7 +510,9 @@ export function useAuth() {
     return { ok: true }
   }
 
-  async function enrollPasskey(_friendlyName = 'Toto zariadenie'): Promise<PasskeyResult> {
+  async function enrollPasskey(options?: {
+    totpCode?: string
+  }): Promise<PasskeyResult> {
     const ready = await ensureSupabaseAuthSession()
     if (!ready.ok) {
       return { ok: false, error: ready.error ?? 'Najskôr sa prihláste heslom.' }
@@ -474,13 +520,56 @@ export function useAuth() {
     if (!canUsePasskeys()) {
       return { ok: false, error: 'Passkeys nie sú v tomto zariadení podporované.' }
     }
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+    if (aal?.currentLevel !== 'aal2') {
+      const { data: factorData } = await supabase.auth.mfa.listFactors()
+      const verifiedTotp = findTotpFactor(collectMfaFactors(factorData), 'verified')
+      if (verifiedTotp?.id) {
+        const code = options?.totpCode?.replace(/\s/g, '') ?? ''
+        if (code.length < 6) {
+          return {
+            ok: false,
+            needsTotpCode: true,
+            error:
+              'Máte zapnuté 2FA. Pred pridaním passkey zadajte aktuálny kód z autentifikačnej aplikácie.',
+          }
+        }
+        const aalErr = await elevateToAal2WithTotpCode(supabase, verifiedTotp.id, code, {
+          requireFreshVerify: true,
+        })
+        if (aalErr) {
+          return { ok: false, error: aalErr }
+        }
+      }
+    }
     const { error } = await supabase.auth.registerPasskey()
     if (error) {
-      return { ok: false, error: error.message ?? 'Nepodarilo sa vytvoriť passkey.' }
+      return { ok: false, error: formatPasskeyAuthError(error.message) }
     }
     await syncSession()
     await loadPasskeys()
     return { ok: true, message: 'Passkey bol úspešne pridaný.' }
+  }
+
+  async function applyPasskeySignInSession(
+    signedIn: Session | null | undefined,
+  ): Promise<PasskeyResult> {
+    if (!signedIn?.access_token || !signedIn.refresh_token) {
+      return { ok: false, error: 'Žiadna session po prihlásení.' }
+    }
+    const { error: sessionErr } = await supabase.auth.setSession({
+      access_token: signedIn.access_token,
+      refresh_token: signedIn.refresh_token,
+    })
+    if (sessionErr) {
+      return { ok: false, error: formatPasskeyAuthError(sessionErr.message) }
+    }
+    const { data: confirmed } = await supabase.auth.getSession()
+    const session = confirmed.session ?? signedIn
+    if (!session.access_token || !session.refresh_token) {
+      return { ok: false, error: 'Žiadna session po prihlásení.' }
+    }
+    return { ok: true, session }
   }
 
   async function signInWithPasskey(captchaToken?: string): Promise<PasskeyResult> {
@@ -493,13 +582,79 @@ export function useAuth() {
         : undefined
     )
     if (error) {
-      return { ok: false, error: error.message ?? 'Prihlásenie passkey zlyhalo.' }
+      const cancelled = isPasskeyUserCancellation(error.message)
+      return {
+        ok: false,
+        cancelled,
+        error: cancelled ? undefined : formatPasskeyAuthError(error.message),
+      }
     }
-    if (data?.session) {
-      await syncSession()
-      return { ok: true }
+    return applyPasskeySignInSession(data?.session)
+  }
+
+  /** Passkey sign-in via email-field autofill (Conditional UI) — no modal picker. */
+  async function signInWithPasskeyConditional(
+    signal: AbortSignal,
+    captchaToken?: string,
+  ): Promise<PasskeyResult> {
+    if (!canUsePasskeys()) {
+      return { ok: false, cancelled: true }
     }
-    return { ok: false, error: 'Žiadna session po prihlásení.' }
+    const conditionalAvailable = await isPasskeyConditionalUiAvailable()
+    if (!conditionalAvailable) {
+      return { ok: false, cancelled: true }
+    }
+    const { data: options, error: optionsError } = await supabase.auth.passkey.startAuthentication(
+      captchaToken ? { options: { captchaToken } } : undefined,
+    )
+    if (signal.aborted) {
+      return { ok: false, cancelled: true }
+    }
+    if (optionsError || !options?.options || !options.challenge_id) {
+      return {
+        ok: false,
+        error: formatPasskeyAuthError(optionsError?.message),
+      }
+    }
+    try {
+      const publicKey = deserializePasskeyRequestOptions(options.options)
+      const credential = await navigator.credentials.get({
+        publicKey,
+        mediation: 'conditional',
+        signal,
+      })
+      if (signal.aborted) {
+        return { ok: false, cancelled: true }
+      }
+      if (!credential || !(credential instanceof PublicKeyCredential)) {
+        return { ok: false, cancelled: true }
+      }
+      const serialized = serializePasskeyAuthenticationCredential(credential)
+      const { data, error } = await supabase.auth.passkey.verifyAuthentication({
+        challengeId: options.challenge_id,
+        credential: serialized,
+      })
+      if (error) {
+        const cancelled = isPasskeyUserCancellation(error.message)
+        return {
+          ok: false,
+          cancelled,
+          error: cancelled ? undefined : formatPasskeyAuthError(error.message),
+        }
+      }
+      return applyPasskeySignInSession(data?.session)
+    } catch (err) {
+      if (signal.aborted || isWebAuthnAbortError(err)) {
+        return { ok: false, cancelled: true }
+      }
+      const message = err instanceof Error ? err.message : String(err)
+      const cancelled = isPasskeyUserCancellation(message)
+      return {
+        ok: false,
+        cancelled,
+        error: cancelled ? undefined : formatPasskeyAuthError(message),
+      }
+    }
   }
 
   async function removePasskey(passkeyId: string): Promise<PasskeyResult> {
@@ -509,7 +664,7 @@ export function useAuth() {
     }
     const { error } = await supabase.auth.passkey.delete({ passkeyId })
     if (error) {
-      return { ok: false, error: error.message ?? 'Nepodarilo sa odstrániť passkey.' }
+      return { ok: false, error: formatPasskeyAuthError(error.message) }
     }
     await loadPasskeys()
     return { ok: true, message: 'Passkey bol odstránený.' }
@@ -524,6 +679,7 @@ export function useAuth() {
 
   async function updateAccountType(newType: UserRole): Promise<boolean> {
     if (!user.value) return false
+    if (user.value.role === newType) return true
     const { api } = useApi()
     try {
       const res = await api('/api/profiles/me', {
@@ -531,11 +687,7 @@ export function useAuth() {
         body: { role: newType },
       })
       if (!res.ok) return false
-      await fetchProfile()
-      if (user.value) {
-        user.value = { ...user.value, role: newType }
-      }
-      persistAuthSnapshot()
+      await refreshUser()
       return true
     } catch {
       return false
@@ -582,6 +734,7 @@ export function useAuth() {
     loadPasskeys,
     enrollPasskey,
     signInWithPasskey,
+    signInWithPasskeyConditional,
     removePasskey,
     updateAccountType,
     updateRoles,

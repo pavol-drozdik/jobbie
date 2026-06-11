@@ -21,7 +21,7 @@ export function assertResourceOwner(
   }
 }
 
-// profiles.role — billing/publish flows for registered companies (not app_role employer).
+// profiles.role — firma account type (IČO, company profile fields), not activity roles.
 export function assertCompanyUser(
   user: CurrentUser,
   message = 'Company account required',

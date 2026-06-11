@@ -26,7 +26,7 @@ import { splitCommaList } from './employer-cv-database.dto';
 /**
  * Employer CV browse/detail — GDPR gates (see docs/GDPR-PRIVACY.md):
  * - List: visible_to_employers + public_show_in_company_search; no gender/disability/birth_date.
- * - Contact: show_contact_details OR cv_contact_unlocks row for (company_id, cv_id).
+ * - Contact: employer unlock via `cv_contact_unlocks` (monthly included quota on CV database).
  * - Chat: blocked when public_allow_platform_contact is false.
  * PERF: Complex filters cap at MAX_SHELL_SCAN shells before in-memory scoring.
  */
@@ -115,6 +115,7 @@ type PersonalRow = {
   email: string | null;
   about_me: string | null;
   show_contact_details: boolean | null;
+  linkedin_url: string | null;
 };
 
 type JobPrefRow = {
@@ -952,6 +953,31 @@ export class EmployerCvDatabaseService {
     return (data ?? []) as CvShellRow[];
   }
 
+  private personalHasStoredContact(
+    personal:
+      | Pick<PersonalRow, 'email' | 'phone' | 'linkedin_url'>
+      | null
+      | undefined,
+  ): boolean {
+    if (!personal) {
+      return false;
+    }
+    return Boolean(
+      personal.email?.trim()
+        || personal.phone?.trim()
+        || personal.linkedin_url?.trim(),
+    );
+  }
+
+  private contactsVisibleForEmployer(
+    _personal: PersonalRow | undefined,
+    cvId: string,
+    unlockSet: Set<string>,
+  ): boolean {
+    // CV database: browse is free; contact fields require employer unlock (monthly quota).
+    return unlockSet.has(cvId);
+  }
+
   private async loadContactUnlockSet(
     employerUserId: string,
     cvIds: string[],
@@ -1056,7 +1082,7 @@ export class EmployerCvDatabaseService {
       const { data: pers } = await this.client()
         .from('cv_personal_info')
         .select(
-          'cv_id, first_name, last_name, title_before_name, title_after_name, academic_title, show_academic_title, address_city, address_district, address_country, driving_license_categories, highest_education_level, about_me, show_contact_details',
+          'cv_id, first_name, last_name, title_before_name, title_after_name, academic_title, show_academic_title, address_city, address_district, address_country, driving_license_categories, highest_education_level, about_me, show_contact_details, email, phone, linkedin_url',
         )
         .in('cv_id', listCvIds);
       for (const row of (pers ?? []) as PersonalRow[]) {
@@ -1425,8 +1451,13 @@ export class EmployerCvDatabaseService {
       const skillSlice = skillNamesOrdered.slice(0, TOP_SKILLS);
       const langSlice = langsByCv.get(w.shell.id) ?? [];
       const eduRowsForCv = educationRowsByCv.get(w.shell.id) ?? [];
-      const contactsVisible =
-        w.personal?.show_contact_details !== false || unlockSet.has(w.shell.id);
+      const contactsVisible = this.contactsVisibleForEmployer(
+        w.personal,
+        w.shell.id,
+        unlockSet,
+      );
+      const hasContactToUnlock =
+        !contactsVisible && this.personalHasStoredContact(w.personal);
       return {
         cv_id: w.shell.id,
         candidate_display_name: this.candidateListDisplayName(w.personal, w.profile),
@@ -1462,6 +1493,7 @@ export class EmployerCvDatabaseService {
         contact_phone: contactsVisible
           ? (w.personal?.phone?.trim() || null)
           : null,
+        has_contact_to_unlock: hasContactToUnlock,
       };
     });
     return {
@@ -1481,7 +1513,67 @@ export class EmployerCvDatabaseService {
     if (!agg) {
       throw new NotFoundException('Životopis sa nenašiel alebo nie je dostupný');
     }
+    const unlockSet = await this.loadContactUnlockSet(employerUserId, [cvId]);
+    const { data: personal } = await this.client()
+      .from('cv_personal_info')
+      .select('email, phone, linkedin_url, show_contact_details')
+      .eq('cv_id', cvId)
+      .maybeSingle();
+    const personalRow = personal as PersonalRow | null;
+    const contactsVisible = this.contactsVisibleForEmployer(
+      personalRow ?? undefined,
+      cvId,
+      unlockSet,
+    );
+    const hasContactToUnlock =
+      !contactsVisible && this.personalHasStoredContact(personalRow);
+    const cvShell = agg.cv as unknown as Record<string, unknown>;
+    cvShell.contacts_visible = contactsVisible;
+    cvShell.has_contact_to_unlock = hasContactToUnlock;
+    cvShell.contact_unlocked = unlockSet.has(cvId);
+    if (contactsVisible && personalRow) {
+      const email = personalRow.email?.trim() || null;
+      const phone = personalRow.phone?.trim() || null;
+      const linkedin = personalRow.linkedin_url?.trim() || null;
+      if (email) {
+        cvShell.email = email;
+      }
+      if (phone) {
+        cvShell.phone = phone;
+      }
+      if (linkedin) {
+        cvShell.linkedin_url = linkedin;
+      }
+    } else {
+      cvShell.email = null;
+      cvShell.phone = null;
+      cvShell.linkedin_url = null;
+    }
+    this.redactSensitiveEmployerCvShell(cvShell);
+    const aggRecord = agg as unknown as Record<string, unknown>;
+    for (const key of ['personal', 'personal_info', 'cv_personal_info']) {
+      const block = aggRecord[key];
+      if (block && typeof block === 'object') {
+        this.redactSensitiveEmployerCvShell(
+          block as Record<string, unknown>,
+        );
+      }
+    }
     return agg;
+  }
+
+  /** GDPR: never expose discrimination-sensitive fields to employer CV database. */
+  private redactSensitiveEmployerCvShell(shell: Record<string, unknown>): void {
+    for (const key of [
+      'has_disability',
+      'gender',
+      'birth_date',
+      'birth_day',
+      'birth_month',
+      'birth_year',
+    ]) {
+      delete shell[key];
+    }
   }
 
   async openChat(

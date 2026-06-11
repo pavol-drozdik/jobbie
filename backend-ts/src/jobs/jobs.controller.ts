@@ -61,7 +61,8 @@ import {
   mapJobForViewer,
   viewerFromUser,
 } from './public-response.mapper';
-import { assertCompanyUser } from '../common/authorization.util';
+import { ProfileActivityAuthorizationService } from '../profiles/profile-activity-authorization.service';
+import { IndexNowService } from '../seo/indexnow.service';
 import {
   JOB_CATEGORY_SLUGS,
   normalizeJobCategorySlugOrNull,
@@ -150,6 +151,8 @@ export class JobsController {
     private credits: CreditsService,
     private limits: SubscriptionLimitsService,
     private topPromotion: ListingTopPromotionService,
+    private profileActivity: ProfileActivityAuthorizationService,
+    private indexNow: IndexNowService,
   ) {}
 
   private async enrichJobsTopBadge(
@@ -267,6 +270,7 @@ export class JobsController {
       return;
     }
     this.jobsFeed.emitJobPublished(toJobPublishedSocketPayload(dto));
+    this.indexNow.notifyJobPublished(dto.id);
   }
 
   // PERF: Paginated catalog — do not load unbounded rows; Typesense used when configured.
@@ -728,9 +732,10 @@ export class JobsController {
     @CurrentUserDecorator() user: CurrentUser,
     @Body() body: JobOfferCreateDto,
   ): Promise<JobOfferResponseDto> {
-    assertCompanyUser(
-      user,
-      'Inzerát môže vytvárať len firemný účet (zamestnávateľ).',
+    await this.profileActivity.assertActivityRole(
+      user.id,
+      'customer',
+      'Inzerát môže vytvárať len používateľ s rolou „Potrebujem pomoc s prácou“.',
     );
     const isDraft = body.is_draft ?? true;
     validateJobForPublish(body, { isDraft });
@@ -1397,7 +1402,10 @@ export class JobsController {
         body.want_top_listing,
         'job_renew_top',
       );
-      return this.enrichJobTopBadge(mapRowForViewer(data as JobRow, user));
+      const renewed = mapRowForViewer(data as JobRow, user);
+      this.emitJobPublishedIfPublic(renewed);
+      void this.searchIndexing.indexJobById(renewed.id);
+      return this.enrichJobTopBadge(renewed);
     } catch (e) {
       await this.rollbackJobSpend(
         user.id,

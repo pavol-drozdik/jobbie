@@ -1,4 +1,4 @@
-export type PricingFaqItem = {
+﻿export type PricingFaqItem = {
   readonly question: string
   readonly answer: string
 }
@@ -17,7 +17,7 @@ export const PRICING_FAQ_ITEMS: readonly PricingFaqItem[] = [
   {
     question: 'Kto môže nakupovať plány a kredity?',
     answer:
-      'Platené funkcie pre firmy a zamestnávateľov sú určené firemným účtom. Brigádnici majú registráciu zvyčajne bezplatnú; platené doplnky pre brigádnikov sú uvedené v cenníku, ak sú k dispozícii.',
+      'Platené funkcie pre firmy a zamestnávateľov sú určené firemným účtom. Uchádzači majú registráciu zvyčajne bezplatnú; platené doplnky pre uchádzačov sú uvedené v cenníku, ak sú k dispozícii.',
   },
   {
     question: 'Ako prebieha platba?',
@@ -32,6 +32,6 @@ export const PRICING_FAQ_ITEMS: readonly PricingFaqItem[] = [
   {
     question: 'Potrebujem individuálnu ponuku?',
     answer:
-      'Pre doplnkové marketingové služby použite formulár Kontaktujte nás na stránke Cenník alebo napíšte na podpora@jobbie.sk.',
+      'Pre doplnkové marketingové služby použite formulár Kontaktujte nás na stránke Cenník alebo napíšte na ahoj@jobbie.sk.',
   },
 ]

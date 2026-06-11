@@ -224,11 +224,13 @@ Paid plans use **native Stripe [Subscriptions](https://docs.stripe.com/billing/s
 | Plan switch / checkout | `subscriptions.cancel` (immediate) | [`cancelUserSubscriptionImmediately`](../backend-ts/src/payments/stripe.service.ts) before new subscription |
 | DB sync | `customer.subscription.created/updated/deleted` | [`payments.controller.ts`](../backend-ts/src/payments/payments.controller.ts) webhook |
 
-**`/platba` (primary):** `payment_behavior: 'default_incomplete'` per [Stripe’s recommended flow](https://docs.stripe.com/billing/subscriptions/overview#create-the-subscription) — subscription starts `incomplete`, Payment Element confirms the first invoice’s PaymentIntent, then status becomes `active` and Stripe sends recurring invoices automatically.
+**`/platba` (primary):** `payment_behavior: 'default_incomplete'` per [Stripe’s recommended flow](https://docs.stripe.com/billing/subscriptions/overview#create-the-subscription) — subscription starts `incomplete`, Payment Element confirms the first invoice’s PaymentIntent (or `pending_setup_intent` during a trial), then status becomes `active` / `trialing` and Stripe sends recurring invoices automatically.
+
+**Free trial (Stripe-controlled):** on each subscription **Price** in Stripe, add metadata `trial_period_days` = `30` (or `jobbie_trial_days`). Avoid the Dashboard “trial on Price” catalog field (Stripe discourages it). To **disable**, remove that metadata. Optional dev fallback: `SUBSCRIPTION_TRIAL_FALLBACK_PERIOD_DAYS` when Prices have no trial yet. JOBBIE applies the trial only for **first-time** paid subscribers (`profiles.subscription_trial_used_at` + no prior Stripe subscription history). Catalog: `GET /api/billing/config` → `subscriptionTrial` + per-plan `trialPeriodDays`; `GET /api/plans` → `trial_period_days`; PWA `/cennik` shows badge when either field is &gt; 0.
 
 **Credits (contrast):** one-time packs use the **Invoicing API** (invoice item → invoice → PI), not a Subscription — see [Purchase flow (one-off credits)](#purchase-flow-one-off-credits).
 
-1. User pays → Stripe `Subscription` becomes `active`; `user_subscriptions` updated via webhook.
+1. User pays → Stripe `Subscription` becomes `active` or `trialing`; `user_subscriptions` updated via webhook.
 2. **`invoice.paid`** → monthly credits granted (idempotent via `subscription_period_credit_grants` / `stripe_invoice_id`).
 3. **Free plan (`zadarmo`)** → no Stripe Subscription; cron `subscription-monthly-credits.cron.ts` (`15 6 1 * *`) grants credits.
 

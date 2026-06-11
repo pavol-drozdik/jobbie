@@ -123,7 +123,7 @@ import {
 
 definePageMeta({
   layout: 'app',
-  middleware: ['auth', 'dashboard-poskytovatel'],
+  middleware: ['auth', 'dashboard-profesional'],
 })
 
 const { api } = useApi()

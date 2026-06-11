@@ -2,6 +2,17 @@
 
 Map of major JOBBIE features to PWA routes and backend modules. Privacy rules for CVs, addresses, and contact fields: [GDPR-PRIVACY.md](./GDPR-PRIVACY.md).
 
+## Profile: account type vs activity roles
+
+| Field | Meaning | Gates |
+|-------|---------|--------|
+| `profiles.role` | `individual` or `company` (Jednotlivec / Firma · SZČO) | Firma settings (`/nastavenia/firma`), IČO, company public profile fields — **not** product nav |
+| `customer_role` | „Potrebujem pomoc s prácou“ | Job posts, applicants, CV database (`customer-only` middleware, Nest `ProfileActivityAuthorizationService`) |
+| `worker_role` | „Hľadám malé práce“ | CV builder, job email alerts (`worker-only`) |
+| `provider_role` | „Chcem aby ma klienti našli“ | Company/service ads (`provider-only`) |
+
+Users can enable multiple activity roles. PWA toggles: **Nastavenia → Profil** → „Čo chcete robiť?“ (`SettingsRolesSection`). Nav filtering: `app-pwa/utils/account-nav-access.ts`.
+
 ## Marketing blog
 
 | Aspect | Location |
@@ -167,7 +178,7 @@ Public token routes for pause/unsubscribe: `public/job-alerts`.
 | Route | Middleware | Purpose |
 |-------|------------|---------|
 | `/dashboard/zakaznik` | `dashboard-zakaznik` | Customer dashboard |
-| `/dashboard/poskytovatel` | `dashboard-poskytovatel` | Provider dashboard |
+| `/dashboard/profesional` | `dashboard-profesional` | Professional dashboard |
 | **Backend** | `analytics.controller` | `/api/dashboard/*` |
 
 ## How to modify safely

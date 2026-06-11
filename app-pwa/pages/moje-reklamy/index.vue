@@ -30,7 +30,7 @@
 
     ]"
 
-    image-src="/home-design/feature-employer.webp"
+    image-src="/home-design/my-ads-illustration.png"
 
     image-alt="Pridanie služby medzi profesionálov"
 
@@ -44,7 +44,12 @@
 
       <p class="m-0 text-sm text-black/70">{{ S.firmyProviderRequired }}</p>
 
-      <AppButton variant="primary" size="lg" class="mt-4 max-w-xs" :to="ROUTES.profile">
+      <AppButton
+        variant="primary"
+        size="lg"
+        class="mt-4 max-w-xs"
+        :to="ROUTES.settingsProfilDenied('provider')"
+      >
 
         {{ S.firmyGoToProfile }}
 
@@ -492,7 +497,7 @@ import CompanyAdHubRow from '~/components/firmy/CompanyAdHubRow.vue'
 
 
 
-definePageMeta({ layout: 'app' })
+definePageMeta({ layout: 'app', middleware: ['provider-only'] })
 
 
 

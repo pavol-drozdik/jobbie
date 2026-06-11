@@ -5,7 +5,7 @@
       <span class="text-marketing-green">{{ S.checkoutPageTitleSubscriptionAccent }}</span>
     </h1>
     <p class="mb-8 mt-2 text-[17px] font-normal leading-normal text-black/55">
-      {{ S.checkoutPageSubtitleSubscription }}
+      {{ planTrialDays > 0 ? S.checkoutPageSubtitleSubscriptionTrial : S.checkoutPageSubtitleSubscription }}
     </p>
 
     <p
@@ -27,8 +27,21 @@
         {{ plan.name_sk }}
         <span class="font-medium text-black/50">· {{ S.checkoutPlanLabel }}</span>
       </p>
-      <p class="m-0 mt-1 font-dmSans text-2xl font-extrabold text-marketing-green">
-        {{ formatPlanPrice(plan.price_monthly_cents) }}
+      <p
+        v-if="planTrialDays > 0"
+        class="m-0 mt-2 inline-block rounded-full bg-amber-100 px-3 py-1 font-dmSans text-[13px] font-bold text-amber-950"
+      >
+        {{ subscriptionTrialBadgeLabel(planTrialDays) }}
+      </p>
+      <p class="m-0 mt-2 font-dmSans text-2xl font-extrabold text-marketing-green">
+        <template v-if="planTrialDays > 0">{{ S.checkoutTrialPriceNow }}</template>
+        <template v-else>{{ formatPlanPrice(plan.price_monthly_cents) }}</template>
+      </p>
+      <p
+        v-if="planTrialDays > 0"
+        class="m-0 mt-1 font-dmSans text-base font-semibold text-black/55"
+      >
+        {{ S.checkoutTrialPriceAfter.replace('{price}', formatPlanPrice(plan.price_monthly_cents)) }}
       </p>
       <p class="m-0 mt-1 text-sm text-black/50">
         {{ plan.monthly_credits }} {{ S.credits }} / mesiac
@@ -43,10 +56,11 @@
         collect-business-billing
         :return-url="stripeReturnUrl"
         :billing-prefill="billingPrefill"
-        :deferred-amount="plan.price_monthly_cents"
+        :deferred-mode="planTrialDays > 0 ? 'setup' : 'payment'"
+        :deferred-amount="planTrialDays > 0 ? undefined : plan.price_monthly_cents"
         deferred-currency="eur"
         :prepare-payment="prepareCheckoutPayment"
-        @success="(id, billing) => confirmSubscriptionFromPaymentIntent(id, billing)"
+        :on-payment-success="confirmSubscriptionFromPaymentIntent"
         @cancel="emit('cancel')"
       />
     </ClientOnly>
@@ -55,6 +69,7 @@
 
 <script setup lang="ts">
 import { S } from '~/utils/strings'
+import { subscriptionTrialBadgeLabel } from '~/utils/subscription-trial'
 
 const props = defineProps<{
   planId: string
@@ -66,12 +81,15 @@ const emit = defineEmits<{
 }>()
 
 import type { CheckoutBillingPayload } from '~/utils/checkout-billing'
+import type { PreparePaymentResult } from '~/utils/stripe-prepare-payment'
 
 const {
   plan,
   loading,
   error,
   successMessage,
+  checkoutTrialDays,
+  planTrialDays,
   billingPrefill,
   stripeReturnUrl,
   formatPlanPrice,
@@ -85,7 +103,7 @@ const {
 
 async function prepareCheckoutPayment(
   billing?: CheckoutBillingPayload,
-): Promise<string | null> {
+): Promise<PreparePaymentResult | null> {
   error.value = null
   return createPaymentIntent(billing)
 }

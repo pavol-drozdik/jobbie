@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div>
     <HomeHeroSection />
     <section class="mt-[72px] flex w-full flex-col items-center marketing:mt-[120px] marketingXl:mt-[140px]">
@@ -81,15 +81,15 @@
       <div class="box-border flex w-full max-w-[1400px] flex-col gap-6 px-5 marketing:flex-row marketing:items-center">
         <div class="w-full marketing:w-1/2">
           <h2 class="mt-0 font-dmSans text-[32px] font-extrabold leading-[1.1] text-black marketing:text-[52px] marketing:leading-[1.05] marketingXl:text-[60px] marketingXl:leading-[60px]">
-            Tisíce brigád. <br> <span class="text-marketing-green">Jeden web.</span>
+            Tisíce ponúk. <br> <span class="text-marketing-green">Jeden web.</span>
           </h2>
-          <p class="mb-0 mt-[10px] font-dmSans text-lg font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Ušetri si čas pri hľadaní brigády a začni zarábať čo najskôr</p>
+          <p class="mb-0 mt-[10px] font-dmSans text-lg font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Ušetri si čas pri hľadaní pracovnej ponuky a začni zarábať čo najskôr</p>
           <div class="mt-5 flex flex-col gap-2.5">
             <div class="flex items-center gap-2.5">
               <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full bg-marketing-green font-dmSans text-xl font-bold text-white/80 marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
                 1.
               </div>
-              <span class="font-dmSans text-[17px] font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Stovky brigád na jednom mieste</span>
+              <span class="font-dmSans text-[17px] font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Stovky pracovných ponúk na jednom mieste</span>
             </div>
             <div class="flex items-center gap-2.5">
               <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full bg-marketing-green font-dmSans text-xl font-bold text-white/80 marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
@@ -131,15 +131,15 @@
         </div>
         <div class="order-1 w-full marketing:order-none marketing:w-1/2">
           <h2 class="mt-0 font-dmSans text-[32px] font-extrabold leading-[1.1] text-black marketing:text-[52px] marketing:leading-[1.05] marketingXl:text-[60px] marketingXl:leading-[60px]">
-            Tisíce študentov. <br> <span class="text-marketing-green">Jeden inzerát.</span>
+            Tisíce uchádzačov. <br> <span class="text-marketing-green">Jeden inzerát.</span>
           </h2>
-          <p class="mb-0 mt-[10px] font-dmSans text-lg font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Ušetri si čas pri hľadaní brigádnika.</p>
+          <p class="mb-0 mt-[10px] font-dmSans text-lg font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Ušetri si čas pri hľadaní uchádzača.</p>
           <div class="mt-5 flex flex-col gap-2.5">
             <div class="flex items-center gap-2.5">
               <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full bg-marketing-green font-dmSans text-xl font-bold text-white/80 marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
                 1.
               </div>
-              <span class="font-dmSans text-[17px] font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Oslovte tisíce overených študentov</span>
+              <span class="font-dmSans text-[17px] font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Oslovte tisíce overených uchádzačov</span>
             </div>
             <div class="flex items-center gap-2.5">
               <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full bg-marketing-green font-dmSans text-xl font-bold text-white/80 marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
@@ -287,9 +287,9 @@
         <div class="flex justify-center pt-[20px]">
           <AppButton
             variant="outline"
-            size="md"
+            size="lg"
             :to="homeCta.to"
-            class="border-0 bg-white px-[18px] py-2.5 text-[17px] text-marketing-green hover:bg-white/90 marketing:px-[15px] marketing:py-2.5 marketing:text-[22px]"
+            class="!h-auto min-h-12 border-0 bg-white px-6 py-3 text-lg text-marketing-green hover:bg-white/90 marketing:min-h-14 marketing:px-8 marketing:py-3.5 marketing:text-2xl"
           >
             {{ homeCta.cta }}
           </AppButton>
@@ -322,13 +322,32 @@ import {
 import type { Job } from '~/utils/job'
 import { HOME_DESIGN_FAQ_BY_ROLE } from '~/utils/home-design-faq'
 import { HOME_DESIGN_CAROUSEL, type HomeDesignCarouselRole } from '~/utils/home-design-carousel'
+import { fetchPublicJobsHome } from '~/composables/fetch-public-jobs-home'
+import { normalizeSiteUrl } from '~/utils/seo-config'
+import { buildJobsAlternateFeeds } from '~/utils/seo-feed-links'
+import { buildFaqPageJsonLd } from '~/utils/seo-json-ld'
 definePageMeta({ layout: 'app' })
 
-usePageSeo({
-  title: 'Nájdi prácu, ktorá ti sadne — Jobbie',
-  description:
-    'Spájame uchádzačov s overenými firmami po celom Slovensku — rýchlo, jednoducho a úplne zadarmo.',
-  canonicalPath: ROUTES.home,
+const runtimeConfig = useRuntimeConfig()
+const siteUrl = computed(() =>
+  normalizeSiteUrl(String(runtimeConfig.public.siteUrl || '')),
+)
+
+const { data: initialHomeJobs } = await useAsyncData('home-jobs', () =>
+  fetchPublicJobsHome(),
+)
+
+usePageSeo(() => {
+  const site = siteUrl.value
+  const faqLd = buildFaqPageJsonLd(HOME_DESIGN_FAQ_BY_ROLE.brigadnik)
+  return {
+    title: 'Nájdi prácu, ktorá ti sadne — Jobbie',
+    description:
+      'Spájame uchádzačov s firmami na Slovensku — brigády, sezónne práce, kosenie trávy a ďalšie ponuky. Rýchlo, jednoducho a zadarmo pre uchádzačov.',
+    canonicalPath: ROUTES.home,
+    alternateFeeds: site ? buildJobsAlternateFeeds(site) : [],
+    jsonLd: faqLd,
+  }
 })
 
 const HomeMarketingReviews = defineAsyncComponent(
@@ -407,10 +426,10 @@ const homeCta = computed(() => {
 
 const { api } = useApi()
 
-const latestJobs = ref<Job[]>([])
+const latestJobs = ref<Job[]>(initialHomeJobs.value?.latest ?? [])
 const latestJobsSectionRef = ref<HTMLElement | null>(null)
-const gridJobs = ref<Job[]>([])
-const loadingGrid = ref(true)
+const gridJobs = ref<Job[]>(initialHomeJobs.value?.grid ?? [])
+const loadingGrid = ref(!initialHomeJobs.value)
 const categoryJobCounts = ref<Record<string, number>>({})
 
 const HOME_LATEST_LIMIT = 4
@@ -419,8 +438,8 @@ const HOME_GRID_LIMIT = 8
 const HOME_CAROUSEL_GAP_PX = 30
 const homeCarouselTabs: readonly { role: HomeDesignCarouselRole; label: string }[] = [
   { role: 'zamestnavatel', label: 'Zamestnávateľ' },
-  { role: 'brigadnik', label: 'Brigádnik' },
-  { role: 'poskytovatel', label: 'Poskytovateľ' },
+  { role: 'brigadnik', label: 'Uchádzač' },
+  { role: 'profesional', label: 'Profesionál' },
 ]
 const homeCarouselRole = ref<HomeDesignCarouselRole>('zamestnavatel')
 const homeFaqItems = computed(() => HOME_DESIGN_FAQ_BY_ROLE[homeCarouselRole.value])
@@ -563,10 +582,20 @@ function toggleFaq(index: number): void {
   openFaqIndex.value = openFaqIndex.value === index ? null : index
 }
 
-onMounted(async () => {
-  loadingGrid.value = true
-  await Promise.all([fetchLatestJobs(), fetchGridJobs(), fetchCategoryJobCounts()])
+watch(initialHomeJobs, (data) => {
+  if (!data) return
+  if (data.latest.length) latestJobs.value = data.latest
+  if (data.grid.length) gridJobs.value = data.grid
   loadingGrid.value = false
+})
+
+onMounted(async () => {
+  if (!initialHomeJobs.value) {
+    loadingGrid.value = true
+    await Promise.all([fetchLatestJobs(), fetchGridJobs()])
+    loadingGrid.value = false
+  }
+  await fetchCategoryJobCounts()
   if (typeof document !== 'undefined' && document.fonts?.ready) {
     try {
       await document.fonts.ready

@@ -100,7 +100,7 @@ Names only — set values in host secret manager or `.env`.
 | `NUXT_PUBLIC_API_BASE_URL` | Nest API origin |
 | `NUXT_PUBLIC_CDN_URL` | CDN for `_nuxt` assets |
 | `NUXT_PUBLIC_MEDIA_CDN_URL` | Image CDN for public photos |
-| `NUXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NUXT_PUBLIC_SUPABASE_URL` | Supabase project URL (`https://<ref>.supabase.co`; after Custom Domain add-on: e.g. `https://auth.jobbie.sk`) |
 | `NUXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
 | `NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe.js |
 | `NUXT_PUBLIC_TURNSTILE_SITE_KEY` | Turnstile widget |
@@ -237,11 +237,15 @@ Configure on the **public marketing host only** (not staging/preview):
 
 Optional brand/contact overrides: `NUXT_PUBLIC_BRAND_NAME`, `NUXT_PUBLIC_BRAND_ALTERNATE_NAME`, `NUXT_PUBLIC_SUPPORT_EMAIL`, `NUXT_PUBLIC_SUPPORT_PHONE`, `NUXT_PUBLIC_SOCIAL_INSTAGRAM_URL`, `NUXT_PUBLIC_SOCIAL_FACEBOOK_URL`.
 
-**Where policy lives:** `app-pwa/utils/seo-route-policy.ts` drives Nitro `routeRules` (SSR + `X-Robots-Tag`), `usePageSeo` robots meta, and static sitemap paths. Dynamic URLs (jobs, blog, company ads) come from `GET /api/seo/sitemap` (Nest). Nitro serves `/robots.txt` and `/sitemap.xml` when indexing is on.
+**Where policy lives:** `app-pwa/utils/seo-route-policy.ts` drives Nitro `routeRules` (SSR + `X-Robots-Tag`), `usePageSeo` robots meta, and static sitemap paths. Dynamic URLs (jobs, blog, company ads) come from `GET /api/seo/sitemap` (Nest). Nitro serves `/robots.txt`, `/sitemap.xml`, `/llms.txt`, and `/feeds/*` when indexing is on.
+
+**Search Console / Bing:** Set `NUXT_PUBLIC_GOOGLE_SITE_VERIFICATION` and `NUXT_PUBLIC_BING_SITE_VERIFICATION` from each console; submit `https://{host}/sitemap.xml`. For IndexNow, set the same UUID in `NUXT_PUBLIC_INDEXNOW_KEY` (PWA key file) and `INDEXNOW_KEY` (API publish pings). See [seo-implementation.md](./seo-implementation.md).
 
 **AI crawlers:** Allowing indexing exposes public marketing HTML to search and AI crawlers; there is no separate GEO allowlist in code.
 
-**Legal pages:** Terms and privacy stay `noindex` and out of the sitemap until `NUXT_PUBLIC_LEGAL_PUBLISHED=1`. Set that flag only after counsel sign-off.
+**Legal pages:** Terms and privacy stay `noindex` and out of the sitemap until `NUXT_PUBLIC_LEGAL_PUBLISHED=1`. Set that flag only after counsel sign-off. Google OAuth branding requires live policy URLs (`/ochrana-osobnych-udajov`, `/vseobecne-podmienky`) — see [`supabase/AUTH-GOOGLE-OAUTH.md`](../supabase/AUTH-GOOGLE-OAUTH.md).
+
+**Google Sign-In branding:** Supabase Dashboard URL config + Google Cloud OAuth client + brand verification — runbook [`supabase/AUTH-GOOGLE-OAUTH.md`](../supabase/AUTH-GOOGLE-OAUTH.md).
 
 Validation checklist: [aeo-geo-implementation-summary.md](./aeo-geo-implementation-summary.md).
 

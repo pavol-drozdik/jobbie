@@ -2,9 +2,53 @@
 
 JOBBIE sends product email (job alerts, saved-search alerts, notification digests, employer applicant auto-replies) through a single Nest service: [`EmailService`](../backend-ts/src/email/email.service.ts) using **nodemailer** and your SMTP server.
 
-Billing invoice PDFs are **not** sent this way — they use [Stripe Dashboard settings](./stripe-invoice-emails.md). Auth messages (signup, password reset) use **Supabase Auth** SMTP settings in the Supabase project. Newsletter signups sync to **MailerLite** when `MAILERLITE_API_KEY` is set.
+Billing invoice PDFs are **not** sent this way — they use [Stripe Dashboard settings](./stripe-invoice-emails.md). Auth messages (signup, password reset, email confirm) use **Supabase Auth** SMTP settings in the Supabase project — **separate** from Nest `SMTP_*` below. Newsletter signups sync to **MailerLite** when `MAILERLITE_API_KEY` is set.
 
-## Environment variables
+## Supabase Auth SMTP (password reset, signup confirm)
+
+Configure in **Supabase Dashboard → Project → Authentication → [Emails](https://supabase.com/dashboard/project/_/auth/templates)** → **SMTP settings** (enable custom SMTP).
+
+| Field | Notes |
+|-------|--------|
+| Host / port | Same relay as production mail (e.g. Websupport `smtp.m1.websupport.sk`, port `587` STARTTLS or `465` SSL). |
+| Username | Usually the **full mailbox address** (`noreply@jobbie.sk`), not a short name. |
+| Password | Mailbox password; re-enter after any hosting panel change. |
+| Sender email | Must be an address the SMTP account is allowed to send as (often identical to username). |
+| Sender name | e.g. `JOBBIE` |
+
+**Redirect URLs** (Authentication → URL configuration): `{origin}/auth/reset-password`, `{origin}/auth/callback`. **Site URL** = PWA origin (`https://jobbie.sk` or `https://www.jobbie.sk` — match what users hit).
+
+Branded bodies: [`supabase/AUTH-EMAIL-TEMPLATES.md`](../supabase/AUTH-EMAIL-TEMPLATES.md).
+
+### Troubleshooting Auth email
+
+| Symptom | Likely cause |
+|---------|----------------|
+| PWA: *Nepodarilo sa odoslať e-mail…*; Supabase log `535 5.7.8 authentication failed` | Wrong SMTP username/password, or username not full email. Fix credentials in Supabase SMTP settings. |
+| Log `500: Error sending recovery email` | SMTP send failed after auth or template render — check Auth logs + SMTP test below. |
+| Log `504` / `context deadline exceeded` (~10s) | Supabase cannot reach your SMTP host in time — wrong host/port, IPv6 hang, or **Websupport blocking cloud IPs**. Try `smtp.m1.websupport.sk` port `465`, or use Resend/SES for Auth SMTP. |
+| API `recover` returns 200, no mail, no error | Unknown email (by design) or mail in spam — only test with a **registered** address. |
+| Reset link wrong host | Add that origin to Redirect URLs; set `NUXT_PUBLIC_SITE_URL` to canonical apex/www. |
+
+**Verify SMTP outside Supabase:** use the same host/user/pass in a desktop client or `SMTP_VERIFY_ON_BOOT=true` on Nest with matching `SMTP_*` env. If Nest sends but Supabase does not, only the **Supabase Dashboard** SMTP block is wrong.
+
+**Websupport from Supabase (per domain):** Another `@other-domain.sk` mailbox on the same `smtp.m1.websupport.sk` can work while `@jobbie.sk` fails — compare **Webadmin → Emaily → schránka → Nastavenia** for the two domains:
+
+| Setting | jobbie.sk check |
+|---------|-----------------|
+| **GEO ochrana** | If enabled, Supabase egress may be blocked (timeout `504`). Disable for test, or allow EU countries (Supabase EU projects). FLOWii docs mention allowing **Holandsko** for NL-hosted apps. |
+| **SMTP protokol** | Must be **povolený** on the mailbox. |
+| **Real mailbox** | `noreply@jobbie.sk` must be a full schránka, not only an alias/forward. |
+| **Sender = login** | Supabase `smtp_user` and sender email must be the **same** mailbox address. |
+| **Limits** | 300/h per mailbox, 2000/h per domain — over limit blocks ~60 min. |
+
+If GEO/SMTP settings match the working domain and it still times out, use Resend for Auth SMTP (below).
+
+**Resend (recommended for Auth):** verify `jobbie.sk` in Resend → Supabase Authentication → SMTP: host `smtp.resend.com`, port `465`, user `resend`, password = Resend API key, sender `noreply@jobbie.sk`. Or use the [Supabase × Resend integration](https://supabase.com/partners/integrations/resend). Merge SPF/DKIM TXT records with existing Websupport mail DNS.
+
+**Rate limit:** Supabase may throttle repeat reset requests (~1/min per address).
+
+## Environment variables (Nest API)
 
 | Variable | Required | Description |
 |----------|----------|-------------|
@@ -17,7 +61,7 @@ Billing invoice PDFs are **not** sent this way — they use [Stripe Dashboard se
 | `PUBLIC_APP_URL` | Recommended | PWA links in digests (unsubscribe page, manage hub, job list URLs) |
 | `PUBLIC_API_URL` | Recommended when API ≠ PWA host | Pause link: `{PUBLIC_API_URL}/api/public/job-alerts/pause?token=…` (GET → redirects to `/ponuky-na-email/pozastavene`) |
 | `NOTIFICATION_PREFERENCE_TOKEN_SECRET` | Required for pause/unsubscribe in job alert emails | Signs tokens for footer actions; if unset, digest footers fall back to non-token URLs |
-| `PRICING_INQUIRY_TO` | No (defaults to `podpora@jobbie.sk`) | Inbox for `/cennik` addon contact form (`POST /api/pricing-inquiries`) |
+| `PRICING_INQUIRY_TO` | No (defaults to `ahoj@jobbie.sk`) | Inbox for `/cennik` addon contact form (`POST /api/pricing-inquiries`) |
 | `SMTP_VERIFY_ON_BOOT` | No | When `true`, Nest logs SMTP `verify()` result on startup (dev troubleshooting) |
 
 If `SMTP_HOST` or `SMTP_FROM` is missing, `EmailService.sendHtmlEmail` returns `false` and crons skip dispatch (`canRunDispatch` / `canRunAlerts`).

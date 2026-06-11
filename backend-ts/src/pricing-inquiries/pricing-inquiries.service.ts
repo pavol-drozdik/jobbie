@@ -33,12 +33,12 @@ export class PricingInquiriesService {
     if (!this.email.isConfigured()) {
       this.logger.warn('SMTP not configured; pricing inquiry rejected');
       throw new ServiceUnavailableException(
-        'Kontaktný formulár je dočasne nedostupný. Skúste neskôr alebo napíšte na podpora@jobbie.sk.',
+        'Kontaktný formulár je dočasne nedostupný. Skúste neskôr alebo napíšte na ahoj@jobbie.sk.',
       );
     }
     const to =
       this.config.get<string>('PRICING_INQUIRY_TO')?.trim() ||
-      'podpora@jobbie.sk';
+      'ahoj@jobbie.sk';
     const emailNorm = dto.email.trim().toLowerCase();
     const name = dto.name.trim();
     const company = dto.company.trim();
@@ -68,7 +68,7 @@ export class PricingInquiriesService {
         `Pricing inquiry email not sent (to=${to}, service=${dto.service_id})`,
       );
       throw new ServiceUnavailableException(
-        'Nepodarilo sa odoslať dopyt. Skúste neskôr alebo napíšte na podpora@jobbie.sk.',
+        'Nepodarilo sa odoslať dopyt. Skúste neskôr alebo napíšte na ahoj@jobbie.sk.',
       );
     }
 

@@ -3,6 +3,8 @@ export interface PreparePaymentResult {
   clientSecret: string
   amount?: number
   currency?: string
+  intentType?: 'payment' | 'setup'
+  trialPeriodDays?: number
 }
 
 export function normalizePreparePaymentResult(
@@ -20,5 +22,13 @@ export function normalizePreparePaymentResult(
     clientSecret,
     amount: typeof value.amount === 'number' ? value.amount : undefined,
     currency: value.currency?.trim() || undefined,
+    intentType:
+      value.intentType === 'setup' || value.intentType === 'payment'
+        ? value.intentType
+        : undefined,
+    trialPeriodDays:
+      typeof value.trialPeriodDays === 'number' && value.trialPeriodDays > 0
+        ? value.trialPeriodDays
+        : undefined,
   }
 }

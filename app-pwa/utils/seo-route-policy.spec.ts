@@ -25,8 +25,7 @@ describe('seo-route-policy', () => {
     expect(getSeoRoutePolicy('/chat/room-1').indexable).toBe(false)
   })
 
-  it('includes guide routes in sitemap', () => {
-    expect(getSeoSitemapStaticPaths(false)).toContain('/navody/ako-to-funguje')
-    expect(getSeoSitemapStaticPaths(false)).toContain('/navody/ako-funguju-kredity')
+  it('does not include removed guide routes in sitemap', () => {
+    expect(getSeoSitemapStaticPaths(false)).not.toContain('/navody/ako-to-funguje')
   })
 })

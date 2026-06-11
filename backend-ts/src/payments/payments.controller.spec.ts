@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SubscriptionCreditsService } from './subscription-credits.service';
+import { SubscriptionTrialService } from '../billing/subscription-trial.service';
 import { CurrentUser, UserRole } from '../auth/auth.types';
 
 function makeController(fromMock: jest.Mock): PaymentsController {
@@ -16,6 +17,9 @@ function makeController(fromMock: jest.Mock): PaymentsController {
     { recordAuditEvent: jest.fn() } as unknown as AuditService,
     { createForUser: jest.fn() } as unknown as NotificationsService,
     {} as SubscriptionCreditsService,
+    {
+      markSubscriptionTrialUsed: jest.fn(),
+    } as unknown as SubscriptionTrialService,
   );
 }
 

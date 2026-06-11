@@ -1,4 +1,4 @@
-export const S = {
+﻿export const S = {
   navDomov: 'Domov',
   navPonuky: 'Ponuky',
   navPridat: 'Pridať',
@@ -36,6 +36,26 @@ export const S = {
     'Heslo bolo zmenené. Všetky zariadenia boli odhlásené. Prihláste sa znova novým heslom.',
   resetPasswordExpired:
     'Odkaz na obnovenie hesla vypršal alebo už bol použitý. Požiadajte o nový odkaz na prihlasovacej stránke.',
+  resetPasswordPkceVerifierMissing:
+    'Otvorte odkaz v tom istom prehliadači, kde ste žiadali o reset hesla, alebo požiadajte o nový odkaz na prihlasovacej stránke.',
+  forgotPasswordTitle: 'Obnovenie',
+  forgotPasswordTitleAccent: 'hesla',
+  forgotPasswordSubtitle: 'Zadajte e-mail účtu. Pošleme vám odkaz na nastavenie nového hesla.',
+  forgotPasswordSubmit: 'Odoslať odkaz',
+  forgotPasswordSubmitting: 'Odosiela sa…',
+  forgotPasswordSentMessage:
+    'Ak existuje účet s touto adresou, odošleme odkaz na obnovenie hesla. Skontrolujte doručenú poštu.',
+  forgotPasswordOpenMailbox: 'Otvoriť e-mailovú schránku',
+  forgotPasswordRateLimited:
+    'Príliš veľa pokusov o obnovenie hesla. Skúste znova o pár minút.',
+  forgotPasswordCaptchaFailed:
+    'Overenie CAPTCHA zlyhalo. Skúste znova.',
+  forgotPasswordInvalidEmail: 'Zadajte platnú e-mailovú adresu.',
+  forgotPasswordSendFailed:
+    'Nepodarilo sa odoslať e-mail. Skúste to neskôr alebo kontaktujte podporu.',
+  forgotPasswordSmtpTimeout:
+    'Odoslanie e-mailu trvalo príliš dlho (SMTP server neodpovedá). Skontrolujte SMTP host/port v Supabase alebo použite transakčný e-mail (Resend, SES).',
+  forgotPasswordBackToLogin: 'Späť na prihlásenie',
   resetPasswordBackToLogin: 'Späť na prihlásenie',
   resetPasswordHaveAccount: 'Späť na',
   resetPasswordSaveFailed:
@@ -69,6 +89,10 @@ export const S = {
   passkeySectionHint:
     'Passkey umožní rýchle overenie na tomto zariadení. Na zariadeniach bez podpory použite heslo.',
   passkeyAdd: 'Pridať passkey',
+  passkeyTotpStepHint:
+    'Máte zapnuté 2FA — pred pridaním passkey zadajte aktuálny kód z autentifikačnej aplikácie.',
+  passkeyTotpOtpLabel: 'Kód z aplikácie (2FA)',
+  passkeyConfirmAdd: 'Potvrdiť a pridať passkey',
   passkeyDateUnknown: 'Dátum vytvorenia nie je dostupný',
   signUp: 'Registrovať sa',
   /** Compact navbar CTA (bez „sa“). */
@@ -308,7 +332,7 @@ export const S = {
   listingBadgeTop: 'TOP',
   all: 'Všetky',
   /** Home stats bar: profiles with worker role (hľadajú prácu). */
-  statsLookingForWork: 'Brigádnikov',
+  statsLookingForWork: 'Uchádzačov',
   statsSpokojnost: 'Spokojnosť',
   statsHodnotenie: 'Hodnotenie',
   searchWork: 'Nájsť prácu',
@@ -327,8 +351,8 @@ export const S = {
   homeEmployerCtaHeading: 'Si zamestnávateľ? ',
   homeEmployerCtaHighlight: 'Nájdi pomoc dnes.',
   homeEmployerCtaSub:
-    'Tisíce overených brigádnikov čakajú. Prvých 5 inzerátov zadarmo.',
-  homePostJobCta: 'Zverejniť brigádu',
+    'Tisíce overených uchádzačov čakajú. 1 inzerát zadarmo mesačne.',
+  homePostJobCta: 'Zverejniť pracovnú ponuku',
   homeWorkerCtaHeading: 'Potrebuješ brigádu? ',
   homeWorkerCtaHighlight: 'Nájdi ju dnes:',
   homeWorkerCtaSub:
@@ -342,29 +366,29 @@ export const S = {
   faqTitle: 'Často kladené otázky',
   faqRolePrompt: 'Som',
   faqRoleEmployer: 'Zamestnávateľ',
-  faqRoleWorker: 'Brigádnik',
-  faqRoleProvider: 'Poskytovateľ',
+  faqRoleWorker: 'Uchádzač',
+  faqRoleProvider: 'Profesionál',
   footerAbout: 'O nás',
   seoContactPageTitle: 'Kontakt',
   seoSecurityPageTitle: 'Bezpečnosť',
   seoFaqPageSubtitle:
-    'Odpovede pre zamestnávateľov, brigádnikov a poskytovateľov služieb na platforme JOBBIE.',
+    'Odpovede pre zamestnávateľov, uchádzačov a profesionálov na platforme JOBBIE.',
   seoFaqPageDescription:
     'Často kladené otázky o Jobbie — registrácia, brigády, cenník, chat, podpora a ochrana údajov.',
   seoHomeDefinition:
-    'Jobbie (JOBBIE) je slovenská online platforma na hľadanie brigád a dočasných prác. Zamestnávatelia zverejňujú ponuky, brigádnici sa prihlasujú a komunikujú cez chat; poskytovatelia služieb sa zobrazujú v katalógu Profesionáli.',
+    'Jobbie (JOBBIE) je slovenská online platforma na hľadanie brigád a dočasných prác. Zamestnávatelia zverejňujú ponuky, uchádzači sa prihlasujú a komunikujú cez chat; profesionáli sa zobrazujú v katalógu Profesionáli.',
   seoCatalogJobsDescription:
     'Prehľad aktuálnych brigád a pracovných ponúk na Slovensku. Filtrujte podľa mesta, kategórie a typu práce.',
   seoCatalogForeignDescription:
     'Zahraničné pracovné ponuky a brigády. Prehľadajte inzeráty a prihláste sa priamo v Jobbie.',
   seoCatalogProfessionalsDescription:
-    'Katalóg poskytovateľov služieb a firiem na Jobbie. Nájdite pomoc podľa kategórie a lokality.',
+    'Katalóg profesionálov a firiem na Jobbie. Nájdite pomoc podľa kategórie a lokality.',
   footerBlog: 'Blog',
-  footerWorkers: 'Brigádnici',
+  footerWorkers: 'Uchádzači',
   footerFindJobs: 'Hľadať brigády',
   footerEmployers: 'Zamestnávatelia',
   footerPricing: 'Cenník',
-  footerEmail: 'info@jobbie.sk',
+  footerEmail: 'ahoj@jobbie.sk',
   footerPhone: '+421 900 000',
   footerLinksHeading: 'Odkazy',
   footerLinkJobOffers: 'Pracovné ponuky',
@@ -372,6 +396,11 @@ export const S = {
   footerLinkPricingServices: 'Cenník služieb',
   footerLinkTerms: 'Všeobecné podmienky',
   footerLinkPrivacy: 'Ochrana osobných údajov',
+  privacyPolicyIntro:
+    'Oficiálne zásady ochrany osobných údajov platformy Jobbie. Správcom osobných údajov je CoCreate s. r. o.',
+  privacyPolicyEffectiveDate: 'Platné od 25. februára 2026.',
+  privacyPolicyDownloadPdf: 'Stiahnuť zásady (PDF)',
+  privacyPolicyOpenPdf: 'Otvoriť PDF v novej karte',
   footerLinkCookieSettings: 'Nastavenia cookies',
   footerPageSoon: 'Ďalší obsah pripravujeme.',
   footerSlogan:
@@ -388,10 +417,10 @@ export const S = {
   newsletterSubscribeSubmitting: 'Odosielam…',
   newsletterSubscribeError:
     'Nepodarilo sa uložiť prihlásenie. Skús to prosím znova.',
+  homeDownloadTitle: 'Jobbie vždy po ruke',
   homeDownloadLead:
-    'Stiahni si aplikáciu a buď prvý, kto sa prihlási na nové brigády. Notifikácie, chat a profil vo vrecku.',
-  homeDownloadAppStore: 'App Store',
-  homeDownloadGooglePlay: 'Google Play',
+    'Na mobilných aplikáciách pre iOS a Android momentálne pracujeme. Čoskoro budeš mať notifikácie, chat a profil vo vrecku.',
+  homeDownloadStatus: 'Aplikáciu pripravujeme',
   homeNewsletterPlaceholderName: 'Meno (voliteľné)',
   homeNewsletterPlaceholderEmail: 'Váš e-mail',
   homeNewsletterSubmit: 'Odoberať',
@@ -417,9 +446,9 @@ export const S = {
   footerLinkPrivacyShort: 'Ochrana súkromia',
   footerLinkTermsShort: 'Obchodné podmienky',
   footerCookieSettings: 'Spravovať cookies',
-  cookieBannerTitle: 'Používame cookies',
+  cookieBannerTitle: 'Ahoj, používame súbory cookie',
   cookieBannerDescription:
-    'Nevyhnutné cookies zabezpečujú prihlásenie a bezpečnosť. Analytické cookies (PostHog, Google Tag Manager s Google Analytics 4 a Microsoft Clarity) nám pomáhajú zlepšovať službu — zapnú sa až po vašom súhlase.',
+    'Používame ich na zabezpečenie správneho fungovania webovej stránky, analýzu návštevnosti a výkonu a poskytovanie funkcií sociálnych médií. Analytické cookies zapneme až po vašom súhlase.',
   cookieBannerAcceptAll: 'Prijať všetky',
   cookieBannerRejectAll: 'Odmietnuť',
   cookieBannerSettings: 'Nastavenia',
@@ -544,6 +573,14 @@ export const S = {
   checkoutBillingPostalCode: 'PSČ',
   checkoutBillingAddressRequired: 'Vyplňte fakturačnú adresu (ulica, mesto, PSČ).',
   checkoutSubscriptionSuccess: 'Predplatné bolo úspešne aktivované.',
+  checkoutSubscriptionTrialSuccess:
+    'Skúšobné obdobie je aktívne. Prvá platba prebehne po jeho skončení.',
+  checkoutPageSubtitleSubscriptionTrial:
+    'Zadajte platobnú kartu — prvý mesiac je zadarmo, platba prebehne až po skončení skúšobného obdobia.',
+  checkoutSubscriptionTrialChargeHint:
+    'Prvá platba až po skončení skúšobného obdobia. Karta sa uloží na budúce fakturácie.',
+  checkoutTrialPriceNow: '0 € teraz',
+  checkoutTrialPriceAfter: 'Potom {price}',
   checkoutStripeNotConfigured:
     'Platobná brána nie je nakonfigurovaná (chýba NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY).',
   checkoutStripeLoadFailed: 'Nepodarilo sa načítať Stripe.',
@@ -555,7 +592,8 @@ export const S = {
   checkoutCreditsSuccess: 'Kredity boli úspešne pripísané na váš účet.',
   pricingPageTitle: 'Cenník',
   pricingPageSubtitle:
-    'Jednorazové kredity, mesačné plány alebo doplnkové marketingové služby pre firmy a poskytovateľov.',
+    'Jednorazové kredity, mesačné plány alebo doplnkové marketingové služby pre firmy a profesionálov.',
+  pricingTrialAfterHint: 'prvá platba až po skúšobnom období',
   pricingTabCredits: 'Jednorazové kredity',
   pricingTabPlans: 'Mesačné plány',
   pricingTabAddons: 'Doplnkové služby',
@@ -565,7 +603,7 @@ export const S = {
   pricingContactSubtitle:
     'Vyplňte formulár a ozveme sa vám s ponukou na vybranú doplnkovú službu.',
   pricingContactDirectTitle: 'Priamy kontakt',
-  pricingSalesEmail: 'podpora@jobbie.sk',
+  pricingSalesEmail: 'ahoj@jobbie.sk',
   pricingSalesPhone: '+421 900 000',
   pricingContactEmailLabel: 'E-mail',
   pricingContactPhoneLabel: 'Telefón',
@@ -588,14 +626,15 @@ export const S = {
   pricingContactErrorMessage: 'Napíšte správu.',
   pricingContactErrorConsent: 'Potvrďte súhlas so spracovaním údajov.',
   pricingContactErrorSubmit:
-    'Nepodarilo sa odoslať dopyt. Skúste neskôr alebo napíšte na podpora@jobbie.sk.',
+    'Nepodarilo sa odoslať dopyt. Skúste neskôr alebo napíšte na ahoj@jobbie.sk.',
   pricingContactErrorApiUnreachable:
-    'Server nie je dostupný. Skúste neskôr alebo napíšte na podpora@jobbie.sk.',
+    'Server nie je dostupný. Skúste neskôr alebo napíšte na ahoj@jobbie.sk.',
   pricingContactErrorApiUnreachableDev:
     'Spustite Nest API (backend-ts, port 8000).',
   pricingCvCompareTitle: 'Porovnanie plánov',
   pricingCreditsCardDesc:
     'Kredity použijete pri zverejnení a propagácii ponúk. Cenu uvidíte aj pri konkrétnej akcii v pridávaní inzerátu.',
+  pricingCreditsYourPlan: 'Váš plán: {plan}',
   pricingBalanceLabel: 'Zostatok',
   pricingPackPricePrefix: 'za',
   pricingCreditsUnit: 'kreditov',
@@ -628,7 +667,7 @@ export const S = {
   pricingMaxActiveOffers: 'Aktívne ponuky',
   pricingSubscriptionStatus: 'Stav predplatného',
   pricingEmployerOnlyHint:
-    'Nákup kreditov a predplatné je určené pre zamestnávateľov a poskytovateľov služieb. Ak hľadáte prácu, prezrite si dostupné ponuky.',
+    'Nákup kreditov a predplatné je určené pre zamestnávateľov a profesionálov. Ak hľadáte prácu, prezrite si dostupné ponuky.',
   pricingDowngradeTitle: 'Prejsť na bezplatný plán?',
   pricingDowngradeMessage:
     'Aktuálne predplatné bude zrušené. Kredity z plateného plánu zostanú platné podľa pravidiel expirácie.',
@@ -741,7 +780,7 @@ export const S = {
   firmyBackToCatalog: 'Späť na Profesionáli',
   /** Account that published the company/service ad (same sense as jobPostedBy). */
   firmyAdPostedBy: 'Zverejnil',
-  firmyAdOwnerFallback: 'Poskytovateľ',
+  firmyAdOwnerFallback: 'Profesionál',
   firmyAdPriceLabel: 'Cena',
   firmyContactProvider: 'Kontaktovať',
   firmyNoAds: 'Zatiaľ žiadne reklamy.',
@@ -903,6 +942,12 @@ export const S = {
   settingsSecurityTotpDisableConfirmTitle: 'Vypnúť dvojfaktorové overenie?',
   settingsSecurityTotpDisableConfirmMessage:
     'Účet bude pri prihlásení heslom chránený len jedným faktorom. Pokračovať?',
+  settingsSecurityTotpDisableStepHint:
+    'Zadajte aktuálny 6-miestny kód z autentifikačnej aplikácie a potvrďte vypnutie.',
+  settingsSecurityTotpDisableConfirmAction: 'Potvrdiť vypnutie',
+  settingsSecurityTotpDisableCancel: 'Zrušiť',
+  settingsSecurityTotpNotActive: 'Dvojfaktorové overenie nie je aktívne.',
+  settingsSecurityTotpDisableSuccess: 'Dvojfaktorové overenie bolo vypnuté.',
   settingsSecurityPhoneSection: 'Telefón',
   settingsSecurityPhoneHint: 'Overenie telefónneho čísla v účte.',
   settingsSecurityPhoneSendCode: 'Odoslať overovací kód (SMS)',
@@ -919,6 +964,9 @@ export const S = {
   settingsSecuritySessionUnavailable: 'Session nie je k dispozícii.',
   settingsSecuritySmsFailed: 'SMS zlyhalo.',
   settingsSecurityVerifyFailed: 'Overenie zlyhalo.',
+  settingsAccountTypeHint:
+    'Typ účtu určuje, či ste evidovaní ako jednotlivec alebo firma / SZČO. Firemné údaje doplníte v nastaveniach firmy.',
+  settingsAccountTypeCompanyLink: 'Upraviť firemný profil',
   settingsRolesSection: 'Čo chcete robiť?',
   settingsRolesDescription: 'Tieto roly ovplyvňujú to, čo sa vám zobrazuje a ako vás vidia ostatní.',
   settingsNotificationsSection: 'Oznámenia (v aplikácii)',
@@ -1156,6 +1204,8 @@ export const S = {
   settingsSubscriptionCanceledReconciled: 'Predplatné bolo zrušené. Účet bol prepnutý na bezplatný plán.',
   settingsSubscriptionCancelNoStripe: 'Predplatné sa nepodarilo zrušiť — chýba prepojenie so Stripe.',
   settingsSubscriptionCancelFailed: 'Nepodarilo sa zrušiť predplatné. Skúste znova alebo kontaktujte podporu.',
+  settingsBillingStepUpFailed:
+    'Relácia s platobným serverom vypršala. Obnovte stránku, prihláste sa znova a skúste ešte raz.',
   subscriptionCancelDialogTitle: 'Zrušiť predplatné?',
   subscriptionCancelDialogIntro:
     'Predplatné zostane aktívne do konca zaplateného obdobia. Pomôžte nám prosím pochopiť dôvod zrušenia.',
@@ -1192,11 +1242,13 @@ export const S = {
   dashboardDateTo: 'Do',
   dashboardApplyRange: 'Použiť obdobie',
   dashboardRoleDeniedCustomer:
-    'Tieto štatistiky sú pre rolu „Potrebujem pomoc s prácou“ (pracovné ponuky). Zapnite ju v profile.',
+    'Tieto štatistiky sú pre rolu „Potrebujem pomoc s prácou“. Zapnite ju v sekcii nižšie.',
   dashboardRoleDeniedProvider:
-    'Tieto štatistiky sú pre rolu „Chcem aby ma klienti našli“ (verejný profil). Zapnite ju v profile.',
+    'Reklamy medzi profesionálmi a súvisiace štatistiky vyžadujú rolu „Chcem aby ma klienti našli“. Zapnite ju v sekcii nižšie.',
   dashboardRoleDeniedWorker:
-    'Tento prehľad vyžaduje rolu uchádzača o prácu. Zapnite ju v nastaveniach účtu.',
+    'Životopisy a e-mailové ponuky vyžadujú rolu „Hľadám malé práce“. Zapnite ju v sekcii nižšie.',
+  dashboardRoleDeniedCompany:
+    'Pracovné ponuky, správa uchádzačov a databáza životopisov vyžadujú rolu „Potrebujem pomoc s prácou“. Zapnite ju v sekcii nižšie.',
   dashboardCustomerAvgApplicants: 'Priemerne prihlásení na ponuku',
   dashboardCustomerAvgApplicantsWhy:
     'Pomáha zistiť, či vaše ponuky lámu ľudí — vyšší priemer znamená väčší záujem.',
@@ -1233,7 +1285,7 @@ export const S = {
   dashboardBenchmarkNoReviews:
     'Zatiaľ nemáte hodnotenia v zvolenom období — benchmark sa zobrazí po prvých recenziách.',
   dashboardBenchmarkNoPeers:
-    'V tejto kategórii zatiaľ nie je dostatok hodnotení od ostatných poskytovateľov.',
+    'V tejto kategórii zatiaľ nie je dostatok hodnotení od ostatných profesionálov.',
   dashboardChartNoData: 'V zvolenom období zatiaľ žiadne dáta pre tento graf.',
   dashboardConversionNoViews:
     'Zatiaľ žiadne zobrazenia profilu v tomto období — konverziu zobrazíme po prvých návštevách.',

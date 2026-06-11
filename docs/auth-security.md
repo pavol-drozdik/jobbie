@@ -12,6 +12,17 @@ How JOBBIE authenticates users, protects the API, and where secrets live. For th
 
 PWA login flow: Supabase PKCE → exchange tokens for API session → subsequent Nest calls use cookies.
 
+### Google Sign-In (OAuth branding)
+
+`signInWithOAuth({ provider: 'google' })` on [`login.vue`](../app-pwa/pages/auth/login.vue) redirects through **Supabase Auth** (`https://<project>.supabase.co/auth/v1/authorize`). Google’s consent screen therefore shows the Supabase callback host unless you change it via dashboard configuration — not in PWA code.
+
+| Tier | Action |
+|------|--------|
+| **Free** | Google Cloud **brand verification** — consent screen shows **JOBBIE** + logo; `*.supabase.co` may still appear in secondary UI |
+| **Pro + Custom Domain** | Supabase custom subdomain (e.g. `auth.jobbie.sk`) — “continue to” shows your subdomain; update `NUXT_PUBLIC_SUPABASE_URL` / `SUPABASE_URL` and Google redirect URI |
+
+Full checklist (Google Console, Supabase URL config, verification test): [`supabase/AUTH-GOOGLE-OAUTH.md`](../supabase/AUTH-GOOGLE-OAUTH.md).
+
 ## Session and token storage
 
 ### BFF cookies (Nest API)
@@ -79,7 +90,7 @@ Server-side session rows: `api_user_sessions` (hashed refresh). Refresh uses `SU
 ### PWA
 
 - `definePageMeta({ middleware: ['auth'] })` on private pages.
-- Role middleware: `company-only`, `worker-only`, `admin`, dashboard variants.
+- Role middleware: `customer-only`, `worker-only`, `provider-only`, `admin`, dashboard variants (`customer_role` / `worker_role` / `provider_role` on `profiles`, not `profiles.role`).
 
 Middleware and guards are **UX only** — backend must enforce the same rules.
 
@@ -123,20 +134,35 @@ Sensitive areas: billing changes, account delete, admin moderation, passkey mana
 
 ## Password reset
 
-- Forgot-password on [`pages/auth/login.vue`](../app-pwa/pages/auth/login.vue) calls `resetPasswordForEmail` with `redirectTo` → `{PWA_ORIGIN}/auth/reset-password`.
-- [`pages/auth/reset-password.vue`](../app-pwa/pages/auth/reset-password.vue) exchanges the PKCE `code` (if present), then `updateUser({ password })`, then `POST /api/auth/sessions/revoke-all` (Supabase global sign-out + all `api_user_sessions` revoked) and local `signOut()`.
+- Forgot-password on [`pages/auth/login.vue`](../app-pwa/pages/auth/login.vue): **Zabudol som heslo** opens an email-only step when the field is empty; after submit, a confirmation view with an optional **Open mailbox** button (known providers via `email-webmail-url.ts`). Calls `resetPasswordForEmail` with `redirectTo` → `{PWA_ORIGIN}/auth/reset-password`.
+- [`pages/auth/reset-password.vue`](../app-pwa/pages/auth/reset-password.vue) bootstraps recovery via [`bootstrap-password-recovery-session.ts`](../app-pwa/utils/bootstrap-password-recovery-session.ts): `verifyOtp({ type: 'recovery', token_hash })` (primary), auto-detect poll, then PKCE `code` exchange (same-browser fallback). Then `updateUser({ password })`, `POST /api/auth/sessions/revoke-all`, and local `signOut()`.
 - `POST /api/auth/sessions/revoke-all` — same global logout after password change in settings (JWT + audit `auth.sessions.revoked_all`).
 - OAuth and legacy links may still use [`pages/auth/callback.vue`](../app-pwa/pages/auth/callback.vue) with `?redirect=/auth/reset-password`.
 - `PASSWORD_RECOVERY` in [`plugins/1.auth.client.ts`](../app-pwa/plugins/1.auth.client.ts) navigates to the reset page when Supabase fires that event.
+
+### Supabase Auth email templates (PKCE)
+
+The PWA uses PKCE. Default `{{ .ConfirmationURL }}` links fail when the email is opened outside the browser that started the flow. Branded HTML templates use `token_hash` + `type` query params (signup, invite, magic link, email change → `/auth/callback`; reset → `/auth/reset-password`).
+
+Full subjects, HTML files, and dashboard checklist: [`supabase/AUTH-EMAIL-TEMPLATES.md`](../supabase/AUTH-EMAIL-TEMPLATES.md).
 
 ### Supabase Auth URL configuration
 
 Add every environment origin to **Redirect URLs** (Authentication → URL configuration), for example:
 
+**Production (`https://jobbie.sk`):**
+
+- `https://jobbie.sk/auth/callback`
+- `https://jobbie.sk/auth/reset-password`
+
+**Local dev:**
+
 - `http://localhost:3001/auth/callback`
 - `http://localhost:3001/auth/reset-password`
 
-Set **Site URL** to the PWA origin (e.g. `http://localhost:3001`), not only `/auth/login`.
+Set **Site URL** to the PWA origin (production: `https://jobbie.sk`; local: e.g. `http://localhost:3001`), not only `/auth/login`.
+
+Google OAuth uses a separate callback on Supabase (`https://<project-ref>.supabase.co/auth/v1/callback`) — configure that in Google Cloud, not in this redirect list. See [`supabase/AUTH-GOOGLE-OAUTH.md`](../supabase/AUTH-GOOGLE-OAUTH.md).
 
 If **Confirm email** is enabled in the Supabase project, users cannot `signInWithPassword` until the address is confirmed; the PWA shows a dedicated message (`loginEmailNotConfirmed`).
 

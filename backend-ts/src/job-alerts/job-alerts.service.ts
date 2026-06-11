@@ -237,10 +237,10 @@ export class JobAlertsService {
     if (row.is_deleted) {
       throw new ForbiddenException('Profil nie je dostupný.');
     }
-    const role = String(row.role ?? '');
-    const hasWorkerRole = Boolean(row.worker_role);
-    if (role === 'company' && !hasWorkerRole) {
-      throw new ForbiddenException('Táto funkcia je určená pre uchádzačov o prácu.');
+    if (!row.worker_role) {
+      throw new ForbiddenException(
+        'Táto funkcia vyžaduje zapnutú rolu „Hľadám malé práce“ v profile.',
+      );
     }
   }
 

@@ -15,7 +15,7 @@ function stableStringify(value: unknown): string {
 }
 
 /** Bump when HTML/CSS/PDF renderer changes so stored PDFs regenerate. */
-export const CV_PDF_RENDERER_REVISION = 11
+export const CV_PDF_RENDERER_REVISION = 13
 
 /** Hash canonical CV document export payload to detect PDF staleness. */
 export function hashCvDocumentExportData(data: CvDocumentExportData): string {

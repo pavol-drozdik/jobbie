@@ -93,6 +93,7 @@ import {
 
 import { companyAdViewerFromUser } from './public-response.mapper';
 import { CompanyAdsListService } from './company-ads-list.service';
+import { IndexNowService } from '../seo/indexnow.service';
 
 
 
@@ -155,7 +156,14 @@ export class CompanyAdsController {
     private limits: SubscriptionLimitsService,
     private companyAdsList: CompanyAdsListService,
     private topPromotion: ListingTopPromotionService,
+    private indexNow: IndexNowService,
   ) {}
+
+  private notifyAdPublishedIfActive(ad: { id: string; status?: string | null }): void {
+    if (ad.status === 'active') {
+      this.indexNow.notifyAdPublished(String(ad.id));
+    }
+  }
 
   private async applyTopListingOnCompanyAdPublish(
     userId: string,
@@ -611,7 +619,11 @@ export class CompanyAdsController {
 
     });
 
-    return mapAdForViewer(adRow, user);
+    const created = mapAdForViewer(adRow, user);
+    if (!isDraft) {
+      this.notifyAdPublishedIfActive(adRow);
+    }
+    return created;
 
   }
 
@@ -775,6 +787,7 @@ export class CompanyAdsController {
         } catch {
           /* Client may retry POST .../top-listing. */
         }
+        this.notifyAdPublishedIfActive(updated as AdRow);
         return publishedDto;
       } catch (e) {
         await this.credits.reverseSpendByRef(
@@ -860,7 +873,9 @@ export class CompanyAdsController {
           'company_ad_renew_top',
         );
 
-        return this.enrichAdTopBadge(mapAdForViewer(updated as AdRow, user));
+        const renewed = mapAdForViewer(updated as AdRow, user);
+        this.notifyAdPublishedIfActive(updated as AdRow);
+        return this.enrichAdTopBadge(renewed);
       } catch (e) {
         await this.credits.reverseSpendByRef(
           user.id,

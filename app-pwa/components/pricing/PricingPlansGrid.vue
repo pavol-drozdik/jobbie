@@ -27,6 +27,12 @@
                 Aktuálny plán
               </span>
               <span
+                v-else-if="planTrialDays(plan) > 0"
+                class="inline-block rounded-full bg-amber-100 px-3 py-1 font-dmSans text-[12px] font-bold text-amber-950"
+              >
+                {{ subscriptionTrialBadgeLabel(planTrialDays(plan)) }}
+              </span>
+              <span
                 v-else-if="plan.slug === 'plus'"
                 class="inline-block rounded-full bg-marketing-green px-3 py-1 font-dmSans text-[12px] font-bold text-white"
               >
@@ -40,10 +46,23 @@
 
             <p class="m-0 mt-3 font-dmSans text-[clamp(1.75rem,3vw,2.25rem)] font-extrabold leading-none tracking-tight text-marketing-green">
               <template v-if="plan.price_monthly_cents === 0">{{ S.planPriceFree }}</template>
+              <template v-else-if="planTrialDays(plan) > 0">{{ S.checkoutTrialPriceNow }}</template>
               <template v-else>
                 {{ (plan.price_monthly_cents / 100).toFixed(2) }} €
                 <span class="text-[15px] font-semibold text-black/40">{{ S.planPerMonth }}</span>
               </template>
+            </p>
+            <p
+              v-if="planTrialDays(plan) > 0 && plan.price_monthly_cents > 0"
+              class="m-0 mt-2 font-dmSans text-sm font-semibold text-black/55"
+            >
+              {{ S.checkoutTrialPriceAfter.replace('{price}', `${(plan.price_monthly_cents / 100).toFixed(2)} €${S.planPerMonth}`) }}
+            </p>
+            <p
+              v-else-if="planTrialDays(plan) > 0"
+              class="m-0 mt-2 font-dmSans text-sm font-semibold text-amber-900"
+            >
+              {{ subscriptionTrialBadgeLabel(planTrialDays(plan)) }} — {{ S.pricingTrialAfterHint }}
             </p>
 
             <ul class="m-0 mt-5 flex flex-1 flex-col gap-2.5 list-none p-0">
@@ -102,6 +121,10 @@
 import { S } from '~/utils/strings'
 import type { PlanRow } from '~/composables/usePlans'
 import { isPlusOrProPlanSlug } from '~/utils/billing-account-access'
+import {
+  resolvePlanTrialDays,
+  subscriptionTrialBadgeLabel,
+} from '~/utils/subscription-trial'
 
 const props = withDefaults(
   defineProps<{
@@ -111,6 +134,12 @@ const props = withDefaults(
     returnBasePath: '/cennik',
   },
 )
+
+const { config: billingCatalogConfig, load: loadBillingCatalog } = useCatalogBilling()
+
+function planTrialDays(plan: PlanRow): number {
+  return resolvePlanTrialDays(plan, billingCatalogConfig.value)
+}
 
 const {
   visiblePlans,
@@ -141,7 +170,11 @@ function planColumnClass(plan: PlanRow): string {
 }
 
 function planFeatures(plan: PlanRow): string[] {
+  const trialDays = planTrialDays(plan)
   const features = [
+    ...(trialDays > 0
+      ? [subscriptionTrialBadgeLabel(trialDays)]
+      : []),
     `${plan.monthly_credits} ${S.credits} / mesiac`,
     `Max. ${plan.max_active_jobs} aktívnych ponúk`,
     S.pricingCvDatabaseTitle,
@@ -162,6 +195,7 @@ watch(
 )
 
 onMounted(() => {
+  void loadBillingCatalog(true)
   void init()
 })
 </script>

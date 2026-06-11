@@ -22,7 +22,7 @@ export class PushNotificationService {
     }
     const publicKey = this.config.get<string>('VAPID_PUBLIC_KEY')?.trim();
     const privateKey = this.config.get<string>('VAPID_PRIVATE_KEY')?.trim();
-    const subject = this.config.get<string>('VAPID_SUBJECT')?.trim() || 'mailto:support@jobbie.sk';
+    const subject = this.config.get<string>('VAPID_SUBJECT')?.trim() || 'mailto:ahoj@jobbie.sk';
     if (!publicKey || !privateKey) {
       return false;
     }

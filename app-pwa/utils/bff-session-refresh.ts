@@ -1,4 +1,4 @@
-import { setApiBearerToken } from '~/utils/api-bearer-token'
+import { setAuthSessionAccessToken } from '~/utils/auth-session-state'
 
 export type BffSessionRefreshBody = {
   ok?: boolean
@@ -30,18 +30,18 @@ export async function applyBffSessionRefreshBody(
 
   const access = body.access_token?.trim()
   const refresh = body.refresh_token?.trim()
-  if (!access || !refresh) return Boolean(body.ok)
+  if (!access || !refresh) {
+    return options?.syncSupabase === true ? false : Boolean(body.ok)
+  }
 
+  const { useSupabase } = await import('~/composables/useSupabase')
   const supabase = useSupabase()
   const { data, error } = await supabase.auth.setSession({
     access_token: access,
     refresh_token: refresh,
   })
   if (error || !data.session) return false
-  const { setApiBearerToken } = await import('~/utils/api-bearer-token')
-  setApiBearerToken(data.session.access_token)
-  const { session: authSession } = useAuth()
-  authSession.value = { access_token: data.session.access_token }
+  setAuthSessionAccessToken(data.session.access_token)
   return true
 }
 
@@ -51,14 +51,13 @@ export function applyBffRefreshAccessToAuthState(
 ): string | null {
   const access = body.access_token?.trim()
   if (!access) return null
-  setApiBearerToken(access)
-  const { session } = useAuth()
-  session.value = { access_token: access }
+  setAuthSessionAccessToken(access)
   return access
 }
 
 export async function refreshBffSessionFromApi(
   apiBase: string,
+  options?: { syncSupabase?: boolean },
 ): Promise<{ ok: boolean; body: BffSessionRefreshBody }> {
   const { fetchApi } = await import('~/utils/api-fetch')
   const res = await fetchApi(`${apiBase}/api/auth/session/refresh`, {
@@ -74,6 +73,6 @@ export async function refreshBffSessionFromApi(
     /* ignore */
   }
   if (!res.ok) return { ok: false, body }
-  const applied = await applyBffSessionRefreshBody(body)
+  const applied = await applyBffSessionRefreshBody(body, options)
   return { ok: applied, body }
 }

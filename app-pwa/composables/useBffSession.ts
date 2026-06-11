@@ -68,11 +68,22 @@ export function useBffSession() {
   }
 
   async function probeActiveBffCookies(): Promise<boolean> {
-    const res = await fetchApi(`${apiBase()}/api/auth/me`, {
+    const boundRes = await fetchApi(`${apiBase()}/api/auth/session/bound`, {
       credentials: 'include',
       headers: { Accept: 'application/json' },
     })
-    if (!res.ok) return false
+    if (!boundRes.ok) return false
+    let sessionBound = false
+    try {
+      const text = await boundRes.text()
+      if (text) {
+        const body = JSON.parse(text) as { session_bound?: boolean }
+        sessionBound = body.session_bound === true
+      }
+    } catch {
+      return false
+    }
+    if (!sessionBound) return false
     if (!readBffCsrfToken()) {
       const { refreshBffSessionFromApi } = await import('~/utils/bff-session-refresh')
       const refreshed = await refreshBffSessionFromApi(apiBase())
@@ -88,26 +99,28 @@ export function useBffSession() {
   async function ensureBffSessionFromSupabase(options?: { force?: boolean }): Promise<boolean> {
     if (!import.meta.client) return false
     if (!options?.force) {
-      if (readBffCsrfToken() && bffActive.value) {
-        return true
-      }
       if (readBffCsrfToken() && (await probeActiveBffCookies())) {
+        bffActive.value = true
         return true
       }
     }
     const supabase = useSupabase()
     const { data } = await supabase.auth.getSession()
     const s = data.session
-    if (!s?.access_token || !s.refresh_token) return false
-    try {
-      await establishSession({
-        access_token: s.access_token,
-        refresh_token: s.refresh_token,
-      })
-      return true
-    } catch {
-      return false
+    if (s?.access_token && s.refresh_token) {
+      try {
+        await establishSession({
+          access_token: s.access_token,
+          refresh_token: s.refresh_token,
+        })
+        return true
+      } catch {
+        return false
+      }
     }
+    const { refreshBffSessionFromApi } = await import('~/utils/bff-session-refresh')
+    const refreshed = await refreshBffSessionFromApi(apiBase())
+    return refreshed.ok
   }
 
   async function logoutSession(): Promise<void> {
@@ -123,23 +136,29 @@ export function useBffSession() {
     }
   }
 
-  // Recent-login proof for billing, delete account, passkeys — requires fresh Supabase access token.
+  // Recent-login proof for billing, delete account, passkeys — requires jb_sid + CSRF.
   async function stepUp(accessToken: string): Promise<void> {
-    const csrf = readBffCsrfToken()
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
+    const postStepUp = async (): Promise<boolean> => {
+      const csrf = readBffCsrfToken()
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      }
+      if (csrf) headers['X-CSRF-Token'] = csrf
+      headers.Authorization = `Bearer ${accessToken}`
+      const res = await fetchApi(`${apiBase()}/api/auth/session/step-up`, {
+        method: 'POST',
+        credentials: 'include',
+        headers,
+        body: JSON.stringify({ access_token: accessToken }),
+      })
+      return res.ok
     }
-    if (csrf) headers['X-CSRF-Token'] = csrf
-    const res = await fetchApi(`${apiBase()}/api/auth/session/step-up`, {
-      method: 'POST',
-      credentials: 'include',
-      headers,
-      body: JSON.stringify({ access_token: accessToken }),
-    })
-    if (!res.ok) {
-      throw new Error('Step-up failed')
-    }
+    if (await postStepUp()) return
+    const { refreshBffSessionSingleFlight } = await import('~/utils/bff-refresh-single-flight')
+    const refreshed = await refreshBffSessionSingleFlight(apiBase())
+    if (refreshed.ok && (await postStepUp())) return
+    throw new Error('Step-up failed')
   }
 
   return {
@@ -147,6 +166,7 @@ export function useBffSession() {
     logoutSession,
     stepUp,
     ensureBffSessionFromSupabase,
+    verifyBffSessionBound: probeActiveBffCookies,
     apiBase,
   }
 }

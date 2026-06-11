@@ -5,6 +5,7 @@ export function useSubscriptionResume() {
   const {
     ensureRecentLoginForBilling,
     ensureBillingStepUpBeforeMutation,
+    billingStepUpFailureMessage,
     billingStepUpUserMessage,
     isStepUpRequiredResponse,
     tryRecoverFromStepUpRequired,
@@ -23,7 +24,7 @@ export function useSubscriptionResume() {
     }
 
     if (!(await ensureBillingStepUpBeforeMutation())) {
-      resumeError.value = S.settingsSubscriptionResumeFailed
+      resumeError.value = billingStepUpFailureMessage()
       return false
     }
 

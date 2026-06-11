@@ -36,15 +36,15 @@ export class RecentLoginGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request>();
     const authed = request as AuthenticatedRequest;
     const cookieParts = this.cookies.readCookies(request);
-    const sessionId = authed.sessionId ?? cookieParts.sessionId;
+    let sessionId = authed.sessionId ?? cookieParts.sessionId;
 
     let resolvedUserId = authed.user?.id?.trim() || '';
+    const authHeader = request.headers.authorization;
+    const bearer =
+      typeof authHeader === 'string' && authHeader.startsWith('Bearer ')
+        ? authHeader.slice(7)
+        : null;
     if (!resolvedUserId) {
-      const authHeader = request.headers.authorization;
-      const bearer =
-        typeof authHeader === 'string' && authHeader.startsWith('Bearer ')
-          ? authHeader.slice(7)
-          : null;
       const user = await this.jwtVerify.verifyToken(
         cookieParts.accessToken || bearer || undefined,
       );
@@ -54,9 +54,13 @@ export class RecentLoginGuard implements CanActivate {
       return true;
     }
 
-    // A Bearer-only client (no jb_sid cookie) cannot satisfy step-up. The
-    // previous fallback to "the user's latest active session" allowed a
-    // stolen JWT to be elevated using another device's recent activity.
+    if (!sessionId) {
+      sessionId = await this.sessions.resolveSessionIdForRecentLogin(
+        resolvedUserId,
+        null,
+        cookieParts.accessToken ?? bearer ?? null,
+      );
+    }
     if (!sessionId) {
       throw new ForbiddenException({
         message: 'Recent authentication required',

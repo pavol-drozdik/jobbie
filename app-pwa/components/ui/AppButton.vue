@@ -16,6 +16,7 @@
     :disabled="disabled"
     :class="mergedClass"
     v-bind="passthroughAttrs"
+    @click="onButtonClick"
   >
     <slot />
   </button>
@@ -26,6 +27,10 @@ import { computed, useAttrs } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 
 defineOptions({ inheritAttrs: false })
+
+const emit = defineEmits<{
+  click: [event: MouseEvent]
+}>()
 
 const props = withDefaults(
   defineProps<{
@@ -73,9 +78,19 @@ const variantClass = computed(() => {
 })
 
 const passthroughAttrs = computed(() => {
-  const { class: _c, ...rest } = attrs as Record<string, unknown>
+  const raw = attrs as Record<string, unknown>
+  const { class: _c, onClick: _click, ...rest } = raw
   return rest
 })
+
+function onButtonClick(event: MouseEvent): void {
+  if (props.disabled) {
+    event.preventDefault()
+    event.stopPropagation()
+    return
+  }
+  emit('click', event)
+}
 
 const linkPassthroughAttrs = computed(() => {
   const { class: _c, type: _t, ...rest } = attrs as Record<string, unknown>

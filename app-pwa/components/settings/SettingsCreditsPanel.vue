@@ -22,7 +22,7 @@
           {{ creditsBalance }}
         </p>
         <p class="m-0 mt-1 font-dmSans text-sm text-black/45">
-          {{ S.credits }}
+          {{ creditWordLabel(creditsBalance) }}
         </p>
         <p
           v-if="expiringSoon > 0"
@@ -161,12 +161,12 @@ import {
   creditLedgerIcon,
   formatCreditLedgerLabel,
 } from '~/utils/credit-ledger-labels'
+import { creditWordLabel } from '~/utils/sk-plural'
 import { S } from '~/utils/strings'
 
 const { session, user } = useAuth()
+const { isEmployer } = usePricingCheckout('/cennik')
 const { api } = useApi()
-
-const isEmployer = computed(() => user.value?.role === 'company')
 
 const buyCreditsTo = {
   path: '/cennik',

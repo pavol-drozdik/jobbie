@@ -30,7 +30,7 @@
 
     ]"
 
-    image-src="/home-design/feature-employer.webp"
+    image-src="/home-design/applicants-illustration.png"
 
     image-alt="Správa uchádzačov"
 
@@ -137,7 +137,7 @@ import {
 
 
 
-definePageMeta({ layout: 'app', middleware: ['company-only'] })
+definePageMeta({ layout: 'app', middleware: ['customer-only'] })
 
 
 

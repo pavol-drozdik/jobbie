@@ -230,6 +230,18 @@ export function buildDeferredPaymentElementsOptions(
   }
 }
 
+export function buildDeferredSetupElementsOptions(
+  variant: JobbieStripeAppearanceVariant,
+  locale: StripeElementLocale,
+  currency: string,
+): StripeElementsOptionsMode {
+  return {
+    mode: 'setup',
+    currency: currency.toLowerCase(),
+    ...buildStripeElementsBaseOptions(variant, locale),
+  }
+}
+
 export function buildClientSecretElementsOptions(
   variant: JobbieStripeAppearanceVariant,
   locale: StripeElementLocale,

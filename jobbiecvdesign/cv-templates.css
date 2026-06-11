@@ -478,6 +478,15 @@ a {
     justify-items: start;
 }
 
+.atlas-sidebar .atlas-profile-photo,
+.atlas-sidebar .template-profile-photo.atlas-profile-photo {
+    width: 40mm;
+    height: 40mm;
+    border-radius: 50%;
+    border: none;
+    box-shadow: none;
+}
+
 .atlas-name {
     margin: 0;
     font-size: 25pt;

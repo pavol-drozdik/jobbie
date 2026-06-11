@@ -11,13 +11,14 @@ export type PlanRow = {
   max_cv_contacts_monthly: number | null
   max_cv_pdf_downloads_monthly: number | null
   sort_order: number
+  trial_period_days?: number
 }
 
 /** Session-cached subscription plans from GET /api/plans */
 export function usePlans() {
   const { api } = useApi()
-  const plans = useState<PlanRow[] | null>('catalog-plans-v3', () => null)
-  const loading = useState('catalog-plans-loading-v3', () => false)
+  const plans = useState<PlanRow[] | null>('catalog-plans-v6', () => null)
+  const loading = useState('catalog-plans-loading-v6', () => false)
 
   async function load(force = false): Promise<PlanRow[]> {
     if (plans.value && !force) return plans.value

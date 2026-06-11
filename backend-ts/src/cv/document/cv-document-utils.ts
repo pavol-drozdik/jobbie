@@ -223,12 +223,14 @@ export function renderProfilePhoto(
   photoUrl: string,
   variant: 'dark' | 'warm' | 'default',
   _initials?: string,
+  extraClass = '',
 ): string {
   if (!photoUrl?.trim()) {
     return ''
   }
   const variantClass = variant === 'default' ? '' : ` ${variant}`
-  return `<div class="template-profile-photo${variantClass}"><img src="${escapeHtml(photoUrl)}" alt=""></div>`
+  const moreClass = extraClass.trim() ? ` ${extraClass.trim()}` : ''
+  return `<div class="template-profile-photo${variantClass}${moreClass}"><img src="${escapeHtml(photoUrl)}" alt=""></div>`
 }
 
 export function nameHtmlForSidebar(fullName: string, firstName: string, lastName: string): string {

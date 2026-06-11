@@ -228,7 +228,7 @@ import type { Job } from '~/utils/job'
 import LoggedOutFeatureHero from '~/components/marketing/LoggedOutFeatureHero.vue'
 import JobHubRow from '~/components/job-post/JobHubRow.vue'
 
-definePageMeta({ layout: 'app' })
+definePageMeta({ layout: 'app', middleware: ['customer-only'] })
 
 const route = useRoute()
 const router = useRouter()

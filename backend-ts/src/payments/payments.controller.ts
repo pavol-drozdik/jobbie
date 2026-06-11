@@ -41,6 +41,7 @@ import {
   ConfirmPaymentMethodDto,
 } from './payments.dto';
 import { isPublicSubscriptionPlanSlug } from '../billing/public-pricing-catalog';
+import { SubscriptionTrialService } from '../billing/subscription-trial.service';
 import { resolveSubscriptionStripePriceId } from './stripe-catalog-prices';
 
 const CREDITS_CATALOG_UNAVAILABLE =
@@ -60,6 +61,7 @@ export class PaymentsController {
     private audit: AuditService,
     private notifications: NotificationsService,
     private subscriptionCredits: SubscriptionCreditsService,
+    private subscriptionTrial: SubscriptionTrialService,
   ) {}
 
   /** Non-blocking user notifications after Stripe DB work commits. */
@@ -345,16 +347,27 @@ export class PaymentsController {
     @CurrentUserDecorator() user: CurrentUser,
     @Body() body: ConfirmSubscriptionPurchaseDto,
   ): Promise<{ ok: boolean }> {
-    const id = body.payment_intent_id?.trim();
-    if (!id || !id.startsWith('pi_')) {
+    const piId = body.payment_intent_id?.trim();
+    const setupId = body.setup_intent_id?.trim();
+    if (!piId && !setupId) {
+      throw new BadRequestException('Neplatný identifikátor platby.');
+    }
+    if (piId && !piId.startsWith('pi_')) {
+      throw new BadRequestException('Neplatný identifikátor platby.');
+    }
+    if (setupId && !setupId.startsWith('seti_')) {
       throw new BadRequestException('Neplatný identifikátor platby.');
     }
     if (body.billing) {
       await this.stripe.applyCheckoutBillingDetails(user.id, body.billing);
     }
-    const result = await this.stripe.syncSubscriptionFromPaymentIntent(id, {
-      assertUserId: user.id,
-    });
+    const result = setupId
+      ? await this.stripe.syncSubscriptionFromSetupIntent(setupId, {
+          assertUserId: user.id,
+        })
+      : await this.stripe.syncSubscriptionFromPaymentIntent(piId!, {
+          assertUserId: user.id,
+        });
     if (!result.applied) {
       if (result.reason === 'not_succeeded') {
         throw new BadRequestException(
@@ -771,6 +784,15 @@ export class PaymentsController {
             },
             { onConflict: 'user_id' },
           );
+          if (sub.status === 'trialing') {
+            try {
+              await this.subscriptionTrial.markSubscriptionTrialUsed(userId);
+            } catch (err) {
+              this.logger.warn(
+                `markSubscriptionTrialUsed failed for ${userId}: ${String(err)}`,
+              );
+            }
+          }
         } else {
           await supabase
             .from('user_subscriptions')

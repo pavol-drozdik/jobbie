@@ -32,9 +32,7 @@ watchEffect(() => {
   if (loading.value) {
     return
   }
-  const isCompany =
-    profile.value?.role === 'company' || user.value.role === 'company'
-  if (isCompany && !profile.value?.worker_role) {
+  if (profile.value?.customer_role && !profile.value?.worker_role) {
     void navigateTo({ path: ROUTES.jobHub }, { replace: true })
     return
   }

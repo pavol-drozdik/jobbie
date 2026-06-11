@@ -225,11 +225,14 @@ import {
 import {
   buildFindCatalogCanonicalQuery,
   buildFindCatalogRouteQuery,
+  buildFindCatalogSeoDescription,
   findCatalogHasNonCanonicalFacets,
   parseFindCatalogPageFromRoute,
   type FindCatalogFiltersSnapshot,
 } from '~/utils/find-catalog-seo'
 import { normalizeSiteUrl } from '~/utils/seo-config'
+import { buildJobsAlternateFeeds } from '~/utils/seo-feed-links'
+import { buildJobCatalogItemListJsonLd } from '~/utils/seo-json-ld'
 import { fetchPublicJobCatalog } from '~/composables/fetch-public-job-catalog'
 
 const props = defineProps<{
@@ -240,11 +243,7 @@ const props = defineProps<{
 const route = useRoute()
 const router = useRouter()
 const catalogPath = computed(() => (props.isForeign ? ROUTES.foreignFind : ROUTES.find))
-const catalogSeoDescription = computed(() =>
-  props.isForeign
-    ? 'Zahraničné pracovné ponuky na Jobbie — filtruj podľa krajiny, kategórie a typu práce.'
-    : 'Pracovné ponuky a brigády na Jobbie — vyhľadávaj podľa lokality, kategórie a odmeny.',
-)
+const catalogSeoDescription = computed(() => buildFindCatalogSeoDescription(props.isForeign))
 const runtimeConfig = useRuntimeConfig()
 const catalogPage = computed(() => parseFindCatalogPageFromRoute(route.query))
 const findShellRef = ref<HTMLElement | null>(null)
@@ -499,6 +498,8 @@ usePageSeo(() => {
   const canonicalQ = buildFindCatalogCanonicalQuery(catalogFiltersSnapshot())
   const nextPageNum =
     hasMore.value && jobs.value.length > 0 ? catalogPage.value + 1 : undefined
+  const site = normalizeSiteUrl(String(runtimeConfig.public.siteUrl || ''))
+  const itemList = site ? buildJobCatalogItemListJsonLd(jobs.value, site) : null
   return {
     title: props.pageTitle,
     description: catalogSeoDescription.value,
@@ -507,6 +508,8 @@ usePageSeo(() => {
     robots: findCatalogHasNonCanonicalFacets(catalogFiltersSnapshot())
       ? 'noindex, follow'
       : undefined,
+    alternateFeeds: site ? buildJobsAlternateFeeds(site) : [],
+    jsonLd: itemList,
     pagination: {
       prev: catalogPage.value > 1 ? buildCatalogAbsolutePageUrl(catalogPage.value - 1) : undefined,
       next: nextPageNum ? buildCatalogAbsolutePageUrl(nextPageNum) : undefined,

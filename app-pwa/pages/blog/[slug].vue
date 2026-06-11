@@ -8,8 +8,6 @@
       @retry="reload"
     >
       <div v-if="post" class="mx-auto max-w-[1200px] px-5">
-        <AppBreadcrumbs :items="blogBreadcrumbs" />
-        <PublicContentAeoSummary :facts="aeoFacts" heading="Súhrn článku" class="mb-6" />
         <div ref="containerRef" class="flex flex-col items-start gap-8 lg:flex-row lg:gap-12">
           <article class="min-w-0 flex-1">
             <span
@@ -200,7 +198,7 @@ const { phase: newsletterPhase, submit: submitNewsletter } = useNewsletterSubscr
 const newsletterName = ref('')
 const newsletterEmail = ref('')
 
-const { breadcrumbs: blogBreadcrumbs, aeoFacts } = useBlogPostDetailSeo(post)
+useBlogPostDetailSeo(post)
 
 function onPostLoadMissing(): void {
   if (!import.meta.client) {

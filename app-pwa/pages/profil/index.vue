@@ -106,9 +106,9 @@
 
           <NuxtLink
 
-            v-if="profile?.provider_role"
+            v-if="showProfileStatsNav"
 
-            to="/dashboard/poskytovatel"
+            :to="profileStatsDashboardTo"
 
             :class="sbNavClass(false)"
 
@@ -350,7 +350,10 @@
 <script setup lang="ts">
 
 import { ROUTES } from '~/utils/app-routes'
-
+import {
+  hasProfileStatsAccess,
+  resolveProfileStatsDashboardPath,
+} from '~/utils/dashboard-default-route'
 import { S } from '~/utils/strings'
 
 import type { ProfileDetailPayload } from '~/components/profile/PublicProfileCard.vue'
@@ -382,6 +385,12 @@ const pPageTitle = 'm-0 font-dmSans text-[34px] font-extrabold leading-none text
 
 
 const { user, profile, session, signOut } = useAuth()
+
+const showProfileStatsNav = computed(() => hasProfileStatsAccess(profile.value))
+
+const profileStatsDashboardTo = computed(() =>
+  resolveProfileStatsDashboardPath(profile.value),
+)
 
 const { api } = useApi()
 
@@ -569,9 +578,9 @@ watch(
 
     }
 
-    if (tab === 'provider') {
+    if (tab === 'provider' || tab === 'customer') {
 
-      void navigateTo('/dashboard/poskytovatel', { replace: true })
+      void navigateTo(resolveProfileStatsDashboardPath(profile.value), { replace: true })
 
       return
 

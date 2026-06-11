@@ -3,6 +3,7 @@ import {
   IsOptional,
   IsString,
   IsBoolean,
+  IsIn,
   MaxLength,
   IsInt,
   Min,
@@ -162,6 +163,10 @@ export class NotificationPreferencesDto {
 }
 
 export class ProfileUpdateDto {
+  @IsOptional()
+  @IsIn(['individual', 'company'])
+  role?: 'individual' | 'company';
+
   @IsOptional()
   @IsString()
   @MaxLength(200)

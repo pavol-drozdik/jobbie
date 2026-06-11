@@ -4,9 +4,7 @@ import type { Job } from '~/utils/job'
 import type { BlogPostDetail } from '~/composables/useBlog'
 import type { CompanyAd } from '~/utils/company-ad'
 import {
-  buildBlogAeoFacts,
   buildBlogPostDetailSeoMeta,
-  buildJobAeoFacts,
   buildJobDetailJsonLd,
   buildJobDetailSeoMeta,
   buildProfessionalAdDetailSeoMeta,
@@ -81,39 +79,6 @@ describe('public content SEO meta', () => {
     expect(isJobPublicIndexable(job)).toBe(false)
     expect(buildJobDetailSeoMeta(job).noindex).toBe(true)
     expect(buildJobDetailJsonLd(job, 'https://example.test', [])).toHaveLength(0)
-  })
-
-  it('builds extractable job AEO facts', () => {
-    const job = {
-      id: 'j3',
-      title: 'Skladník',
-      description: 'Popis',
-      category: 'warehouse',
-      job_type: 'part_time',
-      employer_name: 'Firma s.r.o.',
-      is_active: true,
-      is_draft: false,
-      is_deleted: false,
-      location: 'Bratislava',
-      created_at: '2026-01-01T00:00:00Z',
-    } as Job
-    const facts = buildJobAeoFacts(job)
-    expect(facts.some((f) => f.label === 'Ako sa prihlásiť')).toBe(true)
-    expect(facts.some((f) => f.value.includes('Bratislava'))).toBe(true)
-  })
-
-  it('builds blog AEO facts with author when present', () => {
-    const post = {
-      slug: 'x',
-      title: 'T',
-      body_html: '<p>Obsah</p>',
-      published_at: '2026-03-01T00:00:00Z',
-      category: 'guides',
-      author_name: 'Anna',
-      author_role: 'Editor',
-    } as BlogPostDetail
-    const facts = buildBlogAeoFacts(post)
-    expect(facts.some((f) => f.label === 'Autor' && f.value.includes('Anna'))).toBe(true)
   })
 
   it('marks non-active company ads as noindex', () => {

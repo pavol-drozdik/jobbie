@@ -13,6 +13,10 @@ describe('hasPaidPlanAccessFromRow', () => {
     );
   });
 
+  it('returns true for trialing paid plan', () => {
+    expect(hasPaidPlanAccessFromRow('plus', 'trialing', false, null)).toBe(true);
+  });
+
   it('returns true when cancel at period end is scheduled', () => {
     expect(hasPaidPlanAccessFromRow('plus', 'canceled', true, null)).toBe(
       true,

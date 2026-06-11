@@ -73,6 +73,7 @@ function buildSeoRouteRules(): Record<string, object> {
     '/o-nas': { redirect: { to: '/', statusCode: 301 } },
     '/kontakt': { redirect: { to: '/', statusCode: 301 } },
     '/app/jobs/**': { redirect: { to: '/ponuka/**', statusCode: 301 } },
+    '/dashboard/poskytovatel': { redirect: { to: '/dashboard/profesional', statusCode: 301 } },
     '/nastavenia/**': { headers: { ...security, ...PRIVATE_NO_STORE_HEADERS } },
     '/chat/**': { headers: { ...security, ...PRIVATE_NO_STORE_HEADERS } },
     '/spravca-uchadzacov/**': { headers: { ...security, ...PRIVATE_NO_STORE_HEADERS } },
@@ -150,7 +151,6 @@ export default defineNuxtConfig({
     { path: '~/components/ui', pathPrefix: false },
     { path: '~/components/consent', pathPrefix: false },
     { path: '~/components/marketing', pathPrefix: false },
-    { path: '~/components/seo', pathPrefix: false },
   ],
   /**
    * Default CSR for the logged-in PWA. When `NUXT_PUBLIC_ALLOW_INDEXING` is set,
@@ -175,6 +175,22 @@ export default defineNuxtConfig({
         ...(allowIndexing
           ? [{ name: 'robots', content: 'index, follow' }]
           : [{ name: 'robots', content: 'noindex, nofollow' }]),
+        ...(process.env.NUXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim()
+          ? [
+              {
+                name: 'google-site-verification',
+                content: process.env.NUXT_PUBLIC_GOOGLE_SITE_VERIFICATION.trim(),
+              },
+            ]
+          : []),
+        ...(process.env.NUXT_PUBLIC_BING_SITE_VERIFICATION?.trim()
+          ? [
+              {
+                name: 'msvalidate.01',
+                content: process.env.NUXT_PUBLIC_BING_SITE_VERIFICATION.trim(),
+              },
+            ]
+          : []),
         { property: 'og:site_name', content: 'JOBBIE' },
         { property: 'og:locale', content: 'sk_SK' },
         { property: 'og:image', content: SEO_DEFAULT_OG_IMAGE_PATH },
@@ -200,6 +216,11 @@ export default defineNuxtConfig({
   // Unrelated to PWA `pwa.manifest` in this file.
   experimental: {
     appManifest: false,
+    /**
+     * Required with Nuxt 3.21 + Vite 7 when `ssr` is false (local dev / non-indexing builds).
+     * Otherwise dev crashes: "No entry found in rollupOptions.input" (vite-node reads client-only input).
+     */
+    viteEnvironmentApi: true,
   },
   compatibilityDate: '2025-03-16',
   devServer: {
@@ -237,10 +258,13 @@ export default defineNuxtConfig({
       legalPublished: process.env.NUXT_PUBLIC_LEGAL_PUBLISHED || '',
       brandName: process.env.NUXT_PUBLIC_BRAND_NAME || 'JOBBIE',
       brandAlternateName: process.env.NUXT_PUBLIC_BRAND_ALTERNATE_NAME || 'Jobbie',
-      supportEmail: process.env.NUXT_PUBLIC_SUPPORT_EMAIL || 'info@jobbie.sk',
+      supportEmail: process.env.NUXT_PUBLIC_SUPPORT_EMAIL || 'ahoj@jobbie.sk',
       supportPhone: process.env.NUXT_PUBLIC_SUPPORT_PHONE || '',
       socialInstagramUrl: process.env.NUXT_PUBLIC_SOCIAL_INSTAGRAM_URL || '',
       socialFacebookUrl: process.env.NUXT_PUBLIC_SOCIAL_FACEBOOK_URL || '',
+      googleSiteVerification: process.env.NUXT_PUBLIC_GOOGLE_SITE_VERIFICATION || '',
+      bingSiteVerification: process.env.NUXT_PUBLIC_BING_SITE_VERIFICATION || '',
+      indexNowKey: process.env.NUXT_PUBLIC_INDEXNOW_KEY || '',
     },
   },
   modules: [

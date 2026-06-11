@@ -105,6 +105,11 @@ class FakeQuery {
     return result;
   }
 
+  maybeSingle(): Promise<{ data: Row | null; error: null }> {
+    const rows = this.materialize();
+    return Promise.resolve({ data: rows[0] ?? null, error: null });
+  }
+
   then(
     resolve: (v: {
       data: Row[] | null;
@@ -493,6 +498,36 @@ describe('EmployerCvDatabaseService.list', () => {
     expect(res.items.map((i) => i.cv_id)).toEqual(['cv-bob']);
   });
 
+  it('flags has_contact_to_unlock until employer unlocks stored contact', async () => {
+    const svc = makeService(baseTables());
+    const res = await svc.list('employer-1', q());
+    const anna = res.items.find((i) => i.cv_id === 'cv-anna');
+    expect(anna?.has_contact_to_unlock).toBe(true);
+    expect(anna?.contacts_visible).toBe(false);
+    expect(anna?.contact_email).toBeNull();
+  });
+
+  it('exposes contact email on list after employer unlock', async () => {
+    const t = baseTables();
+    t.cv_contact_unlocks = [
+      { company_id: 'employer-1', cv_id: 'cv-anna' },
+    ];
+    const svc = makeService(t);
+    const res = await svc.list('employer-1', q());
+    const anna = res.items.find((i) => i.cv_id === 'cv-anna');
+    expect(anna?.contacts_visible).toBe(true);
+    expect(anna?.contact_email).toBe('anna@example.com');
+    expect(anna?.has_contact_to_unlock).toBe(false);
+  });
+
+  it('does not offer unlock when candidate has no contact on file', async () => {
+    const svc = makeService(baseTables());
+    const res = await svc.list('employer-1', q());
+    const bob = res.items.find((i) => i.cv_id === 'cv-bob');
+    expect(bob?.has_contact_to_unlock).toBe(false);
+    expect(bob?.contacts_visible).toBe(false);
+  });
+
   it('includes sparse opted-in CV without positions, skills, or experience', async () => {
     const t = baseTables();
     t.cvs.push({
@@ -555,7 +590,16 @@ describe('EmployerCvDatabaseService.getDetail', () => {
     const svc = makeService(baseTables(), {
       getEmployerAggregateByCvId: async () => agg,
     });
-    await expect(svc.getDetail('employer-1', 'cv-anna')).resolves.toEqual(agg);
+    await expect(svc.getDetail('employer-1', 'cv-anna')).resolves.toMatchObject({
+      cv: {
+        user_id: 'u-anna',
+        display_title: 'Dev',
+        contacts_visible: false,
+        has_contact_to_unlock: true,
+        contact_unlocked: false,
+        email: null,
+      },
+    });
   });
 
   it('throws NotFound when CvService returns null', async () => {
@@ -565,5 +609,35 @@ describe('EmployerCvDatabaseService.getDetail', () => {
     await expect(svc.getDetail('employer-1', 'cv-anna')).rejects.toBeInstanceOf(
       NotFoundException,
     );
+  });
+
+  it('redacts discrimination-sensitive fields from employer detail cv', async () => {
+    const agg = {
+      cv: {
+        user_id: 'u-anna',
+        display_title: 'Dev',
+        has_disability: false,
+        gender: 'female',
+        birth_date: '1990-01-15',
+      },
+      experience: [],
+      education: [],
+      skills: [],
+      soft_skills: [],
+      languages: [],
+      certifications: [],
+      links: [],
+      volunteering: [],
+      portfolio_links: [],
+      awards: [],
+      references: [],
+    } as unknown as CvAggregateResponseDto;
+    const svc = makeService(baseTables(), {
+      getEmployerAggregateByCvId: async () => agg,
+    });
+    const detail = await svc.getDetail('employer-1', 'cv-anna');
+    expect(detail.cv).not.toHaveProperty('has_disability');
+    expect(detail.cv).not.toHaveProperty('gender');
+    expect(detail.cv).not.toHaveProperty('birth_date');
   });
 });

@@ -35,9 +35,11 @@ async function loadAuthMe(
   if (accessToken?.trim() && !cookieOnly) {
     headers.Authorization = `Bearer ${accessToken.trim()}`
   }
+  const credentials: RequestCredentials =
+    accessToken?.trim() && !cookieOnly ? 'omit' : 'include'
   return fetchApi(apiUrl(apiBaseUrl, '/api/auth/me'), {
     headers,
-    credentials: 'include',
+    credentials,
   })
 }
 
@@ -114,7 +116,7 @@ export async function fetchProfileForBootstrap(
       apiUrl(apiBaseUrl, '/api/profiles/me'),
       {
         headers: { Authorization: `Bearer ${profileToken}` },
-        credentials: 'include',
+        credentials: 'omit',
       },
     ).then(async (r) => {
       if (!r.ok) throw r

@@ -1,3 +1,5 @@
+import { settingsProfilDeniedRoute } from '~/utils/dashboard-role-denied'
+
 export default defineNuxtRouteMiddleware(async (to) => {
   if (import.meta.server) return
   await waitForAuthReady()
@@ -14,9 +16,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
     })
   }
   if (!profile.value?.customer_role) {
-    return navigateTo({
-      path: '/nastavenia',
-      query: { dashboardDenied: 'customer' },
-    })
+    return navigateTo(settingsProfilDeniedRoute('customer'))
   }
 })

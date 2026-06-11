@@ -6,6 +6,7 @@ export function useSubscriptionCancel() {
   const {
     ensureRecentLoginForBilling,
     ensureBillingStepUpBeforeMutation,
+    billingStepUpFailureMessage,
     billingStepUpUserMessage,
     isStepUpRequiredResponse,
     tryRecoverFromStepUpRequired,
@@ -30,7 +31,7 @@ export function useSubscriptionCancel() {
     }
 
     if (!(await ensureBillingStepUpBeforeMutation())) {
-      cancelError.value = S.settingsSubscriptionCancelFailed
+      cancelError.value = billingStepUpFailureMessage()
       return false
     }
 

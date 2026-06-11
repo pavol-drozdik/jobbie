@@ -1,5 +1,11 @@
 # GDPR & privacy runbook (JOBBIE)
 
+## Public privacy policy (PWA)
+
+- PDF: [`app-pwa/public/docs/gdpr-jobbie.pdf`](../app-pwa/public/docs/gdpr-jobbie.pdf) — served at `/docs/gdpr-jobbie.pdf`
+- Page: `/ochrana-osobnych-udajov` (footer **Ochrana súkromia**) — embeds the PDF with download link
+- Source file for updates: replace the PDF in `public/docs/` and bump `GDPR_PRIVACY_POLICY_UPDATED_AT` in `app-pwa/utils/legal-documents.ts`
+
 ## Data categories
 
 | Category | Storage | Who can read |

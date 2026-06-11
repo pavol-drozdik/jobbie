@@ -16,7 +16,42 @@
       </span>
     </div>
 
-    <template v-if="totpHasVerified">
+    <!-- Disabling: highest priority — not nested under totpHasVerified -->
+    <div
+      v-if="totpMode === 'disabling'"
+      id="totp-disable-panel"
+      class="space-y-4 rounded-[14px] border border-amber-200 bg-amber-50/40 p-4"
+    >
+      <p class="m-0 font-dmSans text-sm text-amber-950">
+        {{ S.settingsSecurityTotpDisableConfirmMessage }}
+      </p>
+      <p class="m-0 font-dmSans text-sm text-black/55">{{ S.settingsSecurityTotpDisableStepHint }}</p>
+      <label class="font-dmSans text-[15px] font-semibold text-black" for="security-totp-disable-otp">
+        {{ S.settingsSecurityTotpOtpLabel }}
+      </label>
+      <AuthOtpDigitInput
+        id="security-totp-disable-otp"
+        :model-value="totpVerifyCode"
+        :disabled="totpBusy"
+        :aria-label="S.settingsSecurityTotpOtpLabel"
+        @update:model-value="emit('update:totpVerifyCode', $event)"
+        @complete="emit('confirmDisable')"
+      />
+      <AppButton type="button" block variant="danger" :disabled="totpBusy" @click="emit('confirmDisable')">
+        {{ totpBusy ? S.loading : S.settingsSecurityTotpDisableConfirmAction }}
+      </AppButton>
+      <AppButton
+        type="button"
+        variant="ghost"
+        block
+        :disabled="totpBusy"
+        @click="emit('cancelDisable')"
+      >
+        {{ S.settingsSecurityTotpDisableCancel }}
+      </AppButton>
+    </div>
+
+    <template v-else-if="totpMode === 'active'">
       <AppButton
         type="button"
         variant="outline"
@@ -28,7 +63,7 @@
       </AppButton>
     </template>
 
-    <template v-else-if="totpPendingFactorId">
+    <template v-else-if="totpMode === 'enroll'">
       <p class="font-dmSans text-sm font-semibold text-black">{{ S.settingsSecurityTotpStepScan }}</p>
       <div
         v-if="totpQrDataUrl"
@@ -70,6 +105,7 @@
       </AppButton>
     </template>
 
+    <p v-if="totpMsg" class="text-sm font-medium text-marketing-green">{{ totpMsg }}</p>
     <p v-if="totpErr" class="text-sm text-red-600" role="alert">{{ totpErr }}</p>
   </div>
 </template>
@@ -78,21 +114,23 @@
 import { S } from '~/utils/strings'
 
 defineProps<{
-  totpHasVerified: boolean
-  totpPendingFactorId: string | null
+  totpMode: 'off' | 'enroll' | 'active' | 'disabling'
   totpQrDataUrl: string
   totpVerifyCode: string
   totpBusy: boolean
   totpErr: string
+  totpMsg: string
   totpStatusLabel: string
   totpStatusClass: string
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   'update:totpVerifyCode': [value: string]
   startEnroll: []
   confirmEnroll: []
   restartEnroll: []
   disable: []
+  confirmDisable: []
+  cancelDisable: []
 }>()
 </script>

@@ -10,7 +10,7 @@
         {{ S.dashboardTabCustomer }}
       </span>
       <NuxtLink
-        to="/dashboard/poskytovatel"
+        to="/dashboard/profesional"
         class="rounded-full px-3 py-1.5 text-[14px] font-semibold text-black/55 no-underline transition-colors hover:bg-white hover:text-marketing-green"
       >
         {{ S.dashboardTabProvider }} →

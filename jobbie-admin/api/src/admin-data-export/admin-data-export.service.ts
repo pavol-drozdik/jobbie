@@ -9,7 +9,7 @@ const README_TEXT = `JOBBIE — export osobných údajov (GDPR, admin)
 Tento archív obsahuje kópiu údajov uložených vo vybranom účte k dátumu exportu.
 Súbor data.json je strojovo čitateľný prenos údajov.
 
-Otázky: podpora@jobbie.sk
+Otázky: ahoj@jobbie.sk
 `;
 
 /** Minimal GDPR export for admin support — extend when schema grows. */

@@ -1,4 +1,4 @@
-export type HomeDesignCarouselRole = 'zamestnavatel' | 'brigadnik' | 'poskytovatel'
+export type HomeDesignCarouselRole = 'zamestnavatel' | 'brigadnik' | 'profesional'
 
 export type HomeDesignCarouselSlide = {
   title: string
@@ -34,10 +34,10 @@ export const HOME_DESIGN_CAROUSEL: Record<HomeDesignCarouselRole, HomeDesignCaro
       text: 'Nastúp na brigádu a začni zarábať hneď na druhý deň.',
     },
   ],
-  poskytovatel: [
+  profesional: [
     {
       title: '1. Vytvor profil',
-      text: 'Zaregistruj sa ako poskytovateľ služieb a pridaj svoje odborné zručnosti a referencie.',
+      text: 'Zaregistruj sa ako profesionál a pridaj svoje odborné zručnosti a referencie.',
     },
     {
       title: '2. Získaj zákazníkov',

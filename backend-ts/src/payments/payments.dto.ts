@@ -174,8 +174,13 @@ export class CreatePaymentIntentSubscriptionDto {
 }
 
 export class ConfirmSubscriptionPurchaseDto {
+  @ValidateIf((o: ConfirmSubscriptionPurchaseDto) => !o.setup_intent_id?.trim())
   @IsString()
-  payment_intent_id!: string;
+  payment_intent_id?: string;
+
+  @ValidateIf((o: ConfirmSubscriptionPurchaseDto) => !o.payment_intent_id?.trim())
+  @IsString()
+  setup_intent_id?: string;
 
   @IsOptional()
   @ValidateNested()
@@ -188,6 +193,8 @@ export interface PaymentIntentResponseDto {
   /** PaymentIntent amount in minor units (for Stripe `fetchUpdates` after tax). */
   amount?: number;
   currency?: string;
+  intent_type?: 'payment' | 'setup';
+  trial_period_days?: number;
 }
 
 export const SUBSCRIPTION_CANCEL_REASON_CODES = [

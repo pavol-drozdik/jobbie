@@ -33,6 +33,41 @@ Open http://localhost:3001 (see `devServer.port` in `nuxt.config.ts`). Ensure th
 npm run build
 ```
 
+Cloudflare Pages (uses the **local** Nuxt CLI — do not use `npx nuxi`, which pulls a mismatched version):
+
+```bash
+npm run build:cloudflare
+```
+
+Output is in `dist/`. Deploy with Wrangler, e.g. `npx wrangler pages deploy dist --project-name=jobbie-pwa --branch=<production-branch>`.
+
+### Windows: `npm ci` EPERM on `esbuild.exe`
+
+If `npm ci` fails with `EPERM: unlink ... esbuild.exe`, **`npm run dev` is usually still running** and locks `esbuild.exe` / Rollup native modules. Stop it first (Ctrl+C in that terminal, or Task Manager → end the Node process for port 3001).
+
+1. Stop `npm run dev`, builds, and Wrangler preview for this app.
+2. Run:
+
+   ```bash
+   npm run ci:win
+   ```
+
+   (`clean:win-native` only removes stale temp folders under `node_modules/@esbuild`, etc.)
+
+3. If it still fails, quarantine the locked tree and reinstall:
+
+   ```bash
+   npm run ci:win:quarantine
+   ```
+
+   This renames `node_modules` to `node_modules.__quarantine_<timestamp>` and runs a fresh `npm ci`. Delete the quarantine folder after closing dev servers (or after a reboot).
+
+4. If rename also fails, stop all Node processes for this app, reboot, then run `npm run ci:win:quarantine`.
+
+On Windows, **`npm install`** is often enough for local work when `npm ci` fails; use **`npm ci`** in CI/Linux or after a clean tree.
+
+`npm run build:cloudflare` sets `NUXT_IGNORE_LOCK=1` so a forgotten dev server does not block deploy builds (still stop dev when running `npm ci`).
+
 For static export (used by Capacitor):
 
 ```bash

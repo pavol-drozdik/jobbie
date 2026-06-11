@@ -5,6 +5,7 @@ import { filterPublicSubscriptionPlans } from '~/utils/pricing-catalog'
 import { ROUTES } from '~/utils/app-routes'
 import { parseSafeApiErrorMessage } from '~/utils/safe-user-messages'
 import { stripStripeReturnQueryFromBrowserUrl } from '~/utils/stripe-return-query'
+import { resolvePlanTrialDays } from '~/utils/subscription-trial'
 import { S } from '~/utils/strings'
 
 type ProfileBillingPrefill = {
@@ -28,6 +29,7 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
   const { refreshUser } = useAuth()
   const { capture } = useAnalytics()
   const { load: loadPlansCatalog } = usePlans()
+  const { config: billingCatalogConfig, load: loadBillingCatalog } = useCatalogBilling()
   const route = useRoute()
   const requestURL = useRequestURL()
 
@@ -51,13 +53,22 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
     return `${(priceCents / 100).toFixed(2)} €${S.planPerMonth}`
   }
 
+  const checkoutTrialDays = ref<number | null>(null)
+
+  const planTrialDays = computed((): number => {
+    if (!plan.value) return 0
+    return resolvePlanTrialDays(plan.value, billingCatalogConfig.value)
+  })
+
   async function confirmSubscriptionFromPaymentIntent(
-    paymentIntentId: string | null | undefined,
+    intentId: string | null | undefined,
     billing?: CheckoutBillingPayload,
   ): Promise<boolean> {
     try {
-      const id = typeof paymentIntentId === 'string' ? paymentIntentId.trim() : ''
-      if (!id.startsWith('pi_')) {
+      const id = typeof intentId === 'string' ? intentId.trim() : ''
+      const isPayment = id.startsWith('pi_')
+      const isSetup = id.startsWith('seti_')
+      if (!isPayment && !isSetup) {
         error.value = S.checkoutPaymentNoIntentId
         return false
       }
@@ -66,9 +77,11 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
       error.value = gate.message
       return false
     }
-    const body: { payment_intent_id: string; billing?: CheckoutBillingPayload } = {
-      payment_intent_id: id,
-    }
+    const body: {
+      payment_intent_id?: string
+      setup_intent_id?: string
+      billing?: CheckoutBillingPayload
+    } = isSetup ? { setup_intent_id: id } : { payment_intent_id: id }
     if (billing) body.billing = billing
     let res = await api<{ ok: boolean }>('/api/payments/confirm-subscription', {
       method: 'POST',
@@ -87,7 +100,10 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
     }
     error.value = null
     await refreshUser()
-    successMessage.value = S.checkoutSubscriptionSuccess
+    successMessage.value =
+      checkoutTrialDays.value && checkoutTrialDays.value > 0
+        ? S.checkoutSubscriptionTrialSuccess
+        : S.checkoutSubscriptionSuccess
     clientSecret.value = null
     capture('subscription_purchased', {
       plan_id: planId,
@@ -154,6 +170,8 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
       client_secret: string
       amount?: number
       currency?: string
+      intent_type?: 'payment' | 'setup'
+      trial_period_days?: number
     }>('/api/payments/create-payment-intent-subscription', {
       method: 'POST',
       body,
@@ -163,6 +181,8 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
         client_secret: string
         amount?: number
         currency?: string
+        intent_type?: 'payment' | 'setup'
+        trial_period_days?: number
       }>('/api/payments/create-payment-intent-subscription', {
         method: 'POST',
         body,
@@ -178,15 +198,26 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
       return null
     }
     clientSecret.value = secret
+    const trialDays =
+      typeof res.data?.trial_period_days === 'number' && res.data.trial_period_days > 0
+        ? res.data.trial_period_days
+        : null
+    checkoutTrialDays.value = trialDays
     capture('checkout_started', {
       plan_id: planId,
       flow: 'subscription',
       purchaser_type: billing?.purchaser_type,
+      trial_period_days: trialDays ?? undefined,
     })
     return {
       clientSecret: secret,
       amount: typeof res.data?.amount === 'number' ? res.data.amount : undefined,
       currency: res.data?.currency?.trim() || undefined,
+      intentType:
+        res.data?.intent_type === 'setup' || res.data?.intent_type === 'payment'
+          ? res.data.intent_type
+          : undefined,
+      trialPeriodDays: trialDays ?? undefined,
     }
   }
 
@@ -198,6 +229,7 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
     error.value = null
     try {
       await loadBillingPrefill()
+      await loadBillingCatalog()
       const rows = await loadPlansCatalog()
       const visible = filterPublicSubscriptionPlans(rows)
       const found = visible.find((p) => p.id === planId)
@@ -206,6 +238,7 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
         return
       }
       plan.value = found
+      checkoutTrialDays.value = resolvePlanTrialDays(found, billingCatalogConfig.value) || null
       await tryConfirmFromReturnUrl()
     } finally {
       loading.value = false
@@ -220,6 +253,8 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
     successMessage,
     billingPrefill,
     stripeReturnUrl,
+    checkoutTrialDays,
+    planTrialDays,
     formatPlanPrice,
     confirmSubscriptionFromPaymentIntent,
     createPaymentIntent,

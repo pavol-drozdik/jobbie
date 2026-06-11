@@ -1,35 +1,17 @@
 # AEO/GEO implementation summary
 
-Remaining work from the AEO/GEO plan (2026-06-01).
-
-## Changed files (high level)
-
-**Policy & config:** `utils/seo-route-policy.ts`, `utils/seo-config.ts`, `utils/brand-seo.ts`, `nuxt.config.ts`, `app-pwa/.env.example`, `docs/deployment.md`
-
-**Content & routes:** `utils/public-faq.ts`, `utils/guide-page-content.ts`, `utils/pricing-page-copy.ts`, `pages/casto-kladene-otazky.vue`, `pages/navody/[slug].vue`, `pages/faq.vue` (301), guide/footer link updates
-
-**SSR fetch:** `composables/fetch-public-blog-list.ts`, `composables/fetch-public-job-catalog.ts`; `pages/blog/index.vue`, `components/find/FindJobsCatalogPage.vue`
-
-**Schema & SEO:** `utils/seo-json-ld.ts`, `composables/usePageSeo.ts`, `composables/useGlobalSiteSeo.ts`, trust/pricing/email-alert pages
-
-**Claims cleanup:** `utils/home-design-faq.ts`, `components/home/HomeMarketingBlogFaqNewsletter.vue`, `components/AppSiteFooter.vue`
-
-**Backend sitemap:** `backend-ts/src/seo/seo.service.ts` (legal removed from static list; guides + FAQ slug)
-
-**Tests:** `utils/seo-route-policy.spec.ts`, `utils/seo-json-ld.spec.ts`
-
-**Docs:** `docs/aeo-geo-claims-audit.md`, this file, `docs/changelog.md`
+Last updated: 2026-06-11.
 
 ## Route indexability matrix
 
 | Route | Index when `ALLOW_INDEXING=1` | Sitemap | SSR |
 |-------|------------------------------|---------|-----|
-| `/`, `/pracovne-ponuky`, `/cennik`, `/blog`, guides | yes | yes | yes |
-| `/casto-kladene-otazky` | yes | yes | yes |
-| `/faq` | no (301 → canonical) | no | yes |
+| `/`, `/pracovne-ponuky`, `/cennik`, `/blog` | yes | yes | yes |
+| `/profesionali` | yes | yes | yes (catalog SSR) |
 | `/vseobecne-podmienky`, `/ochrana-osobnych-udajov` | only if `LEGAL_PUBLISHED=1` | same | yes |
 | `/databaza-zivotopisov` | no | no | yes |
 | `/ponuka/:id`, `/blog/:slug`, `/profesionali/:id` | yes | dynamic | yes |
+| `/llms.txt`, `/feeds/*` | yes | yes (feeds) | Nitro only |
 | `/auth`, `/nastavenia`, `/chat`, `/app/*` | no | no | no |
 
 ## Structured data matrix
@@ -37,44 +19,40 @@ Remaining work from the AEO/GEO plan (2026-06-01).
 | Route | JSON-LD |
 |-------|---------|
 | Layout (global) | Organization, WebSite |
-| `/casto-kladene-otazky` | FAQPage |
+| `/` | FAQPage (uchádzač FAQ) |
+| `/pracovne-ponuky`, `/zahranicne-pracovne-ponuky` | ItemList (first page) |
+| `/profesionali` | ItemList (first page) |
 | `/cennik` | WebPage, FAQPage |
 | `/blog/:slug` | BlogPosting, BreadcrumbList |
-| `/ponuka/:id` | JobPosting, BreadcrumbList |
-| `/o-nas` | AboutPage |
-| `/kontakt` | ContactPage |
-| `/bezpecnost` | WebPage |
+| `/ponuka/:id` | JobPosting (+ identifier, directApply), BreadcrumbList |
 | `/ponuky-na-email` | HowTo, FAQPage |
 | `/profesionali/:id` | Service, BreadcrumbList |
-| `/navody/*` | WebPage |
+| `/bezpecnost` | WebPage |
+
+## Syndication
+
+| URL | Format |
+|-----|--------|
+| `/feeds/jobs.rss` | RSS 2.0 |
+| `/feeds/jobs.json` | JSON Feed 1.1 |
+| `/feeds/ads.rss` | RSS 2.0 |
+| `/feeds/ads.json` | JSON Feed 1.1 |
+| `/llms.txt` | Curated markdown index for LLM agents |
 
 ## Manual validation
 
 ```bash
-# Robots (404 when indexing off)
-curl -sI "https://jobbie.sk/robots.txt"
-
-# Sitemap (404 when indexing off; XML when on + SITE_URL set)
-curl -s "https://jobbie.sk/sitemap.xml" | head
-
-# FAQ canonical + schema
-curl -s "https://jobbie.sk/casto-kladene-otazky" | rg -i "FAQPage|canonical"
-
-# Legal noindex until published
-curl -s "https://jobbie.sk/vseobecne-podmienky" | rg -i "noindex"
-
-# Job SSR
-curl -s "https://jobbie.sk/ponuka/<job-id>" | rg -i "JobPosting"
+curl -sI "https://jobbie.sk/llms.txt"
+curl -s "https://jobbie.sk/feeds/jobs.json" | head
+curl -s "https://jobbie.sk/" | rg -i "FAQPage|application/feed"
+curl -s "https://jobbie.sk/pracovne-ponuky" | rg -i "ItemList|alternate"
 ```
 
-External: [Google Rich Results Test](https://search.google.com/test/rich-results), Search Console URL inspection, schema validator.
-
-## Deferred work
-
-See [aeo-geo-claims-audit.md](./aeo-geo-claims-audit.md).
+See [seo-implementation.md](./seo-implementation.md) for full env matrix and GSC/Bing steps.
 
 ## Recommended tests
 
 ```bash
-cd app-pwa && npm test -- utils/seo-route-policy.spec.ts utils/seo-json-ld.spec.ts
+cd app-pwa && npm test -- utils/llms-txt.spec.ts utils/seo-json-ld.spec.ts server/utils/feed-rss-xml.spec.ts
+cd backend-ts && npm test -- src/seo/seo-feed.service.spec.ts src/seo/indexnow.service.spec.ts
 ```

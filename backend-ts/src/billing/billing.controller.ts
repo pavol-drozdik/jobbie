@@ -20,6 +20,7 @@ import { StripeService } from '../payments/stripe.service';
 import { ConfigService } from '@nestjs/config';
 import { getBillingInvoiceSupplier } from '../payments/stripe-invoice-sk';
 import { hasPlusOrProAccessFromRow } from './plan-tier-access';
+import { SubscriptionTrialService } from './subscription-trial.service';
 
 @Controller('billing')
 export class BillingController {
@@ -31,6 +32,7 @@ export class BillingController {
     private readonly supabase: SupabaseService,
     private readonly stripe: StripeService,
     private readonly config: ConfigService,
+    private readonly subscriptionTrial: SubscriptionTrialService,
   ) {}
 
   @Get('config')
@@ -71,6 +73,24 @@ export class BillingController {
       (sub as { cancel_at_period_end?: boolean } | null)?.cancel_at_period_end ??
       false;
 
+    let subscriptionTrialEligible = false;
+    try {
+      const stripe = this.stripe.getStripeClientForTrialChecks();
+      const userEligible =
+        await this.subscriptionTrial.isUserEligibleForSubscriptionTrial(
+          user.id,
+          stripe,
+        );
+      const publicTrial = await this.catalog.getPublicBillingConfig();
+      const trialCfg = publicTrial.subscriptionTrial as
+        | { enabled?: boolean }
+        | undefined;
+      subscriptionTrialEligible =
+        userEligible && trialCfg?.enabled === true;
+    } catch {
+      subscriptionTrialEligible = false;
+    }
+
     return {
       credits: balance.credits,
       expiringSoon: balance.expiringSoon,
@@ -88,6 +108,7 @@ export class BillingController {
       subscriptionStatus,
       currentPeriodEnd,
       cancelAtPeriodEnd,
+      subscriptionTrialEligible,
       cvLimits,
       cvUsage,
     };

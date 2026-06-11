@@ -3,18 +3,14 @@ import type { CompanyAd } from '~/utils/company-ad'
 import {
   getCompanyAdCardLocation,
   getCompanyAdOwnerDisplayName,
-  getCompanyAdPriceDisplay,
-  getCompanyAdServicesPreview,
 } from '~/utils/company-ad-display'
 import {
   getCategoryLabel,
   getJobCardPayDisplay,
   getJobCardThumbnailSrc,
   getJobPublicLocation,
-  getJobTypeLabel,
   type Job,
 } from '~/utils/job'
-import { blogCategoryLabel, blogReadingLabel, formatBlogDate } from '~/utils/blog'
 import { ROUTES } from '~/utils/app-routes'
 import { SEO_DEFAULT_DESCRIPTION } from '~/utils/seo-config'
 import { S } from '~/utils/strings'
@@ -27,11 +23,6 @@ import {
   type BreadcrumbJsonLdItem,
   type JsonLdObject,
 } from '~/utils/seo-json-ld'
-
-export type PublicContentAeoFact = {
-  readonly label: string
-  readonly value: string
-}
 
 export type PublicContentSeoMeta = {
   title: string
@@ -202,76 +193,13 @@ export function buildProfessionalAdDetailJsonLd(
   return out
 }
 
-export function buildJobAeoFacts(job: Job): PublicContentAeoFact[] {
-  const facts: PublicContentAeoFact[] = []
-  const location = getJobPublicLocation(job).trim()
-  if (location && location !== '—') {
-    facts.push({ label: 'Lokalita', value: location })
-  }
-  const pay = getJobCardPayDisplay(job)
-  if (pay && pay !== '—') {
-    facts.push({ label: 'Odmena', value: pay })
-  }
-  const category = getCategoryLabel(job.category)
-  if (category) facts.push({ label: 'Kategória', value: category })
-  const jobType = getJobTypeLabel(job.job_type)
-  if (jobType) facts.push({ label: 'Typ práce', value: jobType })
-  if (job.employer_name?.trim()) {
-    facts.push({ label: 'Zamestnávateľ', value: job.employer_name.trim() })
-  }
-  facts.push({
-    label: 'Ako sa prihlásiť',
-    value:
-      'Vytvorte si účet na Jobbie, otvorte detail ponuky a odošlite prihlášku. Po prihlásení môžete komunikovať so zamestnávateľom v chate.',
-  })
-  return facts
-}
-
-export function buildBlogAeoFacts(post: BlogPostDetail): PublicContentAeoFact[] {
-  const facts: PublicContentAeoFact[] = [
-    { label: 'Kategória', value: blogCategoryLabel(post.category) },
-    { label: 'Publikované', value: formatBlogDate(post.published_at) },
-  ]
-  const reading = blogReadingLabel(post.reading_time_minutes)
-  if (reading) facts.push({ label: 'Čítanie', value: reading })
-  if (post.author_name?.trim()) {
-    const author = post.author_role?.trim()
-      ? `${post.author_name.trim()} (${post.author_role.trim()})`
-      : post.author_name.trim()
-    facts.push({ label: 'Autor', value: author })
-  }
-  const summary = post.excerpt?.trim() || stripHtml(post.body_html).slice(0, 280)
-  if (summary) facts.push({ label: 'O článku', value: summary })
-  return facts
-}
-
-export function buildCompanyAdAeoFacts(ad: CompanyAd): PublicContentAeoFact[] {
-  const facts: PublicContentAeoFact[] = []
-  const owner = getCompanyAdOwnerDisplayName(ad)
-  if (owner) facts.push({ label: 'Poskytovateľ', value: owner })
-  const location = getCompanyAdCardLocation(ad).trim()
-  if (location && location !== '—') facts.push({ label: 'Lokalita', value: location })
-  const price = getCompanyAdPriceDisplay(ad)
-  if (price) facts.push({ label: 'Cena', value: price })
-  const services = getCompanyAdServicesPreview(ad.services ?? [], 5)
-  if (services.length) facts.push({ label: 'Služby', value: services.join(', ') })
-  if (ad.tagline?.trim()) facts.push({ label: 'Ponuka', value: ad.tagline.trim() })
-  facts.push({
-    label: 'Kontakt',
-    value:
-      'Po prihlásení na Jobbie môžete poslať správu poskytovateľovi cez chat na platforme.',
-  })
-  return facts
-}
-
 export type PublicDetailSeoKind = 'job' | 'blog' | 'company_ad'
 
 export type PublicDetailSeoPayload = PublicContentSeoMeta & {
   jsonLd: JsonLdObject | JsonLdObject[] | null
-  aeoFacts: readonly PublicContentAeoFact[]
 }
 
-/** Single entry point for automatic detail-page SEO (meta + JSON-LD + AEO + robots). */
+/** Single entry point for automatic detail-page SEO (meta + JSON-LD + robots). */
 export function buildPublicDetailSeoPayload(input: {
   kind: PublicDetailSeoKind
   siteUrl: string
@@ -288,7 +216,6 @@ export function buildPublicDetailSeoPayload(input: {
     return {
       ...meta,
       jsonLd: siteUrl ? buildJobDetailJsonLd(input.job, siteUrl, breadcrumbs) : null,
-      aeoFacts: buildJobAeoFacts(input.job),
     }
   }
   if (kind === 'blog' && input.blogPost) {
@@ -299,7 +226,6 @@ export function buildPublicDetailSeoPayload(input: {
       jsonLd: siteUrl
         ? buildBlogPostDetailJsonLd(input.blogPost, siteUrl, breadcrumbs, brand)
         : null,
-      aeoFacts: buildBlogAeoFacts(input.blogPost),
     }
   }
   if (kind === 'company_ad' && input.companyAd) {
@@ -309,7 +235,6 @@ export function buildPublicDetailSeoPayload(input: {
       jsonLd: siteUrl
         ? buildProfessionalAdDetailJsonLd(input.companyAd, siteUrl, breadcrumbs)
         : null,
-      aeoFacts: buildCompanyAdAeoFacts(input.companyAd),
     }
   }
   return {
@@ -318,6 +243,5 @@ export function buildPublicDetailSeoPayload(input: {
     canonicalPath: fallbackPath,
     jsonLd: null,
     noindex: true,
-    aeoFacts: [],
   }
 }

@@ -121,11 +121,16 @@ import {
 import {
   buildClientSecretElementsOptions,
   buildDeferredPaymentElementsOptions,
+  buildDeferredSetupElementsOptions,
   buildJobbiePaymentElementOptions,
   jobbieStripeElementsMountClass,
   type JobbieStripeAppearanceVariant,
 } from '~/utils/stripe-payment-element-ui'
-import { paymentIntentIdFromClientSecret } from '~/utils/stripe-payment-intent'
+import {
+  isSetupIntentClientSecret,
+  paymentIntentIdFromClientSecret,
+  setupIntentIdFromClientSecret,
+} from '~/utils/stripe-payment-intent'
 import {
   normalizePreparePaymentResult,
   type PreparePaymentResult,
@@ -153,9 +158,15 @@ const props = withDefaults(
     /** Catalog amount (minor units) for deferred checkout before PI exists. */
     deferredAmount?: number
     deferredCurrency?: string
+    /** Deferred Elements mode — use `setup` for subscription trials (card save only). */
+    deferredMode?: 'payment' | 'setup'
     preparePayment?: (
       billing?: CheckoutBillingPayload,
     ) => Promise<PreparePaymentResult | string | null>
+    onPaymentSuccess?: (
+      paymentIntentId?: string,
+      billing?: CheckoutBillingPayload,
+    ) => Promise<void> | void
   }>(),
   {
     clientSecret: '',
@@ -165,6 +176,7 @@ const props = withDefaults(
     billingPrefill: null,
     deferredAmount: undefined,
     deferredCurrency: 'eur',
+    deferredMode: 'payment',
   },
 )
 
@@ -215,8 +227,8 @@ const addressPostalCode = ref('')
 const usesCheckoutDeferred = computed(
   () =>
     typeof props.preparePayment === 'function' &&
-    typeof props.deferredAmount === 'number' &&
-    props.deferredAmount >= 1,
+    (props.deferredMode === 'setup' ||
+      (typeof props.deferredAmount === 'number' && props.deferredAmount >= 1)),
 )
 
 let stripe: import('@stripe/stripe-js').Stripe | null = null
@@ -305,8 +317,7 @@ function teardownPaymentElement(): void {
 }
 
 async function mountDeferredCheckoutElements(): Promise<void> {
-  const amount = props.deferredAmount
-  if (!usesCheckoutDeferred.value || amount == null || amount < 1 || !elementRef.value) {
+  if (!usesCheckoutDeferred.value || !elementRef.value) {
     return
   }
   const generation = ++mountGeneration
@@ -321,9 +332,19 @@ async function mountDeferredCheckoutElements(): Promise<void> {
   stripe = loaded
 
   const currency = (props.deferredCurrency?.trim() || 'eur').toLowerCase()
-  elements = stripe.elements(
-    buildDeferredPaymentElementsOptions(appearanceVariant.value, stripeLocale(), amount, currency),
-  )
+  elements =
+    props.deferredMode === 'setup'
+      ? stripe.elements(
+          buildDeferredSetupElementsOptions(appearanceVariant.value, stripeLocale(), currency),
+        )
+      : stripe.elements(
+          buildDeferredPaymentElementsOptions(
+            appearanceVariant.value,
+            stripeLocale(),
+            props.deferredAmount as number,
+            currency,
+          ),
+        )
 
   if (!mountTaxIdOnElements(generation)) return
   if (!mountPaymentOnElements(generation)) return
@@ -363,11 +384,16 @@ async function applyPrepareResult(prepared: PreparePaymentResult): Promise<boole
     await mountWithClientSecret(secret)
     return Boolean(stripe && elements)
   }
-  const { error } = await elements.update({ clientSecret: secret })
-  if (error) {
-    payError.value = error.message ?? S.checkoutPaymentFormNotReady
-    await mountWithClientSecret(secret)
-    return Boolean(stripe && elements)
+  try {
+    const updateResult = await elements.update({ clientSecret: secret })
+    if (updateResult?.error) {
+      payError.value = updateResult.error.message ?? S.checkoutPaymentFormNotReady
+      return false
+    }
+  } catch (err) {
+    payError.value =
+      err instanceof Error ? err.message : S.checkoutPaymentFormNotReady
+    return false
   }
   activeSecret.value = secret
   if (
@@ -375,10 +401,14 @@ async function applyPrepareResult(prepared: PreparePaymentResult): Promise<boole
     prepared.amount >= 1 &&
     elements.fetchUpdates
   ) {
-    const { error: fetchError } = await elements.fetchUpdates()
-    if (fetchError) {
-      payError.value = fetchError.message ?? S.checkoutPaymentFormNotReady
-      return false
+    try {
+      const fetchResult = await elements.fetchUpdates()
+      if (fetchResult?.error) {
+        payError.value = fetchResult.error.message ?? S.checkoutPaymentFormNotReady
+        return false
+      }
+    } catch {
+      // Optional after setup-intent update; confirm still uses clientSecret.
     }
   }
   return true
@@ -472,7 +502,7 @@ watch(
 )
 
 watch(
-  () => [props.deferredAmount, props.deferredCurrency] as const,
+  () => [props.deferredAmount, props.deferredCurrency, props.deferredMode] as const,
   () => {
     if (!usesCheckoutDeferred.value) return
     void mountDeferredCheckoutElements()
@@ -507,6 +537,7 @@ async function handlePay() {
       const raw = await props.preparePayment(billing)
       const prepared = normalizePreparePaymentResult(raw)
       if (!prepared) {
+        payError.value = S.checkoutPaymentFailed
         return
       }
       const ready = await applyPrepareResult(prepared)
@@ -521,7 +552,8 @@ async function handlePay() {
       return
     }
 
-    const { error: submitError } = await elements.submit()
+    const submitResult = await elements.submit()
+    const submitError = submitResult?.error
     if (submitError) {
       payError.value =
         submitError.message ?? 'Skontrolujte platobné a fakturačné údaje vo formulári.'
@@ -552,6 +584,32 @@ async function handlePay() {
       confirmOptions.clientSecret = secret
     }
 
+    const useSetup = isSetupIntentClientSecret(secret)
+    if (useSetup) {
+      const { error: setupError, setupIntent } = await stripe.confirmSetup(confirmOptions)
+      if (setupError) {
+        payError.value = setupError.message ?? 'Platba zlyhala.'
+        return
+      }
+      let setupId =
+        setupIntent && typeof setupIntent === 'object' && 'id' in setupIntent
+          ? String((setupIntent as { id: string }).id)
+          : undefined
+      if (!setupId?.startsWith('seti_')) {
+        setupId = setupIntentIdFromClientSecret(secret) ?? undefined
+      }
+      if (!setupId?.startsWith('seti_')) {
+        payError.value = S.checkoutPaymentNoIntentId
+        return
+      }
+      if (props.onPaymentSuccess) {
+        await props.onPaymentSuccess(setupId, billing)
+      } else {
+        emit('success', setupId, billing)
+      }
+      return
+    }
+
     const { error, paymentIntent } = await stripe.confirmPayment(confirmOptions)
     if (error) {
       payError.value = error.message ?? 'Platba zlyhala.'
@@ -569,7 +627,11 @@ async function handlePay() {
       payError.value = S.checkoutPaymentNoIntentId
       return
     }
-    emit('success', piId, billing)
+    if (props.onPaymentSuccess) {
+      await props.onPaymentSuccess(piId, billing)
+    } else {
+      emit('success', piId, billing)
+    }
   } catch (err) {
     payError.value =
       err instanceof Error ? err.message : 'Platba zlyhala. Skúste to znova.'

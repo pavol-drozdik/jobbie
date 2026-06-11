@@ -9,6 +9,8 @@ export interface PlanResponseDto {
   max_cv_contacts_monthly: number | null;
   max_cv_pdf_downloads_monthly: number | null;
   sort_order: number;
+  /** Stripe Price `recurring.trial_period_days` (0 = none). */
+  trial_period_days: number;
 }
 
 export interface MySubscriptionResponseDto {

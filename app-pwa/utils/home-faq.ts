@@ -1,4 +1,4 @@
-export type HomeFaqRole = 'employer' | 'worker' | 'provider'
+﻿export type HomeFaqRole = 'employer' | 'worker' | 'provider'
 
 export interface HomeFaqItem {
   readonly question: string
@@ -10,12 +10,12 @@ export const HOME_FAQ_BY_ROLE: Readonly<Record<HomeFaqRole, readonly HomeFaqItem
     {
       question: 'Čo je Jobbie a na čo slúži?',
       answer:
-        'Jobbie je platforma na rýchle spojenie zamestnávateľov s brigádnikmi. Zverejníte ponuku, uchádzači sa prihlásia a komunikujete priamo v aplikácii.',
+        'Jobbie je platforma na rýchle spojenie zamestnávateľov s uchádzačmi. Zverejníte ponuku, uchádzači sa prihlásia a komunikujete priamo v aplikácii.',
     },
     {
       question: 'Ako zverejním brigádu?',
       answer:
-        'Po prihlásení choďte na „Pridať ponuku“, vyplňte popis, miesto, odmenu a čas. Ponuka sa zobrazí v prehľade a brigádnici sa môžu prihlásiť.',
+        'Po prihlásení choďte na „Pridať ponuku“, vyplňte popis, miesto, odmenu a čas. Ponuka sa zobrazí v prehľade a uchádzači sa môžu prihlásiť.',
     },
     {
       question: 'Koľko to stojí a ako zvýšim viditeľnosť?',
@@ -23,7 +23,7 @@ export const HOME_FAQ_BY_ROLE: Readonly<Record<HomeFaqRole, readonly HomeFaqItem
         'Cenník a predplatné nájdete v sekcii Plány. Zvýraznenie a kredity vám pomôžu dostať ponuku vyššie v výsledkoch a osloviť viac ľudí.',
     },
     {
-      question: 'Ako prebieha komunikácia s brigádnikmi?',
+      question: 'Ako prebieha komunikácia s uchádzačmi?',
       answer:
         'Po prihlásení uchádzača môžete písať v správach v aplikácii. Dohodnite detail priamo tam, kým sa nestretnete na mieste.',
     },
@@ -35,7 +35,7 @@ export const HOME_FAQ_BY_ROLE: Readonly<Record<HomeFaqRole, readonly HomeFaqItem
     {
       question: 'Rieši Jobbie zmluvy a platby?',
       answer:
-        'Jobbie vám pomáha nájsť kontakt a dohodnúť podmienky. Zmluvy a platby medzi vami a brigádnikom si dohadujete vy; platforma nesprostredkováva výplatu mzdy.',
+        'Jobbie vám pomáha nájsť kontakt a dohodnúť podmienky. Zmluvy a platby medzi vami a uchádzačom si dohadujete vy; platforma nesprostredkováva výplatu mzdy.',
     },
     {
       question: 'Ako kontaktujem podporu?',
@@ -62,7 +62,7 @@ export const HOME_FAQ_BY_ROLE: Readonly<Record<HomeFaqRole, readonly HomeFaqItem
     {
       question: 'Musím platiť za registráciu?',
       answer:
-        'Registrácia pre brigádnika je zadarmo. Platíte len vtedy, ak si sami zvolíte platené funkcie uvedené v cenníku (ak sú k dispozícii).',
+        'Registrácia pre uchádzača je zadarmo. Platíte len vtedy, ak si sami zvolíte platené funkcie uvedené v cenníku (ak sú k dispozícii).',
     },
     {
       question: 'Ako funguje chat so zamestnávateľom?',
@@ -84,7 +84,7 @@ export const HOME_FAQ_BY_ROLE: Readonly<Record<HomeFaqRole, readonly HomeFaqItem
     {
       question: 'Čo je Jobbie a na čo slúži?',
       answer:
-        'Pre poskytovateľov služieb Jobbie ponúka sekciu Firmy, kde môžete predstaviť živnosť alebo firmu a osloviť klientov, ktorí hľadajú služby vo vašom segmente.',
+        'Pre profesionálov Jobbie ponúka sekciu Firmy, kde môžete predstaviť živnosť alebo firmu a osloviť klientov, ktorí hľadajú služby vo vašom segmente.',
     },
     {
       question: 'Ako pridám firmu do katalógu?',

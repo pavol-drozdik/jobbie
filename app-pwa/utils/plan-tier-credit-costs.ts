@@ -1,3 +1,4 @@
+import { creditWordLabel } from '~/utils/sk-plural'
 import { S } from '~/utils/strings'
 
 /** Keep in sync with backend-ts/src/billing/plan-tier-credit-costs.ts */
@@ -85,7 +86,7 @@ export function getPlanTierCreditCost(
 
 export function formatPlanTierCreditCostLabel(cost: number): string {
   if (cost < 1) return S.pricingCvFreeLabel
-  return `${cost} ${S.credits}`
+  return `${cost} ${creditWordLabel(cost)}`
 }
 
 export const PLAN_TIER_COMPARE_ROWS: ReadonlyArray<{
@@ -97,6 +98,29 @@ export const PLAN_TIER_COMPARE_ROWS: ReadonlyArray<{
   { key: 'publishUrgentJob', label: S.pricingComparePublishUrgentJob },
   { key: 'topOfCategory7Days', label: S.pricingCompareTopListing },
 ]
+
+export type PayableCreditUsageRow = {
+  key: PlanTierCreditAction
+  label: string
+  cost: number
+  costLabel: string
+}
+
+/** Payable actions in job/ad wizards — same rows as PLAN_TIER_COMPARE_ROWS. */
+export function getPayableCreditUsageRows(
+  matrix: PlanTierCreditCostsMatrix,
+  planSlug: string,
+): PayableCreditUsageRow[] {
+  return PLAN_TIER_COMPARE_ROWS.map((row) => {
+    const cost = getPlanTierCreditCost(matrix, planSlug, row.key)
+    return {
+      key: row.key,
+      label: row.label,
+      cost,
+      costLabel: formatPlanTierCreditCostLabel(cost),
+    }
+  })
+}
 
 /** Boolean plan features in Porovnanie plánov (not credit-priced). */
 export const PLAN_COMPARE_FEATURE_ROWS: ReadonlyArray<{

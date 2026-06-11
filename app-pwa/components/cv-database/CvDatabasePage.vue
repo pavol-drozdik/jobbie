@@ -535,6 +535,7 @@ function applyContactFieldsToRow(
   const row = items.value.find((i) => i.cv_id === cvId)
   if (!row) return
   row.contacts_visible = true
+  row.has_contact_to_unlock = false
   row.contact_email = email
   row.contact_phone = phone
 }
@@ -575,6 +576,18 @@ async function onCardUnlock(cvId: string): Promise<void> {
     )
     return
   }
+  await syncUnlockedContactToUi(cvId)
+}
+
+function onDetailUnlocked(payload: {
+  cvId: string
+  email: string | null
+  phone: string | null
+}): void {
+  applyContactFieldsToRow(payload.cvId, payload.email, payload.phone)
+}
+
+async function syncUnlockedContactToUi(cvId: string): Promise<void> {
   const det = await fetchDetail(cvId)
   if (det.ok && det.data) {
     const { email, phone } = readContactFromAggregate(det.data.cv)
@@ -821,6 +834,7 @@ const skeletonCount = 8
       v-model:open="detailOpen"
       :cv-id="detailCvId"
       :initial-chat-applications="initialChatApplications"
+      @unlocked="onDetailUnlocked"
     />
   </div>
 </template>

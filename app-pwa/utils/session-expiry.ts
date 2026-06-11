@@ -43,7 +43,7 @@ export async function confirmApiSessionDead(): Promise<boolean> {
       headers.Authorization = `Bearer ${bearer.trim()}`
     }
     const res = await fetchApi(`${base}/api/auth/me`, {
-      credentials: 'include',
+      credentials: bearer?.trim() ? 'omit' : 'include',
       headers,
     })
     return res.ok

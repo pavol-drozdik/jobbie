@@ -89,11 +89,8 @@
           <ul class="m-0 grid list-none gap-2 p-0 text-sm text-black sm:grid-cols-3">
 
             <li v-for="row in cvUsageRows" :key="row.label">
-
-              <span class="text-black/55">{{ row.label }}:</span>
-
+              <span class="mr-1 text-black/55">{{ row.label }}:</span>
               <span class="font-semibold">{{ row.value }}</span>
-
             </li>
 
           </ul>
@@ -389,6 +386,7 @@
 <script setup lang="ts">
 
 import { S } from '~/utils/strings'
+import { buildCvDatabaseUsageRows } from '~/utils/cv-database-usage-display'
 
 
 
@@ -559,29 +557,13 @@ const billingAddress = ref('')
 
 
 const cvUsageRows = computed(() => {
-
   const acc = account.value
-
   if (!acc?.cvUsage || !acc.cvLimits) return []
-
-  const rows: { label: string; value: string }[] = []
-
-  const push = (label: string, used: number, max: number | null | undefined) => {
-
-    const cap = max === null || max === undefined ? '∞' : String(max)
-
-    rows.push({ label, value: `${used} / ${cap}` })
-
-  }
-
-  push(S.pricingCvUnlock, acc.cvUsage.unlocksCount, acc.cvLimits.maxCvUnlocksMonthly)
-
-  push(S.pricingCvContact, acc.cvUsage.contactsCount, acc.cvLimits.maxCvContactsMonthly)
-
-  push(S.pricingCvPdf, acc.cvUsage.pdfDownloadsCount, acc.cvLimits.maxCvPdfDownloadsMonthly)
-
-  return rows
-
+  return buildCvDatabaseUsageRows({
+    cvUsage: acc.cvUsage,
+    cvLimits: acc.cvLimits,
+    planSlug: acc.planSlug,
+  })
 })
 
 

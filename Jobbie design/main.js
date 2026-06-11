@@ -34,8 +34,8 @@ const carouselData = {
         { title: '2. Prihlás sa',     text: 'Odošli prihlášku jedným kliknutím. Žiadny životopis, žiadna byrokracia.' },
         { title: '3. Začni zarábať', text: 'Nastúp na brigádu a začni zarábať hneď na druhý deň.' },
     ],
-    poskytovatel: [
-        { title: '1. Vytvor profil',      text: 'Zaregistruj sa ako poskytovateľ služieb a pridaj svoje odborné zručnosti a referencie.' },
+    profesional: [
+        { title: '1. Vytvor profil',      text: 'Zaregistruj sa ako profesionál a pridaj svoje odborné zručnosti a referencie.' },
         { title: '2. Získaj zákazníkov',  text: 'Nechaj zákazníkov, aby ťa našli cez vyhľadávanie. Daj o sebe vedieť tisíckam ľudí.' },
         { title: '3. Spravuj zákazky',    text: 'Komunikuj so zákazníkmi priamo v aplikácii a dohodni podmienky spolupráce.' },
     ],

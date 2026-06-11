@@ -13,22 +13,6 @@ export type SeoRoutePolicy = {
 
 export const SEO_LEGAL_PATHS = ['/vseobecne-podmienky', '/ochrana-osobnych-udajov'] as const
 
-const GUIDE_PATHS = [
-  '/navody/ako-to-funguje',
-  '/navody/ako-sa-registrovat',
-  '/navody/ako-vytvorit-sluzbu',
-  '/navody/ako-si-vytvorit-profil',
-  '/navody/ako-topovat-sluzbu',
-  '/navody/ako-pridat-voucher',
-  '/navody/ako-sa-prihlasit-na-brigadu',
-  '/navody/ako-vytvorit-ponuku',
-  '/navody/ako-funguju-kredity',
-  '/navody/databaza-zivotopisov',
-  '/navody/ponuky-na-email',
-  '/navody/vymazat-ucet',
-  '/navody/export-udajov',
-] as const
-
 const INDEXABLE_STATIC: Record<string, SeoRoutePolicy> = {
   '/': { indexable: true, includeInSitemap: true, ssr: true },
   '/pracovne-ponuky': { indexable: true, includeInSitemap: true, ssr: true },
@@ -53,9 +37,6 @@ function buildExactMap(legalPublished: boolean): Record<string, SeoRoutePolicy> 
   for (const path of SEO_LEGAL_PATHS) {
     exact[path] = legalRoutePolicy(legalPublished)
   }
-  for (const path of GUIDE_PATHS) {
-    exact[path] = { indexable: true, includeInSitemap: true, ssr: true }
-  }
   return exact
 }
 
@@ -67,7 +48,6 @@ const PREFIX: Array<{ prefix: string; policy: SeoRoutePolicy }> = [
   { prefix: '/profesionali/', policy: { indexable: true, includeInSitemap: false, ssr: true } },
   { prefix: '/profil/', policy: { indexable: true, includeInSitemap: false, ssr: true } },
   { prefix: '/blog/', policy: { indexable: true, includeInSitemap: false, ssr: true } },
-  { prefix: '/navody/', policy: { indexable: true, includeInSitemap: true, ssr: true } },
   { prefix: '/auth', policy: { indexable: false, includeInSitemap: false, ssr: false } },
   { prefix: '/nastavenia', policy: { indexable: false, includeInSitemap: false, ssr: false } },
   { prefix: '/platba', policy: { indexable: false, includeInSitemap: false, ssr: false } },
@@ -149,7 +129,6 @@ export const SEO_PUBLIC_SSR_ROUTE_PATTERNS: readonly string[] = [
   '/profesionali/**',
   '/profil/**',
   '/blog/**',
-  '/navody/**',
 ]
 
 /** Nitro routeRules: noindex patterns when indexing is enabled. */

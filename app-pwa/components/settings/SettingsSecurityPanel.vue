@@ -53,16 +53,19 @@
           :passkey-err="passkeyErr"
           :can-use="canUsePasskeys()"
           :format-date="formatPasskeyDate"
+          :passkey-needs-totp-code="passkeyNeedsTotpCode"
+          :passkey-totp-code="passkeyTotpCode"
+          @update:passkey-totp-code="passkeyTotpCode = $event"
           @add="handleAddPasskey"
           @remove="handleRemovePasskey"
         />
         <SettingsSecurityTotp
-          :totp-has-verified="totpHasVerified"
-          :totp-pending-factor-id="totpPendingFactorId"
+          :totp-mode="totpMode"
           :totp-qr-data-url="totpQrDataUrl"
           :totp-verify-code="totpVerifyCode"
           :totp-busy="totpBusy"
           :totp-err="totpErr"
+          :totp-msg="totpMsg"
           :totp-status-label="totpStatusLabel"
           :totp-status-class="totpStatusClass"
           @update:totp-verify-code="totpVerifyCode = $event"
@@ -70,6 +73,8 @@
           @confirm-enroll="confirmTotpEnroll"
           @restart-enroll="restartTotpEnroll"
           @disable="onDisableTotpClick"
+          @confirm-disable="confirmDisableTotp"
+          @cancel-disable="cancelDisableTotp"
         />
       </SettingsSection>
 
@@ -88,9 +93,16 @@
 
 <script setup lang="ts">
 // MFA TOTP, passkeys, password change — destructive actions use useConfirm; admin needs aal2 on API.
+import { normalizePublicApiBase } from '~/utils/api-base-url'
 import { ensureSupabaseAuthSession } from '~/utils/ensure-supabase-auth-session'
+import {
+  collectMfaFactors,
+  elevateToAal2WithTotpCode,
+  findTotpFactor,
+} from '~/utils/mfa-aal2'
 import { formatMfaAuthError } from '~/utils/mfa-auth-errors'
 import { S } from '~/utils/strings'
+type TotpUiMode = 'off' | 'enroll' | 'active' | 'disabling'
 
 const supabase = useSupabase()
 const { api } = useApi()
@@ -110,22 +122,33 @@ const passwordErr = ref('')
 
 const TOTP_FRIENDLY_NAME = 'JOBBIE TOTP'
 
-type MfaFactorRow = {
-  id?: string
-  factor_type?: string
-  status?: string
-}
-
 const totpQrDataUrl = ref('')
 const totpPendingFactorId = ref<string | null>(null)
 const totpVerifyCode = ref('')
 const totpBusy = ref(false)
 const totpErr = ref('')
+const totpMsg = ref('')
 const totpHasVerified = ref(false)
+const totpDisableAwaitingCode = ref(false)
+
+const totpMode = computed<TotpUiMode>(() => {
+  if (totpDisableAwaitingCode.value) {
+    return 'disabling'
+  }
+  if (totpHasVerified.value) {
+    return 'active'
+  }
+  if (totpPendingFactorId.value) {
+    return 'enroll'
+  }
+  return 'off'
+})
 
 const passkeySaving = ref(false)
 const passkeyErr = ref('')
 const passkeyMsg = ref('')
+const passkeyNeedsTotpCode = ref(false)
+const passkeyTotpCode = ref('')
 
 const totpStatusLabel = computed(() => {
   if (totpHasVerified.value) {
@@ -172,13 +195,6 @@ const summaryChips = computed(() => {
   ]
 })
 
-function findTotpFactor(
-  factors: MfaFactorRow[],
-  status: 'verified' | 'unverified',
-): MfaFactorRow | undefined {
-  return factors.find((f) => f.factor_type === 'totp' && f.status === status)
-}
-
 function clearTotpEnrollmentUi(): void {
   totpPendingFactorId.value = null
   totpQrDataUrl.value = ''
@@ -203,7 +219,7 @@ async function unenrollUnverifiedTotpIfAny(): Promise<string | null> {
   if (error) {
     return formatMfaAuthError(error.message)
   }
-  const unverified = findTotpFactor(data?.all ?? [], 'unverified')
+  const unverified = findTotpFactor(collectMfaFactors(data), 'unverified')
   if (!unverified?.id) {
     return null
   }
@@ -307,11 +323,18 @@ async function handleAddPasskey(): Promise<void> {
   }
   passkeySaving.value = true
   try {
-    const result = await enrollPasskey()
+    const result = await enrollPasskey({
+      totpCode: passkeyNeedsTotpCode.value ? passkeyTotpCode.value : undefined,
+    })
     if (!result.ok) {
+      if (result.needsTotpCode) {
+        passkeyNeedsTotpCode.value = true
+      }
       passkeyErr.value = result.error ?? S.passkeyEnrollFailed
       return
     }
+    passkeyNeedsTotpCode.value = false
+    passkeyTotpCode.value = ''
     passkeyMsg.value = result.message ?? S.passkeyEnrollSuccess
     await loadPasskeys()
   } finally {
@@ -356,14 +379,16 @@ async function refreshTotpState(): Promise<void> {
     totpErr.value = formatMfaAuthError(error.message)
     return
   }
-  const factors = data?.all ?? []
+  const factors = collectMfaFactors(data)
   const verified = findTotpFactor(factors, 'verified')
   const unverified = findTotpFactor(factors, 'unverified')
 
   totpHasVerified.value = Boolean(verified?.id)
 
   if (verified?.id) {
-    clearTotpEnrollmentUi()
+    if (!totpDisableAwaitingCode.value) {
+      clearTotpEnrollmentUi()
+    }
     return
   }
 
@@ -391,7 +416,7 @@ async function startTotpEnroll(): Promise<void> {
       totpErr.value = formatMfaAuthError(listError.message)
       return
     }
-    const factors = listData?.all ?? []
+    const factors = collectMfaFactors(listData)
     if (findTotpFactor(factors, 'verified')) {
       totpHasVerified.value = true
       clearTotpEnrollmentUi()
@@ -442,12 +467,9 @@ async function confirmTotpEnroll(): Promise<void> {
       totpErr.value = ready.error ?? S.settingsSecurityReauthRequired
       return
     }
-    const { error } = await supabase.auth.mfa.challengeAndVerify({
-      factorId: fid,
-      code,
-    })
-    if (error) {
-      totpErr.value = formatMfaAuthError(error.message)
+    const aalErr = await elevateToAal2WithTotpCode(supabase, fid, code)
+    if (aalErr) {
+      totpErr.value = aalErr
       return
     }
     clearTotpEnrollmentUi()
@@ -458,42 +480,90 @@ async function confirmTotpEnroll(): Promise<void> {
   }
 }
 
-async function onDisableTotpClick(): Promise<void> {
-  const ok = await confirm({
-    title: S.settingsSecurityTotpDisableConfirmTitle,
-    message: S.settingsSecurityTotpDisableConfirmMessage,
-    confirmDanger: true,
-    confirmText: S.settingsSecurityTotpDisable,
-    cancelText: S.cancel,
+function onDisableTotpClick(): void {
+  totpErr.value = ''
+  totpMsg.value = ''
+  totpVerifyCode.value = ''
+  totpDisableAwaitingCode.value = true
+  nextTick(() => {
+    document.getElementById('totp-disable-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    document.getElementById('security-totp-disable-otp')?.focus()
   })
-  if (!ok) {
-    return
-  }
-  await disableTotp()
 }
 
-async function disableTotp(): Promise<void> {
+function cancelDisableTotp(): void {
+  totpDisableAwaitingCode.value = false
+  totpVerifyCode.value = ''
+  totpErr.value = ''
+  totpMsg.value = ''
+}
+
+async function confirmDisableTotp(): Promise<void> {
+  const code = totpVerifyCode.value.replace(/\s/g, '')
+  if (code.length < 6) {
+    totpErr.value = 'Zadajte 6-miestny kód z autentifikačnej aplikácie.'
+    return
+  }
+  await disableTotp(code)
+}
+
+async function disableTotp(code: string): Promise<void> {
   const ready = await ensureSupabaseAuthSession()
   if (!ready.ok) {
     totpErr.value = ready.error ?? S.settingsSecurityReauthRequired
     return
   }
-  const { data } = await supabase.auth.mfa.listFactors()
-  const factors = data?.all ?? []
+  const { data, error: listError } = await supabase.auth.mfa.listFactors()
+  if (listError) {
+    totpErr.value = formatMfaAuthError(listError.message)
+    return
+  }
+  const factors = collectMfaFactors(data)
   const totp = findTotpFactor(factors, 'verified')
   if (!totp?.id) {
+    totpErr.value = S.settingsSecurityTotpNotActive
+    totpDisableAwaitingCode.value = false
+    await refreshTotpState()
     return
   }
   totpBusy.value = true
   totpErr.value = ''
+  totpMsg.value = ''
   try {
-    const unenrollErr = await unenrollTotpFactor(totp.id)
+    const aalErr = await elevateToAal2WithTotpCode(supabase, totp.id, code, {
+      requireFreshVerify: true,
+    })
+    if (aalErr) {
+      totpErr.value = aalErr
+      return
+    }
+    let unenrollErr = await unenrollTotpFactor(totp.id)
+    if (unenrollErr?.toLowerCase().includes('aal')) {
+      const retryAal = await elevateToAal2WithTotpCode(supabase, totp.id, code, {
+        requireFreshVerify: true,
+      })
+      if (retryAal) {
+        totpErr.value = retryAal
+        return
+      }
+      unenrollErr = await unenrollTotpFactor(totp.id)
+    }
     if (unenrollErr) {
       totpErr.value = unenrollErr
       return
     }
+    await supabase.auth.refreshSession()
+    totpDisableAwaitingCode.value = false
+    totpVerifyCode.value = ''
+    totpHasVerified.value = false
+    totpErr.value = ''
+    totpMsg.value = S.settingsSecurityTotpDisableSuccess
     clearTotpEnrollmentUi()
     await refreshTotpState()
+    const config = useRuntimeConfig().public
+    const base = normalizePublicApiBase(String(config.apiBaseUrl ?? ''))
+    const { refreshBffSessionFromApi } = await import('~/utils/bff-session-refresh')
+    await refreshBffSessionFromApi(base, { syncSupabase: true })
   } finally {
     totpBusy.value = false
   }

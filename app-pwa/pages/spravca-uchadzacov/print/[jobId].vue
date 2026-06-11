@@ -79,7 +79,7 @@ import { S } from '~/utils/strings'
 import type { EmployerPrintListResponse } from '~/types/employer-applicants'
 import LoggedOutFeatureHero from '~/components/marketing/LoggedOutFeatureHero.vue'
 
-definePageMeta({ layout: 'app', middleware: ['company-only'] })
+definePageMeta({ layout: 'app', middleware: ['customer-only'] })
 
 const route = useRoute()
 const redirectPath = computed(() => route.fullPath || ROUTES.applicants)

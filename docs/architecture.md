@@ -94,7 +94,7 @@ Global guards: `ThrottlerGuard`, `GlobalAuthGuard`. Global filter: `SentryGlobal
 | `/cennik`, `/ponuky-na-email/*` | Marketing / alerts (some public) |
 | `/preferences/[token]`, `/unsubscribe/[token]` | Token-based public prefs |
 
-Layouts: `layouts/app.vue` (main nav), `layouts/default.vue` (minimal). Middleware: `auth`, `admin`, `company-only`, `worker-only`, dashboard variants — see [frontend.md](./frontend.md).
+Layouts: `layouts/app.vue` (main nav), `layouts/default.vue` (minimal). Middleware: `auth`, `admin`, `customer-only`, `worker-only`, `provider-only`, dashboard variants — see [frontend.md](./frontend.md).
 
 ## Background jobs
 

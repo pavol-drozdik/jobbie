@@ -132,10 +132,12 @@ export function useApi() {
         const csrf = readBffCsrfToken()
         if (csrf) headers['X-CSRF-Token'] = csrf
       }
+      // Never send HttpOnly jb_* with Bearer — SessionAuthGuard rejects conflicting tokens.
+      const credentials: RequestCredentials = bearer?.trim() ? 'omit' : 'include'
       return fetchApi(url.toString(), {
         method,
         headers,
-        credentials: 'include',
+        credentials,
         body: options.body ? JSON.stringify(options.body) : undefined,
         signal: options.signal,
       })

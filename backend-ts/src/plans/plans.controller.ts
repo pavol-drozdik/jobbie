@@ -1,4 +1,5 @@
 import { Controller, Get, Header, UseGuards } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CatalogCacheService } from '../redis/catalog-cache.service';
 import { JwksAuthGuard } from '../auth/jwks-auth.guard';
 import { CurrentUserDecorator } from '../auth/current-user.decorator';
@@ -10,12 +11,18 @@ import {
   PUBLIC_SUBSCRIPTION_PLAN_SLUGS,
   filterPublicSubscriptionPlans,
 } from '../billing/public-pricing-catalog';
+import { SubscriptionTrialService } from '../billing/subscription-trial.service';
+import { StripeService } from '../payments/stripe.service';
+import { resolveSubscriptionStripePriceId } from '../payments/stripe-catalog-prices';
 
 @Controller('plans')
 export class PlansController {
   constructor(
     private supabase: SupabaseService,
     private readonly catalogCache: CatalogCacheService,
+    private readonly config: ConfigService,
+    private readonly subscriptionTrial: SubscriptionTrialService,
+    private readonly stripeService: StripeService,
   ) {}
 
   /** Public: pricing table can load before the client session is ready. */
@@ -23,20 +30,49 @@ export class PlansController {
   @Public()
   @Header('Cache-Control', 'public, max-age=300')
   async list(): Promise<PlanResponseDto[]> {
-    return this.catalogCache.getOrSet('catalog:plans-list:v4', async () => {
+    return this.catalogCache.getOrSet('catalog:plans-list:v6', async () => {
       const { data, error } = await this.supabase
         .getClient()
         .from('subscription_plans')
         .select(
-          'id,slug,name_sk,price_monthly_cents,max_active_jobs,monthly_credits,max_cv_unlocks_monthly,max_cv_contacts_monthly,max_cv_pdf_downloads_monthly,sort_order,active',
+          'id,slug,name_sk,price_monthly_cents,max_active_jobs,monthly_credits,max_cv_unlocks_monthly,max_cv_contacts_monthly,max_cv_pdf_downloads_monthly,sort_order,active,stripe_price_id',
         )
         .in('slug', [...PUBLIC_SUBSCRIPTION_PLAN_SLUGS])
         .order('sort_order');
-      const rows = (data ?? []) as Array<PlanResponseDto & { active?: boolean }>;
+      const rows = (data ?? []) as Array<
+        PlanResponseDto & { active?: boolean; stripe_price_id?: string | null }
+      >;
       const activeOnly = error
         ? rows
         : rows.filter((row) => row.active !== false);
-      return filterPublicSubscriptionPlans(activeOnly);
+      const filtered = filterPublicSubscriptionPlans(activeOnly);
+      let stripe: ReturnType<StripeService['getStripeClientForTrialChecks']> | null =
+        null;
+      try {
+        stripe = this.stripeService.getStripeClientForTrialChecks();
+      } catch {
+        stripe = null;
+      }
+      return Promise.all(
+        filtered.map(async (row) => {
+          const stripePriceId = resolveSubscriptionStripePriceId(
+            this.config,
+            row.slug,
+            row.stripe_price_id ?? null,
+          );
+          const trial_period_days =
+            stripe && stripePriceId
+              ? await this.subscriptionTrial.getTrialPeriodDaysForPrice(
+                  stripe,
+                  stripePriceId,
+                )
+              : 0;
+          return {
+            ...row,
+            trial_period_days,
+          };
+        }),
+      );
     }, 900);
   }
 

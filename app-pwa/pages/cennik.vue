@@ -28,11 +28,27 @@
 
             v-if="accountCredits !== null"
 
-            class="mt-5 inline-flex items-center rounded-full bg-white/20 px-4 py-2 font-dmSans text-sm font-bold text-white backdrop-blur-sm"
+            class="mt-6 inline-flex min-w-[min(100%,200px)] flex-col items-center rounded-2xl bg-white/95 px-6 py-3 shadow-[0px_4px_16px_rgba(0,0,0,0.1)]"
 
           >
 
-            {{ S.pricingBalanceLabel }}: {{ accountCredits }} {{ S.credits }}
+            <span class="font-dmSans text-sm font-medium text-black/50">
+
+              {{ S.settingsCreditsBalanceLabel }}
+
+            </span>
+
+            <span
+
+              class="mt-0.5 font-dmSans text-[clamp(2rem,5vw,2.75rem)] font-extrabold leading-none tabular-nums text-marketing-green"
+
+            >
+
+              {{ accountCredits }}
+
+            </span>
+
+            <span class="mt-1 font-dmSans text-sm text-black/45">{{ creditWordLabel(accountCredits) }}</span>
 
           </div>
 
@@ -70,15 +86,37 @@
 
 
 
-      <div v-show="activeTab === 'credits'">
+      <div v-show="activeTab === 'credits'" class="space-y-6">
 
-        <PricingCreditPacksGrid
-
-          :return-base-path="returnPath"
-
-          @credits-purchased="loadAccountCredits"
-
+        <PricingCreditsUsageSection
+          :plan-slug="accountPlanSlug"
+          :plan-name-sk="accountPlanNameSk"
+          :plan-tier-credit-costs="planTierCreditCosts"
         />
+
+        <section aria-labelledby="pricing-credit-packs-heading">
+
+          <h2
+
+            id="pricing-credit-packs-heading"
+
+            class="m-0 mb-4 font-dmSans text-[17px] font-extrabold text-black"
+
+          >
+
+            {{ S.pricingCreditPackagesTitle }}
+
+          </h2>
+
+          <PricingCreditPacksGrid
+
+            :return-base-path="returnPath"
+
+            @credits-purchased="loadAccountCredits"
+
+          />
+
+        </section>
 
       </div>
 
@@ -132,6 +170,7 @@ import { normalizeSiteUrl } from '~/utils/seo-config'
 import { buildWebPageJsonLd } from '~/utils/seo-json-ld'
 
 import PricingCreditPacksGrid from '~/components/pricing/PricingCreditPacksGrid.vue'
+import PricingCreditsUsageSection from '~/components/pricing/PricingCreditsUsageSection.vue'
 
 import PricingPlansGrid from '~/components/pricing/PricingPlansGrid.vue'
 
@@ -145,6 +184,7 @@ import JaSegmentedToggle from '~/components/ui/JaSegmentedToggle.vue'
 
 import type { PricingAddonServiceId } from '~/utils/pricing-addon-services'
 import { parsePlanTierCreditCostsFromConfig } from '~/utils/plan-tier-credit-costs'
+import { creditWordLabel } from '~/utils/sk-plural'
 
 
 
@@ -214,6 +254,8 @@ const selectedInquiryService = ref<PricingAddonServiceId | null>(null)
 
 
 const accountCredits = ref<number | null>(null)
+const accountPlanSlug = ref<string | null>(null)
+const accountPlanNameSk = ref<string | null>(null)
 
 const catalogPlans = computed(() => catalogPlansState.value ?? [])
 const planTierCreditCosts = computed(() =>
@@ -227,14 +269,28 @@ async function loadAccountCredits(): Promise<void> {
   if (!session.value?.access_token) {
 
     accountCredits.value = null
+    accountPlanSlug.value = null
+    accountPlanNameSk.value = null
 
     return
 
   }
 
-  const res = await api<{ credits: number }>('/api/billing/account')
+  const res = await api<{
+    credits: number
+    planSlug?: string
+    planNameSk?: string
+  }>('/api/billing/account')
 
-  accountCredits.value = res.ok && res.data ? res.data.credits : null
+  if (res.ok && res.data) {
+    accountCredits.value = res.data.credits
+    accountPlanSlug.value = res.data.planSlug ?? null
+    accountPlanNameSk.value = res.data.planNameSk ?? null
+  } else {
+    accountCredits.value = null
+    accountPlanSlug.value = null
+    accountPlanNameSk.value = null
+  }
 
 }
 

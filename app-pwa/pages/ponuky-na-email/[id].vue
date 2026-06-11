@@ -36,7 +36,7 @@ import JobEmailAlertCreateWizard from '~/components/job-alerts/JobEmailAlertCrea
 import { useJobEmailAlerts, type JobEmailAlertDto } from '~/composables/useJobEmailAlerts'
 import LoggedOutFeatureHero from '~/components/marketing/LoggedOutFeatureHero.vue'
 
-definePageMeta({ layout: 'app' })
+definePageMeta({ layout: 'app', middleware: ['worker-only'] })
 usePageSeo({ noindex: true })
 
 const route = useRoute()

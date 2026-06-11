@@ -7,6 +7,7 @@ import {
 } from '~/utils/auth-cache'
 import {
   AUTH_RESET_PASSWORD_PATH,
+  isAuthLoginBootstrap,
   isAuthLoginRoute,
   shouldSkipAuthPluginProfileFetch,
 } from '~/utils/auth-recovery'
@@ -155,8 +156,10 @@ export default defineNuxtPlugin(async () => {
     if (
       (result.statusCode === 401 || result.statusCode === 403) &&
       !skipSignOut &&
+      !isAuthLoginBootstrap() &&
       !(hasActiveBffSession() && user.value) &&
-      !shouldRestoreBffOnColdBoot()
+      !shouldRestoreBffOnColdBoot() &&
+      !token?.trim()
     ) {
       user.value = null
       profile.value = null
@@ -229,9 +232,10 @@ export default defineNuxtPlugin(async () => {
     accessToken: string,
     refreshToken: string,
   ): Promise<void> {
-    const { readBffCsrfToken } = await import('~/utils/bff-csrf-state')
-    if (readBffCsrfToken()) return
     try {
+      const { ensureBffSessionFromSupabase } = useBffSession()
+      const ok = await ensureBffSessionFromSupabase()
+      if (ok) return
       const { establishSession } = useBffSession()
       await establishSession({
         access_token: accessToken,

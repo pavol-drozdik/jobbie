@@ -456,6 +456,17 @@ body.cv-export-preview .cv-sheet {
     flex-direction: column;
     gap: 14px;
     justify-items: start;
+} .cv-page-export .atlas-sidebar .atlas-profile-photo,
+.cv-page-export .atlas-sidebar .template-profile-photo.atlas-profile-photo {
+    width: 40mm;
+    height: 40mm;
+    border-radius: 50%;
+    border: none;
+    box-shadow: none;
+} .cv-page-export .atlas-sidebar .atlas-profile-photo.dark,
+.cv-page-export .atlas-sidebar .template-profile-photo.atlas-profile-photo.dark {
+    border: none;
+    box-shadow: none;
 } .cv-page-export .atlas-name {
     margin: 0;
     font-size: 25pt;
@@ -862,4 +873,82 @@ ${pdfLayout}
   }
 }
 `;
+}
+
+/**
+ * Minimal CSS for the direct-print PDF path (no JS packer).
+ * Adds heading break-after, Atlas blue stripe via fixed-attachment background,
+ * and Monochrome/Editorial side-column backgrounds so they appear on every page.
+ */
+export function buildCvDocumentPrintStyles(): string {
+  return (
+    buildCvDocumentStyles('pdf') +
+    `
+/* --- print-direct additions (no packer) --- */
+
+/* Prevent section headings from sitting alone at bottom of a page */
+.cv-page-export h2.section-title {
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+/*
+ * Sidebar full-height on every printed page.
+ * background-attachment:fixed positions a background relative to the page viewport
+ * in Chromium print mode, so it repeats on every printed page automatically.
+ * The sidebar element itself becomes transparent so the page background shows through.
+ * Child elements (e.g. monochrome-header) repaint their own backgrounds on top.
+ */
+@media print {
+  /* ─── Atlas ──────────────────────────────────────────────────────────────── */
+  /* Grid is 40% | 60%. Sidebar = left 40% = 84 mm of A4 210 mm.              */
+  .cv-page-export .atlas-page {
+    background:
+      radial-gradient(circle at top left, rgba(255, 255, 255, 0.22), transparent 34%),
+      linear-gradient(90deg, #17324a 40%, transparent 40%);
+    background-attachment: fixed;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .cv-page-export .atlas-sidebar {
+    background: transparent;
+  }
+
+  /* ─── Monochrome ─────────────────────────────────────────────────────────── */
+  /* Grid is 1.34fr | 0.86fr (total 2.20fr). Side = 0.86/2.20 = 39.09% wide,  */
+  /* starting at 60.91% from the left. A 1-px rgba stripe acts as the divider. */
+  .cv-page-export .monochrome-page {
+    background:
+      linear-gradient(
+        90deg,
+        #ffffff 60.91%,
+        rgba(17, 17, 17, 0.08) 60.91% calc(60.91% + 1px),
+        #f6f6f6 calc(60.91% + 1px)
+      );
+    background-attachment: fixed;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* Side element becomes transparent so the page background shows */
+  .cv-page-export .monochrome-side {
+    background: transparent;
+    border-left: none;
+  }
+  /* Dark header must repaint its own background on page 1 (sits above the grey) */
+  .cv-page-export .monochrome-header {
+    background: #111111;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ─── Shared ─────────────────────────────────────────────────────────────── */
+  .cv-page-export .atlas-page,
+  .cv-page-export .monochrome-page,
+  .cv-page-export .editorial-topbar {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+`
+  )
 }

@@ -6,6 +6,20 @@
       </h3>
       <p class="m-0 font-dmSans text-sm text-black/55">{{ S.passkeySectionHint }}</p>
     </div>
+    <template v-if="passkeyNeedsTotpCode">
+      <p class="font-dmSans text-sm text-black/55">{{ S.passkeyTotpStepHint }}</p>
+      <label class="font-dmSans text-[15px] font-semibold text-black" for="security-passkey-totp">
+        {{ S.passkeyTotpOtpLabel }}
+      </label>
+      <AuthOtpDigitInput
+        id="security-passkey-totp"
+        :model-value="passkeyTotpCode"
+        :disabled="passkeySaving"
+        :aria-label="S.passkeyTotpOtpLabel"
+        @update:model-value="emit('update:passkeyTotpCode', $event)"
+        @complete="emit('add')"
+      />
+    </template>
     <AppButton
       type="button"
       variant="outline"
@@ -13,7 +27,7 @@
       :disabled="passkeySaving || !canUse"
       @click="emit('add')"
     >
-      {{ passkeySaving ? S.loading : S.passkeyAdd }}
+      {{ passkeySaving ? S.loading : passkeyNeedsTotpCode ? S.passkeyConfirmAdd : S.passkeyAdd }}
     </AppButton>
     <p v-if="passkeyMsg" class="text-sm font-medium text-marketing-green">{{ passkeyMsg }}</p>
     <p v-if="passkeyErr" class="text-sm text-red-600" role="alert">{{ passkeyErr }}</p>
@@ -59,10 +73,13 @@ defineProps<{
   passkeyErr: string
   canUse: boolean
   formatDate: (iso: string | null) => string
+  passkeyNeedsTotpCode: boolean
+  passkeyTotpCode: string
 }>()
 
 const emit = defineEmits<{
   add: []
   remove: [factorId: string]
+  'update:passkeyTotpCode': [value: string]
 }>()
 </script>

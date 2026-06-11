@@ -183,7 +183,7 @@ import {
 } from '~/composables/useJobEmailAlertFormModel'
 import { useJobEmailAlerts, type JobEmailAlertDto } from '~/composables/useJobEmailAlerts'
 import LoggedOutFeatureHero from '~/components/marketing/LoggedOutFeatureHero.vue'
-definePageMeta({ layout: 'app' })
+definePageMeta({ layout: 'app', middleware: ['worker-only'] })
 
 usePageSeo(() => ({
   title: 'Ponuky na email',
@@ -206,9 +206,7 @@ const employerGate = computed(() => {
   if (!user.value || authLoading.value) {
     return false
   }
-  const isCompany =
-    profile.value?.role === 'company' || user.value.role === 'company'
-  return isCompany && !profile.value?.worker_role
+  return Boolean(profile.value?.customer_role) && !profile.value?.worker_role
 })
 
 const prefillKeys = [

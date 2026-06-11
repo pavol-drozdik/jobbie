@@ -118,7 +118,81 @@ export function buildJobPostingJsonLd(job: Job, siteUrl: string): JsonLdObject {
   if (jobLocationType) {
     payload.jobLocationType = jobLocationType
   }
+  payload.identifier = {
+    '@type': 'PropertyValue',
+    name: 'jobbie_job_id',
+    value: job.id,
+  }
+  const applyUrl = job.application_url?.trim()
+  if (applyUrl) {
+    payload.directApply = true
+    payload.applicationContact = {
+      '@type': 'ContactPoint',
+      url: applyUrl,
+    }
+  } else {
+    payload.directApply = true
+    payload.applicationContact = {
+      '@type': 'ContactPoint',
+      url: `${siteUrl}${ROUTES.jobDetail(job.id)}`,
+    }
+  }
   return payload
+}
+
+export type CatalogItemListEntry = {
+  id: string
+  title: string
+  urlPath: string
+}
+
+export function buildCatalogItemListJsonLd(
+  items: readonly CatalogItemListEntry[],
+  siteUrl: string,
+  listName: string,
+): JsonLdObject | null {
+  if (!items.length) return null
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: listName,
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.title,
+      url: `${siteUrl}${item.urlPath}`,
+    })),
+  }
+}
+
+export function buildJobCatalogItemListJsonLd(
+  jobs: readonly Pick<Job, 'id' | 'title'>[],
+  siteUrl: string,
+): JsonLdObject | null {
+  return buildCatalogItemListJsonLd(
+    jobs.map((job) => ({
+      id: job.id,
+      title: job.title,
+      urlPath: ROUTES.jobDetail(job.id),
+    })),
+    siteUrl,
+    'Pracovné ponuky',
+  )
+}
+
+export function buildProfessionalAdCatalogItemListJsonLd(
+  ads: readonly { id: string; title: string }[],
+  siteUrl: string,
+): JsonLdObject | null {
+  return buildCatalogItemListJsonLd(
+    ads.map((ad) => ({
+      id: ad.id,
+      title: ad.title,
+      urlPath: ROUTES.professionalDetail(ad.id),
+    })),
+    siteUrl,
+    'Profesionáli',
+  )
 }
 
 export function buildBlogArticleJsonLd(
@@ -167,7 +241,7 @@ export function buildOrganizationJsonLd(input: OrganizationJsonLdInput): JsonLdO
   const contactPoint: JsonLdObject = {
     '@type': 'ContactPoint',
     contactType: 'customer support',
-    email: input.email ?? 'info@jobbie.sk',
+    email: input.email ?? 'ahoj@jobbie.sk',
     availableLanguage: ['sk'],
   }
   if (input.supportPhone?.trim()) {

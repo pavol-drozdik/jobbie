@@ -60,7 +60,7 @@ export function renderAtlasPage(data: CvDocumentExportData): string {
       <aside class="atlas-sidebar">
         <section class="atlas-block" data-cv-unit="atomic">
           <div class="atlas-profile-card">
-            ${renderProfilePhoto(data.profilePhoto, 'dark', initialsFrom(data))}
+            ${renderProfilePhoto(data.profilePhoto, 'dark', initialsFrom(data), 'atlas-profile-photo')}
             <div>
               <div class="eyebrow">Profil</div>
               <h1 class="atlas-name">${nameHtmlForSidebar(data.fullName, data.firstName, data.lastName)}</h1>
@@ -75,16 +75,12 @@ export function renderAtlasPage(data: CvDocumentExportData): string {
       </aside>
       <section class="atlas-main">
         ${summaryBlock}
-        <div>
-          <div>
-            ${renderExperienceSection(data.experiences)}
-            ${renderEducationSection(data.education)}
-          </div>
-          <div class="atlas-grid">
-            ${extraBlock}
-            ${hobbiesBlock}
-            ${extraBlocksHtml}
-          </div>
+        ${renderExperienceSection(data.experiences)}
+        ${renderEducationSection(data.education)}
+        <div class="atlas-grid">
+          ${extraBlock}
+          ${hobbiesBlock}
+          ${extraBlocksHtml}
         </div>
       </section>
     </main>`

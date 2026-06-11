@@ -6,6 +6,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { ChatModule } from '../chat/chat.module';
 import { CvModule } from '../cv/cv.module';
 import { BillingModule } from '../billing/billing.module';
+import { ProfilesModule } from '../profiles/profiles.module';
 import { ApplicationsController } from './applications.controller';
 import { EmployerApplicantsController } from './employer-applicants.controller';
 import { EmployerApplicantsService } from './employer-applicants.service';
@@ -23,6 +24,7 @@ import { EmployerCvDatabaseService } from './employer-cv-database.service';
     ChatModule,
     CvModule,
     BillingModule,
+    ProfilesModule,
   ],
   controllers: [
     ApplicationsController,

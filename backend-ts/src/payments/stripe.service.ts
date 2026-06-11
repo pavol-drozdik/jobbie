@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import { AuditService } from '../audit/audit.service';
 import { CreditsService } from '../billing/credits.service';
+import { SubscriptionTrialService } from '../billing/subscription-trial.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreditPackDto } from './payments.dto';
 import {
@@ -91,6 +92,7 @@ export class StripeService {
     private supabaseService: SupabaseService,
     private audit: AuditService,
     private credits: CreditsService,
+    private subscriptionTrial: SubscriptionTrialService,
   ) {
     const key = this.config.get<string>('STRIPE_SECRET_KEY');
     if (key) {
@@ -112,6 +114,11 @@ export class StripeService {
       throw new ServiceUnavailableException('Stripe not configured');
     }
     return this.stripe;
+  }
+
+  /** For billing account trial eligibility (Stripe customer subscription history). */
+  getStripeClientForTrialChecks(): Stripe {
+    return this.getStripe();
   }
 
   async retrieveSubscription(
@@ -321,9 +328,26 @@ export class StripeService {
   private paymentIntentResponseFromStripe(
     pi: Stripe.PaymentIntent | null,
     clientSecret: string,
-  ): { client_secret: string; amount?: number; currency?: string } {
-    const response: { client_secret: string; amount?: number; currency?: string } = {
+    extras?: {
+      intent_type?: 'payment' | 'setup';
+      trial_period_days?: number;
+    },
+  ): {
+    client_secret: string;
+    amount?: number;
+    currency?: string;
+    intent_type?: 'payment' | 'setup';
+    trial_period_days?: number;
+  } {
+    const response: {
+      client_secret: string;
+      amount?: number;
+      currency?: string;
+      intent_type?: 'payment' | 'setup';
+      trial_period_days?: number;
+    } = {
       client_secret: clientSecret,
+      ...extras,
     };
     if (pi && typeof pi.amount === 'number' && pi.amount >= 1) {
       response.amount = pi.amount;
@@ -332,6 +356,148 @@ export class StripeService {
       response.currency = pi.currency.trim();
     }
     return response;
+  }
+
+  private async applyStripePriceTrialToSubscriptionCreate(
+    params: Stripe.SubscriptionCreateParams,
+    userId: string,
+    stripePriceId: string,
+  ): Promise<number> {
+    const stripe = this.getStripe();
+    const priceTrialDays =
+      await this.subscriptionTrial.getTrialPeriodDaysForPrice(
+        stripe,
+        stripePriceId,
+      );
+    const trialPeriodDays =
+      await this.subscriptionTrial.resolveSubscriptionTrialDays(
+        userId,
+        stripe,
+        stripePriceId,
+      );
+    this.subscriptionTrial.applyTrialToSubscriptionParams(
+      params,
+      trialPeriodDays,
+      {
+        suppressPriceDefaultTrial:
+          priceTrialDays > 0 && trialPeriodDays < 1,
+      },
+    );
+    return trialPeriodDays;
+  }
+
+  private async buildCheckoutSubscriptionData(
+    userId: string,
+    planId: string,
+    stripePriceId: string,
+  ): Promise<Stripe.Checkout.SessionCreateParams.SubscriptionData> {
+    const stripe = this.getStripe();
+    const priceTrialDays =
+      await this.subscriptionTrial.getTrialPeriodDaysForPrice(
+        stripe,
+        stripePriceId,
+      );
+    const trialPeriodDays =
+      await this.subscriptionTrial.resolveSubscriptionTrialDays(
+        userId,
+        stripe,
+        stripePriceId,
+      );
+    const data: Stripe.Checkout.SessionCreateParams.SubscriptionData = {
+      metadata: { user_id: userId, plan_id: planId },
+    };
+    this.subscriptionTrial.applyTrialToCheckoutSubscriptionData(
+      data,
+      trialPeriodDays,
+      {
+        suppressPriceDefaultTrial:
+          priceTrialDays > 0 && trialPeriodDays < 1,
+      },
+    );
+    return data;
+  }
+
+  private async resolveSubscriptionPaymentClientSecret(
+    subscription: Stripe.Subscription,
+  ): Promise<{
+    clientSecret: string;
+    intentType: 'payment' | 'setup';
+    pi: Stripe.PaymentIntent | null;
+  }> {
+    const stripe = this.getStripe();
+    const invoiceRef = subscription.latest_invoice;
+    let invoice: Stripe.Invoice | null = null;
+    if (invoiceRef && typeof invoiceRef === 'object') {
+      invoice = invoiceRef as Stripe.Invoice;
+    } else if (typeof invoiceRef === 'string') {
+      invoice = await stripe.invoices.retrieve(invoiceRef, {
+        expand: ['payment_intent'],
+      });
+    }
+    const piRef = invoice?.payment_intent;
+    if (piRef && typeof piRef === 'object') {
+      const secret = piRef.client_secret?.trim();
+      if (secret) {
+        return { clientSecret: secret, intentType: 'payment', pi: piRef };
+      }
+    }
+    if (typeof piRef === 'string') {
+      const pi = await stripe.paymentIntents.retrieve(piRef);
+      const secret = pi.client_secret?.trim();
+      if (secret) {
+        return { clientSecret: secret, intentType: 'payment', pi };
+      }
+    }
+    const setupRef = subscription.pending_setup_intent;
+    if (setupRef && typeof setupRef === 'object') {
+      const secret = setupRef.client_secret?.trim();
+      if (secret) {
+        return { clientSecret: secret, intentType: 'setup', pi: null };
+      }
+    }
+    if (typeof setupRef === 'string') {
+      const si = await stripe.setupIntents.retrieve(setupRef);
+      const secret = si.client_secret?.trim();
+      if (secret) {
+        return { clientSecret: secret, intentType: 'setup', pi: null };
+      }
+    }
+    throw new ServiceUnavailableException(
+      'Nepodarilo sa vytvoriť platobný formulár predplatného.',
+    );
+  }
+
+  private async upsertUserSubscriptionFromStripeSub(
+    userId: string,
+    planId: string,
+    sub: Stripe.Subscription,
+  ): Promise<void> {
+    const periodEnd = sub.current_period_end
+      ? new Date(sub.current_period_end * 1000).toISOString()
+      : null;
+    const customerId =
+      typeof sub.customer === 'string'
+        ? sub.customer
+        : sub.customer &&
+            typeof sub.customer === 'object' &&
+            'id' in sub.customer
+          ? String((sub.customer as { id: string }).id)
+          : null;
+    await this.supabaseService
+      .getClient()
+      .from('user_subscriptions')
+      .upsert(
+        {
+          user_id: userId,
+          plan_id: planId,
+          status: sub.status ?? 'active',
+          stripe_subscription_id: sub.id,
+          stripe_customer_id: customerId,
+          current_period_end: periodEnd,
+          cancel_at_period_end: sub.cancel_at_period_end ?? false,
+        },
+        { onConflict: 'user_id' },
+      );
   }
 
   /** Keep Stripe Customer + invoice recipient email aligned (Dashboard + receipt emails). */
@@ -685,9 +851,11 @@ export class StripeService {
     client_secret?: string;
   }> {
     const stripe = this.getStripe();
-    const subscriptionData = {
-      metadata: { user_id: userId, plan_id: planId },
-    };
+    const subscriptionData = await this.buildCheckoutSubscriptionData(
+      userId,
+      planId,
+      stripePriceId,
+    );
     if (options.embedded) {
       const returnUrl = options.returnUrl?.trim();
       if (!returnUrl) {
@@ -1097,13 +1265,18 @@ export class StripeService {
       collection_method: 'charge_automatically',
       payment_behavior: 'default_incomplete',
       payment_settings: { save_default_payment_method: 'on_subscription' },
-      expand: ['latest_invoice.payment_intent'],
+      expand: ['latest_invoice.payment_intent', 'pending_setup_intent'],
       metadata: {
         user_id: userId,
         plan_id: planId,
         type: 'subscription',
       },
     };
+    const trialPeriodDays = await this.applyStripePriceTrialToSubscriptionCreate(
+      subscriptionParams,
+      userId,
+      stripePriceId,
+    );
     if (isStripeAutomaticTaxEnabled(this.config)) {
       subscriptionParams.automatic_tax = { enabled: true };
     }
@@ -1128,24 +1301,24 @@ export class StripeService {
       subscription = await stripe.subscriptions.create(retryParams);
     }
 
-    const invoice = subscription.latest_invoice;
-    if (!invoice || typeof invoice === 'string') {
-      throw new ServiceUnavailableException(
-        'Nepodarilo sa vytvoriť platbu predplatného.',
-      );
-    }
-    const piRef = invoice.payment_intent;
-    const pi =
-      piRef && typeof piRef === 'object'
-        ? piRef
-        : typeof piRef === 'string'
-          ? await stripe.paymentIntents.retrieve(piRef)
+    const { clientSecret, intentType, pi } =
+      await this.resolveSubscriptionPaymentClientSecret(subscription);
+    const setupRef = subscription.pending_setup_intent;
+    const setupId =
+      typeof setupRef === 'string'
+        ? setupRef
+        : setupRef && typeof setupRef === 'object' && 'id' in setupRef
+          ? String((setupRef as { id: string }).id)
           : null;
-    const secret = pi?.client_secret?.trim();
-    if (!secret) {
-      throw new ServiceUnavailableException(
-        'Nepodarilo sa vytvoriť platobný formulár predplatného.',
-      );
+    if (setupId) {
+      await stripe.setupIntents.update(setupId, {
+        metadata: {
+          user_id: userId,
+          plan_id: planId,
+          type: 'subscription',
+          stripe_subscription_id: subscription.id,
+        },
+      });
     }
     if (pi?.id) {
       await this.attachInvoicePaymentIntentExtras(pi.id, customerEmail, {
@@ -1155,7 +1328,10 @@ export class StripeService {
         stripe_subscription_id: subscription.id,
       });
     }
-    return this.paymentIntentResponseFromStripe(pi, secret);
+    return this.paymentIntentResponseFromStripe(pi, clientSecret, {
+      intent_type: intentType,
+      trial_period_days: trialPeriodDays > 0 ? trialPeriodDays : undefined,
+    });
   }
 
   async syncSubscriptionFromPaymentIntent(
@@ -1214,32 +1390,57 @@ export class StripeService {
     if (!subscriptionId) {
       return { applied: false, reason: 'no_subscription' };
     }
-    const periodEnd = sub?.current_period_end
-      ? new Date(sub.current_period_end * 1000).toISOString()
-      : null;
-    const customerId = sub
-      ? typeof sub.customer === 'string'
-        ? sub.customer
-        : sub.customer &&
-            typeof sub.customer === 'object' &&
-            'id' in sub.customer
-          ? String((sub.customer as { id: string }).id)
-          : null
-      : null;
-    await this.supabaseService
-      .getClient()
-      .from('user_subscriptions')
-      .upsert(
-        {
-          user_id: userId,
-          plan_id: planId,
-          status: sub?.status ?? 'active',
-          stripe_subscription_id: subscriptionId,
-          stripe_customer_id: customerId,
-          current_period_end: periodEnd,
-        },
-        { onConflict: 'user_id' },
-      );
+    const fullSub =
+      sub ?? (await this.retrieveSubscription(subscriptionId));
+    if (!fullSub) {
+      return { applied: false, reason: 'no_subscription' };
+    }
+    await this.upsertUserSubscriptionFromStripeSub(userId, planId, fullSub);
+    if (fullSub.status === 'trialing') {
+      await this.subscriptionTrial.markSubscriptionTrialUsed(userId);
+    }
+    return { applied: true, reason: 'ok' };
+  }
+
+  async syncSubscriptionFromSetupIntent(
+    setupIntentId: string,
+    options?: { assertUserId?: string },
+  ): Promise<{
+    applied: boolean;
+    reason:
+      | 'ok'
+      | 'not_succeeded'
+      | 'no_subscription'
+      | 'forbidden'
+      | 'missing_metadata';
+  }> {
+    const stripe = this.getStripe();
+    const si = await stripe.setupIntents.retrieve(setupIntentId);
+    if (si.status !== 'succeeded') {
+      return { applied: false, reason: 'not_succeeded' };
+    }
+    const siMeta = (si.metadata ?? {}) as Record<string, string>;
+    const subscriptionId = siMeta.stripe_subscription_id?.trim();
+    if (!subscriptionId) {
+      return { applied: false, reason: 'no_subscription' };
+    }
+    const sub = await this.retrieveSubscription(subscriptionId);
+    if (!sub) {
+      return { applied: false, reason: 'no_subscription' };
+    }
+    const meta = (sub.metadata ?? {}) as Record<string, string>;
+    const userId = meta.user_id?.trim() || siMeta.user_id?.trim();
+    const planId = meta.plan_id?.trim() || siMeta.plan_id?.trim();
+    if (options?.assertUserId && userId !== options.assertUserId) {
+      return { applied: false, reason: 'forbidden' };
+    }
+    if (!userId || !planId) {
+      return { applied: false, reason: 'missing_metadata' };
+    }
+    await this.upsertUserSubscriptionFromStripeSub(userId, planId, sub);
+    if (sub.status === 'trialing') {
+      await this.subscriptionTrial.markSubscriptionTrialUsed(userId);
+    }
     return { applied: true, reason: 'ok' };
   }
 
@@ -2002,6 +2203,16 @@ export class StripeService {
     }
     try {
       const existing = await this.getStripe().subscriptions.retrieve(subId);
+      if (
+        existing.status === 'incomplete' ||
+        existing.status === 'incomplete_expired'
+      ) {
+        return this.cancelIncompleteStripeSubscription(
+          userId,
+          subId,
+          feedback,
+        );
+      }
       if (existing.status === 'canceled') {
         const periodEndIso = existing.current_period_end
           ? new Date(existing.current_period_end * 1000).toISOString()
@@ -2127,6 +2338,38 @@ export class StripeService {
         'Nepodarilo sa zrušiť predplatné. Skúste znova alebo kontaktujte podporu.',
       );
     }
+  }
+
+  /**
+   * Incomplete checkouts cannot use cancel_at_period_end — cancel in Stripe and
+   * clear local paid plan so the user can subscribe again.
+   */
+  private async cancelIncompleteStripeSubscription(
+    userId: string,
+    subId: string,
+    feedback: SubscriptionCancelFeedbackInput,
+  ): Promise<{
+    canceled: boolean;
+    cancel_at_period_end?: boolean;
+    current_period_end?: string | null;
+  }> {
+    try {
+      await this.getStripe().subscriptions.cancel(subId);
+    } catch (err: unknown) {
+      if (!this.isStripeSubscriptionMissing(err)) {
+        throw err;
+      }
+    }
+    await this.downgradeUserSubscriptionToFree(userId);
+    await this.recordSubscriptionCancelFeedback(userId, subId, feedback, {
+      cancel_at_period_end: false,
+      current_period_end: null,
+    });
+    return {
+      canceled: true,
+      cancel_at_period_end: false,
+      current_period_end: null,
+    };
   }
 
   /** Paid plan in DB without Stripe subscription id (dev / webhook drift). */

@@ -199,9 +199,10 @@
 <script setup lang="ts">
 import { setPasswordRecoverySkipProfile } from '~/utils/auth-recovery'
 import {
-  mapSupabaseRecoveryExchangeError,
-  mapSupabaseResetError,
-} from '~/utils/map-supabase-reset-error'
+  bootstrapPasswordRecoverySession,
+  readRecoveryHandoffForBootstrap,
+} from '~/utils/bootstrap-password-recovery-session'
+import { mapSupabaseResetError } from '~/utils/map-supabase-reset-error'
 import { S } from '~/utils/strings'
 import { formFieldLabelClass, formTextInputTrailingIconClass } from '~/utils/form-field-ui'
 
@@ -230,28 +231,13 @@ const success = ref<string | null>(null)
 
 async function bootstrapRecoverySession(): Promise<void> {
   sessionError.value = null
-  let { data: sessionData } = await supabase.auth.getSession()
-
-  if (!sessionData.session?.access_token) {
-    const code = route.query.code
-    const codeStr = Array.isArray(code) ? code[0] : code
-    if (typeof codeStr === 'string' && codeStr.trim()) {
-      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(codeStr)
-      if (exchangeError) {
-        hasRecoverySession.value = false
-        sessionError.value = mapSupabaseRecoveryExchangeError(
-          exchangeError.code,
-          exchangeError.message,
-        )
-        return
-      }
-      sessionData = (await supabase.auth.getSession()).data
-    }
-  }
-
-  hasRecoverySession.value = Boolean(sessionData.session?.access_token)
-  if (!hasRecoverySession.value) {
-    sessionError.value = S.resetPasswordExpired
+  const result = await bootstrapPasswordRecoverySession(
+    supabase,
+    readRecoveryHandoffForBootstrap(route),
+  )
+  hasRecoverySession.value = result.ok
+  if (!result.ok) {
+    sessionError.value = result.error
   }
 }
 

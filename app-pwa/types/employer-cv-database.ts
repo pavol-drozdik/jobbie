@@ -32,6 +32,8 @@ export interface EmployerCvDatabaseListItem {
   contacts_visible: boolean
   contact_email: string | null
   contact_phone: string | null
+  /** Locked CV with contact on file — show unlock CTA. */
+  has_contact_to_unlock: boolean
 }
 
 export interface EmployerCvDatabaseListResponse {
@@ -64,6 +66,8 @@ export interface CvEmployerAggregate {
     visible_to_employers?: boolean
     show_contact_details?: boolean
     contact_unlocked?: boolean
+    contacts_visible?: boolean
+    has_contact_to_unlock?: boolean
     email?: string | null
     phone?: string | null
     linkedin_url?: string | null

@@ -38,7 +38,7 @@ export function readBrandSeoConfigFromRuntime(
     brandName: String(publicConfig.brandName ?? 'JOBBIE').trim() || 'JOBBIE',
     brandAlternateName:
       String(publicConfig.brandAlternateName ?? 'Jobbie').trim() || 'Jobbie',
-    supportEmail: String(publicConfig.supportEmail ?? 'info@jobbie.sk').trim() || 'info@jobbie.sk',
+    supportEmail: String(publicConfig.supportEmail ?? 'ahoj@jobbie.sk').trim() || 'ahoj@jobbie.sk',
     supportPhone: rawPhone && !isPlaceholderPhone(rawPhone) ? rawPhone : null,
     socialInstagramUrl:
       rawInstagram && !isGenericSocialUrl(rawInstagram) ? rawInstagram : null,

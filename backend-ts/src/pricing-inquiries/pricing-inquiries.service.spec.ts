@@ -25,7 +25,7 @@ describe('PricingInquiriesService', () => {
     } as unknown as EmailService;
     const config = {
       get: jest.fn((key: string) =>
-        key === 'PRICING_INQUIRY_TO' ? 'sales@jobbie.sk' : undefined,
+        key === 'PRICING_INQUIRY_TO' ? 'ahoj@jobbie.sk' : undefined,
       ),
     } as unknown as ConfigService;
     const audit = {

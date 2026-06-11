@@ -3,40 +3,25 @@
     class="mt-[72px] flex w-full flex-col items-center bg-marketing-green px-5 pt-[60px] text-center marketing:mt-[120px] marketingXl:mt-[140px]"
   >
     <h2 class="font-dmSans text-[32px] font-extrabold leading-[1.1] text-white marketing:text-[52px] marketing:leading-[1.05] marketingXl:text-[60px] marketingXl:leading-[60px]">
-      Jobbie vždy po ruke
+      {{ S.homeDownloadTitle }}
     </h2>
     <p class="mb-4 pt-[20px] max-w-[900px] font-dmSans text-[17px] font-medium text-white/80 marketing:text-2xl marketingXl:text-[28px]">
       {{ S.homeDownloadLead }}
     </p>
-    <div class="my-4 flex flex-wrap items-center justify-center gap-3">
-      <a
-        href="#"
-        class="inline-flex cursor-pointer items-center justify-center gap-2.5 rounded-full border-none bg-black px-[18px] py-2.5 font-dmSans text-base font-bold text-white no-underline"
-        :aria-label="S.homeDownloadAppStore"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true">
-          <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5c0 26.2 4.8 53.3 14.4 81.2 12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zM262.1 104.5c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
-        </svg>
-        {{ S.homeDownloadAppStore }}
-      </a>
-      <a
-        href="#"
-        class="inline-flex cursor-pointer items-center justify-center gap-2.5 rounded-full border-none bg-black px-[18px] py-2.5 font-dmSans text-base font-bold text-white no-underline"
-        :aria-label="S.homeDownloadGooglePlay"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z" />
-        </svg>
-        {{ S.homeDownloadGooglePlay }}
-      </a>
-    </div>
+    <p
+      class="my-4 inline-flex items-center justify-center rounded-full border border-white/25 bg-white/10 px-5 py-2.5 font-dmSans text-base font-bold text-white marketing:text-lg"
+      role="status"
+    >
+      {{ S.homeDownloadStatus }}
+    </p>
     <img
-      src="/img/heroiphone2.png"
+      src="/img/jobbie-app.webp"
       alt=""
       width="300"
       height="600"
       loading="lazy"
-      class="mt-5 w-full max-w-[280px] marketing:max-w-[300px]"
+      decoding="async"
+      class="mt-5 h-auto w-full max-w-[280px] object-contain marketing:max-w-[300px]"
     >
   </section>
   <section class="mt-[72px] flex w-full flex-col items-center marketing:mt-[120px] marketingXl:mt-[140px]">

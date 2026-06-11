@@ -15,9 +15,6 @@
         {{ S.settingsDashboardDescription }}
       </p>
     </header>
-    <p v-if="dashboardDeniedMessage" class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-      {{ dashboardDeniedMessage }}
-    </p>
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <SettingsDashboardCard
         to="/nastavenia/profil"
@@ -82,18 +79,12 @@
 import { ROUTES } from '~/utils/app-routes'
 import { S } from '~/utils/strings'
 
-definePageMeta({ layout: 'app', middleware: ['auth'] })
-
-const route = useRoute()
-const { user } = useAuth()
-
-const dashboardDeniedMessage = computed(() => {
-  const d = route.query.dashboardDenied
-  if (d === 'customer') return S.dashboardRoleDeniedCustomer
-  if (d === 'provider') return S.dashboardRoleDeniedProvider
-  if (d === 'worker') return S.dashboardRoleDeniedWorker
-  return ''
+definePageMeta({
+  layout: 'app',
+  middleware: ['auth', 'settings-role-denied-redirect'],
 })
+
+const { user } = useAuth()
 
 useHead({ title: () => S.settingsTitle })
 </script>

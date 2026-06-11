@@ -1,6 +1,11 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CV_MONTHLY_QUOTA_EXCEEDED_MESSAGE } from './billing-errors';
+import {
+  resolvePlanSlug,
+  subscriptionPlanSpecBySlug,
+} from './billing.config';
+import { hasPaidPlanAccessFromRow } from './paid-plan-access.service';
 
 export type CvQuotaAction = 'unlock' | 'contact' | 'pdf';
 
@@ -11,17 +16,6 @@ const ACTION_USAGE_COLUMN: Record<
   unlock: 'unlocks_count',
   contact: 'contacts_count',
   pdf: 'pdf_downloads_count',
-};
-
-const ACTION_LIMIT_COLUMN: Record<
-  CvQuotaAction,
-  | 'max_cv_unlocks_monthly'
-  | 'max_cv_contacts_monthly'
-  | 'max_cv_pdf_downloads_monthly'
-> = {
-  unlock: 'max_cv_unlocks_monthly',
-  contact: 'max_cv_contacts_monthly',
-  pdf: 'max_cv_pdf_downloads_monthly',
 };
 
 export type CvQuotaLimits = {
@@ -37,6 +31,16 @@ export type CvQuotaUsage = {
   periodMonth: string;
 };
 
+type PlanCvRow = {
+  slug?: string;
+  max_cv_unlocks_monthly: number | null;
+  max_cv_contacts_monthly: number | null;
+  max_cv_pdf_downloads_monthly: number | null;
+};
+
+const PLAN_CV_SELECT =
+  'slug, max_cv_unlocks_monthly, max_cv_contacts_monthly, max_cv_pdf_downloads_monthly';
+
 @Injectable()
 export class CvDatabaseQuotaService {
   constructor(private readonly supabase: SupabaseService) {}
@@ -49,12 +53,8 @@ export class CvDatabaseQuotaService {
   }
 
   async getLimits(companyUserId: string): Promise<CvQuotaLimits> {
-    const plan = await this.loadPlanRow(companyUserId);
-    return {
-      maxCvUnlocksMonthly: plan?.max_cv_unlocks_monthly ?? null,
-      maxCvContactsMonthly: plan?.max_cv_contacts_monthly ?? null,
-      maxCvPdfDownloadsMonthly: plan?.max_cv_pdf_downloads_monthly ?? null,
-    };
+    const { slug, row } = await this.loadEffectivePlan(companyUserId);
+    return this.cvLimitsFromPlanRow(row, slug);
   }
 
   async getUsage(companyUserId: string): Promise<CvQuotaUsage> {
@@ -89,12 +89,6 @@ export class CvDatabaseQuotaService {
     companyUserId: string,
     cvId: string,
   ): Promise<void> {
-    const plan = await this.loadPlanRow(companyUserId);
-    const limit =
-      (plan?.max_cv_pdf_downloads_monthly as number | null | undefined) ?? null;
-    if (limit === null) {
-      return;
-    }
     const periodMonth = this.currentPeriodMonth();
     const client = this.supabase.getClient();
     const { data: existingAccess } = await client
@@ -107,17 +101,25 @@ export class CvDatabaseQuotaService {
     if (existingAccess) {
       return;
     }
-    const usageCol = ACTION_USAGE_COLUMN.pdf;
-    const { data: usageRow } = await client
-      .from('employer_cv_monthly_usage')
-      .select(usageCol)
-      .eq('company_id', companyUserId)
-      .eq('period_month', periodMonth)
-      .maybeSingle();
-    const current = (usageRow as Record<string, number> | null)?.[usageCol] ?? 0;
-    if (current >= limit) {
-      throw new ForbiddenException(CV_MONTHLY_QUOTA_EXCEEDED_MESSAGE);
+
+    const { slug, row } = await this.loadEffectivePlan(companyUserId);
+    const limits = this.cvLimitsFromPlanRow(row, slug);
+    const limit = limits.maxCvPdfDownloadsMonthly;
+
+    if (limit !== null) {
+      const usageCol = ACTION_USAGE_COLUMN.pdf;
+      const { data: usageRow } = await client
+        .from('employer_cv_monthly_usage')
+        .select(usageCol)
+        .eq('company_id', companyUserId)
+        .eq('period_month', periodMonth)
+        .maybeSingle();
+      const current = (usageRow as Record<string, number> | null)?.[usageCol] ?? 0;
+      if (current >= limit) {
+        throw new ForbiddenException(CV_MONTHLY_QUOTA_EXCEEDED_MESSAGE);
+      }
     }
+
     const { error: insertAccessErr } = await client
       .from('employer_cv_monthly_pdf_access')
       .insert({
@@ -135,39 +137,128 @@ export class CvDatabaseQuotaService {
   }
 
   /**
-   * Consumes one included monthly quota when the plan has a cap; unlimited when limit is null.
+   * Consumes one included monthly quota when the plan has a cap; tracks usage even when unlimited.
    * When the cap is reached, rejects — does not spend credits.
    */
   async consumeIncludedQuota(
     companyUserId: string,
     action: CvQuotaAction,
   ): Promise<void> {
-    const plan = await this.loadPlanRow(companyUserId);
-    const limitCol = ACTION_LIMIT_COLUMN[action];
-    const limit = plan ? (plan[limitCol] as number | null | undefined) ?? null : null;
-
-    if (limit === null) {
-      return;
-    }
-
+    const { slug, row } = await this.loadEffectivePlan(companyUserId);
+    const limits = this.cvLimitsFromPlanRow(row, slug);
+    const limit = this.limitForAction(limits, action);
     const periodMonth = this.currentPeriodMonth();
     const usageCol = ACTION_USAGE_COLUMN[action];
     const client = this.supabase.getClient();
 
-    const { data: usageRow } = await client
-      .from('employer_cv_monthly_usage')
-      .select(usageCol)
-      .eq('company_id', companyUserId)
-      .eq('period_month', periodMonth)
-      .maybeSingle();
+    if (limit !== null) {
+      const { data: usageRow } = await client
+        .from('employer_cv_monthly_usage')
+        .select(usageCol)
+        .eq('company_id', companyUserId)
+        .eq('period_month', periodMonth)
+        .maybeSingle();
 
-    const current = (usageRow as Record<string, number> | null)?.[usageCol] ?? 0;
+      const current = (usageRow as Record<string, number> | null)?.[usageCol] ?? 0;
 
-    if (current >= limit) {
-      throw new ForbiddenException(CV_MONTHLY_QUOTA_EXCEEDED_MESSAGE);
+      if (current >= limit) {
+        throw new ForbiddenException(CV_MONTHLY_QUOTA_EXCEEDED_MESSAGE);
+      }
     }
 
     await this.incrementUsage(companyUserId, periodMonth, action);
+  }
+
+  private limitForAction(
+    limits: CvQuotaLimits,
+    action: CvQuotaAction,
+  ): number | null {
+    switch (action) {
+      case 'unlock':
+        return limits.maxCvUnlocksMonthly;
+      case 'contact':
+        return limits.maxCvContactsMonthly;
+      case 'pdf':
+        return limits.maxCvPdfDownloadsMonthly;
+      default:
+        return null;
+    }
+  }
+
+  private cvLimitsFromPlanRow(
+    row: PlanCvRow | null,
+    slug: string,
+  ): CvQuotaLimits {
+    const resolvedSlug = resolvePlanSlug(slug);
+    if (resolvedSlug === 'agentura') {
+      return {
+        maxCvUnlocksMonthly: null,
+        maxCvContactsMonthly: null,
+        maxCvPdfDownloadsMonthly: null,
+      };
+    }
+    const spec = subscriptionPlanSpecBySlug(resolvedSlug);
+    return {
+      maxCvUnlocksMonthly:
+        row?.max_cv_unlocks_monthly ?? spec?.maxCvUnlocksMonthly ?? null,
+      maxCvContactsMonthly:
+        row?.max_cv_contacts_monthly ?? spec?.maxCvContactsMonthly ?? null,
+      maxCvPdfDownloadsMonthly:
+        row?.max_cv_pdf_downloads_monthly ?? spec?.maxCvPdfDownloadsMonthly ?? null,
+    };
+  }
+
+  private async loadZadarmoPlanRow(): Promise<PlanCvRow | null> {
+    const client = this.supabase.getClient();
+    const { data: freePlan } = await client
+      .from('subscription_plans')
+      .select(PLAN_CV_SELECT)
+      .eq('slug', 'zadarmo')
+      .single();
+    return (freePlan as PlanCvRow | null) ?? null;
+  }
+
+  private async loadEffectivePlan(
+    companyUserId: string,
+  ): Promise<{ slug: string; row: PlanCvRow | null }> {
+    const client = this.supabase.getClient();
+    const { data: sub } = await client
+      .from('user_subscriptions')
+      .select('plan_id, status, cancel_at_period_end, current_period_end')
+      .eq('user_id', companyUserId)
+      .maybeSingle();
+
+    const subRow = sub as {
+      plan_id?: string;
+      status?: string;
+      cancel_at_period_end?: boolean;
+      current_period_end?: string | null;
+    } | null;
+
+    if (subRow?.plan_id) {
+      const { data: plan } = await client
+        .from('subscription_plans')
+        .select(PLAN_CV_SELECT)
+        .eq('id', subRow.plan_id)
+        .maybeSingle();
+
+      const slug = resolvePlanSlug(
+        (plan as { slug?: string } | null)?.slug ?? 'zadarmo',
+      );
+      const hasPaidAccess = hasPaidPlanAccessFromRow(
+        slug,
+        subRow.status ?? '',
+        Boolean(subRow.cancel_at_period_end),
+        subRow.current_period_end ?? null,
+      );
+
+      if (hasPaidAccess && plan) {
+        return { slug, row: plan as PlanCvRow };
+      }
+    }
+
+    const row = await this.loadZadarmoPlanRow();
+    return { slug: 'zadarmo', row };
   }
 
   private async incrementUsage(
@@ -204,62 +295,5 @@ export class CvDatabaseQuotaService {
       .update({ [col]: next })
       .eq('company_id', companyUserId)
       .eq('period_month', periodMonth);
-  }
-
-  private async loadPlanRow(companyUserId: string): Promise<{
-    max_cv_unlocks_monthly: number | null;
-    max_cv_contacts_monthly: number | null;
-    max_cv_pdf_downloads_monthly: number | null;
-  } | null> {
-    const client = this.supabase.getClient();
-    const { data: sub } = await client
-      .from('user_subscriptions')
-      .select('plan_id')
-      .eq('user_id', companyUserId)
-      .maybeSingle();
-
-    let planId = (sub as { plan_id?: string } | null)?.plan_id;
-    if (!planId) {
-      const { data: freePlan } = await client
-        .from('subscription_plans')
-        .select(
-          'max_cv_unlocks_monthly, max_cv_contacts_monthly, max_cv_pdf_downloads_monthly',
-        )
-        .eq('slug', 'zadarmo')
-        .single();
-      return freePlan as {
-        max_cv_unlocks_monthly: number | null;
-        max_cv_contacts_monthly: number | null;
-        max_cv_pdf_downloads_monthly: number | null;
-      } | null;
-    }
-
-    const { data: plan } = await client
-      .from('subscription_plans')
-      .select(
-        'max_cv_unlocks_monthly, max_cv_contacts_monthly, max_cv_pdf_downloads_monthly, slug',
-      )
-      .eq('id', planId)
-      .single();
-
-    const p = plan as {
-      slug?: string;
-      max_cv_unlocks_monthly: number | null;
-      max_cv_contacts_monthly: number | null;
-      max_cv_pdf_downloads_monthly: number | null;
-    } | null;
-
-    if (!p) return null;
-
-    // Legacy agentura tier: treat as unlimited included (no monthly cap).
-    if (p.slug === 'agentura') {
-      return {
-        max_cv_unlocks_monthly: null,
-        max_cv_contacts_monthly: null,
-        max_cv_pdf_downloads_monthly: null,
-      };
-    }
-
-    return p;
   }
 }

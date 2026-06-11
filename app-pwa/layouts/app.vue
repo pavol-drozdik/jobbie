@@ -12,14 +12,8 @@
         <div class="relative flex h-full w-full items-center gap-2 marketing:gap-3">
           <AppBrandLogo
             :link-to="ROUTES.home"
-            variant="mark"
-            root-class="relative z-10 ml-[10px] min-[400px]:hidden"
-            image-class="h-8 w-auto rounded-[10px]"
-          />
-          <AppBrandLogo
-            :link-to="ROUTES.home"
             variant="full"
-            root-class="relative z-10 ml-[10px] hidden min-[400px]:inline-flex"
+            root-class="relative z-10 ml-[10px]"
             image-class="h-8 w-auto max-w-[min(100%,11rem)]"
           />
           <nav
@@ -315,9 +309,13 @@
 </template>
 
 <script setup lang="ts">
+import {
+  APP_NAV_SINGLES,
+  filterAppNavGroups,
+  type AppNavItem,
+} from '~/utils/app-nav'
 import { ROUTES } from '~/utils/app-routes'
 import { S } from '~/utils/strings'
-import type { AppIconName } from '~/utils/app-icons'
 
 const route = useRoute()
 
@@ -327,6 +325,16 @@ const layoutMainFlushTop = computed(() => route.meta.layoutMainFlushTop === true
 const { user, profile, loading: authLoading } = useAuth()
 
 const showGuestAuth = computed(() => !authLoading.value && !user.value)
+
+const authReady = computed(() => !authLoading.value)
+
+const navGroups = computed(() =>
+  filterAppNavGroups({
+    user: user.value,
+    profile: profile.value,
+    authReady: authReady.value,
+  }),
+)
 
 const mobileNavOpen = ref(false)
 
@@ -434,137 +442,27 @@ const registerTo = computed(() => ({
   query: authReturnQuery.value,
 }))
 
-type NavItem = {
-  to?: string
-  path?: string
-  label: string
-  icon: AppIconName
-  description?: string
-  placeholder?: boolean
-  home?: boolean
-}
-
-type NavGroup = {
-  id: string
-  label: string
-  items: NavItem[]
-}
-
-const navGroups: NavGroup[] = [
-  {
-    id: 'jobseekers',
-    label: 'Pre uchádzačov o prácu',
-    items: [
-      {
-        to: ROUTES.find,
-        path: ROUTES.find,
-        label: 'Pozri ponuky',
-        icon: 'briefcase',
-        description: 'Prezri si aktuálne pracovné ponuky od overených zamestnávateľov.',
-      },
-      {
-        to: ROUTES.foreignFind,
-        path: ROUTES.foreignFind,
-        label: 'Zahraničné ponuky',
-        icon: 'map-pin',
-        description: 'Pracovné ponuky v zahraničí — turnusová práca a ďalšie úväzky.',
-      },
-      {
-        to: ROUTES.cvHub,
-        path: ROUTES.cvHub,
-        label: S.navCvBuilderTitle,
-        icon: 'file-lines',
-        description: S.navCvBuilderDescription,
-      },
-      {
-        to: '/ponuky-na-email',
-        path: '/ponuky-na-email',
-        label: S.jobEmailAlertsPageTitle,
-        icon: 'bell',
-        description: S.jobAlertsNavMenuDescription,
-      },
-    ],
-  },
-  {
-    id: 'employers',
-    label: 'Pre zamestnávateľov',
-    items: [
-      {
-        to: ROUTES.jobHub,
-        path: ROUTES.jobHub,
-        label: 'Vytvor pracovnú ponuku',
-        icon: 'plus',
-        description: 'Pridaj pracovnú ponuku a oslov vhodných kandidátov.',
-      },
-      {
-        to: ROUTES.foreignJobHub,
-        path: ROUTES.foreignJobHub,
-        label: 'Zahraničná ponuka',
-        icon: 'plus',
-        description: 'Vytvor a spravuj zahraničné pracovné ponuky.',
-      },
-      {
-        to: ROUTES.applicants,
-        path: ROUTES.applicants,
-        label: 'Spravuj uchádzačov',
-        icon: 'users',
-        description: 'Prezeraj, filtruj a spravuj uchádzačov o tvoje pracovné pozície.',
-      },
-      {
-        to: '/databaza-zivotopisov',
-        path: '/databaza-zivotopisov',
-        label: S.navCvDatabaseTitle,
-        icon: 'id-card',
-        description: S.navCvDatabaseDescription,
-      },
-    ],
-  },
-  {
-    id: 'professionals',
-    label: 'Profesionáli',
-    items: [
-      {
-        to: ROUTES.professionalsCatalog,
-        path: ROUTES.professionalsCatalog,
-        label: 'Nájsť profesionála',
-        icon: 'search',
-        description: 'Nájdi firmu alebo odborníka na služby vo svojom okolí.',
-      },
-      {
-        to: ROUTES.myAds,
-        path: ROUTES.myAds,
-        label: S.firmyNavMyAds,
-        icon: 'plus',
-        description: 'Vytvor reklamu pre svoju firmu alebo ponúkanú službu.',
-      },
-    ],
-  },
-]
-
-const navSingles: NavItem[] = [
-  { to: '/cennik', path: '/cennik', label: 'Cenník', icon: 'currency' },
-  { to: '/blog', path: '/blog', label: 'Blog', icon: 'bookmark' },
-]
+const navSingles = APP_NAV_SINGLES
 
 const desktopOpenGroupId = ref<string | null>(null)
 const mobileOpenGroups = ref<Record<string, boolean>>({})
 let desktopCloseTimer: ReturnType<typeof setTimeout> | null = null
 
-const navItemMessages: NavItem = {
+const navItemMessages: AppNavItem = {
   to: ROUTES.chat,
   path: ROUTES.chat,
   label: S.navSpravy,
   icon: 'chat',
 }
 
-const navItemProfile: NavItem = {
+const navItemProfile: AppNavItem = {
   to: ROUTES.profile,
   path: ROUTES.profile,
   label: S.navProfil,
   icon: 'user',
 }
 
-function itemActive(item: NavItem): boolean {
+function itemActive(item: AppNavItem): boolean {
   if (!item.path) {
     return false
   }

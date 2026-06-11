@@ -9,6 +9,7 @@ import { DataExportModule } from '../data-export/data-export.module';
 import { SkRpoLookupService } from '../registry/sk-rpo-lookup.service';
 import { ChatModule } from '../chat/chat.module';
 import { ProfileOpenChatService } from './profile-open-chat.service';
+import { ProfileActivityAuthorizationService } from './profile-activity-authorization.service';
 
 @Module({
   imports: [
@@ -21,6 +22,11 @@ import { ProfileOpenChatService } from './profile-open-chat.service';
     ChatModule,
   ],
   controllers: [ProfilesController],
-  providers: [SkRpoLookupService, ProfileOpenChatService],
+  providers: [
+    SkRpoLookupService,
+    ProfileOpenChatService,
+    ProfileActivityAuthorizationService,
+  ],
+  exports: [ProfileActivityAuthorizationService],
 })
 export class ProfilesModule {}

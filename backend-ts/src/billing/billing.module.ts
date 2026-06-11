@@ -1,4 +1,5 @@
 import { Module, forwardRef } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 
 import { AuditModule } from '../audit/audit.module';
 
@@ -20,13 +21,20 @@ import { PaidPlanAccessService } from './paid-plan-access.service';
 
 import { ListingTopPromotionService } from './listing-top-promotion.service';
 
+import { SubscriptionTrialService } from './subscription-trial.service';
+
 import { CreditExpirationCron } from './credit-expiration.cron';
 
 
 
 @Module({
 
-  imports: [AuditModule, AuthModule, forwardRef(() => PaymentsModule)],
+  imports: [
+    ConfigModule,
+    AuditModule,
+    AuthModule,
+    forwardRef(() => PaymentsModule),
+  ],
 
   controllers: [BillingController],
 
@@ -43,6 +51,8 @@ import { CreditExpirationCron } from './credit-expiration.cron';
     BillingCatalogService,
 
     CvDatabaseQuotaService,
+
+    SubscriptionTrialService,
 
     CreditExpirationCron,
 
@@ -61,6 +71,8 @@ import { CreditExpirationCron } from './credit-expiration.cron';
     BillingCatalogService,
 
     CvDatabaseQuotaService,
+
+    SubscriptionTrialService,
 
   ],
 

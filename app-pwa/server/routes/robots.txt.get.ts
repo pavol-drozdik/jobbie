@@ -14,7 +14,9 @@ export default defineEventHandler((event) => {
   }
   const siteUrl = String(config.public.siteUrl || '').replace(/\/+$/, '')
   const sitemapLine = siteUrl ? `Sitemap: ${siteUrl}/sitemap.xml` : 'Sitemap: /sitemap.xml'
+  const llmsLine = siteUrl ? `# LLMs: ${siteUrl}/llms.txt` : '# LLMs: /llms.txt'
   return [
+    llmsLine,
     'User-agent: *',
     'Allow: /',
     'Disallow: /auth/',

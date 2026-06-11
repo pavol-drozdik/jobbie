@@ -4,8 +4,6 @@
       <div class="mx-auto box-border w-full min-w-0 max-w-full overflow-visible px-3.5 pb-16 pt-[30px] marketing:pb-20 sm:px-5">
         <AppDetailPageSkeleton v-if="loading" />
         <template v-else-if="job">
-          <AppBreadcrumbs :items="jobBreadcrumbs" class="mb-4" />
-          <PublicContentAeoSummary :facts="aeoFacts" heading="Súhrn ponuky" />
           <div
             v-if="showInactiveListingBanner"
             class="mb-4 rounded-[14px] border border-amber-200/90 bg-amber-50 px-4 py-3 text-[15px] font-medium leading-snug text-amber-950"
@@ -560,7 +558,7 @@ const applicationDeadlineFormatted = computed(() => {
   })
 })
 
-const { breadcrumbs: jobBreadcrumbs, aeoFacts } = useJobDetailSeo(job, {
+useJobDetailSeo(job, {
   fallbackTitle: S.jobOffers,
 })
 

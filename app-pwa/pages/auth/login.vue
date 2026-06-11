@@ -26,12 +26,89 @@
       <div
         class="flex flex-1 flex-col justify-center bg-white px-7 py-10 min-[701px]:px-14 min-[701px]:py-[52px]"
       >
-        <h1 class="m-0 text-4xl font-extrabold leading-[1.1] text-black">
+        <template v-if="forgotPasswordStep === 'sent'">
+          <h1 class="m-0 text-4xl font-extrabold leading-[1.1] text-black">
+            Skontrolujte <span class="text-marketing-green">e-mail</span>
+          </h1>
+          <p class="mb-9 mt-2 text-[17px] font-normal leading-normal text-black/55">
+            {{ S.forgotPasswordSentMessage }}
+          </p>
+          <a
+            v-if="forgotWebmailUrl"
+            :href="forgotWebmailUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="mb-4 inline-flex h-14 w-full items-center justify-center rounded-full bg-marketing-green text-lg font-bold text-white no-underline transition-opacity duration-200 hover:opacity-[0.88]"
+          >
+            {{ S.forgotPasswordOpenMailbox }}
+          </a>
+          <button
+            type="button"
+            class="h-14 w-full cursor-pointer rounded-full border-[1.5px] border-black/12 bg-white text-lg font-semibold text-black transition-[background-color,border-color] duration-150 hover:border-black/20 hover:bg-marketing-soft"
+            @click="returnToLoginForm"
+          >
+            {{ S.forgotPasswordBackToLogin }}
+          </button>
+        </template>
+
+        <template v-else-if="forgotPasswordStep === 'email'">
+          <h1 class="m-0 text-4xl font-extrabold leading-[1.1] text-black">
+            {{ S.forgotPasswordTitle }}
+            <span class="text-marketing-green">{{ S.forgotPasswordTitleAccent }}</span>
+          </h1>
+          <p class="mb-9 mt-2 text-[17px] font-normal leading-normal text-black/55">
+            {{ S.forgotPasswordSubtitle }}
+          </p>
+
+          <p v-if="error" class="mb-4 text-sm text-red-600" role="alert">{{ error }}</p>
+
+          <form class="contents" @submit.prevent="submitForgotPasswordEmail">
+            <div class="mb-7 flex flex-col gap-1.5">
+              <label :class="fieldLabelClass" for="forgot-email">E-mail</label>
+              <div class="relative flex items-center">
+                <input
+                  id="forgot-email"
+                  v-model="email"
+                  type="email"
+                  autocomplete="username"
+                  placeholder="jan.novak@email.sk"
+                  :class="inputWithIconClass"
+                  :disabled="forgotLoading"
+                >
+                <span class="pointer-events-none absolute right-[18px] text-black/30" aria-hidden="true">
+                  <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+                    />
+                  </svg>
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              class="mb-4 h-14 w-full cursor-pointer rounded-full border-none bg-marketing-green text-lg font-bold text-white transition-opacity duration-200 hover:opacity-[0.88] disabled:cursor-not-allowed disabled:opacity-50"
+              :disabled="forgotLoading"
+            >
+              {{ forgotLoading ? S.forgotPasswordSubmitting : S.forgotPasswordSubmit }}
+            </button>
+          </form>
+
+          <button
+            type="button"
+            class="border-none bg-transparent p-0 text-base font-semibold text-marketing-green transition-opacity duration-150 hover:opacity-75"
+            @click="returnToLoginForm"
+          >
+            {{ S.forgotPasswordBackToLogin }}
+          </button>
+        </template>
+
+        <template v-else>
+        <h1 class="mb-9 mt-0 text-4xl font-extrabold leading-[1.1] text-black">
           Vitaj <span class="text-marketing-green">späť</span>
         </h1>
-        <p class="mb-9 mt-2 text-[17px] font-normal leading-normal text-black/55">
-          Zadaj svoj e-mail a heslo aby si sa prihlásil do svojho účtu.
-        </p>
 
         <p v-if="error" class="mb-4 text-sm text-red-600" role="alert">{{ error }}</p>
         <p v-if="infoMessage" class="mb-4 text-sm text-black/60" role="status">{{ infoMessage }}</p>
@@ -40,7 +117,7 @@
           <div :key="turnstileKey" ref="turnstileContainer" class="min-h-[65px] w-full" />
         </div>
 
-        <form class="contents" @submit.prevent="handlePasswordLogin">
+        <form class="contents" @submit.prevent="handleLoginSubmit">
           <div class="mb-5 flex flex-col gap-1.5">
             <label :class="fieldLabelClass" for="login-email">E-mail</label>
             <div class="relative flex items-center">
@@ -48,7 +125,7 @@
                 id="login-email"
                 v-model="email"
                 type="email"
-                autocomplete="email"
+                autocomplete="username webauthn"
                 placeholder="jan.novak@email.sk"
                 :class="inputWithIconClass"
                 :disabled="loading || oauthLoading"
@@ -204,6 +281,7 @@
             Registruj sa
           </NuxtLink>
         </p>
+        </template>
       </div>
     </div>
   </div>
@@ -216,11 +294,11 @@ import {
   isAuthRecoveryInUrl,
   AUTH_LOGIN_BOOTSTRAP_KEY,
   setAuthLoginBootstrap,
+  resolveAuthRedirectOrigin,
 } from '~/utils/auth-recovery'
-import { isApiUnreachableStatus } from '~/utils/api-fetch'
+import { mapSupabaseForgotPasswordError } from '~/utils/map-supabase-forgot-password-error'
 import { mapSupabaseLoginError } from '~/utils/map-supabase-login-error'
-import { ROUTES } from '~/utils/app-routes'
-import { resolveSafeInternalPath } from '~/utils/safe-navigation'
+import { resolveWebmailUrl } from '~/utils/email-webmail-url'
 import { S } from '~/utils/strings'
 import { formFieldLabelClass, formTextInputTrailingIconClass } from '~/utils/form-field-ui'
 
@@ -230,6 +308,8 @@ import {
   readAuthRememberMePreference,
   setAuthRememberMePreference,
 } from '~/utils/supabase-auth-storage'
+import { ROUTES } from '~/utils/app-routes'
+import { resolveSafeInternalPath } from '~/utils/safe-navigation'
 import { waitForAuthReady } from '~/utils/wait-for-auth'
 
 definePageMeta({ layout: 'app' })
@@ -238,15 +318,20 @@ const route = useRoute()
 const config = useRuntimeConfig().public
 const supabase = useSupabase()
 const { syncSession, session, user, signOut } = useAuth()
+const { finishAuthAfterSignIn } = usePasskeySignInFlow()
+const { startConditionalPasskeySignIn, abortConditionalPasskeySignIn } =
+  usePasskeyConditionalSignIn()
 const api = useApi()
 
-const GENERIC_RESET_MESSAGE =
-  'Ak existuje účet s touto adresou, odošleme odkaz na obnovenie hesla.'
+type ForgotPasswordStep = 'login' | 'email' | 'sent'
+
 const LOCKOUT_ERROR =
   'Príliš veľa neúspešných pokusov. Skúste znova neskôr.'
 
 const email = ref('')
 const password = ref('')
+const forgotPasswordStep = ref<ForgotPasswordStep>('login')
+const forgotEmailForWebmail = ref('')
 const loading = ref(false)
 const oauthLoading = ref(false)
 const forgotLoading = ref(false)
@@ -265,9 +350,11 @@ const captchaRequired = ref(false)
 const loginFailedOnce = ref(false)
 const showTurnstile = computed(
   () =>
+    forgotPasswordStep.value === 'login' &&
     Boolean(turnstileSiteKey.value) &&
     (captchaRequired.value || loginFailedOnce.value),
 )
+const forgotWebmailUrl = computed(() => resolveWebmailUrl(forgotEmailForWebmail.value))
 
 declare global {
   interface Window {
@@ -308,7 +395,7 @@ function mountTurnstile(): void {
 function getPostLoginPath(): string {
   const raw = route.query.redirect
   const s = Array.isArray(raw) ? raw[0] : raw
-  return resolveSafeInternalPath(s, ROUTES.home)
+  return resolveSafeInternalPath(typeof s === 'string' ? s : undefined, ROUTES.home)
 }
 
 async function recordLoginAttempt(success: boolean): Promise<boolean> {
@@ -333,14 +420,45 @@ async function recordLoginAttempt(success: boolean): Promise<boolean> {
   return false
 }
 
-async function handlePasswordLogin(): Promise<void> {
+function beginConditionalPasskeyAutofill(): void {
+  if (forgotPasswordStep.value !== 'login') return
+  startConditionalPasskeySignIn({
+    redirectPath: getPostLoginPath(),
+    getRememberMe: () => rememberMe.value,
+    onError: (msg) => {
+      error.value = msg
+      loading.value = false
+    },
+    onSigningIn: () => {
+      loading.value = true
+      error.value = null
+    },
+  })
+}
+
+async function handleLoginSubmit(): Promise<void> {
+  abortConditionalPasskeySignIn()
   infoMessage.value = null
+  error.value = null
+  setAuthLoginBootstrap(true)
+  loading.value = true
+  try {
+    await runPasswordLogin()
+  } catch (err) {
+    console.error('[login] unexpected error', err)
+    error.value = S.loginPostAuthFailed
+    setAuthLoginBootstrap(false)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function runPasswordLogin(): Promise<void> {
   if (!email.value.trim() || !password.value) {
     error.value = 'Vyplňte email a heslo.'
+    setAuthLoginBootstrap(false)
     return
   }
-  loading.value = true
-  error.value = null
   try {
     if (showTurnstile.value && !captchaToken.value.trim()) {
       error.value = 'Potvrďte, že nie ste robot (Turnstile).'
@@ -402,62 +520,23 @@ async function handlePasswordLogin(): Promise<void> {
       error.value = mapSupabaseLoginError(e.code)
       return
     }
-    const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
-    if (
-      aalData?.nextLevel === 'aal2' &&
-      aalData.currentLevel !== 'aal2'
-    ) {
-      await navigateTo({
-        path: '/auth/mfa',
-        query: { redirect: getPostLoginPath() },
-      })
-      return
-    }
     if (!signInData.session?.access_token || !signInData.session.refresh_token) {
       error.value = S.loginPostAuthFailed
       return
     }
-    const loaded = await syncSession({
-      loginBootstrap: true,
-      supabaseSession: signInData.session,
-    })
-    if (!loaded || !user.value) {
-      const { api, getApiBaseUrl } = useApi()
-      const probe = await api('/api/auth/me', {
-        token: signInData.session.access_token,
-        skipSessionExpiry: true,
-      })
-      error.value =
-        isApiUnreachableStatus(probe.status)
-          ? S.loginApiUnreachable
-          : S.loginPostAuthFailed
-      if (import.meta.dev) {
-        console.warn('[login] post-auth bootstrap failed', {
-          loaded,
-          hasUser: Boolean(user.value),
-          authMeStatus: probe.status,
-          apiBase: getApiBaseUrl(),
-        })
-      }
-      setAuthLoginBootstrap(false)
-      return
+    const flow = await finishAuthAfterSignIn(signInData.session, getPostLoginPath())
+    if (flow.error) {
+      error.value = flow.error
     }
-    const target = getPostLoginPath()
-    const nav = await navigateTo(target, { replace: true })
-    if (nav === false && import.meta.client) {
-      window.location.assign(target)
-    }
-    setAuthLoginBootstrap(false)
   } catch (err) {
-    console.error('[login] unexpected error', err)
+    console.error('[login] password login error', err)
     error.value = S.loginPostAuthFailed
     setAuthLoginBootstrap(false)
-  } finally {
-    loading.value = false
   }
 }
 
 async function oauthGoogle(): Promise<void> {
+  abortConditionalPasskeySignIn()
   infoMessage.value = null
   error.value = null
   oauthLoading.value = true
@@ -478,31 +557,89 @@ async function oauthGoogle(): Promise<void> {
   }
 }
 
-async function handleForgotPassword(): Promise<void> {
+async function sendForgotPasswordEmail(em: string): Promise<void> {
+  error.value = null
   infoMessage.value = null
+  forgotLoading.value = true
+  let supabaseError: { code?: string; message?: string } | null = null
+  try {
+    const origin = resolveAuthRedirectOrigin(String(config.siteUrl || ''))
+    if (!origin) {
+      supabaseError = { code: 'validation_failed', message: 'redirect origin missing' }
+    } else {
+      const redirectTo = `${origin}${AUTH_RESET_PASSWORD_PATH}`
+      const { error: e } = await supabase.auth.resetPasswordForEmail(em, { redirectTo })
+      supabaseError = e
+    }
+  } catch (err) {
+    if (import.meta.dev) {
+      console.warn('[forgot-password] unexpected error', err)
+    }
+    supabaseError = { code: 'unexpected_failure' }
+  } finally {
+    forgotLoading.value = false
+  }
+
+  const mapped = mapSupabaseForgotPasswordError(
+    supabaseError?.code,
+    supabaseError?.message,
+  )
+  if (mapped) {
+    error.value = mapped
+    return
+  }
+
+  if (supabaseError && import.meta.dev) {
+    console.warn('[forgot-password] Supabase error (generic success shown)', supabaseError)
+  }
+
+  forgotEmailForWebmail.value = em
+  forgotPasswordStep.value = 'sent'
+}
+
+function returnToLoginForm(): void {
+  forgotPasswordStep.value = 'login'
+  error.value = null
+  infoMessage.value = null
+  nextTick(() => beginConditionalPasskeyAutofill())
+}
+
+async function submitForgotPasswordEmail(): Promise<void> {
+  abortConditionalPasskeySignIn()
   const em = email.value.trim()
   if (!em) {
     error.value = 'Zadajte email pre obnovenie hesla.'
     return
   }
+  await sendForgotPasswordEmail(em)
+}
+
+async function handleForgotPassword(): Promise<void> {
+  abortConditionalPasskeySignIn()
+  infoMessage.value = null
   error.value = null
-  forgotLoading.value = true
-  try {
-    const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    const redirectTo = `${origin}${AUTH_RESET_PASSWORD_PATH}`
-    await supabase.auth.resetPasswordForEmail(em, { redirectTo })
-    infoMessage.value = GENERIC_RESET_MESSAGE
-  } catch {
-    infoMessage.value = GENERIC_RESET_MESSAGE
-  } finally {
-    forgotLoading.value = false
+  const em = email.value.trim()
+  if (!em) {
+    forgotPasswordStep.value = 'email'
+    return
   }
+  await sendForgotPasswordEmail(em)
 }
 
 watch(showTurnstile, (visible) => {
   if (visible) {
     nextTick(() => mountTurnstile())
   }
+})
+
+watch(forgotPasswordStep, (step) => {
+  if (step !== 'login') {
+    abortConditionalPasskeySignIn()
+  }
+})
+
+onBeforeUnmount(() => {
+  abortConditionalPasskeySignIn()
 })
 
 onMounted(async () => {
@@ -514,6 +651,17 @@ onMounted(async () => {
   if (reason === 'session_expired') {
     infoMessage.value = S.sessionExpiredMessage
   }
+  if (reason === 'auth_callback_failed') {
+    const errRaw = route.query.error
+    const err = Array.isArray(errRaw) ? errRaw[0] : errRaw
+    error.value =
+      typeof err === 'string' && err.trim() ? err.trim() : S.loginPostAuthFailed
+  }
+  const passkeyErrRaw = route.query.passkey_err
+  const passkeyErr = Array.isArray(passkeyErrRaw) ? passkeyErrRaw[0] : passkeyErrRaw
+  if (typeof passkeyErr === 'string' && passkeyErr.trim()) {
+    error.value = passkeyErr.trim()
+  }
   await waitForAuthReady()
   if (isAuthRecoveryInUrl(route) && session.value?.access_token) {
     await navigateTo(AUTH_RESET_PASSWORD_PATH, { replace: true })
@@ -523,14 +671,27 @@ onMounted(async () => {
     await navigateTo(getPostLoginPath(), { replace: true })
     return
   }
-  // Stale Supabase JWT without a Nest user — skip during active login submit (bootstrap).
-  if (
-    session.value?.access_token &&
-    !user.value &&
-    !isAuthRecoveryInUrl(route) &&
-    !useState(AUTH_LOGIN_BOOTSTRAP_KEY, () => false).value
-  ) {
-    await signOut()
+  // Passkey / OAuth may leave a Supabase session before BFF bootstrap — finish login instead of signing out.
+  if (session.value?.access_token && !user.value && !isAuthRecoveryInUrl(route)) {
+    const { data: s } = await supabase.auth.getSession()
+    const supaSession = s.session
+    if (supaSession?.access_token && supaSession.refresh_token) {
+      setAuthLoginBootstrap(true)
+      const ok = await syncSession({
+        loginBootstrap: true,
+        supabaseSession: supaSession,
+      })
+      setAuthLoginBootstrap(false)
+      if (ok && user.value) {
+        await navigateTo(getPostLoginPath(), { replace: true })
+        return
+      }
+      error.value = S.loginPostAuthFailed
+    }
+    if (!useState(AUTH_LOGIN_BOOTSTRAP_KEY, () => false).value) {
+      await signOut()
+    }
   }
+  beginConditionalPasskeyAutofill()
 })
 </script>

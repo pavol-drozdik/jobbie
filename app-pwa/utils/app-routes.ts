@@ -1,3 +1,5 @@
+import type { SettingsProfilDeniedKey } from '~/utils/dashboard-role-denied'
+
 /**
  * Canonical PWA paths (marketing slugs). Use these instead of hardcoded `/app/*` strings.
  */
@@ -38,24 +40,14 @@ export const ROUTES = {
   chat: '/chat',
   chatRoom: (roomId: string) => `/chat/${roomId}`,
   pricing: '/cennik',
+  settingsProfil: '/nastavenia/profil',
+  settingsProfilDenied: (key: SettingsProfilDeniedKey) =>
+    `/nastavenia/profil?dashboardDenied=${key}`,
   blog: '/blog',
   security: '/bezpecnost',
   terms: '/vseobecne-podmienky',
   privacy: '/ochrana-osobnych-udajov',
   authRegister: '/auth/register',
-  guideHowItWorks: '/navody/ako-to-funguje',
-  guideRegister: '/navody/ako-sa-registrovat',
-  guideCreateService: '/navody/ako-vytvorit-sluzbu',
-  guideCreateProfile: '/navody/ako-si-vytvorit-profil',
-  guideTopService: '/navody/ako-topovat-sluzbu',
-  guideAddVoucher: '/navody/ako-pridat-voucher',
-  guideApply: '/navody/ako-sa-prihlasit-na-brigadu',
-  guideCreateJob: '/navody/ako-vytvorit-ponuku',
-  guideCredits: '/navody/ako-funguju-kredity',
-  guideCvDb: '/navody/databaza-zivotopisov',
-  guideEmailAlerts: '/navody/ponuky-na-email',
-  guideDeleteAccount: '/navody/vymazat-ucet',
-  guideDataExport: '/navody/export-udajov',
   checkout: '/platba',
   checkoutCredits: (pack: string, returnPath = '/cennik') =>
     `/platba?type=credits&pack=${encodeURIComponent(pack)}&return=${encodeURIComponent(returnPath)}`,

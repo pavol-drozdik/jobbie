@@ -96,4 +96,15 @@ export function parseFindCatalogPageFromRoute(
   return Math.min(value, 500)
 }
 
+export function buildFindCatalogSeoDescription(isForeign: boolean): string {
+  if (isForeign) {
+    return 'Zahraničné pracovné ponuky na Jobbie — filtruj podľa krajiny, kategórie a typu práce.'
+  }
+  return 'Pracovné ponuky a brigády na Jobbie — vyhľadávaj letné brigády, kosenie trávy, pomoc v domácnosti a ďalšie práce podľa lokality a kategórie.'
+}
+
+export function buildProfessionalsCatalogSeoDescription(): string {
+  return 'Profesionáli a služby na Jobbie — nájdi kosenie, údržbu záhrady, remeselníkov a sezónne služby vo svojom okolí.'
+}
+
 export { CANONICAL_QUERY_KEYS, NOINDEX_FACET_KEYS }

@@ -9,7 +9,11 @@
   "scripts": {
     "prepare": "nuxt prepare",
     "build": "node --max-old-space-size=8192 ./node_modules/nuxt/bin/nuxt.mjs build",
+    "build:cloudflare": "node ./scripts/nuxt-build-cloudflare.mjs",
     "build:analyze": "node ./scripts/build-analyze.mjs",
+    "ci:win": "node ./scripts/win-clean-stale-native-bins.mjs && npm ci",
+    "ci:win:quarantine": "node ./scripts/win-clean-stale-native-bins.mjs --quarantine-node-modules && npm ci",
+    "clean:win-native": "node ./scripts/win-clean-stale-native-bins.mjs",
     "dev": "node --max-old-space-size=8192 ./node_modules/nuxt/bin/nuxt.mjs dev",
     "generate": "node --max-old-space-size=8192 ./node_modules/nuxt/bin/nuxt.mjs generate",
     "preview": "nuxt preview",

@@ -226,7 +226,7 @@ import {
 
 
 
-definePageMeta({ layout: 'app', middleware: ['company-only'] })
+definePageMeta({ layout: 'app', middleware: ['customer-only'] })
 
 
 

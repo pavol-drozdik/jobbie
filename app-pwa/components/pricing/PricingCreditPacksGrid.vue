@@ -54,7 +54,6 @@
           </div>
         </div>
       </div>
-      <p v-if="!session?.access_token" class="mt-5 text-sm text-black/55">{{ S.pleaseSignIn }}</p>
     </template>
   </div>
 </template>
@@ -83,7 +82,6 @@ const checkout = usePricingCreditCheckout({
 })
 
 const {
-  session,
   packs,
   packsLoading,
   packsLoadError,

@@ -55,51 +55,9 @@ export const TRUST_SECURITY_PAGE: TrustContentPage = {
 export const TRUST_PRIVACY_PAGE: TrustContentPage = {
   title: 'Ochrana osobných údajov',
   intro:
-    'Tento dokument popisuje, ako platforma JOBBIE spracúva osobné údaje používateľov. Prevádzkovateľom je subjekt uvedený v kontaktných údajoch v pätičke webu (info@jobbie.sk).',
-  updatedAt: '2026-06-01',
-  sections: [
-    {
-      id: 'rozsah',
-      title: 'Aké údaje spracúvame',
-      paragraphs: [
-        'Registračné a profilové údaje (meno, e-mail, rola, nastavenia súkromia).',
-        'Údaje v životopisoch a pri prihlásení na ponuky. Údaje o platbách a fakturácii spracúva Stripe; my evidujeme transakcie kreditov a predplatného.',
-        'Technické logy, cookies podľa vášho súhlasu a nastavení notifikácií.',
-      ],
-    },
-    {
-      id: 'ucely',
-      title: 'Účely spracovania',
-      paragraphs: [
-        'Poskytovanie služieb platformy (účty, ponuky, chat, životopisy).',
-        'Fakturácia a plnenie zmluvy. Marketingové správy len so súhlasom alebo na základe oprávneného záujmu podľa vášho nastavenia.',
-        'Bezpečnosť, prevencia zneužitia a plnenie zákonných povinností.',
-      ],
-    },
-    {
-      id: 'prava',
-      title: 'Vaše práva',
-      paragraphs: [
-        'Máte právo na prístup, opravu, výmaz, obmedzenie spracovania, prenosnosť údajov a námietku. Export údajov: Nastavenia → Export údajov (ZIP).',
-        'Vymazanie účtu: Nastavenia → Nebezpečná zóna. Odber newslettera a kategórií notifikácií môžete spravovať v nastaveniach alebo cez odkaz v e-mailoch.',
-      ],
-    },
-    {
-      id: 'zdielanie',
-      title: 'Komu údaje sprístupňujeme',
-      paragraphs: [
-        'Zamestnávateľom podľa vašich nastavení viditeľnosti CV a kontaktu. Poskytovateľom infraštruktúry (hosting, databáza, e-mail, platby) v rozsahu nevyhnutnom na prevádzku.',
-        'Údaje nepredávame tretím stranám na ich marketing.',
-      ],
-    },
-    {
-      id: 'kontakt-dpo',
-      title: 'Kontakt',
-      paragraphs: [
-        'Otázky k ochrane údajov: info@jobbie.sk (predmet: Ochrana údajov).',
-      ],
-    },
-  ],
+    'Oficiálne zásady ochrany osobných údajov platformy Jobbie. Správcom osobných údajov je CoCreate s. r. o. Kontakt: ahoj@jobbie.sk.',
+  updatedAt: '2026-02-25',
+  sections: [],
 }
 
 export const TRUST_TERMS_PAGE: TrustContentPage = {
@@ -112,7 +70,7 @@ export const TRUST_TERMS_PAGE: TrustContentPage = {
       id: 'sluzba',
       title: 'Charakter služby',
       paragraphs: [
-        'JOBBIE je online platforma na zverejňovanie ponúk, vyhľadávanie brigád a komunikáciu medzi používateľmi. Nie sme zamestnávateľom brigádnikov ani sprostredkovateľom výplaty mzdy medzi vami a protistranou.',
+        'JOBBIE je online platforma na zverejňovanie ponúk, vyhľadávanie brigád a komunikáciu medzi používateľmi. Nie sme zamestnávateľom uchádzačov ani sprostredkovateľom výplaty mzdy medzi vami a protistranou.',
       ],
     },
     {
@@ -134,7 +92,7 @@ export const TRUST_TERMS_PAGE: TrustContentPage = {
       id: 'zodpovednost',
       title: 'Obmedzenie zodpovednosti',
       paragraphs: [
-        'Platformu poskytujeme v rozsahu „tak ako je“. Nenesieme zodpovednosť za dohody medzi zamestnávateľom a brigádnikom mimo rozsahu našej služby.',
+        'Platformu poskytujeme v rozsahu „tak ako je“. Nenesieme zodpovednosť za dohody medzi zamestnávateľom a uchádzačom mimo rozsahu našej služby.',
       ],
     },
     {

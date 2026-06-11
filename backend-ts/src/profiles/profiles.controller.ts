@@ -20,7 +20,7 @@ import {
 import { Request, Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { JwksAuthGuard } from '../auth/jwks-auth.guard';
-import { OptionalJwksAuthGuard } from '../auth/optional-jwks-auth.guard';
+import { OptionalAuth } from '../auth/optional-auth.decorator';
 import { CurrentUserDecorator } from '../auth/current-user.decorator';
 import { CurrentUser } from '../auth/auth.types';
 import { RequireRecentLogin } from '../auth/require-recent-login.decorator';
@@ -96,6 +96,7 @@ function isProfileSelectMissingOptionalColumnError(err: {
 }
 
 const PATCH_WHITELIST = new Set([
+  'role',
   'display_name',
   'company_name',
   'first_name',
@@ -469,6 +470,13 @@ export class ProfilesController {
       keys.includes('customer_role') ||
       keys.includes('worker_role') ||
       keys.includes('provider_role');
+    if (keys.includes('role')) {
+      const nextAccountType = String(payload.role ?? '').trim();
+      if (nextAccountType !== 'individual' && nextAccountType !== 'company') {
+        throw new BadRequestException('Neplatný typ účtu.');
+      }
+      payload.role = nextAccountType;
+    }
     if (wantsRoleUpdate) {
       const nextCustomer =
         payload.customer_role !== undefined
@@ -543,6 +551,19 @@ export class ProfilesController {
       );
     }
     let finalRow = data as unknown as ProfileRow;
+    if (keys.includes('role') && String(beforeRow.role) !== String(finalRow.role)) {
+      this.jwtVerify.invalidateProfileCache(user.id);
+    }
+    const activityFlagKeys = ['customer_role', 'worker_role', 'provider_role'] as const;
+    if (
+      activityFlagKeys.some(
+        (k) =>
+          keys.includes(k) &&
+          Boolean(beforeRow[k]) !== Boolean((finalRow as ProfileRow)[k]),
+      )
+    ) {
+      this.jwtVerify.invalidateProfileCache(user.id);
+    }
     if (String(beforeRow.role) === 'company' && keys.includes('registration_number')) {
       const oldN = normalizeSkIco(
         String(beforeRow.registration_number ?? ''),
@@ -671,7 +692,7 @@ export class ProfilesController {
   }
 
   @Get(':id/reviews')
-  @UseGuards(OptionalJwksAuthGuard)
+  @OptionalAuth()
   async listReviews(
     @Param('id', ParseUUIDPipe) profileId: string,
     @Query('limit') limitRaw = '20',
@@ -920,7 +941,7 @@ export class ProfilesController {
   }
 
   @Get(':id')
-  @UseGuards(OptionalJwksAuthGuard)
+  @OptionalAuth()
   async getPublicProfile(
     @Param('id', ParseUUIDPipe) profileId: string,
     @CurrentUserDecorator() user: CurrentUser | null,

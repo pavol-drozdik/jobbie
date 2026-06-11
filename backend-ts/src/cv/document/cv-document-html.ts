@@ -1,7 +1,7 @@
 import type { CvDocumentExportData, CvDocumentMode } from './cv-document.types'
 import { escapeHtml } from './cv-document-utils'
 import { buildCvPaginationBootstrapScript } from './cv-document-pagination.node'
-import { buildCvDocumentStyles } from './cv-document-styles'
+import { buildCvDocumentStyles, buildCvDocumentPrintStyles } from './cv-document-styles'
 import { renderTemplateBody } from './cv-document-templates'
 
 export const CV_DOCUMENT_FONT_LINK =
@@ -55,6 +55,42 @@ ${styles}
     <div id="cv-pagination-output"></div>
   </div>
 ${paginationScript}
+</body>
+</html>`
+}
+
+/**
+ * Builds a clean, single-document HTML for direct CSS print pagination (no JS packer).
+ * Playwright prints it with `preferCSSPageSize: true`; `break-inside: avoid` on entries
+ * keeps blocks intact. Use `renderPdfDirect()` on the renderer side.
+ */
+export function buildCvDocumentPrint(data: CvDocumentExportData): string {
+  const body = renderTemplateBody(data)
+  const styles = buildCvDocumentPrintStyles()
+  return `<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escapeHtml(data.fullName)} - CV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="${CV_DOCUMENT_FONT_LINK}" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    padding: 0;
+    background: #ffffff;
+    font-family: "Source Sans 3", Arial, sans-serif;
+  }
+${styles}
+</style>
+</head>
+<body class="cv-export-pdf">
+  <div class="cv-page-export">
+    ${body}
+  </div>
 </body>
 </html>`
 }

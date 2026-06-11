@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div
     class="font-dmSans flex min-h-screen items-center justify-center bg-marketing-mint px-5 py-10 antialiased"
   >
@@ -19,7 +19,7 @@
             Začni svoju<br />cestu s nami.
           </h2>
           <p class="mt-3.5 text-[17px] font-medium leading-normal text-white/75">
-            Registrácia trvá menej ako minútu. Nájdi prácu alebo brigádnikov už dnes.
+            Registrácia trvá menej ako minútu. Nájdi prácu alebo uchádzačov už dnes.
           </p>
         </div>
       </div>
@@ -99,7 +99,7 @@
               />
               <h3 class="m-0 text-xl font-extrabold text-black">Firma / SZČO</h3>
               <p class="m-0 text-[15px] font-normal leading-snug text-black/45">
-                Podnikateľ alebo firma hľadajúca brigádnikov, zamestnancov alebo dodávateľov.
+                Podnikateľ alebo firma hľadajúca uchádzačov, zamestnancov alebo dodávateľov.
               </p>
             </button>
           </div>
