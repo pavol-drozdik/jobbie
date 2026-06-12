@@ -196,9 +196,20 @@ Without Redis, crons still run alerts **inline**.
 
 API images need **libvips** for `sharp` image re-encoding. See root DEPLOYMENT notes.
 
-### Staging VPS (Docker + GHCR)
+### Backend VPS (Docker + GHCR)
 
-Websupport bundle: [`websupport-vps-deployment/README-DEPLOYMENT.md`](../websupport-vps-deployment/README-DEPLOYMENT.md). **`backend-ghcr`** builds multi-arch images; **`deploy-staging`** SSHs to the VPS after each push (private GHCR: set `STAGING_GHCR_TOKEN` with `read:packages`). Manual redeploy: workflow **deploy-staging**.
+Websupport bundle: [`websupport-vps-deployment/README-DEPLOYMENT.md`](../websupport-vps-deployment/README-DEPLOYMENT.md).
+
+| Branch / trigger | CI workflow | Deploy |
+|------------------|-------------|--------|
+| Push **`staging`** (backend paths) | `backend-ghcr` | Staging VPS (`STAGING_SSH_*`) |
+| Push **`main`** | `backend-ghcr` | Production VPS (`PROD_SSH_*`; GitHub **`production`** environment) |
+| Tag `backend-v*` | `backend-ghcr` | Staging VPS |
+| Manual | `backend-ghcr` / **deploy-staging** / **deploy-production** | Redeploy existing tag |
+
+Image tags: `staging-YYYY.MM.DD-<sha7>` on staging branch; `YYYY.MM.DD-<sha7>` on main. Private GHCR: `read:packages` PAT on each VPS deploy.
+
+**Git:** create `staging` branch; merge features → `staging` → test → merge `staging` → `main` for production. Supabase migrations and PWA deploy are separate steps (staging DB / preview first, then prod).
 
 ### Production checklist
 

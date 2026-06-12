@@ -160,11 +160,24 @@ echo 'GHCR_READ_TOKEN' | sudo docker login ghcr.io -u GITHUB_USERNAME --password
 
 Use a token with package read permissions only.
 
-## Automatic staging deploy (private repo + private GHCR)
+## Branch-based deploy (staging + production)
 
-After each successful `backend-ghcr` run (tag push or **Run workflow**), the **`deploy-staging`** job SSHs to the VPS, logs into GHCR, updates `BACKEND_IMAGE` in `.env`, pulls the backend image, and restarts the backend container. A separate **`deploy-staging`** workflow redeploys an existing tag without rebuilding.
+`backend-ghcr` builds a multi-arch image and deploys by **git branch**:
 
-### One-time GitHub setup
+| Trigger | Image tag (auto) | Deploy target |
+|---------|------------------|---------------|
+| Push to **`staging`** | `staging-YYYY.MM.DD-<sha7>` | Staging VPS (`deploy-staging` job) |
+| Push to **`main`** | `YYYY.MM.DD-<sha7>` (+ `:latest`) | Production VPS (`deploy-production` job) |
+| Push tag **`backend-v*`** | tag suffix after `backend-v` | Staging VPS |
+| **Run workflow** (manual) | optional input, else date-SHA | Staging if run from `staging` / tag; production if run from `main` |
+
+Path filter: `backend-ts/**`, `websupport-vps-deployment/**`, or this workflow file.
+
+**Typical flow:** feature PR → merge **`staging`** → test on staging API → PR **`staging` → `main`** → production deploy (optionally gated; see below).
+
+Redeploy an existing tag without rebuilding: workflows **deploy-staging** or **deploy-production**.
+
+### One-time GitHub setup — staging
 
 1. **Deploy SSH key** (Ed25519, no passphrase recommended for CI):
 
@@ -172,33 +185,61 @@ After each successful `backend-ghcr` run (tag push or **Run workflow**), the **`
    ssh-keygen -t ed25519 -C "github-actions-staging" -f ~/.ssh/jobbie-staging-deploy -N ""
    ```
 
-   Append `jobbie-staging-deploy.pub` to the VPS user’s `~/.ssh/authorized_keys` (e.g. `ubuntu`).
+   Append `jobbie-staging-deploy.pub` to the staging VPS user’s `~/.ssh/authorized_keys` (e.g. `ubuntu`).
 
-2. **GHCR read token** — classic PAT or fine-grained token with **`read:packages`** on this repository’s `jobbie-backend` package. The VPS user does not need `write:packages`; CI passes the token only for `docker login` during deploy.
+2. **GHCR read token** — classic PAT or fine-grained token with **`read:packages`** on this repository’s `jobbie-backend` package.
 
 3. **Repository secrets** (Settings → Secrets and variables → Actions):
 
    | Secret | Example / notes |
    |--------|-----------------|
-   | `STAGING_SSH_HOST` | VPS public IP or hostname |
+   | `STAGING_SSH_HOST` | Staging VPS public IP or hostname |
    | `STAGING_SSH_USER` | `ubuntu` |
    | `STAGING_SSH_KEY` | Private key contents (`jobbie-staging-deploy`) |
    | `STAGING_GHCR_TOKEN` | PAT with `read:packages` |
-   | `STAGING_GHCR_USER` | Optional; defaults to lowercase GitHub org/user (`pr3vesttheduck`) |
+   | `STAGING_GHCR_USER` | Optional; defaults to lowercase GitHub org/user |
 
-4. **Optional repository variable** `STAGING_HEALTH_URL` — defaults to `https://api.cocreate.cz/health`.
+4. **Optional variable** `STAGING_HEALTH_URL` — defaults to `https://api.cocreate.cz/health`.
 
-5. **Environment** `staging` — created automatically on first deploy; optional protection rules in GitHub.
+5. **Environment** `staging` — created on first deploy; optional protection rules.
 
-6. On the VPS, create `.env` / `.env.backend` (see below) and run **`docker compose up -d` once** before the first auto-deploy so Typesense and Caddy are already up.
+6. On the staging VPS, create `.env` / `.env.backend` and run **`docker compose up -d` once** before the first auto-deploy.
 
-### Skip deploy on a build
+### One-time GitHub setup — production
 
-When running **backend-ghcr** manually, check **Skip automatic staging VPS deploy after push**.
+Use a **separate** deploy key and VPS (recommended). Mirror staging secrets with `PROD_` prefix:
+
+| Secret | Notes |
+|--------|--------|
+| `PROD_SSH_HOST` | Production VPS |
+| `PROD_SSH_USER` | e.g. `ubuntu` |
+| `PROD_SSH_KEY` | Production deploy private key |
+| `PROD_GHCR_TOKEN` | `read:packages` PAT (may reuse staging token) |
+| `PROD_GHCR_USER` | Optional |
+
+**Optional variable** `PROD_HEALTH_URL` — defaults to `https://api.jobbie.sk/health`.
+
+**Environment** `production` — in GitHub → Settings → Environments → **production**, enable **Required reviewers** so `main` merges build the image but you approve before SSH deploy.
+
+Bootstrap the production VPS the same way as staging (`setup_server.sh`, prod `.env.backend`, `docker compose up -d`).
+
+### Create the `staging` branch
+
+```bash
+git checkout main && git pull
+git checkout -b staging && git push -u origin staging
+```
+
+Point feature PRs at **`staging`** first; promote to **`main`** after QA.
+
+### Skip deploy on a manual build
+
+When running **backend-ghcr** manually, check **Skip VPS deploy after build**.
 
 ### Manual redeploy only
 
-Actions → **deploy-staging** → Run workflow → enter an existing image tag (e.g. `2026.06.12-1`).
+- Staging: Actions → **deploy-staging** → image tag (e.g. `staging-2026.06.12-a1b2c3d`)
+- Production: Actions → **deploy-production** → image tag (e.g. `2026.06.12-a1b2c3d`)
 
 ### Docker access on the VPS
 

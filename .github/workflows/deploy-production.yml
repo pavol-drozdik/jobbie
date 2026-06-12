@@ -1,0 +1,69 @@
+name: deploy-production
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Backend image tag to deploy (must already exist on GHCR)
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy backend to production VPS
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve GHCR image
+        id: image
+        shell: bash
+        run: |
+          OWNER="$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
+          echo "image=ghcr.io/${OWNER}/jobbie-backend" >> "${GITHUB_OUTPUT}"
+          echo "version=${{ github.event.inputs.version }}" >> "${GITHUB_OUTPUT}"
+
+      - name: Resolve GHCR login user
+        id: ghcr
+        shell: bash
+        run: |
+          USER="${{ secrets.PROD_GHCR_USER }}"
+          if [[ -z "${USER}" ]]; then
+            USER="${{ secrets.STAGING_GHCR_USER }}"
+          fi
+          if [[ -z "${USER}" ]]; then
+            USER="$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
+          fi
+          echo "user=${USER}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload deploy script
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          source: websupport-vps-deployment/scripts/deploy_staging.sh
+          target: /tmp/jobbie-deploy/
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          BACKEND_VERSION: ${{ steps.image.outputs.version }}
+          GHCR_IMAGE: ${{ steps.image.outputs.image }}
+          GHCR_USER: ${{ steps.ghcr.outputs.user }}
+          GHCR_TOKEN: ${{ secrets.PROD_GHCR_TOKEN }}
+          HEALTH_URL: ${{ vars.PROD_HEALTH_URL }}
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          envs: BACKEND_VERSION,GHCR_IMAGE,GHCR_USER,GHCR_TOKEN,HEALTH_URL
+          script: |
+            set -euo pipefail
+            sudo install -m 755 /tmp/jobbie-deploy/websupport-vps-deployment/scripts/deploy_staging.sh \
+              /srv/nestjs-typesense/scripts/deploy_staging.sh
+            export HEALTH_URL="${HEALTH_URL:-https://api.jobbie.sk/health}"
+            sudo bash /srv/nestjs-typesense/scripts/deploy_staging.sh

@@ -1,4 +1,14 @@
-﻿## 2026-06-12 — Health check CORS bypass and Typesense compose probe
+﻿## 2026-06-12 — Branch-based backend deploy (staging / main)
+
+Added:
+- `backend-ghcr` triggers on push to **`staging`** and **`main`** (path-filtered); auto image tags `staging-YYYY.MM.DD-<sha7>` vs `YYYY.MM.DD-<sha7>`; `:latest` only on `main` and `backend-v*` tags.
+- `deploy-production` job in `backend-ghcr` + workflow **deploy-production** (SSH via `PROD_SSH_*`, `PROD_GHCR_TOKEN`, `production` environment).
+- Docs: branch promotion flow, production GitHub secrets, optional production environment approval.
+
+Changed:
+- `deploy_staging.sh` success message is environment-neutral (same script for staging and prod VPS).
+
+## 2026-06-12 — Health check CORS bypass and Typesense compose probe
 
 Fixed:
 - `GET /health` skips credentialed CORS middleware so Docker, `curl`, and `deploy_staging.sh` work without an `Origin` header in production.

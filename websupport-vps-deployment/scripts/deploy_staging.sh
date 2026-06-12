@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Deploy backend image on staging VPS. Called from GitHub Actions (SSH) or manually:
-#   sudo BACKEND_VERSION=2026.06.12-1 GHCR_IMAGE=ghcr.io/owner/jobbie-backend \
-#     GHCR_USER=owner GHCR_TOKEN=... bash scripts/deploy_staging.sh
+# Pull a versioned backend image and restart the backend container.
+# Used for staging and production VPS (GitHub Actions SSH or manual):
+#   sudo BACKEND_VERSION=2026.06.12-abc1234 GHCR_IMAGE=ghcr.io/owner/jobbie-backend \
+#     GHCR_USER=owner GHCR_TOKEN=... HEALTH_URL=https://api.example/health \
+#     bash scripts/deploy_staging.sh
 
 DEPLOY_ROOT="${DEPLOY_ROOT:-/srv/nestjs-typesense}"
 BACKEND_VERSION="${BACKEND_VERSION:?BACKEND_VERSION is required}"
@@ -61,4 +63,4 @@ compose_cmd up -d backend
 # GET /health bypasses CORS (no Origin required) — safe for curl and load balancers.
 curl -fsS "${HEALTH_URL}"
 echo
-echo "Staging deploy OK: ${NEW_IMAGE}"
+echo "Deploy OK: ${NEW_IMAGE}"
