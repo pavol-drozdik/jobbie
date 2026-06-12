@@ -88,7 +88,7 @@ Without `REDIS_URL`, crons run handlers inline.
 - **Slow queries**: Supabase Dashboard → Query performance; monthly review — [observability-runbook.md](./observability-runbook.md)
 - **HTTP**: Prometheus `GET /metrics` (not sampled); `jobbie_outbound_fetch_duration_seconds` for Typesense/Turnstile/Twilio
 - **Load smoke**: `k6 run -e BASE_URL=... backend-ts/scripts/k6/smoke.js` (staging)
-- **CI**: `.github/workflows/backend-ci.yml` — `npm test` + `npm run build` on `backend-ts` changes
+- **CI**: `.github/workflows/backend-ci.yml` — `npm test` + `npm run build` on `backend-ts` and `app-pwa` changes
 - **Product search**: `search_query_logs`, admin analytics RPCs
 
 ## PWA bundle analysis

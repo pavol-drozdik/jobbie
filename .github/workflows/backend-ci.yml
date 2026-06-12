@@ -50,6 +50,34 @@ jobs:
       - name: Build API
         run: npm run build
 
+  # Validates PWA code when app-pwa/** is in the workflow path filter.
+  pwa-build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app-pwa
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: app-pwa/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build PWA
+        run: npm run build
+        env:
+          NUXT_PUBLIC_API_BASE_URL: http://127.0.0.1:8000/api
+          NUXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NUXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+
   # Fails the build when any production dependency has a high/critical CVE.
   # Use `npm audit --omit=dev` so a dev-only finding doesn't block the merge —
   # those are tracked separately via Dependabot.

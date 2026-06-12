@@ -1,4 +1,9 @@
-﻿## 2026-06-12 — GHCR multi-arch (amd64 + arm64)
+﻿## 2026-06-12 — Backend CI: PWA build and test
+
+Fixed:
+- `backend-ci` triggered on `app-pwa/**` but only ran backend `build-and-test` plus `pwa-npm-audit` (no compile/typecheck). Added `pwa-build-and-test` (`npm test`, `npm run build`) so PWA-only PRs and pushes cannot pass CI without a green PWA build.
+
+## 2026-06-12 — GHCR multi-arch (amd64 + arm64)
 
 Fixed:
 - `backend-ghcr` publishes `linux/amd64,linux/arm64` (staging ARM VPS + production x86); QEMU + Buildx on GHA amd64 runners. Same tag on both hosts — Docker picks the matching manifest.
