@@ -1,9 +1,14 @@
-﻿## 2026-06-12 — Backend CI: Jest exceljs + CV pagination bootstrap
+﻿## 2026-06-12 — Backend CI Node 22
+
+Changed:
+- `backend-ci` `build-and-test` and `npm-audit` jobs use Node 22 (matches `backend-ghcr` and production `node:22-bookworm-slim` image).
+
+## 2026-06-12 — Backend CI: Jest exceljs + CV pagination bootstrap
 
 Fixed:
 - `employer-applicants.service.spec.ts` — Jest `moduleNameMapper` shim for `exceljs` (avoids ESM `uuid` parse error in CI).
 - `cv-document-html.spec.ts` — track `cv-document-pagination.bootstrap.js` in git (was gitignored; required at runtime by `cv-document-pagination.node.ts` and Nest asset copy).
-- CI Playwright — `scripts/ensure-playwright-browsers.cjs` + `pretest` installs `chromium-headless-shell` when `CI=true` (works even if workflow only runs `npm test`).
+- CI Playwright — `scripts/ensure-playwright-browsers.cjs` + `pretest` installs `chromium-headless-shell` when `CI=true`; verify via headless launch (not `executablePath()`, which points at full Chromium).
 
 ## 2026-06-12 — Restore CV API sources for CI
 
