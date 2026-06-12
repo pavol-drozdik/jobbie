@@ -66,7 +66,12 @@ services:
     networks:
       - web
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8108/health"]
+      # typesense/typesense:30.2 has no wget/curl; bash /dev/tcp probes /health.
+      test:
+        [
+          "CMD-SHELL",
+          "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8108 && printf \"GET /health HTTP/1.0\\r\\n\\r\\n\" >&3 && grep -q ok <&3'",
+        ]
       interval: 20s
       timeout: 5s
       retries: 10

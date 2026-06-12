@@ -1,4 +1,10 @@
-﻿## 2026-06-12 — Staging auto-deploy after GHCR push
+﻿## 2026-06-12 — Health check CORS bypass and Typesense compose probe
+
+Fixed:
+- `GET /health` skips credentialed CORS middleware so Docker, `curl`, and `deploy_staging.sh` work without an `Origin` header in production.
+- `websupport-vps-deployment/docker-compose.yml` Typesense healthcheck uses bash `/dev/tcp` (image has no `wget`).
+
+## 2026-06-12 — Staging auto-deploy after GHCR push
 
 Added:
 - `websupport-vps-deployment/scripts/deploy_staging.sh` — GHCR login (private package), set `BACKEND_IMAGE`, `compose pull` + `up -d backend`, health check.

@@ -23,6 +23,13 @@ const DEFAULT_DEV_ORIGINS = [
   'http://127.0.0.1:3001',
 ];
 
+/** Liveness/monitoring paths — no browser Origin; skip credentialed CORS middleware. */
+const CORS_BYPASS_PATHS = new Set(['/health']);
+
+export function shouldBypassCors(path: string): boolean {
+  return CORS_BYPASS_PATHS.has(path);
+}
+
 function resolveAllowedOrigins(): string[] {
   const fromEnv = parseCorsOriginsFromEnv(process.env.CORS_ORIGINS);
   if (fromEnv && fromEnv.length > 0) return fromEnv;
@@ -38,10 +45,9 @@ function makeOriginValidator(allowed: string[]) {
     origin: string | undefined,
     callback: (err: Error | null, allow?: boolean) => void,
   ): void => {
-    // Same-origin / non-browser requests have no Origin header. In production
-    // we reject because every credentialed request from the PWA *must* carry
-    // an Origin header. In non-production we tolerate it (curl/Postman) since
-    // there is no credential reflection risk against a chosen attacker host.
+    // Non-browser requests have no Origin header. In production we reject on API
+    // routes because credentialed PWA calls must carry Origin (see
+    // shouldBypassCors for /health). Dev tolerates missing Origin for curl.
     if (!origin) {
       if (isNodeProduction()) {
         callback(new Error('Not allowed by CORS'));

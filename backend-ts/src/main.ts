@@ -4,10 +4,14 @@ import { ValidationPipe } from '@nestjs/common';
 import { RedisIoAdapter } from './common/redis-io.adapter';
 import * as express from 'express';
 import * as cookieParser from 'cookie-parser';
+import cors from 'cors';
 import helmet from 'helmet';
 import { setupExpressErrorHandler } from '@sentry/node';
 import { AppModule } from './app.module';
-import { buildNestCorsOptions } from './common/http-cors.util';
+import {
+  buildNestCorsOptions,
+  shouldBypassCors,
+} from './common/http-cors.util';
 import {
   isNodeProduction,
   parseCorsOriginsFromEnv,
@@ -28,7 +32,13 @@ async function bootstrap() {
     crossOriginResourcePolicy: { policy: 'cross-origin' },
   }));
   app.use(cookieParser());
-  app.enableCors(buildNestCorsOptions());
+  const corsOptions = buildNestCorsOptions();
+  app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (shouldBypassCors(req.path)) {
+      return next();
+    }
+    return cors(corsOptions)(req, res, next);
+  });
   // Stripe webhook needs raw body for signature verification
   app.use(
     '/api/payments/webhook',

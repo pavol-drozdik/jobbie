@@ -58,6 +58,7 @@ export BACKEND_IMAGE="${NEW_IMAGE}"
 compose_cmd pull backend
 compose_cmd up -d backend
 
+# GET /health bypasses CORS (no Origin required) — safe for curl and load balancers.
 curl -fsS "${HEALTH_URL}"
 echo
 echo "Staging deploy OK: ${NEW_IMAGE}"

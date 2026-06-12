@@ -190,7 +190,7 @@ Without Redis, crons still run alerts **inline**.
 
 - Nest: stateless; JWT/cookie auth needs no sticky sessions for HTTP.
 - Socket.IO: use Redis adapter or sticky sessions on load balancer.
-- Health check: `GET /health`.
+- Health check: `GET /health` (no `Origin` header required; bypasses CORS).
 
 ### Docker / sharp
 
