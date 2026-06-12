@@ -160,6 +160,57 @@ echo 'GHCR_READ_TOKEN' | sudo docker login ghcr.io -u GITHUB_USERNAME --password
 
 Use a token with package read permissions only.
 
+## Automatic staging deploy (private repo + private GHCR)
+
+After each successful `backend-ghcr` run (tag push or **Run workflow**), the **`deploy-staging`** job SSHs to the VPS, logs into GHCR, updates `BACKEND_IMAGE` in `.env`, pulls the backend image, and restarts the backend container. A separate **`deploy-staging`** workflow redeploys an existing tag without rebuilding.
+
+### One-time GitHub setup
+
+1. **Deploy SSH key** (Ed25519, no passphrase recommended for CI):
+
+   ```bash
+   ssh-keygen -t ed25519 -C "github-actions-staging" -f ~/.ssh/jobbie-staging-deploy -N ""
+   ```
+
+   Append `jobbie-staging-deploy.pub` to the VPS user’s `~/.ssh/authorized_keys` (e.g. `ubuntu`).
+
+2. **GHCR read token** — classic PAT or fine-grained token with **`read:packages`** on this repository’s `jobbie-backend` package. The VPS user does not need `write:packages`; CI passes the token only for `docker login` during deploy.
+
+3. **Repository secrets** (Settings → Secrets and variables → Actions):
+
+   | Secret | Example / notes |
+   |--------|-----------------|
+   | `STAGING_SSH_HOST` | VPS public IP or hostname |
+   | `STAGING_SSH_USER` | `ubuntu` |
+   | `STAGING_SSH_KEY` | Private key contents (`jobbie-staging-deploy`) |
+   | `STAGING_GHCR_TOKEN` | PAT with `read:packages` |
+   | `STAGING_GHCR_USER` | Optional; defaults to lowercase GitHub org/user (`pr3vesttheduck`) |
+
+4. **Optional repository variable** `STAGING_HEALTH_URL` — defaults to `https://api.cocreate.cz/health`.
+
+5. **Environment** `staging` — created automatically on first deploy; optional protection rules in GitHub.
+
+6. On the VPS, create `.env` / `.env.backend` (see below) and run **`docker compose up -d` once** before the first auto-deploy so Typesense and Caddy are already up.
+
+### Skip deploy on a build
+
+When running **backend-ghcr** manually, check **Skip automatic staging VPS deploy after push**.
+
+### Manual redeploy only
+
+Actions → **deploy-staging** → Run workflow → enter an existing image tag (e.g. `2026.06.12-1`).
+
+### Docker access on the VPS
+
+The deploy script needs non-interactive Docker. After bootstrap, either:
+
+```bash
+sudo usermod -aG docker ubuntu
+# log out and back in
+```
+
+or allow passwordless `sudo` for `docker` (e.g. `/etc/sudoers.d/jobbie-docker`). The GitHub SSH step still uses `sudo` only to install the script under `/srv/nestjs-typesense/scripts/`.
+
 ## First Docker Deployment
 
 ```bash
@@ -244,6 +295,21 @@ sudo apt-get upgrade
 Before major upgrades, confirm a recent R2 backup exists and take a Websupport VPS snapshot.
 
 ## Deploy Backend Update
+
+**Preferred:** push a `backend-v*` tag or run **backend-ghcr** in GitHub Actions (staging auto-deploy when secrets are set).
+
+**Manual** (same steps as `scripts/deploy_staging.sh`):
+
+```bash
+cd /srv/nestjs-typesense
+export BACKEND_VERSION=2026.06.12-1
+export GHCR_IMAGE=ghcr.io/GITHUB_USERNAME/jobbie-backend
+export GHCR_USER=GITHUB_USERNAME
+export GHCR_TOKEN=...   # read:packages PAT for private image
+sudo -E bash scripts/deploy_staging.sh
+```
+
+Or without the script:
 
 ```bash
 cd /srv/nestjs-typesense

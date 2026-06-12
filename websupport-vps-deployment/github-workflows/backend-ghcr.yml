@@ -6,6 +6,10 @@ on:
       version:
         description: Version tag to publish, for example 2026.06.03-1
         required: true
+      skip_deploy:
+        description: Skip automatic staging VPS deploy after push
+        type: boolean
+        default: false
   push:
     tags:
       - 'backend-v*'
@@ -16,6 +20,9 @@ permissions:
 
 jobs:
   test-build-push:
+    outputs:
+      image: ${{ steps.tags.outputs.image }}
+      version: ${{ steps.tags.outputs.version }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -78,3 +85,53 @@ jobs:
           tags: |
             ${{ steps.tags.outputs.image }}:${{ steps.tags.outputs.version }}
             ${{ steps.tags.outputs.image }}:latest
+
+  deploy-staging:
+    name: Deploy backend to staging VPS
+    needs: test-build-push
+    if: >
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.skip_deploy != 'true'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve GHCR login user
+        id: ghcr
+        shell: bash
+        run: |
+          USER="${{ secrets.STAGING_GHCR_USER }}"
+          if [[ -z "${USER}" ]]; then
+            USER="$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
+          fi
+          echo "user=${USER}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload deploy script
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          source: websupport-vps-deployment/scripts/deploy_staging.sh
+          target: /tmp/jobbie-deploy/
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          BACKEND_VERSION: ${{ needs.test-build-push.outputs.version }}
+          GHCR_IMAGE: ${{ needs.test-build-push.outputs.image }}
+          GHCR_USER: ${{ steps.ghcr.outputs.user }}
+          GHCR_TOKEN: ${{ secrets.STAGING_GHCR_TOKEN }}
+          HEALTH_URL: ${{ vars.STAGING_HEALTH_URL }}
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          envs: BACKEND_VERSION,GHCR_IMAGE,GHCR_USER,GHCR_TOKEN,HEALTH_URL
+          script: |
+            set -euo pipefail
+            sudo install -m 755 /tmp/jobbie-deploy/websupport-vps-deployment/scripts/deploy_staging.sh \
+              /srv/nestjs-typesense/scripts/deploy_staging.sh
+            export HEALTH_URL="${HEALTH_URL:-https://api.cocreate.cz/health}"
+            sudo bash /srv/nestjs-typesense/scripts/deploy_staging.sh

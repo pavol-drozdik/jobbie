@@ -1,4 +1,11 @@
-﻿## 2026-06-12 — Backend CI: PWA build and test
+﻿## 2026-06-12 — Staging auto-deploy after GHCR push
+
+Added:
+- `websupport-vps-deployment/scripts/deploy_staging.sh` — GHCR login (private package), set `BACKEND_IMAGE`, `compose pull` + `up -d backend`, health check.
+- `backend-ghcr` job `deploy-staging` (SSH + optional `skip_deploy` on manual runs); workflow `deploy-staging` for redeploy-only.
+- Docs: GitHub secrets (`STAGING_SSH_*`, `STAGING_GHCR_TOKEN`), `staging` environment, private GHCR `read:packages` PAT.
+
+## 2026-06-12 — Backend CI: PWA build and test
 
 Fixed:
 - `backend-ci` triggered on `app-pwa/**` but only ran backend `build-and-test` plus `pwa-npm-audit` (no compile/typecheck). Added `pwa-build-and-test` (`npm test`, `npm run build`) so PWA-only PRs and pushes cannot pass CI without a green PWA build.

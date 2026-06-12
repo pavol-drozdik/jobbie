@@ -196,6 +196,10 @@ Without Redis, crons still run alerts **inline**.
 
 API images need **libvips** for `sharp` image re-encoding. See root DEPLOYMENT notes.
 
+### Staging VPS (Docker + GHCR)
+
+Websupport bundle: [`websupport-vps-deployment/README-DEPLOYMENT.md`](../websupport-vps-deployment/README-DEPLOYMENT.md). **`backend-ghcr`** builds multi-arch images; **`deploy-staging`** SSHs to the VPS after each push (private GHCR: set `STAGING_GHCR_TOKEN` with `read:packages`). Manual redeploy: workflow **deploy-staging**.
+
 ### Production checklist
 
 - [ ] `REDIS_URL` (multi-instance + queues + websockets)
