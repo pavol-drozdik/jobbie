@@ -34,9 +34,15 @@ android/app/build/
 ios/build/
 *.xcuserstate
 
-# NestJS / Node
+# NestJS / Node (compiled artifacts in src; CV service/controllers tracked as .js until full .ts port)
 backend-ts/src/**/*.js
+!backend-ts/src/cv/cv.service.js
+!backend-ts/src/cv/cv.controller.js
+!backend-ts/src/cv/cv-scoped-sections.controller.js
 backend-ts/src/**/*.d.ts
+!backend-ts/src/cv/cv.service.d.ts
+!backend-ts/src/cv/cv.controller.d.ts
+!backend-ts/src/cv/cv-scoped-sections.controller.d.ts
 coverage/
 .nyc_output/
 *.log
@@ -60,6 +66,7 @@ Thumbs.db
 
 # Testing and misc
 *.local
+**/.claude/settings.local.json
 .cache/
 
 # Local archives (not source)
