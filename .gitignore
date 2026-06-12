@@ -39,6 +39,7 @@ backend-ts/src/**/*.js
 !backend-ts/src/cv/cv.service.js
 !backend-ts/src/cv/cv.controller.js
 !backend-ts/src/cv/cv-scoped-sections.controller.js
+!backend-ts/src/cv/document/cv-document-pagination.bootstrap.js
 backend-ts/src/**/*.d.ts
 !backend-ts/src/cv/cv.service.d.ts
 !backend-ts/src/cv/cv.controller.d.ts

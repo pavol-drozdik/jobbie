@@ -70,7 +70,7 @@ function makeService(overrides: {
       getEmployerAggregateByCvId: jest.fn(),
     } as never,
     { buildInvitedListPdf: jest.fn() } as never,
-    { buildApplicantsExcel: jest.fn() } as never,
+    { buildWorkbook: jest.fn() } as never,
     { renderCvPdf: jest.fn() } as never,
     {
       hasPlusOrProAccess: jest.fn().mockResolvedValue(true),

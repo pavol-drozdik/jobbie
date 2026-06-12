@@ -10,5 +10,6 @@ module.exports = {
   ],
   moduleNameMapper: {
     '^isomorphic-dompurify$': '<rootDir>/src/test/mocks/isomorphic-dompurify.ts',
+    '^exceljs$': '<rootDir>/src/test/mocks/exceljs.cjs',
   },
 };

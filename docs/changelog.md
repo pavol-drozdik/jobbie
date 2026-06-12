@@ -1,4 +1,28 @@
-﻿## 2026-06-11 — Security: employer CV database GDPR redaction
+﻿## 2026-06-12 — Backend CI: Jest exceljs + CV pagination bootstrap
+
+Fixed:
+- `employer-applicants.service.spec.ts` — Jest `moduleNameMapper` shim for `exceljs` (avoids ESM `uuid` parse error in CI).
+- `cv-document-html.spec.ts` — track `cv-document-pagination.bootstrap.js` in git (was gitignored; required at runtime by `cv-document-pagination.node.ts` and Nest asset copy).
+
+## 2026-06-12 — Restore CV API sources for CI
+
+Fixed:
+- GitHub Actions failed because `cv.service`, `cv.controller`, `cv.dto`, and `cv.module` were never committed (only compiled `.js` existed locally under `backend-ts/src/cv/`, gitignored).
+- Added TypeScript sources: `cv.dto.ts`, `cv.module.ts`, `cv-skill-name.ts`.
+- Committed legacy compiled `cv.service.js`, `cv.controller.js`, `cv-scoped-sections.controller.js` (+ `.d.ts`) until full TypeScript port of the large service/controller files.
+
+## 2026-06-11 — CV builder PDF export auth
+
+Fixed:
+- `fetchApiBinary` (CV PDF download/preview) now matches `useApi` session recovery: Bearer fallback after BFF refresh on 401, `credentials: 'omit'` when using Bearer (avoids stale `jb_*` cookie conflicts), CSRF ensure/retry on mutations.
+
+## 2026-06-11 — PWA dev: blank page from IndexNow route
+
+Fixed:
+- Removed `server/routes/[key].txt.get.ts` — Nitro registered `/:key.txt` as a catch-all `key.txt` param, so every path returned 404 and Nuxt showed a blank error overlay in dev.
+- IndexNow key file is now served from `server/middleware/indexnow-key-txt.ts` with explicit `/{key}.txt` matching (still skips `robots.txt` / `llms.txt`).
+
+## 2026-06-11 — Security: employer CV database GDPR redaction
 
 Fixed:
 - `GET /api/employer/cv-database/:cvId` no longer exposes `has_disability` (including `false`) on the CV shell; `sanitizeHeaderForEmployerDatabaseView` omits the field instead of sending a boolean.
