@@ -1,4 +1,9 @@
-﻿## 2026-06-12 — Backend CI Node 22
+﻿## 2026-06-12 — GHCR multi-arch (amd64 + arm64)
+
+Fixed:
+- `backend-ghcr` publishes `linux/amd64,linux/arm64` (staging ARM VPS + production x86); QEMU + Buildx on GHA amd64 runners. Same tag on both hosts — Docker picks the matching manifest.
+
+## 2026-06-12 — Backend CI Node 22
 
 Changed:
 - `backend-ci` `build-and-test` and `npm-audit` jobs use Node 22 (matches `backend-ghcr` and production `node:22-bookworm-slim` image).

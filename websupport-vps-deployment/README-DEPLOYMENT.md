@@ -136,11 +136,13 @@ Supabase Storage caveat: the optional Supabase dump is a Postgres logical dump. 
 
 ## Build And Push To GHCR
 
-Build from the repository root, not from `backend-ts`:
+GHCR images are **multi-arch** (`linux/amd64` + `linux/arm64`). Staging (ARM VPS) and production (x86 VPS) pull the same version tag; Docker selects the matching manifest automatically.
+
+The `backend-ghcr` GitHub Action publishes both platforms (QEMU + Buildx on amd64 runners). For a manual build from the repository root (not `backend-ts`):
 
 ```bash
 docker buildx build \
-  --platform linux/amd64 \
+  --platform linux/amd64,linux/arm64 \
   -f websupport-vps-deployment/Dockerfile \
   -t ghcr.io/GITHUB_USERNAME/jobbie-backend:VERSION \
   -t ghcr.io/GITHUB_USERNAME/jobbie-backend:latest \
