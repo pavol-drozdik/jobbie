@@ -28,7 +28,7 @@ RUN apt-get update \
 COPY --from=prod-deps --chown=jobbie:jobbie /app/backend-ts/node_modules ./node_modules
 COPY --from=build --chown=jobbie:jobbie /app/backend-ts/dist ./dist
 COPY --from=build --chown=jobbie:jobbie /app/backend-ts/package.json ./package.json
-RUN npx playwright install --with-deps chromium \
+RUN npx playwright install --with-deps chromium-headless-shell \
   && chown -R jobbie:jobbie /ms-playwright \
   && rm -rf /var/lib/apt/lists/*
 

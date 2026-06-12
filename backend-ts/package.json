@@ -8,8 +8,9 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
+    "pretest": "node scripts/ensure-playwright-browsers.cjs",
     "test": "jest",
-    "test:ci": "playwright install --with-deps chromium-headless-shell && jest"
+    "test:ci": "node scripts/ensure-playwright-browsers.cjs && jest"
   },
   "dependencies": {
     "@nestjs/bullmq": "^11.0.4",

@@ -18,7 +18,7 @@ alwaysApply: false
 - `GET /profiles/me/export`: throttled; audit `data.export.requested`.
 
 ## Mutations
-- Use `JwksAuthGuard` on create/update/delete/publish.
+- Rely on app-wide `GlobalAuthGuard` → `SessionAuthGuard` (BFF `jb_at` cookie + CSRF on POST/PATCH/DELETE). Do **not** add `@UseGuards(JwksAuthGuard)` — legacy Bearer-only guard; redundant stacking has broken cookie sessions on publish/export routes.
 - Verify `company_id` / `owner_id === user.id` before writes; return `ForbiddenException` otherwise.
 - Credit spend and Stripe webhooks: verify metadata and signatures; do not trust client amounts.
 

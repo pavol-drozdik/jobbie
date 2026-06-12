@@ -3,6 +3,7 @@
 Fixed:
 - `employer-applicants.service.spec.ts` — Jest `moduleNameMapper` shim for `exceljs` (avoids ESM `uuid` parse error in CI).
 - `cv-document-html.spec.ts` — track `cv-document-pagination.bootstrap.js` in git (was gitignored; required at runtime by `cv-document-pagination.node.ts` and Nest asset copy).
+- CI Playwright — `scripts/ensure-playwright-browsers.cjs` + `pretest` installs `chromium-headless-shell` when `CI=true` (works even if workflow only runs `npm test`).
 
 ## 2026-06-12 — Restore CV API sources for CI
 

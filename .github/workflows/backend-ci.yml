@@ -39,6 +39,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Playwright browsers
+        run: node scripts/ensure-playwright-browsers.cjs
+        env:
+          CI: true
+
       - name: Unit tests
         run: npm test
 

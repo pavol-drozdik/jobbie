@@ -79,7 +79,7 @@ Registered in [`backend-ts/src/app.module.ts`](../backend-ts/src/app.module.ts):
 
 Global guards: `ThrottlerGuard`, `GlobalAuthGuard`. Global filter: `SentryGlobalFilter`.
 
-**Note:** `CvModule` is wired from `src/cv/`; the tree may contain compiled `.js` artifacts — TODO: verify whether TypeScript sources live elsewhere or are generated at build time.
+**Note:** `CvModule` uses `cv.dto.ts`, `cv.module.ts`, `cv-skill-name.ts`; `CvService` and HTTP controllers still ship as compiled `.js` in `src/cv/` (tracked in git) pending a full TypeScript port of those large files.
 
 ## PWA routing (overview)
 

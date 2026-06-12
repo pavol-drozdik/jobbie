@@ -1,4 +1,4 @@
-﻿jobbie-admin/release*/**
+jobbie-admin/release*/**
 
 # Never index local .env files - they contain real secrets in development.
 **/.env
