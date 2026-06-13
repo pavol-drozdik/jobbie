@@ -3,6 +3,11 @@
 Fixed:
 - `backend-ts/tsconfig.json`: enable `esModuleInterop` so `import cors from 'cors'` compiles correctly (`cors_1.default is not a function` on `/api/*` OPTIONS/GET in GHCR image; `/health` was unaffected).
 
+Changed:
+- `websupport-vps-deployment/Dockerfile`: retry `npm ci` on transient registry errors (common on arm64 QEMU in GHA).
+- `backend-ghcr.yml`: staging branch builds `linux/arm64` only (staging VPS); `main`/tags still build amd64+arm64.
+- Rename `deploy_staging.sh` → `deploy_backend.sh` (shared VPS deploy; prod workflows no longer reference a staging-named script).
+
 ## 2026-06-12 — PWA Cloudflare deploy (GitHub Actions)
 
 Added:

@@ -42,7 +42,7 @@ jobs:
           host: ${{ secrets.STAGING_SSH_HOST }}
           username: ${{ secrets.STAGING_SSH_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
-          source: websupport-vps-deployment/scripts/deploy_staging.sh
+          source: websupport-vps-deployment/scripts/deploy_backend.sh
           target: /tmp/jobbie-deploy/
 
       - name: Deploy over SSH
@@ -60,8 +60,8 @@ jobs:
           envs: BACKEND_VERSION,GHCR_IMAGE,GHCR_USER,GHCR_TOKEN,HEALTH_URL
           script: |
             set -euo pipefail
-            sudo install -m 755 /tmp/jobbie-deploy/websupport-vps-deployment/scripts/deploy_staging.sh \
-              /srv/nestjs-typesense/scripts/deploy_staging.sh
+            sudo install -m 755 /tmp/jobbie-deploy/websupport-vps-deployment/scripts/deploy_backend.sh \
+              /srv/nestjs-typesense/scripts/deploy_backend.sh
             export HEALTH_URL="${HEALTH_URL:-https://api.cocreate.cz/health}"
             sudo \
               BACKEND_VERSION="${BACKEND_VERSION}" \
@@ -69,4 +69,4 @@ jobs:
               GHCR_USER="${GHCR_USER}" \
               GHCR_TOKEN="${GHCR_TOKEN}" \
               HEALTH_URL="${HEALTH_URL}" \
-              bash /srv/nestjs-typesense/scripts/deploy_staging.sh
+              bash /srv/nestjs-typesense/scripts/deploy_backend.sh

@@ -341,7 +341,7 @@ Before major upgrades, confirm a recent R2 backup exists and take a Websupport V
 
 **Preferred:** push a `backend-v*` tag or run **backend-ghcr** in GitHub Actions (staging auto-deploy when secrets are set).
 
-**Manual** (same steps as `scripts/deploy_staging.sh`):
+**Manual** (same steps as `scripts/deploy_backend.sh`):
 
 ```bash
 cd /srv/nestjs-typesense
@@ -349,7 +349,7 @@ export BACKEND_VERSION=2026.06.12-1
 export GHCR_IMAGE=ghcr.io/GITHUB_USERNAME/jobbie-backend
 export GHCR_USER=GITHUB_USERNAME
 export GHCR_TOKEN=...   # read:packages PAT for private image
-sudo -E bash scripts/deploy_staging.sh
+sudo -E bash scripts/deploy_backend.sh
 ```
 
 Or without the script:

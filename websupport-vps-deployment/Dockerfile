@@ -1,7 +1,16 @@
 FROM node:22-bookworm-slim AS deps
 WORKDIR /app/backend-ts
 COPY backend-ts/package.json backend-ts/package-lock.json ./
-RUN npm ci
+# CI arm64 QEMU builds can hit transient npm registry resets — retry with backoff.
+RUN npm config set fetch-retries 5 \
+  && npm config set fetch-retry-mintimeout 20000 \
+  && npm config set fetch-retry-maxtimeout 120000 \
+  && for attempt in 1 2 3 4 5; do \
+       npm ci && exit 0; \
+       echo "npm ci failed (attempt ${attempt}/5), retrying..." >&2; \
+       sleep $((attempt * 15)); \
+     done; \
+     exit 1
 
 FROM node:22-bookworm-slim AS build
 WORKDIR /app/backend-ts
@@ -12,7 +21,15 @@ RUN npm run build
 FROM node:22-bookworm-slim AS prod-deps
 WORKDIR /app/backend-ts
 COPY backend-ts/package.json backend-ts/package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm config set fetch-retries 5 \
+  && npm config set fetch-retry-mintimeout 20000 \
+  && npm config set fetch-retry-maxtimeout 120000 \
+  && for attempt in 1 2 3 4 5; do \
+       npm ci --omit=dev && npm cache clean --force && exit 0; \
+       echo "npm ci --omit=dev failed (attempt ${attempt}/5), retrying..." >&2; \
+       sleep $((attempt * 15)); \
+     done; \
+     exit 1
 
 FROM node:22-bookworm-slim AS runtime
 WORKDIR /app/backend-ts

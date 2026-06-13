@@ -2,15 +2,17 @@
 set -euo pipefail
 
 # Pull a versioned backend image and restart the backend container.
-# Used for staging and production VPS (GitHub Actions SSH or manual):
+# Shared by staging and production VPS deploy (GitHub Actions SSH or manual).
+# Environment is selected by workflow secrets/vars and each host's .env — not by this script.
+#
 #   sudo BACKEND_VERSION=2026.06.12-abc1234 GHCR_IMAGE=ghcr.io/owner/jobbie-backend \
 #     GHCR_USER=owner GHCR_TOKEN=... HEALTH_URL=https://api.example/health \
-#     bash scripts/deploy_staging.sh
+#     bash scripts/deploy_backend.sh
 
 DEPLOY_ROOT="${DEPLOY_ROOT:-/srv/nestjs-typesense}"
 BACKEND_VERSION="${BACKEND_VERSION:?BACKEND_VERSION is required}"
 GHCR_IMAGE="${GHCR_IMAGE:?GHCR_IMAGE is required}"
-HEALTH_URL="${HEALTH_URL:-https://api.cocreate.cz/health}"
+HEALTH_URL="${HEALTH_URL:?HEALTH_URL is required}"
 
 docker_cmd() {
   if docker info >/dev/null 2>&1; then

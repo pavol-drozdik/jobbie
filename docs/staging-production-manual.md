@@ -256,7 +256,7 @@ Redeploy without a new merge: **deploy-pwa-staging** or **deploy-pwa-production*
 
 ### What deploy does on the VPS
 
-Script: `websupport-vps-deployment/scripts/deploy_staging.sh` (used for both staging and prod)
+Script: `websupport-vps-deployment/scripts/deploy_backend.sh` (shared staging + prod)
 
 1. `docker login ghcr.io` (CI passes token)
 2. Set `BACKEND_IMAGE=ghcr.io/owner/jobbie-backend:<tag>` in `.env`
@@ -733,7 +733,7 @@ export GHCR_IMAGE=ghcr.io/pr3vesttheduck/jobbie-backend
 export GHCR_USER=pr3vesttheduck
 export GHCR_TOKEN=...   # read:packages
 export HEALTH_URL=https://api.cocreate.cz/health
-sudo -E bash scripts/deploy_staging.sh
+sudo -E bash scripts/deploy_backend.sh
 ```
 
 ### Rollback
@@ -814,7 +814,7 @@ See [observability-runbook.md](./observability-runbook.md).
 
 ### deploy job failed: `BACKEND_VERSION is required`
 
-Ubuntu `sudo` resets the environment. CI workflows pass deploy vars on the `sudo` line (`sudo BACKEND_VERSION=… bash deploy_staging.sh`), not `sudo bash` alone.
+Ubuntu `sudo` resets the environment. CI workflows pass deploy vars on the `sudo` line (`sudo BACKEND_VERSION=… bash deploy_backend.sh`), not `sudo bash` alone.
 
 ### deploy job failed: docker pull / unauthorized
 
