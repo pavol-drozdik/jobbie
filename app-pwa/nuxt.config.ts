@@ -58,6 +58,11 @@ function buildSeoRouteRules(): Record<string, object> {
         'cache-control': 'public, max-age=31536000, immutable',
       },
     },
+    '/_ipx/**': {
+      headers: {
+        'cache-control': 'public, max-age=31536000, immutable',
+      },
+    },
     '/assets/**': {
       headers: {
         'cache-control': 'public, max-age=31536000, immutable',

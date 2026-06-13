@@ -21,29 +21,40 @@
 <script setup lang="ts">
 import type { Job } from '~/utils/job'
 import { getJobCardThumbnailSrc, JOB_CARD_PLACEHOLDER_PATH } from '~/utils/job'
+import { jobPhotoFullPublicUrl } from '~/utils/job-photo-url'
 import { resolvePublicImageUrl } from '~/utils/public-image-url'
 
 const props = defineProps<{
   job: Job
 }>()
 
-const imageSrc = ref<string>(getJobCardThumbnailSrc(props.job))
-let fallbackUsed = false
+const fullResolvedUrl = computed(() =>
+  resolvePublicImageUrl(getJobCardThumbnailSrc(props.job)),
+)
+const imageSrc = ref<string>(fullResolvedUrl.value)
+let fallbackStage = 0
 
 watch(
   () => props.job,
-  (job: Job) => {
-    fallbackUsed = false
-    imageSrc.value = resolvePublicImageUrl(getJobCardThumbnailSrc(job))
+  () => {
+    fallbackStage = 0
+    imageSrc.value = fullResolvedUrl.value
   },
   { deep: true },
 )
 
 function onThumbnailError(): void {
-  if (fallbackUsed) {
-    return
+  if (fallbackStage === 0) {
+    fallbackStage = 1
+    const full = jobPhotoFullPublicUrl(fullResolvedUrl.value)
+    if (full && full !== imageSrc.value) {
+      imageSrc.value = full
+      return
+    }
   }
-  fallbackUsed = true
-  imageSrc.value = JOB_CARD_PLACEHOLDER_PATH
+  if (fallbackStage >= 1) {
+    fallbackStage = 2
+    imageSrc.value = JOB_CARD_PLACEHOLDER_PATH
+  }
 }
 </script>

@@ -4,6 +4,7 @@ import sharp = require('sharp');
 import {
   CV_PHOTO_MAX_EDGE_PX,
   JOB_PHOTO_MAX_EDGE_PX,
+  JOB_PHOTO_THUMB_MAX_EDGE_PX,
   PROFILE_AVATAR_MAX_EDGE_PX,
 } from './upload-policy';
 
@@ -26,6 +27,19 @@ export class ImageProcessService {
         withoutEnlargement: true,
       })
       .jpeg({ quality: 85, mozjpeg: true })
+      .toBuffer();
+    return { buffer, contentType: 'image/jpeg', ext: 'jpg' };
+  }
+
+  /** Smaller variant for job list cards (stored as `{uuid}_thumb.jpg`). */
+  async processJobPhotoThumb(input: Buffer): Promise<ProcessedImage> {
+    const buffer = await sharp(input)
+      .rotate()
+      .resize(JOB_PHOTO_THUMB_MAX_EDGE_PX, JOB_PHOTO_THUMB_MAX_EDGE_PX, {
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .jpeg({ quality: 82, mozjpeg: true })
       .toBuffer();
     return { buffer, contentType: 'image/jpeg', ext: 'jpg' };
   }

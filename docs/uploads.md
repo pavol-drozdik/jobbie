@@ -43,8 +43,9 @@ Legacy multipart routes return **410 Gone**. CV JSON `data_url` on `POST /api/cv
 1. Authenticate (`SessionAuthGuard` / `GlobalAuthGuard`) + ownership.
 2. `@Throttle()` on init/finalize (~10/min).
 3. Init: extension/MIME allowlist ([`file-allowlist.ts`](../backend-ts/src/storage/file-allowlist.ts)), size cap, server-generated path, `storage_pending_uploads` row.
-4. Finalize: download object, **magic-byte sniff**, block SVG, Sharp for images, overwrite object.
-5. Pending registry: [`storage_pending_uploads`](../supabase/migrations/20260623140000_storage_pending_uploads.sql).
+4. Finalize: download object, **magic-byte sniff**, block SVG, Sharp for images, overwrite object with long `Cache-Control` (`storage-cache-policy.ts`).
+5. Job photos: full image (max 1920px) plus list thumbnail `{uuid}_thumb.jpg` (640px) in the same bucket.
+6. Pending registry: [`storage_pending_uploads`](../supabase/migrations/20260623140000_storage_pending_uploads.sql).
 
 ## Size and type limits
 
@@ -52,7 +53,7 @@ From [`backend-ts/src/storage/upload-policy.ts`](../backend-ts/src/storage/uploa
 
 | Kind | Max size | Max edge (images) | Types |
 |------|----------|-------------------|-------|
-| Job photo | 5 MB | 1920 px | jpeg, png, webp, gif |
+| Job photo | 5 MB | 1920 px (640 px thumb for lists) | jpeg, png, webp, gif |
 | Profile avatar | 5 MB | 512 px | jpeg, png, webp, gif |
 | CV photo | 5 MB | 512 px | jpeg, png, webp |
 | Chat media | 15 MB | (varies) | Images + PDF, Office, CSV, TXT, RTF, ODT, ODS |

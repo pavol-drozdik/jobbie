@@ -9,6 +9,7 @@ import {
   SearchAnalyticsSummaryDto,
 } from './search.dto';
 import { JOB_SEARCH_HYDRATE_SELECT } from '../jobs/job-list-select';
+import { coverPhotosForJobList } from '../jobs/job-photo-url.util';
 import { TypesenseService } from './typesense.service';
 import type { TypesenseJobSortMode } from './typesense-job-search.types';
 import { ListingTopPromotionService } from '../billing/listing-top-promotion.service';
@@ -55,7 +56,7 @@ function nextCursorOrUndefined(
 function toJobResponse(row: JobRow): JobOfferResponseDto {
   return {
     ...(row as unknown as JobOfferResponseDto),
-    photos: Array.isArray(row.photos) ? (row.photos as string[]) : [],
+    photos: coverPhotosForJobList(row.photos),
     applications_count: Number(row.applications_count) || 0,
   };
 }

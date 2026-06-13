@@ -26,6 +26,8 @@ import {
 import { FileScanService } from './file-scan.service';
 import { ImageProcessService } from './image-process.service';
 import type { StorageUploadInitDto } from './storage-upload.dto';
+import { PUBLIC_STORAGE_CACHE_CONTROL } from './storage-cache-policy';
+import { jobPhotoThumbStoragePath } from '../jobs/job-photo-url.util';
 import {
   BUCKET_CHAT_MEDIA,
   BUCKET_CV_PHOTOS,
@@ -384,13 +386,26 @@ export class StorageUploadService {
     await this.fileScan.scan(buffer);
     const processed = await this.images.processJobPhoto(buffer);
     assertMaxBytes(processed.buffer.length, JOB_PHOTO_MAX_BYTES);
-    return this.overwriteObject(
+    const result = await this.overwriteObject(
       BUCKET_JOB_PHOTOS,
       storagePath,
       processed.buffer,
       processed.contentType,
       true,
     );
+    try {
+      const thumb = await this.images.processJobPhotoThumb(buffer);
+      await this.overwriteObject(
+        BUCKET_JOB_PHOTOS,
+        jobPhotoThumbStoragePath(storagePath),
+        thumb.buffer,
+        thumb.contentType,
+        true,
+      );
+    } catch (err) {
+      this.logger.warn(`job photo thumb skipped: ${String(err)}`);
+    }
+    return result;
   }
 
   private async finalizeProfileAvatarBuffer(
@@ -620,7 +635,11 @@ export class StorageUploadService {
     const { error } = await this.supabase
       .getClient()
       .storage.from(bucket)
-      .upload(storagePath, buffer, { contentType, upsert: true });
+      .upload(storagePath, buffer, {
+        contentType,
+        upsert: true,
+        cacheControl: isPublic ? PUBLIC_STORAGE_CACHE_CONTROL : undefined,
+      });
     if (error) {
       throw new BadRequestException(error.message || 'Upload failed');
     }

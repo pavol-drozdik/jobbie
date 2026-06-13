@@ -83,7 +83,7 @@ export class CompanyAdsListService {
     const now = new Date().toISOString();
     const base = () =>
       this.supabase
-        .getClient()
+        .getReadClient()
         .from('company_ads')
         .select(COMPANY_AD_LIST_SELECT, { count: 'exact' })
         .eq('status', 'active')

@@ -13,6 +13,7 @@ import {
   ForbiddenException,
   NotFoundException,
   BadRequestException,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { JwksAuthGuard } from '../auth/jwks-auth.guard';
@@ -30,9 +31,11 @@ import {
 } from './feed-scoring.service';
 import {
   JOB_CARD_LIST_SELECT,
-  JOB_FEED_LIST_SELECT,
+  JOB_LIST_MEMORY_FILTER_SELECT,
   JOB_SEARCH_HYDRATE_SELECT,
 } from './job-list-select';
+import { coverPhotosForJobList } from './job-photo-url.util';
+import { AnonymousCatalogCacheInterceptor } from '../common/interceptors/anonymous-catalog-cache.interceptor';
 import {
   JobOfferCreateDto,
   JobOfferUpdateDto,
@@ -117,12 +120,30 @@ function mapRowForViewer(
   return mapJobForViewer(toResponse(row), viewerFromUser(user));
 }
 
+function mapRowForListViewer(
+  row: JobRow,
+  user: CurrentUser | null,
+): JobOfferResponseDto {
+  const dto = mapRowForViewer(row, user);
+  return {
+    ...dto,
+    photos: coverPhotosForJobList(dto.photos),
+  };
+}
+
 function mapRowsForViewer(
   rows: JobRow[],
   user: CurrentUser | null,
 ): JobOfferResponseDto[] {
   const viewer = viewerFromUser(user);
   return rows.map((row) => mapJobForViewer(toResponse(row), viewer));
+}
+
+function mapRowsForListViewer(
+  rows: JobRow[],
+  user: CurrentUser | null,
+): JobOfferResponseDto[] {
+  return rows.map((row) => mapRowForListViewer(row, user));
 }
 
 function isPublicJobOffer(dto: JobOfferResponseDto): boolean {
@@ -277,6 +298,7 @@ export class JobsController {
   /** List jobs. When user is logged in, order by rule-based score (see FeedScoringService). */
   @Get()
   @OptionalAuth()
+  @UseInterceptors(AnonymousCatalogCacheInterceptor)
   @Throttle({ default: { limit: 200, ttl: 60000 } })
   async list(
     @CurrentUserDecorator() user: CurrentUser | null,
@@ -309,12 +331,22 @@ export class JobsController {
           (effectiveCompanyId && effectiveCompanyId === user.id)),
     );
 
+    const locRaw = location?.trim();
+    const qRaw = q?.trim();
+    const hasBothLocationAndQuery = Boolean(locRaw && qRaw);
+    const filterPlanTier =
+      planTier && ['bronze', 'silver', 'gold'].includes(planTier);
+    const needsMemoryPipeline =
+      Boolean(user) || filterPlanTier || hasBothLocationAndQuery;
+
     const listSelect =
-      user || q?.trim()
-        ? JOB_FEED_LIST_SELECT
+      needsMemoryPipeline && qRaw
+        ? JOB_LIST_MEMORY_FILTER_SELECT
         : JOB_CARD_LIST_SELECT;
-    let query = this.supabase
-      .getClient()
+    const dbClient = isOwnerScopedList
+      ? this.supabase.getClient()
+      : this.supabase.getReadClient();
+    let query = dbClient
       .from('job_offers')
       .select(listSelect)
       .eq('is_deleted', false);
@@ -381,8 +413,6 @@ export class JobsController {
       }
     }
 
-    const locRaw = location?.trim();
-    const qRaw = q?.trim();
     if (locRaw && !qRaw) {
       const inner = escapePostgrestIlikePattern(locRaw);
       const p = `%${inner}%`;
@@ -396,12 +426,6 @@ export class JobsController {
         `title.ilike.${p},description.ilike.${p},location.ilike.${p},location_address.ilike.${p}`,
       );
     }
-
-    const filterPlanTier =
-      planTier && ['bronze', 'silver', 'gold'].includes(planTier);
-    const hasBothLocationAndQuery = Boolean(locRaw && qRaw);
-    const needsMemoryPipeline =
-      Boolean(user) || filterPlanTier || hasBothLocationAndQuery;
 
     if (!needsMemoryPipeline) {
       let q2 = query;
@@ -419,7 +443,7 @@ export class JobsController {
       let list = (rows ?? []) as unknown as JobRow[];
       list = await this.sortJobRowsTopFirst(list);
       const paginated = list.slice(offsetNum, offsetNum + limitNum);
-      return this.enrichJobsTopBadge(mapRowsForViewer(paginated, user));
+      return this.enrichJobsTopBadge(mapRowsForListViewer(paginated, user));
     }
 
     const fetchCap = this.listFetchCap(offsetNum, limitNum);
@@ -442,15 +466,20 @@ export class JobsController {
 
     if (qRaw) {
       const lower = qRaw.toLowerCase();
-      list = list.filter(
-        (j) =>
+      list = list.filter((j) => {
+        const tags = Array.isArray(j.skill_tags)
+          ? (j.skill_tags as string[])
+          : [];
+        return (
           (j.title && String(j.title).toLowerCase().includes(lower)) ||
           (j.description &&
             String(j.description).toLowerCase().includes(lower)) ||
+          tags.some((tag) => String(tag).toLowerCase().includes(lower)) ||
           (j.location && String(j.location).toLowerCase().includes(lower)) ||
           (j.location_address &&
-            String(j.location_address).toLowerCase().includes(lower)),
-      );
+            String(j.location_address).toLowerCase().includes(lower))
+        );
+      });
     }
 
     if (filterPlanTier) {
@@ -516,7 +545,7 @@ export class JobsController {
 
     list = await this.sortJobRowsTopFirst(list);
     const paginated = list.slice(offsetNum, offsetNum + limitNum);
-    return this.enrichJobsTopBadge(mapRowsForViewer(paginated, user));
+    return this.enrichJobsTopBadge(mapRowsForListViewer(paginated, user));
   }
 
   @Post('impressions')

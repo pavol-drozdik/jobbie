@@ -1,4 +1,15 @@
-﻿## 2026-06-13 — Fix CORS middleware crash in Docker production build
+﻿## 2026-06-13 — Supabase egress reductions
+
+Changed:
+- **Storage:** public objects get `Cache-Control: public, max-age=31536000, immutable` on finalize; job photo uploads also write a `{uuid}_thumb.jpg` list variant (640px).
+- **Jobs catalog:** list API returns cover thumb URLs only; feed scoring uses `skill_tags` instead of shipping `description`/`requirements`; public catalog reads use `getReadClient()` when configured.
+- **Cache:** `AnonymousCatalogCacheInterceptor` on `GET /jobs` and `GET /company-ads` (60s CDN for anonymous); SEO feeds cached in Redis (15 min); PWA `/_ipx/**` long cache headers.
+- **PWA:** CV signed photo URL in-memory cache; job card thumbnails fall back from thumb → full URL → placeholder.
+
+Docs:
+- `docs/scalability.md` — egress / media CDN notes.
+
+## 2026-06-13 — Fix CORS middleware crash in Docker production build
 
 Fixed:
 - `backend-ts/tsconfig.json`: enable `esModuleInterop` so `import cors from 'cors'` compiles correctly (`cors_1.default is not a function` on `/api/*` OPTIONS/GET in GHCR image; `/health` was unaffected).
