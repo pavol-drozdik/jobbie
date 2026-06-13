@@ -66,4 +66,10 @@ jobs:
             sudo install -m 755 /tmp/jobbie-deploy/websupport-vps-deployment/scripts/deploy_staging.sh \
               /srv/nestjs-typesense/scripts/deploy_staging.sh
             export HEALTH_URL="${HEALTH_URL:-https://api.jobbie.sk/health}"
-            sudo bash /srv/nestjs-typesense/scripts/deploy_staging.sh
+            sudo \
+              BACKEND_VERSION="${BACKEND_VERSION}" \
+              GHCR_IMAGE="${GHCR_IMAGE}" \
+              GHCR_USER="${GHCR_USER}" \
+              GHCR_TOKEN="${GHCR_TOKEN}" \
+              HEALTH_URL="${HEALTH_URL}" \
+              bash /srv/nestjs-typesense/scripts/deploy_staging.sh

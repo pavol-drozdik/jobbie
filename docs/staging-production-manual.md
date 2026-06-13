@@ -724,6 +724,10 @@ See [observability-runbook.md](./observability-runbook.md).
 - Confirm deploy public key is in `authorized_keys`
 - Test manually: `ssh -i jobbie-staging-deploy ubuntu@HOST`
 
+### deploy job failed: `BACKEND_VERSION is required`
+
+Ubuntu `sudo` resets the environment. CI workflows pass deploy vars on the `sudo` line (`sudo BACKEND_VERSION=… bash deploy_staging.sh`), not `sudo bash` alone.
+
 ### deploy job failed: docker pull / unauthorized
 
 - `STAGING_GHCR_TOKEN` needs `read:packages`

@@ -1,4 +1,9 @@
-﻿## 2026-06-12 — Staging & production deployment manual
+﻿## 2026-06-12 — VPS deploy: pass env vars through sudo
+
+Fixed:
+- GitHub Actions SSH deploy passes `BACKEND_VERSION`, `GHCR_*`, and `HEALTH_URL` on the `sudo` line — default `sudo bash` stripped them (`BACKEND_VERSION is required`).
+
+## 2026-06-12 — Staging & production deployment manual
 
 Docs:
 - [`docs/staging-production-manual.md`](./staging-production-manual.md) — full runbook: architecture, Git/GitHub (`staging`/`main`), CI/CD workflows, VPS bootstrap (staging + prod), env files, migrations, PWA, Stripe, release checklist, troubleshooting.
