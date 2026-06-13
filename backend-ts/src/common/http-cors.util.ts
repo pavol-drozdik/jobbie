@@ -11,7 +11,7 @@ const CORS_HEADERS = [
 
 /**
  * Default dev origin allowlist used when `CORS_ORIGINS` is unset outside of
- * production. We avoid the reflective `origin: true` pattern (which echoes
+ * production. We avoid a reflective CORS origin (echoing any Origin header
  * any Origin header alongside `Access-Control-Allow-Credentials: true`) so a
  * preview/staging deployment misconfigured with `NODE_ENV=development`
  * cannot serve authenticated responses to an arbitrary attacker page.

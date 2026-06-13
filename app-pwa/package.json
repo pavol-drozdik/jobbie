@@ -62,6 +62,8 @@
     "workbox-routing": "^7.4.1"
   },
   "overrides": {
-    "tar": "^7.5.16"
+    "tar": "^7.5.16",
+    "esbuild": ">=0.28.1",
+    "shell-quote": ">=1.8.4"
   }
 }

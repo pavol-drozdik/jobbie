@@ -60,9 +60,26 @@ fi
 cd "${DEPLOY_ROOT}"
 export BACKEND_IMAGE="${NEW_IMAGE}"
 compose_cmd pull backend
-compose_cmd up -d backend
+compose_cmd up -d --wait --wait-timeout 180 backend
 
 # GET /health bypasses CORS (no Origin required) — safe for curl and load balancers.
-curl -fsS "${HEALTH_URL}"
-echo
-echo "Deploy OK: ${NEW_IMAGE}"
+# Retry through Caddy in case the reverse proxy flaps briefly after container recreate.
+HEALTH_RETRIES="${HEALTH_RETRIES:-30}"
+HEALTH_SLEEP="${HEALTH_SLEEP:-3}"
+attempt=1
+while [[ "${attempt}" -le "${HEALTH_RETRIES}" ]]; do
+  if curl -fsS "${HEALTH_URL}"; then
+    echo
+    echo "Deploy OK: ${NEW_IMAGE}"
+    exit 0
+  fi
+  if [[ "${attempt}" -eq "${HEALTH_RETRIES}" ]]; then
+    echo "Health check failed after ${HEALTH_RETRIES} attempts: ${HEALTH_URL}" >&2
+    compose_cmd ps backend || true
+    compose_cmd logs backend --tail 80 || true
+    exit 1
+  fi
+  echo "Health check attempt ${attempt}/${HEALTH_RETRIES} failed; retrying in ${HEALTH_SLEEP}s..."
+  sleep "${HEALTH_SLEEP}"
+  attempt=$((attempt + 1))
+done

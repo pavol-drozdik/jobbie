@@ -7,6 +7,7 @@ Changed:
 - `websupport-vps-deployment/Dockerfile`: retry `npm ci` on transient registry errors (common on arm64 QEMU in GHA).
 - `backend-ghcr.yml`: staging branch builds `linux/arm64` only (staging VPS); `main`/tags still build amd64+arm64.
 - Rename `deploy_staging.sh` → `deploy_backend.sh` (shared VPS deploy; prod workflows no longer reference a staging-named script).
+- `deploy_backend.sh`: `docker compose up --wait` (180s) plus retried external `/health` curl — fixes false-fail 502 right after container recreate.
 
 ## 2026-06-12 — PWA Cloudflare deploy (GitHub Actions)
 
