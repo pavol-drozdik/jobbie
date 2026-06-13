@@ -27,7 +27,7 @@
     "audit:prod": "npm audit --omit=dev"
   },
   "dependencies": {
-    "@capacitor/android": "^6.0.0",
+    "@capacitor/android": "^8.4.0",
     "@capacitor/core": "^6.0.0",
     "@capacitor/ios": "^6.0.0",
     "@fontsource-variable/dm-sans": "^5.2.8",
