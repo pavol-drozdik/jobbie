@@ -28,6 +28,17 @@ updates:
     labels:
       - dependencies
       - frontend
+    groups:
+      tiptap:
+        patterns:
+          - '@tiptap/*'
+      capacitor:
+        patterns:
+          - '@capacitor/*'
+    ignore:
+      # Capacitor 7/8 needs a dedicated migration; stay on 6.x until planned.
+      - dependency-name: '@capacitor/*'
+        update-types: ['version-update:semver-major']
 
   # GitHub Actions versions
   - package-ecosystem: github-actions
