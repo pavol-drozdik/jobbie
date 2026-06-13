@@ -1,4 +1,9 @@
-﻿## 2026-06-12 — Branch-based backend deploy (staging / main)
+﻿## 2026-06-12 — Staging & production deployment manual
+
+Docs:
+- [`docs/staging-production-manual.md`](./staging-production-manual.md) — full runbook: architecture, Git/GitHub (`staging`/`main`), CI/CD workflows, VPS bootstrap (staging + prod), env files, migrations, PWA, Stripe, release checklist, troubleshooting.
+
+## 2026-06-12 — Branch-based backend deploy (staging / main)
 
 Added:
 - `backend-ghcr` triggers on push to **`staging`** and **`main`** (path-filtered); auto image tags `staging-YYYY.MM.DD-<sha7>` vs `YYYY.MM.DD-<sha7>`; `:latest` only on `main` and `backend-v*` tags.

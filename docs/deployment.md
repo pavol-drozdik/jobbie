@@ -2,6 +2,8 @@
 
 How to run JOBBIE locally and deploy to production. Portable hosting notes were merged from the root [`DEPLOYMENT.md`](../DEPLOYMENT.md).
 
+**Full staging → production runbook (Git, GitHub Actions, VPS):** [staging-production-manual.md](./staging-production-manual.md).
+
 Operations: [database-operations-runbook.md](./database-operations-runbook.md). Monitoring: [observability-runbook.md](./observability-runbook.md).
 
 ## Local development

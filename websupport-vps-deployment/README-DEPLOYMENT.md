@@ -2,6 +2,8 @@
 
 This folder is an isolated production deployment bundle for the existing `backend-ts` NestJS API. It intentionally does not self-host Supabase and does not expose Typesense publicly.
 
+**End-to-end manual (Git branches, GitHub CI/CD, staging + prod VPS):** [`docs/staging-production-manual.md`](../docs/staging-production-manual.md).
+
 Recommended VPS:
 
 ```text
