@@ -217,7 +217,10 @@ Workflow files: `.github/workflows/`
 
 | Workflow | Triggers | What it does |
 |----------|----------|--------------|
-| **backend-ci** | PR + push to any branch (path filter) | Unit tests, PWA build, npm audit, security grep. **No deploy.** |
+| **backend-ci** | PR + push to any branch (path filter) | Unit tests, PWA build smoke test, npm audit, security grep. **No deploy.** |
+| **pwa-bundle-budget** | PR on `app-pwa/**` | Bundle analyzer + soft chunk budget. **No deploy.** |
+| **pwa-pages** | Push `staging` / `main` on `app-pwa/**`; manual | Test, `build:cloudflare`, deploy to Cloudflare Pages |
+| **deploy-pwa-staging** / **deploy-pwa-production** | Manual only | Rebuild + redeploy PWA (optional `git_ref`) |
 | **backend-ghcr** | Push `staging` / `main`; tag `backend-v*`; manual | Test, build multi-arch image, push GHCR, deploy to matching VPS |
 | **deploy-staging** | Manual only | Redeploy an **existing** image tag to staging (no rebuild) |
 | **deploy-production** | Manual only | Redeploy an **existing** image tag to production |
@@ -235,7 +238,21 @@ Workflow files: `.github/workflows/`
 
 Path filter (branch pushes): `backend-ts/**`, `websupport-vps-deployment/**`, `.github/workflows/backend-ghcr.yml`.
 
-PWA-only changes do **not** trigger backend deploy (by design). Merge backend when API changes ship.
+PWA-only changes do **not** trigger backend deploy (by design). Backend-only changes do **not** trigger PWA deploy.
+
+### pwa-pages triggers
+
+| Trigger | GitHub environment | Pages target |
+|---------|-------------------|--------------|
+| Push **`staging`** (`app-pwa/**`) | `staging` | `PWA_PAGES_PROJECT` + `PWA_PAGES_BRANCH` vars |
+| Push **`main`** | `production` | same vars on **production** environment |
+| Manual + **Skip deploy** | — | build/test only |
+
+Path filter: `app-pwa/**`, `.github/workflows/pwa-pages.yml`, `.github/workflows/pwa-cloudflare-deploy.yml`.
+
+Redeploy without a new merge: **deploy-pwa-staging** or **deploy-pwa-production** (optional `git_ref`).
+
+**PWA host / project** are not hardcoded in YAML — set **Environment variables** on `staging` and `production` (see [§13](#13-pwa-frontend-deploy)).
 
 ### What deploy does on the VPS
 
@@ -298,12 +315,47 @@ Append `jobbie-staging-deploy.pub` to staging VPS:
 | `STAGING_HEALTH_URL` | `https://api.cocreate.cz/health` |
 | `PROD_HEALTH_URL` | `https://api.jobbie.sk/health` |
 
+**Cloudflare (PWA deploy)** — repository **Secrets** (or per-environment if you prefer):
+
+| Secret | Purpose |
+|--------|---------|
+| `CLOUDFLARE_API_TOKEN` | Pages deploy via Wrangler (`Account` → **Cloudflare Pages: Edit**) |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |
+
+**PWA deploy target** — **Environment variables** on `staging` and `production` (names are fixed in the workflow):
+
+| Variable | Purpose |
+|----------|---------|
+| `PWA_PAGES_PROJECT` | Cloudflare Pages project name (default `jobbie-pwa` if unset) |
+| `PWA_PAGES_BRANCH` | Optional Wrangler `--branch=…` (empty = production deployment on that project) |
+| `NUXT_PUBLIC_SITE_URL` | Public PWA origin for canonical/OG (no trailing slash) |
+
+Custom domains (`jobbie.sk`, `staging.jobbie.sk`) are attached in the **Cloudflare Pages** dashboard to the matching project — not in GitHub.
+
+**PWA build variables** — same environments; names match `app-pwa/.env.example` (`NUXT_PUBLIC_*`). Minimum per environment:
+
+| Variable | Staging example | Production example |
+|----------|-----------------|-------------------|
+| `NUXT_PUBLIC_API_BASE_URL` | `https://api.cocreate.cz` | `https://api.jobbie.sk` |
+| `NUXT_PUBLIC_SITE_URL` | `https://jobbie.sk` (see [§13](#13-pwa-frontend-deploy) phases) | `https://jobbie.sk` |
+| `NUXT_PUBLIC_SUPABASE_URL` | staging Supabase URL | prod Supabase URL |
+| `NUXT_PUBLIC_SUPABASE_ANON_KEY` | staging anon key | prod anon key |
+| `NUXT_PUBLIC_SITE_URL` | staging PWA URL (no trailing slash) | `https://jobbie.sk` |
+| `NUXT_PUBLIC_ALLOW_INDEXING` | `0` or empty | `1` |
+| `NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe **test** publishable | Stripe **live** publishable |
+| `NUXT_PUBLIC_TURNSTILE_SITE_KEY` | Turnstile site key (test OK) | production site key |
+
+Optional: Sentry, PostHog, GTM, CDN URLs, SEO verification keys — see [deployment.md](./deployment.md). The workflow passes every `NUXT_PUBLIC_*` from the environment; leave unused ones empty.
+
+`NUXT_PUBLIC_API_BASE_URL` is the **API origin only** (e.g. `https://api.cocreate.cz`), not `…/api` — the PWA appends `/api/...` on each request (`app-pwa/utils/api-base-url.ts`).
+
 ### 6.5 Verify CI secrets before first auto-deploy
 
 1. Merge workflow files to `main` (and `staging` after branch exists)
-2. Set all `STAGING_*` secrets
+2. Set all `STAGING_*` secrets and Cloudflare + `staging` environment `NUXT_PUBLIC_*` variables
 3. Complete [VPS staging setup](#8-staging-vps-setup) through [first stack start](#11-first-stack-start)
-4. Push a small change to `staging` or run **backend-ghcr** manually from `staging`
+4. Create Cloudflare Pages project `jobbie-pwa`; set **staging** environment vars (Phase 1 in [§13](#13-pwa-frontend-deploy))
+5. Push a small change to `staging` or run **backend-ghcr** / **pwa-pages** manually from `staging`
 
 ---
 
@@ -568,26 +620,62 @@ See [database-schema-conventions.md](./database-schema-conventions.md).
 
 ## 13. PWA (frontend) deploy
 
-The PWA is **not** deployed by `backend-ghcr`. It is a separate build (Nuxt → Cloudflare Pages per `app-pwa/README.md`).
+The PWA is deployed separately from the backend VPS: **GitHub Actions** → **Cloudflare Pages** (`pwa-pages` on branch push; **deploy-pwa-*** for manual redeploy).
 
-| Environment | Typical setup |
-|-------------|---------------|
-| Staging | Preview branch or separate Pages project; `NUXT_PUBLIC_API_BASE_URL=https://api.cocreate.cz/api` |
-| Production | `jobbie.sk`; `NUXT_PUBLIC_API_BASE_URL=https://api.jobbie.sk/api` |
+Build command in CI: `npm run build:cloudflare` (output `app-pwa/dist/`). PRs use `backend-ci` + `pwa-bundle-budget` only — no deploy until merge to `staging` or `main`.
 
-Build:
+### Host & project configuration (GitHub Environment variables)
+
+Workflow reads **`PWA_PAGES_PROJECT`**, **`PWA_PAGES_BRANCH`**, and **`NUXT_PUBLIC_SITE_URL`** from the GitHub **Environment** (`staging` or `production`). Change these when you split hosts — no workflow edit required.
+
+#### Phase 1 — now (staging frontend on `jobbie.sk`)
+
+Use one Cloudflare Pages project until production goes live.
+
+| GitHub **staging** variable | Value |
+|----------------------------|--------|
+| `PWA_PAGES_PROJECT` | `jobbie-pwa` |
+| `PWA_PAGES_BRANCH` | *(leave empty)* |
+| `NUXT_PUBLIC_SITE_URL` | `https://jobbie.sk` |
+| `NUXT_PUBLIC_API_BASE_URL` | `https://api.cocreate.cz` |
+| `NUXT_PUBLIC_ALLOW_INDEXING` | `0` or empty |
+
+**Cloudflare dashboard** (project `jobbie-pwa`):
+
+1. **Custom domains** → add `jobbie.sk` (and `www` if used)
+2. **Settings** → **Production branch** = **`staging`** (so pushes from git `staging` update `jobbie.sk`)
+3. Do **not** run **pwa-pages** from `main` until Phase 2 (or use **Skip deploy**)
+
+API staging remains `api.cocreate.cz`; ensure `CORS_ORIGINS` on the staging API includes `https://jobbie.sk`.
+
+#### Phase 2 — split hosts (recommended before prod launch)
+
+| | **staging** environment | **production** environment |
+|--|-------------------------|----------------------------|
+| `PWA_PAGES_PROJECT` | `jobbie-pwa-staging` | `jobbie-pwa` |
+| `PWA_PAGES_BRANCH` | `staging` | *(empty)* |
+| `NUXT_PUBLIC_SITE_URL` | `https://staging.jobbie.sk` | `https://jobbie.sk` |
+| `NUXT_PUBLIC_API_BASE_URL` | `https://api.cocreate.cz` | `https://api.jobbie.sk` |
+| `NUXT_PUBLIC_ALLOW_INDEXING` | `0` | `1` when ready |
+
+**Cloudflare:**
+
+1. Create project **`jobbie-pwa-staging`** → custom domain **`staging.jobbie.sk`** → production branch **`staging`**
+2. Project **`jobbie-pwa`** → **`jobbie.sk`** → production branch **`main`**
+3. Add `https://staging.jobbie.sk` to staging API `CORS_ORIGINS`; add `https://jobbie.sk` to prod API
+
+**DNS:** `staging.jobbie.sk` CNAME → Pages; `jobbie.sk` stays on production project.
+
+### Local build
 
 ```bash
 cd app-pwa
 npm ci
-npm run build
-# deploy dist/ via Wrangler / Cloudflare dashboard
+npm run build:cloudflare
+# wrangler pages deploy dist --project-name=jobbie-pwa
 ```
 
-SEO flags ([deployment.md](./deployment.md)):
-
-- Production: `NUXT_PUBLIC_SITE_URL`, `NUXT_PUBLIC_ALLOW_INDEXING=1`
-- Staging: do **not** enable indexing
+SEO: [deployment.md](./deployment.md) — staging must not enable `NUXT_PUBLIC_ALLOW_INDEXING` until you intentionally want search indexing on that host.
 
 ---
 
@@ -616,7 +704,7 @@ Use separate Stripe Price IDs in **staging vs prod** Supabase (`credit_packs`, `
 7. [ ] Approve **production** environment deploy (if reviewers enabled)
 8. [ ] Confirm prod health URL
 9. [ ] Apply migrations on **production** Supabase
-10. [ ] Deploy PWA if `app-pwa/**` changed
+10. [ ] PWA: confirm **pwa-pages** succeeded (or run **deploy-pwa-production**) if `app-pwa/**` changed
 11. [ ] Smoke test login, job list, billing (if touched)
 
 ### Hotfix (urgent production)
@@ -731,6 +819,14 @@ Ubuntu `sudo` resets the environment. CI workflows pass deploy vars on the `sudo
 ### deploy job failed: docker pull / unauthorized
 
 - `STAGING_GHCR_TOKEN` needs `read:packages`
+
+### pwa-pages failed: Cloudflare / Wrangler
+
+- `CLOUDFLARE_API_TOKEN` needs **Cloudflare Pages → Edit** on the account
+- `CLOUDFLARE_ACCOUNT_ID` must match the account that owns the Pages project
+- Create project `jobbie-pwa` (Phase 1) or both projects (Phase 2) before first deploy
+- Set `PWA_PAGES_*` and `NUXT_PUBLIC_SITE_URL` on the GitHub **Environment**, not only repo variables
+- Build needs at least `NUXT_PUBLIC_SUPABASE_URL` + `NUXT_PUBLIC_SUPABASE_ANON_KEY`
 - Package visibility: repo must allow token access
 - On VPS: `docker login ghcr.io` with same credentials
 

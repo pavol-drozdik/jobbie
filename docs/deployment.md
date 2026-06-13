@@ -99,7 +99,7 @@ Names only — set values in host secret manager or `.env`.
 
 | Variable | Purpose |
 |----------|---------|
-| `NUXT_PUBLIC_API_BASE_URL` | Nest API origin |
+| `NUXT_PUBLIC_API_BASE_URL` | Nest API **origin** (no `/api` suffix; e.g. `https://api.jobbie.sk`) |
 | `NUXT_PUBLIC_CDN_URL` | CDN for `_nuxt` assets |
 | `NUXT_PUBLIC_MEDIA_CDN_URL` | Image CDN for public photos |
 | `NUXT_PUBLIC_SUPABASE_URL` | Supabase project URL (`https://<ref>.supabase.co`; after Custom Domain add-on: e.g. `https://auth.jobbie.sk`) |
@@ -211,7 +211,21 @@ Websupport bundle: [`websupport-vps-deployment/README-DEPLOYMENT.md`](../websupp
 
 Image tags: `staging-YYYY.MM.DD-<sha7>` on staging branch; `YYYY.MM.DD-<sha7>` on main. Private GHCR: `read:packages` PAT on each VPS deploy.
 
-**Git:** create `staging` branch; merge features → `staging` → test → merge `staging` → `main` for production. Supabase migrations and PWA deploy are separate steps (staging DB / preview first, then prod).
+**Git:** create `staging` branch; merge features → `staging` → test → merge `staging` → `main` for production. Supabase migrations are a separate manual step (staging DB first, then prod).
+
+### PWA (Cloudflare Pages + GitHub Actions)
+
+Build: `npm run build:cloudflare` → `app-pwa/dist/`. Workflows: `.github/workflows/pwa-pages.yml` (reusable `pwa-cloudflare-deploy.yml`).
+
+| Branch / trigger | CI workflow | Deploy |
+|------------------|-------------|--------|
+| Push **`staging`** (`app-pwa/**`) | `pwa-pages` | Cloudflare Pages (GitHub **`staging`** env: `PWA_PAGES_*`, `NUXT_PUBLIC_*`) |
+| Push **`main`** | `pwa-pages` | Cloudflare Pages (GitHub **`production`** env) |
+| Manual | **deploy-pwa-staging** / **deploy-pwa-production** | Rebuild + redeploy (optional `git_ref`) |
+
+PR checks (no deploy): `backend-ci` (`pwa-build-and-test`), `pwa-bundle-budget`.
+
+**GitHub:** secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; per-environment variables `PWA_PAGES_PROJECT`, `PWA_PAGES_BRANCH`, `NUXT_PUBLIC_SITE_URL`, and other `NUXT_PUBLIC_*` (see `app-pwa/.env.example`). Host phases: [staging-production-manual.md](./staging-production-manual.md#13-pwa-frontend-deploy).
 
 ### Production checklist
 

@@ -1,4 +1,19 @@
-﻿## 2026-06-12 — VPS deploy: pass env vars through sudo
+﻿## 2026-06-13 — Fix CORS middleware crash in Docker production build
+
+Fixed:
+- `backend-ts/tsconfig.json`: enable `esModuleInterop` so `import cors from 'cors'` compiles correctly (`cors_1.default is not a function` on `/api/*` OPTIONS/GET in GHCR image; `/health` was unaffected).
+
+## 2026-06-12 — PWA Cloudflare deploy (GitHub Actions)
+
+Added:
+- `pwa-pages` — push `staging` / `main` on `app-pwa/**`: test, `build:cloudflare`, deploy via Wrangler to Cloudflare Pages.
+- Reusable `pwa-cloudflare-deploy.yml`; manual **deploy-pwa-staging** / **deploy-pwa-production**.
+- PWA host/project via GitHub Environment vars `PWA_PAGES_PROJECT`, `PWA_PAGES_BRANCH`, `NUXT_PUBLIC_SITE_URL` (Phase 1: staging on `jobbie.sk`; Phase 2: `staging.jobbie.sk` + prod `jobbie.sk`).
+
+Changed:
+- Docs: `NUXT_PUBLIC_API_BASE_URL` is API origin without `/api` suffix.
+
+## 2026-06-12 — VPS deploy: pass env vars through sudo
 
 Fixed:
 - GitHub Actions SSH deploy passes `BACKEND_VERSION`, `GHCR_*`, and `HEALTH_URL` on the `sudo` line — default `sudo bash` stripped them (`BACKEND_VERSION is required`).
