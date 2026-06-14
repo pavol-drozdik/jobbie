@@ -184,31 +184,7 @@ exception
 end;
 $$;
 
--- ---------------------------------------------------------------------------
--- content_reports + moderation queue support
--- ---------------------------------------------------------------------------
-create table if not exists public.content_reports (
-  id uuid primary key default gen_random_uuid(),
-  reporter_user_id uuid references public.profiles (id) on delete set null,
-  target_type text not null check (target_type in (
-    'job_offer', 'company_profile', 'banner_ad', 'company_review', 'chat_message'
-  )),
-  target_id text not null,
-  reason text not null,
-  status text not null default 'open' check (status in ('open', 'reviewed', 'dismissed')),
-  created_at timestamptz not null default now(),
-  reviewed_at timestamptz,
-  reviewed_by uuid references public.profiles (id) on delete set null
-);
-
-create index if not exists idx_content_reports_status
-  on public.content_reports (status, created_at desc);
-
-alter table public.content_reports enable row level security;
-create policy "deny all content_reports"
-  on public.content_reports for all using (false) with check (false);
-
-grant select, insert, update on public.content_reports to service_role;
+-- content_reports table: 20260530110000_content_reports_and_account_status.sql
 
 -- Idempotent credit clawback after Stripe refund (uses spend_credits ledger ref)
 create or replace function public.revoke_credits_for_payment_refund(

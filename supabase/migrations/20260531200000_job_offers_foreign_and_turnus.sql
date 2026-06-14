@@ -21,6 +21,9 @@ create index if not exists idx_job_offers_active_domestic_created
     and is_foreign = false;
 
 alter table public.job_offers
+  add column if not exists employment_types text[] not null default '{}'::text[];
+
+alter table public.job_offers
   drop constraint if exists job_offers_employment_types_subset_check;
 
 alter table public.job_offers

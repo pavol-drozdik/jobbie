@@ -8,7 +8,7 @@ Companion to [`.cursor/rules/scalability.mdc`](../.cursor/rules/scalability.mdc)
 |----------|---------|
 | `REDIS_URL` | Feed engagement cache, BullMQ `background` queue, Socket.IO adapter |
 | `NUXT_PUBLIC_CDN_URL` | Hashed `_nuxt` static assets |
-| `NUXT_PUBLIC_MEDIA_CDN_URL` | Optional transform/CDN prefix for public Supabase images |
+| `NUXT_PUBLIC_MEDIA_CDN_URL` | Optional transform/CDN prefix for public Supabase images (`/media` → Nitro proxy on PWA) |
 | `TYPESENSE_HOST` + `TYPESENSE_API_KEY` | Job search and alert matching |
 | Supabase pooler (port **6543**) | Server-side Postgres connections |
 | `SUPABASE_READ_URL` | Optional read replica for catalog lists, SEO, locations (not search hydrate) |
@@ -55,7 +55,7 @@ Without `REDIS_URL`, crons run handlers inline.
 | `profile-avatars` | Public | PWA direct |
 | `chat-media` | Private | `POST /api/chat/rooms/:id/media` only |
 
-**Egress:** set `NUXT_PUBLIC_MEDIA_CDN_URL` so public images are served from an edge CDN; keep `Cache-Control` on storage objects and `/_ipx/**` (see `nuxt.config.ts`). Anonymous catalog APIs send short `Cache-Control` for CDN caching.
+**Egress:** set `NUXT_PUBLIC_MEDIA_CDN_URL=/media` (same-origin Nitro proxy) or a full URL prefix; long `Cache-Control` on storage objects and `/_ipx/**` (see `nuxt.config.ts`). Anonymous catalog APIs send short `Cache-Control` for CDN caching.
 
 ### Search indexing
 

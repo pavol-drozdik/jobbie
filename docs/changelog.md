@@ -1,4 +1,9 @@
-﻿## 2026-06-13 — Supabase egress reductions
+﻿## 2026-06-13 — PWA media proxy (Nitro `/media`)
+
+Added:
+- `GET /media?url=` Nitro route — caches public `job-photos` and `profile-avatars` from Supabase; set `NUXT_PUBLIC_MEDIA_CDN_URL=/media`.
+
+## 2026-06-13 — Supabase egress reductions
 
 Changed:
 - **Storage:** public objects get `Cache-Control: public, max-age=31536000, immutable` on finalize; job photo uploads also write a `{uuid}_thumb.jpg` list variant (640px).

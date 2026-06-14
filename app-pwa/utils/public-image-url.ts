@@ -1,6 +1,6 @@
 /**
  * Optional CDN/transform prefix for public Supabase image URLs (list cards, avatars).
- * Set NUXT_PUBLIC_MEDIA_CDN_URL to a reverse proxy or image worker origin.
+ * Set NUXT_PUBLIC_MEDIA_CDN_URL to the Nitro proxy route (recommended: `/media` on the PWA origin).
  */
 export function resolvePublicImageUrl(url: string | null | undefined): string {
   const raw = (url ?? '').trim()

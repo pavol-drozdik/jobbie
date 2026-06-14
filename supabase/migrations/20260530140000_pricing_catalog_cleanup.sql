@@ -1,11 +1,5 @@
 -- Pricing catalog cleanup: deactivate agentura tiers, CV DB monthly quotas, usage tracking.
-
--- ---------------------------------------------------------------------------
--- credit_packs: hide agentura pack
--- ---------------------------------------------------------------------------
-update public.credit_packs
-set active = false, updated_at = now()
-where slug = 'agentura';
+-- credit_packs agentura deactivation: 20260620120000_billing_cennik.sql (table created there).
 
 -- ---------------------------------------------------------------------------
 -- subscription_plans: public catalog flag + CV monthly limits
@@ -29,21 +23,12 @@ comment on column public.subscription_plans.max_cv_unlocks_monthly is
   'Included unlocks per calendar month on free tier; NULL = unlimited included (paid plans).';
 
 update public.subscription_plans set
-  active = false,
-  updated_at = now()
-where slug = 'agentura';
-
-update public.subscription_plans set
   max_cv_unlocks_monthly = 10,
   max_cv_contacts_monthly = 5,
   max_cv_pdf_downloads_monthly = 5
 where slug = 'zadarmo';
 
-update public.subscription_plans set
-  max_cv_unlocks_monthly = null,
-  max_cv_contacts_monthly = null,
-  max_cv_pdf_downloads_monthly = null
-where slug in ('start', 'plus', 'pro');
+-- start/plus/pro limits + agentura deactivation: after slug renames in billing_cennik.
 
 -- ---------------------------------------------------------------------------
 -- employer_cv_monthly_usage (service_role only)

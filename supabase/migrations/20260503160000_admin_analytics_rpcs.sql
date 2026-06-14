@@ -101,47 +101,6 @@ as $$
   );
 $$;
 
-create or replace function public.admin_analytics_api_latency(
-  p_from timestamptz,
-  p_to timestamptz,
-  p_limit int default 40
-)
-returns jsonb
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select coalesce(
-    (
-      select jsonb_agg(
-        jsonb_build_object(
-          'path', s.path,
-          'n', s.n,
-          'p50_ms', round(s.p50::numeric, 2),
-          'p95_ms', round(s.p95::numeric, 2),
-          'avg_ms', round(s.avg_ms::numeric, 2)
-        )
-        order by s.n desc
-      )
-      from (
-        select
-          path,
-          count(*)::bigint as n,
-          percentile_cont(0.5) within group (order by latency_ms) as p50,
-          percentile_cont(0.95) within group (order by latency_ms) as p95,
-          avg(latency_ms::double precision) as avg_ms
-        from api_request_logs
-        where occurred_at >= p_from and occurred_at <= p_to
-        group by path
-        order by count(*) desc
-        limit greatest(1, least(coalesce(p_limit, 40), 200))
-      ) s
-    ),
-    '[]'::jsonb
-  );
-$$;
-
 create or replace function public.admin_analytics_cohort_weekly(p_weeks int default 8)
 returns jsonb
 language plpgsql
@@ -191,11 +150,9 @@ $$;
 revoke all on function public.admin_analytics_funnel(timestamptz, timestamptz) from public;
 revoke all on function public.admin_analytics_revenue() from public;
 revoke all on function public.admin_analytics_subscription_churn(timestamptz, timestamptz) from public;
-revoke all on function public.admin_analytics_api_latency(timestamptz, timestamptz, int) from public;
 revoke all on function public.admin_analytics_cohort_weekly(int) from public;
 
 grant execute on function public.admin_analytics_funnel(timestamptz, timestamptz) to service_role;
 grant execute on function public.admin_analytics_revenue() to service_role;
 grant execute on function public.admin_analytics_subscription_churn(timestamptz, timestamptz) to service_role;
-grant execute on function public.admin_analytics_api_latency(timestamptz, timestamptz, int) to service_role;
 grant execute on function public.admin_analytics_cohort_weekly(int) to service_role;

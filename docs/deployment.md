@@ -164,7 +164,7 @@ Full list and comments: [`backend-ts/.env.example`](../backend-ts/.env.example).
 ### CDN and static assets
 
 - Set `NUXT_PUBLIC_CDN_URL` for hashed `_nuxt` chunks ([`nuxt.config.ts`](../app-pwa/nuxt.config.ts)).
-- Optional `NUXT_PUBLIC_MEDIA_CDN_URL` for public job/ad images — not chat signed URLs.
+- Optional `NUXT_PUBLIC_MEDIA_CDN_URL` for public job/ad images — Nitro route `GET /media?url=…` on the PWA origin (set to `/media` or `https://jobbie.sk/media`). Not chat signed URLs.
 - Mirror cache headers (long cache for `/_nuxt/**`, `/assets/**`) on CDN.
 
 ### Security headers

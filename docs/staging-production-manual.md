@@ -638,6 +638,7 @@ Use one Cloudflare Pages project until production goes live.
 | `PWA_PAGES_BRANCH` | *(leave empty)* |
 | `NUXT_PUBLIC_SITE_URL` | `https://jobbie.sk` |
 | `NUXT_PUBLIC_API_BASE_URL` | `https://api.cocreate.cz` |
+| `NUXT_PUBLIC_MEDIA_CDN_URL` | `/media` |
 | `NUXT_PUBLIC_ALLOW_INDEXING` | `0` or empty |
 
 **Cloudflare dashboard** (project `jobbie-pwa`):
@@ -656,6 +657,7 @@ API staging remains `api.cocreate.cz`; ensure `CORS_ORIGINS` on the staging API 
 | `PWA_PAGES_BRANCH` | `staging` | *(empty)* |
 | `NUXT_PUBLIC_SITE_URL` | `https://staging.jobbie.sk` | `https://jobbie.sk` |
 | `NUXT_PUBLIC_API_BASE_URL` | `https://api.cocreate.cz` | `https://api.jobbie.sk` |
+| `NUXT_PUBLIC_MEDIA_CDN_URL` | `/media` | `/media` |
 | `NUXT_PUBLIC_ALLOW_INDEXING` | `0` | `1` when ready |
 
 **Cloudflare:**
