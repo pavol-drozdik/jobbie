@@ -1,13 +1,6 @@
 <template>
   <div class="min-h-[50vh] bg-marketing-mint px-5 pb-20 pt-[calc(5.5rem+env(safe-area-inset-top))] font-dmSans md:pt-28">
     <article class="mx-auto max-w-3xl">
-      <div
-        v-if="showLegalReviewBanner"
-        class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 font-dmSans text-sm font-medium text-amber-900"
-        role="status"
-      >
-        Právne overenie prebieha. Texty môžu byť upravené pred finálnym zverejnením.
-      </div>
       <header class="mb-10">
         <h1 class="m-0 font-dmSans text-[32px] font-extrabold leading-tight text-black sm:text-[40px]">
           {{ page.title }}
@@ -62,7 +55,6 @@ import { trustSectionBlocks, type TrustContentPage } from '~/utils/trust-page-co
 
 const props = defineProps<{
   page: TrustContentPage
-  showLegalReviewBanner?: boolean
 }>()
 
 const datePrefix = computed(() =>

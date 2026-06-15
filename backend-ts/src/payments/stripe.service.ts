@@ -46,13 +46,17 @@ import {
 } from './stripe-catalog-prices';
 import {
   buildInvoiceCustomFieldsSk,
+  buildSkInvoicePaymentSettings,
+  buildSkInvoiceRendering,
   type CheckoutBillingDetailsInput,
+  getInvoiceConstantSymbol,
   getStripeAccountTaxIds,
   getBillingInvoiceSupplier,
   getStripeInvoiceFooter,
   isStripeAutomaticTaxEnabled,
   normalizeSkEuVatId,
   resolveCustomerAddress,
+  SK_INVOICE_PAYMENT_METHOD_LABEL,
   type BillingInvoiceSupplierDto,
   type StripeCustomerAddressInput,
 } from './stripe-invoice-sk';
@@ -84,6 +88,11 @@ export type InvoiceDetailDto = {
   status: string | null;
   created: number;
   due_date: number | null;
+  issued_at: number;
+  delivery_at: number;
+  variable_symbol: string | null;
+  constant_symbol: string;
+  payment_method_label: string;
   currency: string;
   subtotal: number;
   tax: number;
@@ -269,8 +278,10 @@ export class StripeService {
       auto_advance: false,
       description,
       metadata,
-      custom_fields: buildInvoiceCustomFieldsSk(billing),
+      custom_fields: buildInvoiceCustomFieldsSk(billing, this.config),
       footer: getStripeInvoiceFooter(this.config),
+      payment_settings: buildSkInvoicePaymentSettings(),
+      rendering: buildSkInvoiceRendering(),
     };
     const accountTaxIds = getStripeAccountTaxIds(this.config);
     if (accountTaxIds?.length) {
@@ -992,6 +1003,12 @@ export class StripeService {
           },
         }
       : {};
+    const invoiceSettingsFields = {
+      invoice_settings: {
+        custom_fields: buildInvoiceCustomFieldsSk(details, this.config),
+        footer: getStripeInvoiceFooter(this.config),
+      },
+    };
 
     if (purchaserType === 'company' && companyName) {
       metadata.company_name = companyName;
@@ -1001,6 +1018,7 @@ export class StripeService {
         ...localeUpdate,
         ...emailFields,
         ...addressFields,
+        ...invoiceSettingsFields,
       });
     } else {
       const personName = details.company_name?.trim();
@@ -1010,6 +1028,7 @@ export class StripeService {
         ...localeUpdate,
         ...emailFields,
         ...addressFields,
+        ...invoiceSettingsFields,
       });
     }
 
@@ -1289,7 +1308,10 @@ export class StripeService {
       items: [{ price: stripePriceId }],
       collection_method: 'charge_automatically',
       payment_behavior: 'default_incomplete',
-      payment_settings: { save_default_payment_method: 'on_subscription' },
+      payment_settings: {
+        save_default_payment_method: 'on_subscription',
+        payment_method_types: ['card'],
+      },
       expand: ['latest_invoice.payments.data.payment.payment_intent', 'pending_setup_intent'],
       metadata: {
         user_id: userId,
@@ -2098,6 +2120,12 @@ export class StripeService {
       invoice.status_transitions?.finalized_at ??
       invoice.status_transitions?.paid_at ??
       0;
+    const issuedAt =
+      invoice.status_transitions?.finalized_at ?? createdTs;
+    const deliveryAt =
+      invoice.status_transitions?.paid_at ??
+      invoice.status_transitions?.finalized_at ??
+      createdTs;
 
     return {
       id: invoice.id,
@@ -2105,6 +2133,11 @@ export class StripeService {
       status: invoice.status,
       created: createdTs,
       due_date: invoice.due_date ?? null,
+      issued_at: issuedAt,
+      delivery_at: deliveryAt,
+      variable_symbol: invoice.number?.trim() || null,
+      constant_symbol: getInvoiceConstantSymbol(this.config),
+      payment_method_label: SK_INVOICE_PAYMENT_METHOD_LABEL,
       currency: invoice.currency ?? 'eur',
       subtotal: invoice.subtotal ?? 0,
       tax,

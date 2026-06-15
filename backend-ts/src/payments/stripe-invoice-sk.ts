@@ -25,10 +25,27 @@ export type StripeCustomerAddressInput = {
   country: string;
 };
 
+export const DEFAULT_INVOICE_CONSTANT_SYMBOL = '0308';
+
+export const SK_INVOICE_PAYMENT_METHOD_LABEL = 'Kartou / online platba';
+
+const MAX_INVOICE_CUSTOM_FIELDS = 4;
+
+const LATE_PAYMENT_FOOTER_SK =
+  'Dovoľujeme si Vás upozorniť, že v prípade nedodržania dátumu splatnosti uvedeného na faktúre Vám môžeme účtovať zákonný úrok z omeškania.';
+
 const DEFAULT_INVOICE_FOOTER_SK = [
   'Faktúra vyhotovená v súlade so zákonom č. 222/2004 Z. z. o dani z pridanej hodnoty.',
   'Dodávateľ je platiteľom DPH (údaje dodávateľa sú uvedené v hlavičke faktúry).',
+  LATE_PAYMENT_FOOTER_SK,
 ].join(' ');
+
+export type InvoiceCustomField = { name: string; value: string };
+
+export function getInvoiceConstantSymbol(config?: ConfigService): string {
+  const raw = config?.get<string>('STRIPE_INVOICE_CONSTANT_SYMBOL')?.trim();
+  return raw || DEFAULT_INVOICE_CONSTANT_SYMBOL;
+}
 
 export function normalizeSkEuVatId(raw: string | null | undefined): string | null {
   const t = raw?.trim();
@@ -80,30 +97,54 @@ export function resolveCustomerAddress(
   );
 }
 
+/** Up to 4 Stripe invoice custom fields (SK buyer IDs + konštantný symbol). */
 export function buildInvoiceCustomFieldsSk(
   billing?: CheckoutBillingDetailsInput | null,
+  config?: ConfigService,
 ): InvoiceCreateParams['custom_fields'] {
+  const constantField: InvoiceCustomField = {
+    name: 'Konštantný symbol',
+    value: getInvoiceConstantSymbol(config),
+  };
+
   if (!billing) {
-    return undefined;
+    return [constantField];
   }
-  const fields: { name: string; value: string }[] = [];
+
   if (billing.purchaser_type === 'individual') {
-    fields.push({ name: 'Odberateľ', value: 'Fyzická osoba' });
-    return fields;
+    return [
+      { name: 'Odberateľ', value: 'Fyzická osoba' },
+      constantField,
+    ];
   }
+
+  const buyerFields: InvoiceCustomField[] = [];
   const ico = billing.registration_number?.trim();
   if (ico) {
-    fields.push({ name: 'IČO', value: ico });
+    buyerFields.push({ name: 'IČO', value: ico });
   }
   const dic = billing.tax_id?.trim();
   if (dic) {
-    fields.push({ name: 'DIČ', value: dic });
+    buyerFields.push({ name: 'DIČ', value: dic });
   }
   const vat = normalizeSkEuVatId(billing.vat_id);
   if (vat) {
-    fields.push({ name: 'IČ DPH', value: vat });
+    buyerFields.push({ name: 'IČ DPH', value: vat });
   }
-  return fields.length > 0 ? fields : undefined;
+
+  const cappedBuyer = buyerFields.slice(0, MAX_INVOICE_CUSTOM_FIELDS - 1);
+  return [...cappedBuyer, constantField];
+}
+
+/** Card-only invoice payment — no bank transfer / Pay by Square on PDF. */
+export function buildSkInvoicePaymentSettings(): NonNullable<
+  InvoiceCreateParams['payment_settings']
+> {
+  return { payment_method_types: ['card'] };
+}
+
+export function buildSkInvoiceRendering(): NonNullable<InvoiceCreateParams['rendering']> {
+  return { pdf: { page_size: 'a4' } };
 }
 
 export function isStripeAutomaticTaxEnabled(config: ConfigService): boolean {

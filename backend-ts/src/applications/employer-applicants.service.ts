@@ -16,7 +16,6 @@ import { CvService } from '../cv/cv.service';
 import { displaySkillName } from '../cv/cv-skill-name';
 import { displayNameFromProfileRow } from '../profiles/profile-display.util';
 import { PassThrough } from 'stream';
-import archiver = require('archiver');
 import { CvPdfService } from '../cv/cv-pdf.service';
 import { EmployerApplicantsExcelService, type ApplicantExcelRow } from './employer-applicants-excel.service';
 import { EmployerApplicantsPdfService, type InvitedListRow } from './employer-applicants-pdf.service';
@@ -1822,7 +1821,10 @@ export class EmployerApplicantsService {
 
   private zipBuffers(files: { name: string; buffer: Buffer }[]): Promise<Buffer> {
     return new Promise((resolve, reject) => {
-      const archive = archiver('zip', { zlib: { level: 9 } });
+      // archiver@8 is ESM — load at runtime so Jest does not parse index.js at import time.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { ZipArchive } = require('archiver') as typeof import('archiver');
+      const archive = new ZipArchive({ zlib: { level: 9 } });
       const stream = new PassThrough();
       const chunks: Buffer[] = [];
       stream.on('data', (chunk: Buffer) => chunks.push(chunk));

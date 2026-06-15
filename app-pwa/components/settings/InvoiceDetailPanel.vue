@@ -4,7 +4,7 @@
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p class="m-0 text-xs font-semibold uppercase tracking-wide text-black/45">
-            {{ S.settingsInvoiceNumber }}
+            {{ S.settingsInvoiceDetailTitle }}
           </p>
           <h2 class="m-0 mt-1 font-dmSans text-2xl font-extrabold text-black">
             {{ invoice.number || invoice.id }}
@@ -18,17 +18,6 @@
           {{ statusLabel }}
         </span>
       </div>
-
-      <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-        <div>
-          <dt class="text-black/45">{{ S.settingsInvoiceIssued }}</dt>
-          <dd class="m-0 mt-0.5 font-semibold text-black">{{ formatUnix(invoice.created) }}</dd>
-        </div>
-        <div v-if="invoice.due_date">
-          <dt class="text-black/45">{{ S.settingsInvoiceDue }}</dt>
-          <dd class="m-0 mt-0.5 font-semibold text-black">{{ formatUnix(invoice.due_date) }}</dd>
-        </div>
-      </dl>
     </section>
 
     <section :class="settingsCardClass">
@@ -66,11 +55,11 @@
             {{ invoice.customer.address }}
           </p>
           <ul
-            v-if="invoice.customer.custom_fields.length"
+            v-if="buyerCustomFields.length"
             class="m-0 mt-2 list-none space-y-0.5 p-0 text-sm text-black/55"
           >
             <li
-              v-for="field in invoice.customer.custom_fields"
+              v-for="field in buyerCustomFields"
               :key="field.name"
             >
               {{ field.name }}: {{ field.value }}
@@ -78,6 +67,48 @@
           </ul>
         </div>
       </div>
+    </section>
+
+    <section :class="settingsCardClass">
+      <h3 class="form-label mb-3">{{ S.settingsInvoiceSymbolsAndDates }}</h3>
+      <dl class="grid gap-3 text-sm sm:grid-cols-2">
+        <div>
+          <dt class="text-black/45">{{ S.settingsInvoiceVariableSymbol }}</dt>
+          <dd class="m-0 mt-0.5 font-semibold text-black">
+            {{ invoice.variable_symbol || invoice.number || '—' }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-black/45">{{ S.settingsInvoiceConstantSymbol }}</dt>
+          <dd class="m-0 mt-0.5 font-semibold text-black">
+            {{ invoice.constant_symbol }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-black/45">{{ S.settingsInvoiceIssued }}</dt>
+          <dd class="m-0 mt-0.5 font-semibold text-black">
+            {{ formatUnix(invoice.issued_at) }}
+          </dd>
+        </div>
+        <div v-if="invoice.due_date">
+          <dt class="text-black/45">{{ S.settingsInvoiceDue }}</dt>
+          <dd class="m-0 mt-0.5 font-semibold text-black">
+            {{ formatUnix(invoice.due_date) }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-black/45">{{ S.settingsInvoiceDelivery }}</dt>
+          <dd class="m-0 mt-0.5 font-semibold text-black">
+            {{ formatUnix(invoice.delivery_at) }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-black/45">{{ S.settingsInvoicePaymentMethod }}</dt>
+          <dd class="m-0 mt-0.5 font-semibold text-black">
+            {{ invoice.payment_method_label }}
+          </dd>
+        </div>
+      </dl>
     </section>
 
     <section :class="settingsCardClass">
@@ -202,6 +233,12 @@ const { settingsCardClass } = useSettingsFormStyles()
 
 const paySecret = computed(
   () => props.invoice.payment_intent_client_secret?.trim() || '',
+)
+
+const buyerCustomFields = computed(() =>
+  props.invoice.customer.custom_fields.filter(
+    (field) => field.name !== 'Konštantný symbol',
+  ),
 )
 
 const INVOICE_STATUS_LABELS: Record<string, string> = {

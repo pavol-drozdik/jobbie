@@ -1,4 +1,24 @@
-﻿## 2026-06-15 — Privacy policy as HTML page
+﻿## 2026-06-15 — Staging deploy health check fallback
+
+Fixed:
+- Staging GitHub Actions deploy no longer falls back to `https://api.cocreate.cz/health` (wrong project). `deploy_backend.sh` derives `https://{APP_DOMAIN}/health` from the VPS `.env` when `STAGING_HEALTH_URL` / `HEALTH_URL` is unset.
+
+## 2026-06-15 — Stripe Payment Element billing address on confirm
+
+Fixed:
+- PWA: credits checkout Payment Element hides each billing address subfield (`never`) while invoice/card setup uses `if_required`; `confirmPayment` passes full address including `state` (city fallback for SK).
+- PWA: deferred checkout Elements use `paymentMethodTypes: ['card']` to match invoice-backed PaymentIntents (`payment_method_types: ['card']`), fixing automatic-PM confirm mismatch.
+
+## 2026-06-15 — Slovak Stripe invoice format (iDoklad-style)
+
+Changed:
+- Stripe invoices: konštantný symbol `0308` (`STRIPE_INVOICE_CONSTANT_SYMBOL`), card-only `payment_settings`, A4 PDF, SK footer with late-payment text; customer `invoice_settings` for subscription renewals.
+- `/nastavenia/fakturacia/:id`: variabilný symbol (= číslo faktúry), symboly, dátumy dodania, spôsob úhrady „Kartou / online platba“.
+
+Docs:
+- [stripe-invoice-sk-vat.md](./stripe-invoice-sk-vat.md) — Dashboard numbering, no bank transfer, symbols checklist.
+
+## 2026-06-15 — Privacy policy as HTML page
 
 Changed:
 - `/ochrana-osobnych-udajov`: replace PDF embed with full Slovak GDPR text (`privacy-policy-content.ts`); `MarketingContentPage` supports bullet lists and subsection headings.
@@ -8,6 +28,12 @@ Changed:
 Changed:
 - `backend-ts`: bump `stripe` from 14.25.0 to 22.2.1; pin `apiVersion` to `2026-05-27.dahlia`.
 - Billing helpers for Dahlia/Basil field moves: subscription period on `items`, invoice `parent.subscription_details` and `payments`, invoice line `pricing`, checkout `ui_mode: embedded_page`.
+
+## 2026-06-15 — backend-ts dependency bumps (archiver 8, sharp 0.35)
+
+Changed:
+- `archiver` ^8.0.0 + `@types/archiver` ^8.0.0 — `ZipArchive` class API (runtime `require` for ESM package + Jest).
+- `sharp` ^0.35.1 — removed deprecated `@types/sharp`; callable `require` cast in `image-process.service.ts`.
 
 ## 2026-06-15 — Fix CORS middleware crash (production)
 

@@ -122,6 +122,7 @@ import {
   buildClientSecretElementsOptions,
   buildDeferredPaymentElementsOptions,
   buildDeferredSetupElementsOptions,
+  buildJobbiePaymentMethodConfirmData,
   buildJobbiePaymentElementOptions,
   jobbieStripeElementsMountClass,
   type JobbieStripeAppearanceVariant,
@@ -294,7 +295,9 @@ function mountPaymentOnElements(generation: number): boolean {
   paymentElement = null
   paymentElement = elements.create(
     'payment',
-    buildJobbiePaymentElementOptions(purchaserType.value),
+    buildJobbiePaymentElementOptions(purchaserType.value, {
+      collectAddressExternally: props.collectBusinessBilling,
+    }),
   )
   if (generation !== mountGeneration) {
     paymentElement.unmount()
@@ -478,7 +481,11 @@ function syncTaxIdVisibility(): void {
 }
 
 function syncPaymentBillingFields(): void {
-  paymentElement?.update(buildJobbiePaymentElementOptions(purchaserType.value))
+  paymentElement?.update(
+    buildJobbiePaymentElementOptions(purchaserType.value, {
+      collectAddressExternally: props.collectBusinessBilling,
+    }),
+  )
 }
 
 onMounted(() => {
@@ -562,12 +569,23 @@ async function handlePay() {
 
     const confirmParams: {
       return_url: string
-      payment_method_data?: { billing_details: { name: string } }
+      payment_method_data?: ReturnType<typeof buildJobbiePaymentMethodConfirmData>
     } = { return_url: props.returnUrl }
-    if (billing?.purchaser_type === 'company' && billing.company_name?.trim()) {
-      confirmParams.payment_method_data = {
-        billing_details: { name: billing.company_name.trim() },
-      }
+    if (props.collectBusinessBilling) {
+      confirmParams.payment_method_data = buildJobbiePaymentMethodConfirmData(
+        billing
+          ? {
+              name:
+                billing.purchaser_type === 'company'
+                  ? billing.company_name
+                  : undefined,
+              address_line1: billing.address_line1,
+              address_city: billing.address_city,
+              address_postal_code: billing.address_postal_code,
+              address_country: billing.address_country,
+            }
+          : null,
+      )
     }
 
     const confirmOptions: {

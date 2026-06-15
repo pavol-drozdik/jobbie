@@ -312,7 +312,7 @@ Append `jobbie-staging-deploy.pub` to staging VPS:
 
 | Variable | Default |
 |----------|---------|
-| `STAGING_HEALTH_URL` | `https://api.cocreate.cz/health` |
+| `STAGING_HEALTH_URL` | Optional override; default `https://{APP_DOMAIN}/health` from VPS `.env` |
 | `PROD_HEALTH_URL` | `https://api.jobbie.sk/health` |
 
 **Cloudflare (PWA deploy)** — repository **Secrets** (or per-environment if you prefer):
@@ -734,7 +734,7 @@ export BACKEND_VERSION=staging-2026.06.12-a1b2c3d
 export GHCR_IMAGE=ghcr.io/pr3vesttheduck/jobbie-backend
 export GHCR_USER=pr3vesttheduck
 export GHCR_TOKEN=...   # read:packages
-export HEALTH_URL=https://api.cocreate.cz/health
+# HEALTH_URL optional — derived from APP_DOMAIN in .env when unset
 sudo -E bash scripts/deploy_backend.sh
 ```
 

@@ -20,6 +20,11 @@ export type InvoiceDetail = {
   status: string | null
   created: number
   due_date: number | null
+  issued_at: number
+  delivery_at: number
+  variable_symbol: string | null
+  constant_symbol: string
+  payment_method_label: string
   currency: string
   subtotal: number
   tax: number

@@ -201,7 +201,7 @@ Redeploy an existing tag without rebuilding: workflows **deploy-staging** or **d
    | `STAGING_GHCR_TOKEN` | PAT with `read:packages` |
    | `STAGING_GHCR_USER` | Optional; defaults to lowercase GitHub org/user |
 
-4. **Optional variable** `STAGING_HEALTH_URL` — defaults to `https://api.cocreate.cz/health`.
+4. **Optional variable** `STAGING_HEALTH_URL` — when unset, `deploy_backend.sh` derives `https://{APP_DOMAIN}/health` from the VPS `.env`.
 
 5. **Environment** `staging` — created on first deploy; optional protection rules.
 
