@@ -26,6 +26,7 @@ const navItems = [
   { to: '/support', label: 'Podpora' },
   { to: '/analytics', label: 'Analytics' },
   { to: '/audit', label: 'Audit' },
+  { to: '/consent-log', label: 'Cookie súhlas' },
   { to: '/moderation', label: 'Moderácia', badge: true, requiresModeration: true },
   { to: '/users', label: 'Účty' },
   { to: '/notifications', label: 'Upozornenia' },

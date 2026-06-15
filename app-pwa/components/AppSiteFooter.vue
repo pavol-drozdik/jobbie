@@ -49,7 +49,7 @@
           <button
             type="button"
             class="flex w-fit cursor-pointer items-center gap-2 border-none bg-transparent p-0 font-dmSans text-[14.5px] font-medium text-marketing-abMuted transition-colors hover:text-marketing-abGreen focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marketing-green/40"
-            @click="showCookiePreferencesModal"
+            @click="openFooterCookieSettings"
           >
             <AppIcon name="shield-check" :size="18" class="shrink-0 text-marketing-abGreen" />
             {{ S.footerCookieSettings }}
@@ -195,25 +195,13 @@
         </div>
       </div>
     </div>
-
-    <AppCookiePreferences
-      :open="isCookiePreferencesOpen"
-      :analytics="analyticsEnabled"
-      @close="closeCookiePreferencesModal"
-      @save="onSaveCookiePreferences"
-      @reject-all="onRejectAllCookies"
-    />
   </footer>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { ROUTES } from '~/utils/app-routes'
-import {
-  closeCookiePreferences,
-  cookiePreferencesOpen,
-  openCookiePreferences as showCookiePreferencesModal,
-} from '~/utils/cookie-consent-ui'
+import { openCookiePreferences as showCookiePreferencesModal } from '~/utils/cookie-consent-ui'
 import { S } from '~/utils/strings'
 import { useBrandSeoConfig } from '~/utils/brand-seo'
 
@@ -249,20 +237,8 @@ const footerQuickMenuItems = [
   { to: ROUTES.authRegister, label: S.register },
 ] as const
 
-const { analyticsEnabled, savePreferences, rejectAll } = useCookieConsentStore()
-
-const isCookiePreferencesOpen = computed(() => cookiePreferencesOpen.value)
-
-function closeCookiePreferencesModal(): void {
-  closeCookiePreferences()
-}
-
-function onSaveCookiePreferences(analytics: boolean): void {
-  savePreferences({ analytics })
-}
-
-function onRejectAllCookies(): void {
-  rejectAll()
+function openFooterCookieSettings(): void {
+  showCookiePreferencesModal('footer')
 }
 
 const { phase: newsletterPhase, submit: submitNewsletter, resetPhase: resetNewsletterPhase } =

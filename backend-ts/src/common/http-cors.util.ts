@@ -1,5 +1,13 @@
+import type { RequestHandler } from 'express';
 import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { isNodeProduction, parseCorsOriginsFromEnv } from './runtime-env.util';
+
+type CorsFactory = (options: CorsOptions) => RequestHandler;
+
+// `cors` is CJS (`module.exports = fn`). `import cors from 'cors'` compiles to
+// `cors_1.default(...)` and crashes without `esModuleInterop` in tsconfig.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const corsFactory = require('cors') as CorsFactory;
 
 const CORS_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] as const;
 const CORS_HEADERS = [
@@ -77,6 +85,11 @@ export function buildNestCorsOptions(): CorsOptions {
     allowedHeaders: [...CORS_HEADERS],
     origin: makeOriginValidator(allowed),
   };
+}
+
+/** Express CORS middleware — stable CJS load (see corsFactory above). */
+export function createExpressCorsMiddleware(options: CorsOptions): RequestHandler {
+  return corsFactory(options);
 }
 
 type SocketIoCorsOrigin =

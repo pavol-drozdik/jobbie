@@ -16,7 +16,7 @@
           {{ page.intro }}
         </p>
         <p v-if="page.updatedAt" class="mt-3 font-dmSans text-sm font-medium text-black/45">
-          Aktualizované: {{ formattedUpdatedAt }}
+          {{ datePrefix }}{{ formattedUpdatedAt }}
         </p>
       </header>
       <div class="flex flex-col gap-10">
@@ -26,17 +26,30 @@
           :id="section.id"
           class="scroll-mt-28"
         >
-          <h2 class="m-0 font-dmSans text-2xl font-extrabold text-black">
+          <component
+            :is="section.headingLevel === 3 ? 'h3' : 'h2'"
+            class="m-0 font-dmSans font-extrabold text-black"
+            :class="section.headingLevel === 3 ? 'text-xl' : 'text-2xl'"
+          >
             {{ section.title }}
-          </h2>
+          </component>
           <div class="mt-3 flex flex-col gap-3">
-            <p
-              v-for="(paragraph, index) in section.paragraphs"
-              :key="index"
-              class="m-0 font-dmSans text-base font-medium leading-relaxed text-black/75"
-            >
-              {{ paragraph }}
-            </p>
+            <template v-for="(block, index) in trustSectionBlocks(section)" :key="index">
+              <p
+                v-if="block.kind === 'paragraph'"
+                class="m-0 font-dmSans text-base font-medium leading-relaxed text-black/75"
+              >
+                {{ block.text }}
+              </p>
+              <ul
+                v-else
+                class="m-0 list-disc space-y-2 pl-5 font-dmSans text-base font-medium leading-relaxed text-black/75"
+              >
+                <li v-for="(item, itemIndex) in block.items" :key="itemIndex">
+                  {{ item }}
+                </li>
+              </ul>
+            </template>
           </div>
         </section>
       </div>
@@ -45,12 +58,16 @@
 </template>
 
 <script setup lang="ts">
-import type { TrustContentPage } from '~/utils/trust-page-content'
+import { trustSectionBlocks, type TrustContentPage } from '~/utils/trust-page-content'
 
 const props = defineProps<{
   page: TrustContentPage
   showLegalReviewBanner?: boolean
 }>()
+
+const datePrefix = computed(() =>
+  props.page.dateLabel === 'effective' ? 'Platné od ' : 'Aktualizované: ',
+)
 
 const formattedUpdatedAt = computed(() => {
   const date = new Date(props.page.updatedAt)

@@ -15,7 +15,20 @@ import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { Public } from '../auth/public.decorator';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
-import Stripe from 'stripe';
+import {
+  getInvoicePaymentIntentId,
+  getInvoiceSubscriptionId,
+  getSubscriptionCurrentPeriodEndIso,
+} from './stripe-api-compat';
+import type {
+  Charge,
+  CheckoutSession,
+  Dispute,
+  Event,
+  Invoice,
+  PaymentIntent,
+  Subscription,
+} from './stripe-types';
 import { CurrentUserDecorator } from '../auth/current-user.decorator';
 import { CurrentUser } from '../auth/auth.types';
 import { RequireRecentLogin } from '../auth/require-recent-login.decorator';
@@ -611,12 +624,12 @@ export class PaymentsController {
     if (typeof sig !== 'string') {
       throw new BadRequestException('Invalid signature');
     }
-    let event: Stripe.Event;
+    let event: Event;
     try {
       event = this.stripe.constructWebhookEvent(
         rawBody,
         sig,
-      ) as unknown as Stripe.Event;
+      ) as unknown as Event;
     } catch {
       throw new BadRequestException('Invalid payload or signature');
     }
@@ -628,7 +641,7 @@ export class PaymentsController {
     const webhookStarted = Date.now();
     try {
       if (event.type === 'checkout.session.completed') {
-        const session = event.data.object as Stripe.Checkout.Session;
+        const session = event.data.object as CheckoutSession;
         const meta = (session.metadata ?? {}) as Record<string, string>;
         const piRef = session.payment_intent;
         const piId =
@@ -669,7 +682,7 @@ export class PaymentsController {
         }
       }
       if (event.type === 'payment_intent.succeeded') {
-        const pi = event.data.object as Stripe.PaymentIntent;
+        const pi = event.data.object as PaymentIntent;
         const meta = (pi.metadata ?? {}) as Record<string, string>;
         try {
           await this.stripe.syncCustomerEmailFromPaymentIntent(pi.id);
@@ -706,14 +719,8 @@ export class PaymentsController {
         }
       }
       if (event.type === 'invoice.paid') {
-        const inv = event.data.object as Stripe.Invoice;
-        const piRef = inv.payment_intent;
-        const piId =
-          typeof piRef === 'string'
-            ? piRef
-            : piRef && typeof piRef === 'object' && 'id' in piRef
-              ? (piRef as { id: string }).id
-              : null;
+        const inv = event.data.object as Invoice;
+        const piId = getInvoicePaymentIntentId(inv);
         if (piId) {
           try {
             await this.stripe.syncCustomerEmailFromPaymentIntent(piId);
@@ -726,12 +733,12 @@ export class PaymentsController {
         // Subscription monthly credits; paid-invoice emails are sent by Stripe
         // when Dashboard invoice email settings are enabled — docs/stripe-invoice-emails.md
         await this.subscriptionCredits.grantFromPaidSubscriptionInvoice(inv);
-        if (inv.subscription) {
+        if (getInvoiceSubscriptionId(inv)) {
           await this.stripe.syncSubscriptionStatusFromInvoice(inv, 'active');
         }
       }
       if (event.type === 'invoice.payment_failed') {
-        const inv = event.data.object as Stripe.Invoice;
+        const inv = event.data.object as Invoice;
         const userId = await this.stripe.syncSubscriptionStatusFromInvoice(
           inv,
           'past_due',
@@ -747,7 +754,7 @@ export class PaymentsController {
         }
       }
       if (event.type === 'invoice.payment_action_required') {
-        const inv = event.data.object as Stripe.Invoice;
+        const inv = event.data.object as Invoice;
         const userId = await this.stripe.resolveUserIdFromStripeInvoice(inv);
         if (userId) {
           this.deferWebhookNotification({
@@ -763,13 +770,11 @@ export class PaymentsController {
         event.type === 'customer.subscription.created' ||
         event.type === 'customer.subscription.updated'
       ) {
-        const sub = event.data.object as unknown as Stripe.Subscription;
+        const sub = event.data.object as unknown as Subscription;
         const meta = (sub.metadata ?? {}) as Record<string, string>;
         const userId = meta.user_id;
         const planId = meta.plan_id;
-        const periodEnd = sub.current_period_end
-          ? new Date(sub.current_period_end * 1000).toISOString()
-          : null;
+        const periodEnd = getSubscriptionCurrentPeriodEndIso(sub);
         const cancelAtPeriodEnd = sub.cancel_at_period_end ?? false;
         if (userId && planId) {
           await supabase.from('user_subscriptions').upsert(
@@ -805,7 +810,7 @@ export class PaymentsController {
         }
       }
       if (event.type === 'customer.subscription.deleted') {
-        const sub = event.data.object as unknown as Stripe.Subscription;
+        const sub = event.data.object as unknown as Subscription;
         const meta = (sub.metadata ?? {}) as Record<string, string>;
         let userId = meta.user_id?.trim() || null;
         if (!userId) {
@@ -839,7 +844,7 @@ export class PaymentsController {
         }
       }
       if (event.type === 'charge.refunded') {
-        const ch = event.data.object as Stripe.Charge;
+        const ch = event.data.object as Charge;
         await this.stripe.handleChargeRefunded(ch);
         const auditId = await this.audit.recordAuditEvent({
           actorUserId: null,
@@ -869,7 +874,7 @@ export class PaymentsController {
         event.type === 'charge.dispute.created' ||
         event.type === 'charge.dispute.closed'
       ) {
-        const d = event.data.object as Stripe.Dispute;
+        const d = event.data.object as Dispute;
         const auditId = await this.audit.recordAuditEvent({
           actorUserId: null,
           actorIp: null,
@@ -928,7 +933,7 @@ export class PaymentsController {
    */
   private async claimStripeWebhookEvent(
     supabase: ReturnType<SupabaseService['getClient']>,
-    event: Stripe.Event,
+    event: Event,
   ): Promise<boolean> {
     const now = new Date().toISOString();
     const { error: insertErr } = await supabase.from('stripe_webhook_events').insert({

@@ -1,5 +1,5 @@
 import { ConfigService } from '@nestjs/config';
-import Stripe from 'stripe';
+import type { Price } from '../payments/stripe-types';
 import {
   buildPublicTrialSummary,
   getSubscriptionTrialFallbackDaysFromEnv,
@@ -17,7 +17,7 @@ describe('subscription-trial.config', () => {
     expect(
       trialPeriodDaysFromStripePrice({
         recurring: { trial_period_days: 30 },
-      } as unknown as Stripe.Price),
+      } as unknown as Price),
     ).toBe(30);
   });
 
@@ -25,7 +25,7 @@ describe('subscription-trial.config', () => {
     expect(
       trialPeriodDaysFromStripePrice({
         metadata: { jobbie_trial_days: '14' },
-      } as unknown as Stripe.Price),
+      } as unknown as Price),
     ).toBe(14);
   });
 

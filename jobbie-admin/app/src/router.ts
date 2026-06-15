@@ -53,6 +53,12 @@ export const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/consent-log',
+      name: 'consent-log',
+      component: () => import('./views/ConsentLogView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/moderation',
       name: 'moderation',
       component: () => import('./views/ModerationView.vue'),

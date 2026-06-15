@@ -1,5 +1,6 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
-import Stripe from 'stripe';
+import type { Invoice } from './stripe-types';
+import { getInvoiceSubscriptionId } from './stripe-api-compat';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SupabaseService } from '../supabase/supabase.service';
@@ -7,21 +8,9 @@ import { StripeService } from './stripe.service';
 import { CreditsService } from '../billing/credits.service';
 
 function resolveSubscriptionIdFromInvoice(
-  invoice: Stripe.Invoice,
+  invoice: Invoice,
 ): string | null {
-  const subRef = invoice.subscription;
-  if (typeof subRef === 'string') {
-    return subRef;
-  }
-  if (
-    subRef &&
-    typeof subRef === 'object' &&
-    'id' in subRef &&
-    typeof (subRef as { id: unknown }).id === 'string'
-  ) {
-    return (subRef as { id: string }).id;
-  }
-  return null;
+  return getInvoiceSubscriptionId(invoice);
 }
 
 /** Monthly subscription grants — idempotent via stripe_invoice_id / subscription_period ref. */
@@ -72,7 +61,7 @@ export class SubscriptionCreditsService {
    * Idempotent: one grant per Stripe invoice (subscription_create / subscription_cycle).
    */
   async grantFromPaidSubscriptionInvoice(
-    invoice: Stripe.Invoice,
+    invoice: Invoice,
   ): Promise<{ applied: boolean }> {
     const subscriptionId = resolveSubscriptionIdFromInvoice(invoice);
     if (!subscriptionId) {

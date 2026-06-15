@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import Stripe from 'stripe';
+import type {
+  CheckoutSubscriptionData,
+  StripeClient,
+  SubscriptionCreateParams,
+} from '../payments/stripe-types';
 import { SupabaseService } from '../supabase/supabase.service';
 import {
   buildPublicTrialSummary,
@@ -33,7 +37,7 @@ export class SubscriptionTrialService {
   ) {}
 
   async getTrialPeriodDaysForPrice(
-    stripe: Stripe,
+    stripe: StripeClient,
     stripePriceId: string,
   ): Promise<number> {
     const priceId = stripePriceId?.trim();
@@ -62,7 +66,7 @@ export class SubscriptionTrialService {
   }
 
   async getPublicTrialConfig(
-    stripe: Stripe,
+    stripe: StripeClient,
     stripePriceIds: string[],
   ): Promise<SubscriptionTrialPublicConfig> {
     const unique = [...new Set(stripePriceIds.map((id) => id?.trim()).filter(Boolean))];
@@ -74,7 +78,7 @@ export class SubscriptionTrialService {
 
   async isUserEligibleForSubscriptionTrial(
     userId: string,
-    stripe: Stripe,
+    stripe: StripeClient,
   ): Promise<boolean> {
     const supabase = this.supabase.getClient();
     const { data: profile } = await supabase
@@ -127,7 +131,7 @@ export class SubscriptionTrialService {
    */
   async resolveSubscriptionTrialDays(
     userId: string,
-    stripe: Stripe,
+    stripe: StripeClient,
     stripePriceId: string,
   ): Promise<number> {
     const priceTrialDays = await this.getTrialPeriodDaysForPrice(
@@ -148,7 +152,7 @@ export class SubscriptionTrialService {
   }
 
   applyTrialToSubscriptionParams(
-    params: Stripe.SubscriptionCreateParams,
+    params: SubscriptionCreateParams,
     trialPeriodDays: number,
     options: { suppressPriceDefaultTrial: boolean },
   ): void {
@@ -166,7 +170,7 @@ export class SubscriptionTrialService {
   }
 
   applyTrialToCheckoutSubscriptionData(
-    data: Stripe.Checkout.SessionCreateParams.SubscriptionData,
+    data: CheckoutSubscriptionData,
     trialPeriodDays: number,
     options: { suppressPriceDefaultTrial: boolean },
   ): void {

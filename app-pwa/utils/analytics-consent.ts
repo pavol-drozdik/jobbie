@@ -90,9 +90,11 @@ export function applyAnalyticsConsent(granted: boolean): void {
   if (granted) {
     initPosthogIfConsented()
     loadGtm()
+    window.dispatchEvent(new Event('jobbie:analytics-consent-changed'))
     return
   }
   shutdownPosthog()
   unloadGtm()
   clearAnalyticsCookies()
+  window.dispatchEvent(new Event('jobbie:analytics-consent-changed'))
 }

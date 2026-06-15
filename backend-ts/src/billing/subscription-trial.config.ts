@@ -1,5 +1,5 @@
 import { ConfigService } from '@nestjs/config';
-import Stripe from 'stripe';
+import type { Price } from '../payments/stripe-types';
 
 export type SubscriptionTrialPublicConfig = {
   enabled: boolean;
@@ -28,7 +28,7 @@ export function getSubscriptionTrialFallbackDaysFromEnv(
  * Trial length from Stripe Price (Dashboard → Product → Price → trial).
  * Optional metadata `trial_period_days` or `jobbie_trial_days` if recurring trial is unset.
  */
-export function trialPeriodDaysFromStripePrice(price: Stripe.Price): number {
+export function trialPeriodDaysFromStripePrice(price: Price): number {
   const recurringDays = price.recurring?.trial_period_days;
   if (typeof recurringDays === 'number' && recurringDays > 0) {
     return recurringDays;

@@ -230,7 +230,7 @@
                   urgent-with-bolt
                 />
                 <NuxtImg
-                  :src="getJobCardThumbnailSrc(job)"
+                  :src="thumbSrc(job)"
                   :alt="job.title"
                   width="400"
                   height="300"
@@ -239,6 +239,7 @@
                   format="webp"
                   quality="82"
                   class="block size-full rounded-t-[15px] object-cover"
+                  @error="onThumbError(job)"
                 />
               </div>
               <div class="min-w-0 p-4 marketing:p-5">
@@ -296,7 +297,7 @@
         </div>
       </div>
     </section>
-    <HomeMarketingReviews />
+    <HomeMarketingReviews v-if="HOME_MARKETING_REVIEWS_ENABLED" />
     <HomeMarketingBlogFaqNewsletter
       :carousel-tabs="homeCarouselTabs"
       :carousel-role="homeCarouselRole"
@@ -320,7 +321,12 @@ import {
   getJobCardThumbnailSrc,
 } from '~/utils/job'
 import type { Job } from '~/utils/job'
+import {
+  jobPhotoThumbnailSrcForStage,
+  type JobPhotoThumbnailFallbackStage,
+} from '~/utils/job-photo-url'
 import { HOME_DESIGN_FAQ_BY_ROLE } from '~/utils/home-design-faq'
+import { HOME_MARKETING_REVIEWS_ENABLED } from '~/utils/home-reviews'
 import { HOME_DESIGN_CAROUSEL, type HomeDesignCarouselRole } from '~/utils/home-design-carousel'
 import { fetchPublicJobsHome } from '~/composables/fetch-public-jobs-home'
 import { normalizeSiteUrl } from '~/utils/seo-config'
@@ -429,11 +435,39 @@ const { api } = useApi()
 const latestJobs = ref<Job[]>(initialHomeJobs.value?.latest ?? [])
 const latestJobsSectionRef = ref<HTMLElement | null>(null)
 const gridJobs = ref<Job[]>(initialHomeJobs.value?.grid ?? [])
+const thumbFallbackStages = ref<Record<string, JobPhotoThumbnailFallbackStage>>({})
 const loadingGrid = ref(!initialHomeJobs.value)
 const categoryJobCounts = ref<Record<string, number>>({})
 
 const HOME_LATEST_LIMIT = 4
 const HOME_GRID_LIMIT = 8
+
+function thumbSrc(job: Job): string {
+  const stage = thumbFallbackStages.value[job.id] ?? 0
+  return jobPhotoThumbnailSrcForStage(getJobCardThumbnailSrc(job), stage)
+}
+
+function onThumbError(job: Job): void {
+  const current = thumbFallbackStages.value[job.id] ?? 0
+  if (current >= 2) {
+    return
+  }
+  thumbFallbackStages.value = {
+    ...thumbFallbackStages.value,
+    [job.id]: (current + 1) as JobPhotoThumbnailFallbackStage,
+  }
+}
+
+watch(gridJobs, (list) => {
+  const ids = new Set(list.map((job) => job.id))
+  const next = { ...thumbFallbackStages.value }
+  for (const id of Object.keys(next)) {
+    if (!ids.has(id)) {
+      delete next[id]
+    }
+  }
+  thumbFallbackStages.value = next
+})
 
 const HOME_CAROUSEL_GAP_PX = 30
 const homeCarouselTabs: readonly { role: HomeDesignCarouselRole; label: string }[] = [

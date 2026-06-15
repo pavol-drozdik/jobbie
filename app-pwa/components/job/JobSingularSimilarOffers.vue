@@ -13,12 +13,13 @@
       >
         <img
           class="size-14 min-h-14 min-w-14 shrink-0 rounded-xl bg-marketing-panel object-cover"
-          :src="getJobCardThumbnailSrc(sj)"
+          :src="similarThumbSrc(sj)"
           alt=""
           width="56"
           height="56"
           loading="lazy"
           decoding="async"
+          @error="onSimilarThumbError(sj)"
         >
         <div class="min-w-0 flex-1">
           <div class="mb-1 min-w-0 break-words text-[15px] font-bold text-black line-clamp-2">{{ sj.title }}</div>
@@ -51,8 +52,44 @@ import { ROUTES } from '~/utils/app-routes'
 import { S } from '~/utils/strings'
 import { getJobCardCityDisplay, getJobCardPayDisplay, getJobCardThumbnailSrc } from '~/utils/job'
 import type { Job } from '~/utils/job'
+import {
+  jobPhotoThumbnailSrcForStage,
+  type JobPhotoThumbnailFallbackStage,
+} from '~/utils/job-photo-url'
 
-defineProps<{
+const props = defineProps<{
   jobs: Job[]
 }>()
+
+const thumbFallbackStages = ref<Record<string, JobPhotoThumbnailFallbackStage>>({})
+
+watch(
+  () => props.jobs,
+  (list) => {
+    const ids = new Set(list.map((job) => job.id))
+    const next = { ...thumbFallbackStages.value }
+    for (const id of Object.keys(next)) {
+      if (!ids.has(id)) {
+        delete next[id]
+      }
+    }
+    thumbFallbackStages.value = next
+  },
+)
+
+function similarThumbSrc(job: Job): string {
+  const stage = thumbFallbackStages.value[job.id] ?? 0
+  return jobPhotoThumbnailSrcForStage(getJobCardThumbnailSrc(job), stage)
+}
+
+function onSimilarThumbError(job: Job): void {
+  const current = thumbFallbackStages.value[job.id] ?? 0
+  if (current >= 2) {
+    return
+  }
+  thumbFallbackStages.value = {
+    ...thumbFallbackStages.value,
+    [job.id]: (current + 1) as JobPhotoThumbnailFallbackStage,
+  }
+}
 </script>

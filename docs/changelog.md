@@ -1,4 +1,37 @@
-﻿## 2026-06-13 — PWA media proxy (Nitro `/media`)
+﻿## 2026-06-15 — Privacy policy as HTML page
+
+Changed:
+- `/ochrana-osobnych-udajov`: replace PDF embed with full Slovak GDPR text (`privacy-policy-content.ts`); `MarketingContentPage` supports bullet lists and subsection headings.
+
+## 2026-06-15 — Stripe Node SDK 22 (Dahlia API)
+
+Changed:
+- `backend-ts`: bump `stripe` from 14.25.0 to 22.2.1; pin `apiVersion` to `2026-05-27.dahlia`.
+- Billing helpers for Dahlia/Basil field moves: subscription period on `items`, invoice `parent.subscription_details` and `payments`, invoice line `pricing`, checkout `ui_mode: embedded_page`.
+
+## 2026-06-15 — Fix CORS middleware crash (production)
+
+Fixed:
+- `backend-ts`: load `cors` via `require()` in `http-cors.util.ts` so compiled `dist/main.js` no longer calls `cors_1.default` (TypeError on `GET /` and `/api/*` when Docker image was built without `esModuleInterop`; `/health` was unaffected).
+
+## 2026-06-15 — Cookie consent CMP compliance
+
+Added:
+- `cookie_consent_log` table + `POST /api/consent/cookie` (anonymous or authenticated) for CMP audit trail.
+- jobbie-admin **Cookie súhlas** view (`/consent-log`) and per-user history on support user detail.
+- `jb_consent` v2 payload (analytics, marketing, personalization, policy version) and `jb_consent_vid` visitor cookie.
+
+Fixed:
+- Cookie withdrawal: preferences modal mounted globally in `AppCookieConsentHost`; unsaved-close confirm; consolidated `useConsentCookieRef()`.
+- PostHog/Sentry teardown and prior blocking when consent withdrawn.
+
+Changed:
+- Marketing and personalization CMP categories (inactive until integrations exist); Sentry gated on analytics consent; modal a11y (focus trap, Escape, close button).
+
+Database:
+- `20260715120000_cookie_consent_log.sql`
+
+## 2026-06-13 — PWA media proxy (Nitro `/media`)
 
 Added:
 - `GET /media?url=` Nitro route — caches public `job-photos` and `profile-avatars` from Supabase; set `NUXT_PUBLIC_MEDIA_CDN_URL=/media`.

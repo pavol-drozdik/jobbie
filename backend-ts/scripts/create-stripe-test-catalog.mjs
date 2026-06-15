@@ -7,7 +7,7 @@ if (!key?.startsWith('sk_test_')) {
   process.exit(1);
 }
 
-const stripe = new Stripe(key, { apiVersion: '2023-10-16' });
+const stripe = new Stripe(key, { apiVersion: '2026-05-27.dahlia' });
 
 const creditPacks = [
   { slug: 'starter', name: 'JOBBIE Credits – Starter', desc: '5 credits', amount: 500 },

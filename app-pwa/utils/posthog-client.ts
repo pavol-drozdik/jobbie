@@ -152,6 +152,30 @@ async function ensurePosthogInitialized(): Promise<PostHog | null> {
   return posthogClient
 }
 
+function clearPosthogPersistence(): void {
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+      const key = localStorage.key(i)
+      if (key?.startsWith('ph_') || key?.includes('posthog')) {
+        localStorage.removeItem(key)
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  try {
+    for (const part of document.cookie.split(';')) {
+      const name = part.split('=')[0]?.trim()
+      if (!name?.startsWith('ph_')) {
+        continue
+      }
+      document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT`
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Stop capture and clear PostHog client state (consent withdrawn). */
 export function shutdownPosthog(): void {
   if (!import.meta.client) {
@@ -167,6 +191,7 @@ export function shutdownPosthog(): void {
     }
   }
   posthogClient = null
+  clearPosthogPersistence()
 }
 
 /** Align PostHog with current cookie consent (call from consent callbacks). */

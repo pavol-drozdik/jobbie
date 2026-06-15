@@ -398,9 +398,6 @@
   footerLinkPrivacy: 'Ochrana osobných údajov',
   privacyPolicyIntro:
     'Oficiálne zásady ochrany osobných údajov platformy Jobbie. Správcom osobných údajov je CoCreate s. r. o.',
-  privacyPolicyEffectiveDate: 'Platné od 25. februára 2026.',
-  privacyPolicyDownloadPdf: 'Stiahnuť zásady (PDF)',
-  privacyPolicyOpenPdf: 'Otvoriť PDF v novej karte',
   footerLinkCookieSettings: 'Nastavenia cookies',
   footerPageSoon: 'Ďalší obsah pripravujeme.',
   footerSlogan:
@@ -448,7 +445,7 @@
   footerCookieSettings: 'Spravovať cookies',
   cookieBannerTitle: 'Ahoj, používame súbory cookie',
   cookieBannerDescription:
-    'Používame ich na zabezpečenie správneho fungovania webovej stránky, analýzu návštevnosti a výkonu a poskytovanie funkcií sociálnych médií. Analytické cookies zapneme až po vašom súhlase.',
+    'Používame ich na zabezpečenie správneho fungovania webovej stránky, analýzu návštevnosti a výkonu a prispôsobenie obsahu. Voliteľné cookies zapneme až po vašom súhlase.',
   cookieBannerAcceptAll: 'Prijať všetky',
   cookieBannerRejectAll: 'Odmietnuť',
   cookieBannerSettings: 'Nastavenia',
@@ -479,6 +476,26 @@
     'Tieto súbory cookie nám umožňujú analyzovať návštevy a zdroje návštevnosti, aby sme mohli merať a zlepšovať výkonnosť stránky. Pomáhajú nám zistiť, ktoré stránky sú najobľúbenejšie a najmenej obľúbené, a sledovať, ako sa návštevníci pohybujú po stránke. Načítajú sa až po vašom súhlase.',
   cookieCategoryAnalyticsEmpty:
     'Analytické nástroje (PostHog, Google Tag Manager) nie sú v tejto inštancii nakonfigurované — žiadne analytické cookies sa nenastavujú.',
+  cookieCategoryMarketingTitle: 'Marketingové',
+  cookieCategoryMarketingHint:
+    'Cookies na meranie reklám a kampaní. V súčasnosti nie sú na webe aktívne žiadne marketingové nástroje.',
+  cookieCategoryMarketingDetail:
+    'Tieto súbory cookie sa používajú na zobrazenie relevantnej reklamy a meranie účinnosti marketingových kampaní. Môžete ich povoliť alebo odmietnuť; v tejto inštancii služby nie sú nakonfigurované.',
+  cookieCategoryMarketingEmpty:
+    'Marketingové nástroje nie sú v tejto inštancii nakonfigurované — žiadne marketingové cookies sa nenastavujú.',
+  cookieCategoryPersonalizationTitle: 'Personalizačné',
+  cookieCategoryPersonalizationHint:
+    'Cookies na prispôsobenie obsahu a odporúčaní. V súčasnosti nie sú na webe aktívne žiadne personalizačné nástroje.',
+  cookieCategoryPersonalizationDetail:
+    'Tieto súbory cookie umožňujú webu zapamätať si vaše voľby a prispôsobiť obsah. Môžete ich povoliť alebo odmietnuť; v tejto inštancii služby nie sú nakonfigurované.',
+  cookieCategoryPersonalizationEmpty:
+    'Personalizačné nástroje nie sú v tejto inštancii nakonfigurované — žiadne personalizačné cookies sa nenastavujú.',
+  cookiePreferencesUnsavedTitle: 'Neuložené zmeny',
+  cookiePreferencesUnsavedMessage:
+    'Máte neuložené zmeny nastavení cookies. Chcete uložiť nový výber pred zatvorením?',
+  cookiePreferencesUnsavedConfirm: 'Uložiť',
+  cookiePreferencesUnsavedDiscard: 'Zahodiť',
+  cookiePreferencesSavedAnnouncement: 'Nastavenia cookies boli uložené.',
   cookieServicePosthog: 'PostHog — produktová analytika a záznamy relácií pri kľúčových akciách.',
   cookieServiceGtm:
     'Google Tag Manager — načítava Google Analytics 4 a Microsoft Clarity po vašom súhlase.',

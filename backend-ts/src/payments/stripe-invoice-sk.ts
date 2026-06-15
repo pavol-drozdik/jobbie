@@ -1,5 +1,5 @@
 import type { ConfigService } from '@nestjs/config';
-import type Stripe from 'stripe';
+import type { InvoiceCreateParams } from './stripe-types';
 
 export type CheckoutBillingDetailsInput = {
   purchaser_type: 'individual' | 'company';
@@ -82,7 +82,7 @@ export function resolveCustomerAddress(
 
 export function buildInvoiceCustomFieldsSk(
   billing?: CheckoutBillingDetailsInput | null,
-): Stripe.InvoiceCreateParams['custom_fields'] {
+): InvoiceCreateParams['custom_fields'] {
   if (!billing) {
     return undefined;
   }

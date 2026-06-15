@@ -43,6 +43,15 @@ export class DataExportService {
       .order('recorded_at', { ascending: false })
       .limit(500);
 
+    const { data: cookieConsents } = await client
+      .from('cookie_consent_log')
+      .select(
+        'action, analytics, marketing, personalization, policy_version, source, page_path, recorded_at',
+      )
+      .eq('user_id', userId)
+      .order('recorded_at', { ascending: false })
+      .limit(500);
+
     const { data: alerts } = await client
       .from('job_email_alerts')
       .select(
@@ -96,6 +105,7 @@ export class DataExportService {
           }
         : null,
       consent_events: consents ?? [],
+      cookie_consent_log: cookieConsents ?? [],
       job_email_alerts: alerts ?? [],
       applications: applications ?? [],
       chat_rooms: (chatRooms ?? []).map((r) => ({

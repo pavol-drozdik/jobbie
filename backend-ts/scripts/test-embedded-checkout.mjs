@@ -61,10 +61,5 @@ async function test(apiVersion, uiMode) {
 }
 
 for (const uiMode of ['embedded', 'embedded_page']) {
-  await test('2023-10-16', uiMode);
-}
-for (const v of ['2024-06-20', '2024-11-20.acacia']) {
-  for (const uiMode of ['embedded', 'embedded_page']) {
-    await test(v, uiMode);
-  }
+  await test('2026-05-27.dahlia', uiMode);
 }
