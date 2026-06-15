@@ -39,7 +39,11 @@ Cloudflare Pages (uses the **local** Nuxt CLI — do not use `npx nuxi`, which p
 npm run build:cloudflare
 ```
 
-Output is in `dist/`. Deploy with Wrangler, e.g. `npx wrangler pages deploy dist --project-name=jobbie-pwa --branch=<production-branch>`.
+Output is in `dist/`. CI deploys via GitHub Actions (`pwa-pages` workflow) to Cloudflare Pages. Manual:
+
+```bash
+npx wrangler pages deploy dist --project-name=jobbie-pwa-staging --branch=staging
+```
 
 ### Windows: `npm ci` EPERM on `esbuild.exe`
 

@@ -2,6 +2,8 @@
 
 How to run JOBBIE locally and deploy to production. Portable hosting notes were merged from the root [`DEPLOYMENT.md`](../DEPLOYMENT.md).
 
+**Full staging → production runbook (Git, GitHub Actions, VPS):** [staging-production-manual.md](./staging-production-manual.md).
+
 Operations: [database-operations-runbook.md](./database-operations-runbook.md). Monitoring: [observability-runbook.md](./observability-runbook.md).
 
 ## Local development
@@ -97,7 +99,7 @@ Names only — set values in host secret manager or `.env`.
 
 | Variable | Purpose |
 |----------|---------|
-| `NUXT_PUBLIC_API_BASE_URL` | Nest API origin |
+| `NUXT_PUBLIC_API_BASE_URL` | Nest API **origin** (no `/api` suffix; e.g. `https://api.jobbie.sk`) |
 | `NUXT_PUBLIC_CDN_URL` | CDN for `_nuxt` assets |
 | `NUXT_PUBLIC_MEDIA_CDN_URL` | Image CDN for public photos |
 | `NUXT_PUBLIC_SUPABASE_URL` | Supabase project URL (`https://<ref>.supabase.co`; after Custom Domain add-on: e.g. `https://auth.jobbie.sk`) |
@@ -162,7 +164,7 @@ Full list and comments: [`backend-ts/.env.example`](../backend-ts/.env.example).
 ### CDN and static assets
 
 - Set `NUXT_PUBLIC_CDN_URL` for hashed `_nuxt` chunks ([`nuxt.config.ts`](../app-pwa/nuxt.config.ts)).
-- Optional `NUXT_PUBLIC_MEDIA_CDN_URL` for public job/ad images — not chat signed URLs.
+- Optional `NUXT_PUBLIC_MEDIA_CDN_URL` for public job/ad images — Nitro route `GET /media?url=…` on the PWA origin (set to `/media` or `https://jobbie.sk/media`). Not chat signed URLs.
 - Mirror cache headers (long cache for `/_nuxt/**`, `/assets/**`) on CDN.
 
 ### Security headers
@@ -196,9 +198,34 @@ Without Redis, crons still run alerts **inline**.
 
 API images need **libvips** for `sharp` image re-encoding. See root DEPLOYMENT notes.
 
-### Staging VPS (Docker + GHCR)
+### Backend VPS (Docker + GHCR)
 
-Websupport bundle: [`websupport-vps-deployment/README-DEPLOYMENT.md`](../websupport-vps-deployment/README-DEPLOYMENT.md). **`backend-ghcr`** builds multi-arch images; **`deploy-staging`** SSHs to the VPS after each push (private GHCR: set `STAGING_GHCR_TOKEN` with `read:packages`). Manual redeploy: workflow **deploy-staging**.
+Websupport bundle: [`websupport-vps-deployment/README-DEPLOYMENT.md`](../websupport-vps-deployment/README-DEPLOYMENT.md).
+
+| Branch / trigger | CI workflow | Deploy |
+|------------------|-------------|--------|
+| Push **`staging`** (backend paths) | `backend-ghcr` | Staging VPS (`STAGING_SSH_*`) |
+| Push **`main`** | `backend-ghcr` | Production VPS (`PROD_SSH_*`; GitHub **`production`** environment) |
+| Tag `backend-v*` | `backend-ghcr` | Staging VPS |
+| Manual | `backend-ghcr` / **deploy-staging** / **deploy-production** | Redeploy existing tag |
+
+Image tags: `staging-YYYY.MM.DD-<sha7>` on staging branch; `YYYY.MM.DD-<sha7>` on main. Private GHCR: `read:packages` PAT on each VPS deploy.
+
+**Git:** create `staging` branch; merge features → `staging` → test → merge `staging` → `main` for production. Supabase migrations are a separate manual step (staging DB first, then prod).
+
+### PWA (Cloudflare Pages + GitHub Actions)
+
+Build: `npm run build:cloudflare` → `app-pwa/dist/`. Workflows: `.github/workflows/pwa-pages.yml` (reusable `pwa-cloudflare-deploy.yml`).
+
+| Branch / trigger | CI workflow | Deploy |
+|------------------|-------------|--------|
+| Push **`staging`** (`app-pwa/**`) | `pwa-pages` | Cloudflare Pages (GitHub **`staging`** env: `PWA_PAGES_*`, `NUXT_PUBLIC_*`) |
+| Push **`main`** | `pwa-pages` | Cloudflare Pages (GitHub **`production`** env) |
+| Manual | **deploy-pwa-staging** / **deploy-pwa-production** | Rebuild + redeploy (optional `git_ref`) |
+
+PR checks (no deploy): `backend-ci` (`pwa-build-and-test`), `pwa-bundle-budget`.
+
+**GitHub:** secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; per-environment variables `PWA_PAGES_PROJECT`, `PWA_PAGES_BRANCH`, `NUXT_PUBLIC_SITE_URL`, and other `NUXT_PUBLIC_*` (see `app-pwa/.env.example`). Host phases: [staging-production-manual.md](./staging-production-manual.md#13-pwa-frontend-deploy).
 
 ### Production checklist
 

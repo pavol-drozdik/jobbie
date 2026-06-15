@@ -1,11 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+import { CatalogCacheService } from '../redis/catalog-cache.service';
 import { normalizeJobPhotos } from '../jobs/normalize-job-photos.util';
 import type { SeoFeedItemDto, SeoFeedPayloadDto } from './seo-feed.dto';
 import { stripHtmlForFeed, truncateFeedSummary } from './seo-feed-text.util';
 
 const DEFAULT_FEED_LIMIT = 100;
 const MAX_FEED_LIMIT = 200;
+/** Redis-backed cache TTL for SEO feeds (reduces repeated Supabase reads). */
+const SEO_FEED_CACHE_TTL_SEC = 900;
 
 const JOB_FEED_SELECT = 'id, title, description, created_at, updated_at, photos';
 const AD_FEED_SELECT =
@@ -32,7 +35,10 @@ type AdFeedRow = {
 
 @Injectable()
 export class SeoFeedService {
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly catalogCache: CatalogCacheService,
+  ) {}
 
   private clampLimit(limit?: number): number {
     const n = Number(limit) || DEFAULT_FEED_LIMIT;
@@ -41,8 +47,25 @@ export class SeoFeedService {
 
   async listJobFeedItems(limit?: number): Promise<SeoFeedPayloadDto> {
     const lim = this.clampLimit(limit);
+    return this.catalogCache.getOrSet(
+      `seo:jobs:feed:v1:${lim}`,
+      () => this.loadJobFeedItems(lim),
+      SEO_FEED_CACHE_TTL_SEC,
+    );
+  }
+
+  async listAdFeedItems(limit?: number): Promise<SeoFeedPayloadDto> {
+    const lim = this.clampLimit(limit);
+    return this.catalogCache.getOrSet(
+      `seo:ads:feed:v1:${lim}`,
+      () => this.loadAdFeedItems(lim),
+      SEO_FEED_CACHE_TTL_SEC,
+    );
+  }
+
+  private async loadJobFeedItems(lim: number): Promise<SeoFeedPayloadDto> {
     const { data } = await this.supabase
-      .getClient()
+      .getReadClient()
       .from('job_offers')
       .select(JOB_FEED_SELECT)
       .eq('is_deleted', false)
@@ -56,10 +79,9 @@ export class SeoFeedService {
     return { items };
   }
 
-  async listAdFeedItems(limit?: number): Promise<SeoFeedPayloadDto> {
-    const lim = this.clampLimit(limit);
+  private async loadAdFeedItems(lim: number): Promise<SeoFeedPayloadDto> {
     const { data } = await this.supabase
-      .getClient()
+      .getReadClient()
       .from('company_ads')
       .select(AD_FEED_SELECT)
       .eq('status', 'active')

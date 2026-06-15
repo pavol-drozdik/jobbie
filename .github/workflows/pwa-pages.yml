@@ -1,0 +1,48 @@
+# Hybrid PWA CD: PR checks stay in backend-ci + pwa-bundle-budget; this workflow deploys.
+# Host / Pages project: GitHub Environment vars PWA_PAGES_* and NUXT_PUBLIC_SITE_URL (see manual).
+name: pwa-pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      skip_deploy:
+        description: Build and test only (no Cloudflare deploy)
+        type: boolean
+        default: false
+  push:
+    branches:
+      - staging
+      - main
+    paths:
+      - 'app-pwa/**'
+      - '.github/workflows/pwa-pages.yml'
+      - '.github/workflows/pwa-cloudflare-deploy.yml'
+
+concurrency:
+  group: pwa-pages-${{ github.ref }}
+  cancel-in-progress: false
+  
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  deploy-staging:
+    name: Deploy PWA to staging
+    if: >
+      github.ref == 'refs/heads/staging' &&
+      (github.event_name != 'workflow_dispatch' || github.event.inputs.skip_deploy != 'true')
+    uses: ./.github/workflows/pwa-cloudflare-deploy.yml
+    with:
+      environment: staging
+    secrets: inherit
+
+  deploy-production:
+    name: Deploy PWA to production
+    if: >
+      github.ref == 'refs/heads/main' &&
+      (github.event_name != 'workflow_dispatch' || github.event.inputs.skip_deploy != 'true')
+    uses: ./.github/workflows/pwa-cloudflare-deploy.yml
+    with:
+      environment: production
+    secrets: inherit

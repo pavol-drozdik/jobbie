@@ -49,11 +49,14 @@ describe('SeoFeedService', () => {
       return builder;
     };
     const supabase = {
-      getClient: () => ({
+      getReadClient: () => ({
         from: (table: string) => chain(table),
       }),
     };
-    return new SeoFeedService(supabase as never);
+    const catalogCache = {
+      getOrSet: async <T>(_key: string, factory: () => Promise<T>) => factory(),
+    };
+    return new SeoFeedService(supabase as never, catalogCache as never);
   }
 
   it('maps job feed items with summary and image', async () => {

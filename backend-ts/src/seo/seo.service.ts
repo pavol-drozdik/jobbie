@@ -26,7 +26,7 @@ export class SeoService {
   ) {}
 
   async buildSitemapPayload(): Promise<SeoSitemapPayload> {
-    const client = this.supabase.getClient();
+    const client = this.supabase.getReadClient();
     const [jobsRes, adsRes, blogItems] = await Promise.all([
       client
         .from('job_offers')

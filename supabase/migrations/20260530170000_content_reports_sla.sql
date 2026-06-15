@@ -1,4 +1,5 @@
 -- Moderation SLA: claim, resolution, handler tracking (admin API service_role only).
+-- Base table + SLA columns: 20260530110000_content_reports_and_account_status.sql
 
 alter table public.content_reports
   add column if not exists handled_by uuid references public.profiles (id) on delete set null,

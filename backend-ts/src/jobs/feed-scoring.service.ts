@@ -10,7 +10,7 @@
  * - Same job_type as viewed/applied/saved: +15
  * - Profile job_interests matches job category: +25
  * - Profile location matches job location/address: +15
- * - Profile skill in title/description/requirements: +5 per skill
+ * - Profile skill in title or skill_tags: +5 per skill
  *
  * Skipped preferences: when user skipped the preferences step (null
  * job_interests/location), profile-based ranking for category/location is
@@ -126,8 +126,7 @@ export interface JobForScore {
   location: string | null;
   location_address: string | null;
   title?: string | null;
-  description?: string | null;
-  requirements?: string | null;
+  skill_tags?: string[] | null;
 }
 
 @Injectable()
@@ -404,16 +403,15 @@ export class FeedScoringService {
       ) {
         score += FEED_WEIGHTS.profileLocationMatch;
       }
-      const text = [
+      const tagHaystack = [
         job.title,
-        job.description,
-        job.requirements,
+        ...(Array.isArray(job.skill_tags) ? job.skill_tags : []),
       ]
         .filter(Boolean)
         .join(' ')
         .toLowerCase();
       for (const skill of profile.skills) {
-        if (skill && text.includes(skill.toLowerCase())) {
+        if (skill && tagHaystack.includes(skill.toLowerCase())) {
           score += FEED_WEIGHTS.profileSkillMatch;
         }
       }

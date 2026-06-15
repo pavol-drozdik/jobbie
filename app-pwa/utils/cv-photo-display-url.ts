@@ -1,5 +1,9 @@
 import type { ApiResponse } from '~/composables/useApi'
 import type { CvHeaderResponseDto } from '~/types/cv'
+import {
+  getCachedCvPhotoSignedUrl,
+  setCachedCvPhotoSignedUrl,
+} from '~/utils/cv-photo-signed-url-cache'
 
 export function isPublicHttpImageUrl(value: string | null | undefined): boolean {
   return /^https?:\/\//i.test((value ?? '').trim())
@@ -27,10 +31,18 @@ export async function resolveCvPhotoDisplayUrl(
   if (!storagePath || isPublicHttpImageUrl(storagePath)) {
     return storagePath || null
   }
-  const res = await api<{ url: string }>(`/api/cv/${encodeURIComponent(cvId)}/photo-url`)
+  const cached = getCachedCvPhotoSignedUrl(cvId)
+  if (cached) {
+    return cached
+  }
+  const res = await api<{ url: string; expires_in_seconds?: number }>(
+    `/api/cv/${encodeURIComponent(cvId)}/photo-url`,
+  )
   const resolved = res.data?.url?.trim() ?? ''
   if (!res.ok || !isPublicHttpImageUrl(resolved)) {
     return null
   }
+  const ttl = Number(res.data?.expires_in_seconds) || 300
+  setCachedCvPhotoSignedUrl(cvId, resolved, ttl)
   return resolved
 }

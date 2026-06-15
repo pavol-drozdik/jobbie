@@ -1,15 +1,34 @@
 -- Run this only if you already have applications and chat_rooms with student_id column.
 -- Renames student_id to individual_id and updates indexes.
+-- No-op on fresh installs where initial_schema already uses individual_id.
 
-alter table public.applications rename column student_id to individual_id;
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'applications'
+      and column_name = 'student_id'
+  ) then
+    alter table public.applications rename column student_id to individual_id;
+    drop index if exists public.idx_applications_student_id;
+    create index if not exists idx_applications_individual_id on public.applications (individual_id);
+  end if;
 
-drop index if exists public.idx_applications_student_id;
-create index if not exists idx_applications_individual_id on public.applications(individual_id);
-
-alter table public.chat_rooms rename column student_id to individual_id;
-
-drop index if exists public.idx_chat_rooms_student_id;
-create index if not exists idx_chat_rooms_individual_id on public.chat_rooms(individual_id);
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'chat_rooms'
+      and column_name = 'student_id'
+  ) then
+    alter table public.chat_rooms rename column student_id to individual_id;
+    drop index if exists public.idx_chat_rooms_student_id;
+    create index if not exists idx_chat_rooms_individual_id on public.chat_rooms (individual_id);
+  end if;
+end
+$$;
 
 -- Recreate RLS policies that reference the old column name (drop and recreate)
 drop policy if exists "User can insert own application" on public.applications;

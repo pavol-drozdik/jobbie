@@ -28,11 +28,14 @@ import {
 
   Req,
 
+  UseInterceptors,
+
 } from '@nestjs/common';
 
 import { Request } from 'express';
 
 import { OptionalAuth } from '../auth/optional-auth.decorator';
+import { AnonymousCatalogCacheInterceptor } from '../common/interceptors/anonymous-catalog-cache.interceptor';
 import { sanitizeRichTextHtml } from '../common/sanitize-html.util';
 
 import { CurrentUserDecorator } from '../auth/current-user.decorator';
@@ -186,6 +189,8 @@ export class CompanyAdsController {
   @Get()
 
   @OptionalAuth()
+
+  @UseInterceptors(AnonymousCatalogCacheInterceptor)
 
   async list(
 

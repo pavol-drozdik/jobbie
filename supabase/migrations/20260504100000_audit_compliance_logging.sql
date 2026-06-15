@@ -172,6 +172,7 @@ create table if not exists public.credit_ledger (
   ref_type text,
   ref_id text,
   payment_intent_id text,
+  transaction_type text,
   audit_event_id uuid references public.audit_events (id) on delete set null
 );
 
@@ -224,6 +225,51 @@ create table if not exists public.api_request_logs (
 
 create index if not exists idx_api_request_logs_occurred on public.api_request_logs (occurred_at desc);
 create index if not exists idx_api_request_logs_user on public.api_request_logs (user_id, occurred_at desc);
+
+-- Admin analytics RPC (SQL language — must be created after api_request_logs exists).
+create or replace function public.admin_analytics_api_latency(
+  p_from timestamptz,
+  p_to timestamptz,
+  p_limit int default 40
+)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(
+    (
+      select jsonb_agg(
+        jsonb_build_object(
+          'path', s.path,
+          'n', s.n,
+          'p50_ms', round(s.p50::numeric, 2),
+          'p95_ms', round(s.p95::numeric, 2),
+          'avg_ms', round(s.avg_ms::numeric, 2)
+        )
+        order by s.n desc
+      )
+      from (
+        select
+          path,
+          count(*)::bigint as n,
+          percentile_cont(0.5) within group (order by latency_ms) as p50,
+          percentile_cont(0.95) within group (order by latency_ms) as p95,
+          avg(latency_ms::double precision) as avg_ms
+        from public.api_request_logs
+        where occurred_at >= p_from and occurred_at <= p_to
+        group by path
+        order by count(*) desc
+        limit greatest(1, least(coalesce(p_limit, 40), 200))
+      ) s
+    ),
+    '[]'::jsonb
+  );
+$$;
+
+revoke all on function public.admin_analytics_api_latency(timestamptz, timestamptz, int) from public;
+grant execute on function public.admin_analytics_api_latency(timestamptz, timestamptz, int) to service_role;
 
 -- ---------------------------------------------------------------------------
 -- Storage access (upload trigger + optional download reporting)

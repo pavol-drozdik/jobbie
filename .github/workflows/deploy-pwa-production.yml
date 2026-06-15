@@ -1,0 +1,32 @@
+name: deploy-pwa-production
+
+on:
+  workflow_dispatch:
+    inputs:
+      git_ref:
+        description: Git ref to build (branch, tag, or SHA; default main tip)
+        required: false
+        default: main
+      pages_project:
+        description: Override PWA_PAGES_PROJECT (leave empty to use production environment var)
+        required: false
+        default: ''
+      pages_branch:
+        description: Override PWA_PAGES_BRANCH (leave empty to use production environment var)
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  deploy:
+    name: Rebuild and deploy PWA to production
+    uses: ./.github/workflows/pwa-cloudflare-deploy.yml
+    with:
+      environment: production
+      pages_project_override: ${{ github.event.inputs.pages_project }}
+      pages_branch_override: ${{ github.event.inputs.pages_branch }}
+      git_ref: ${{ github.event.inputs.git_ref }}
+    secrets: inherit

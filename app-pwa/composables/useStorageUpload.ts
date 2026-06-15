@@ -64,7 +64,7 @@ export function useStorageUpload() {
   ): Promise<void> {
     const { error } = await supabase.storage.from(bucket).uploadToSignedUrl(path, token, file, {
       contentType: resolveFileMime(file),
-      cacheControl: '3600',
+      cacheControl: 'public, max-age=31536000, immutable',
     })
     if (error) {
       throw new Error(error.message || 'Priame nahrávanie zlyhalo.')

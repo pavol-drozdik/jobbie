@@ -16,6 +16,7 @@ JOBBIE is a Slovak job marketplace where **companies** publish job offers and se
 | [uploads.md](./uploads.md) | Storage pipeline and limits |
 | [notifications.md](./notifications.md) | In-app, email, push, alerts |
 | [deployment.md](./deployment.md) | Local dev, env vars, production |
+| [staging-production-manual.md](./staging-production-manual.md) | **Full runbook:** Git branches, GitHub CI/CD, staging & prod VPS |
 | [admin-desktop.md](./admin-desktop.md) | Local Electron admin panel (`jobbie-admin/`) |
 | [changelog.md](./changelog.md) | Important codebase changes |
 

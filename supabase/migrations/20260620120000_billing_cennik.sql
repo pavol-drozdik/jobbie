@@ -63,6 +63,10 @@ on conflict (slug) do update set
   active = excluded.active,
   updated_at = now();
 
+update public.credit_packs
+set active = false, updated_at = now()
+where slug = 'agentura';
+
 -- ---------------------------------------------------------------------------
 -- subscription_plans: rename slugs + new limits (preserve stripe_price_id)
 -- ---------------------------------------------------------------------------
@@ -110,6 +114,16 @@ on conflict (slug) do update set
   max_active_jobs = excluded.max_active_jobs,
   monthly_credits = excluded.monthly_credits,
   sort_order = excluded.sort_order;
+
+update public.subscription_plans
+set active = false, updated_at = now()
+where slug = 'agentura';
+
+update public.subscription_plans set
+  max_cv_unlocks_monthly = null,
+  max_cv_contacts_monthly = null,
+  max_cv_pdf_downloads_monthly = null
+where slug in ('start', 'plus', 'pro');
 
 -- ---------------------------------------------------------------------------
 -- credit_lots (FIFO spend + expiration)

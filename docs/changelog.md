@@ -1,4 +1,61 @@
-﻿## 2026-06-12 — Health check CORS bypass and Typesense compose probe
+﻿## 2026-06-13 — PWA media proxy (Nitro `/media`)
+
+Added:
+- `GET /media?url=` Nitro route — caches public `job-photos` and `profile-avatars` from Supabase; set `NUXT_PUBLIC_MEDIA_CDN_URL=/media`.
+
+## 2026-06-13 — Supabase egress reductions
+
+Changed:
+- **Storage:** public objects get `Cache-Control: public, max-age=31536000, immutable` on finalize; job photo uploads also write a `{uuid}_thumb.jpg` list variant (640px).
+- **Jobs catalog:** list API returns cover thumb URLs only; feed scoring uses `skill_tags` instead of shipping `description`/`requirements`; public catalog reads use `getReadClient()` when configured.
+- **Cache:** `AnonymousCatalogCacheInterceptor` on `GET /jobs` and `GET /company-ads` (60s CDN for anonymous); SEO feeds cached in Redis (15 min); PWA `/_ipx/**` long cache headers.
+- **PWA:** CV signed photo URL in-memory cache; job card thumbnails fall back from thumb → full URL → placeholder.
+
+Docs:
+- `docs/scalability.md` — egress / media CDN notes.
+
+## 2026-06-13 — Fix CORS middleware crash in Docker production build
+
+Fixed:
+- `backend-ts/tsconfig.json`: enable `esModuleInterop` so `import cors from 'cors'` compiles correctly (`cors_1.default is not a function` on `/api/*` OPTIONS/GET in GHCR image; `/health` was unaffected).
+
+Changed:
+- `websupport-vps-deployment/Dockerfile`: retry `npm ci` on transient registry errors (common on arm64 QEMU in GHA).
+- `backend-ghcr.yml`: staging branch builds `linux/arm64` only (staging VPS); `main`/tags still build amd64+arm64.
+- Rename `deploy_staging.sh` → `deploy_backend.sh` (shared VPS deploy; prod workflows no longer reference a staging-named script).
+- `deploy_backend.sh`: `docker compose up --wait` (180s) plus retried external `/health` curl — fixes false-fail 502 right after container recreate.
+
+## 2026-06-12 — PWA Cloudflare deploy (GitHub Actions)
+
+Added:
+- `pwa-pages` — push `staging` / `main` on `app-pwa/**`: test, `build:cloudflare`, deploy via Wrangler to Cloudflare Pages.
+- Reusable `pwa-cloudflare-deploy.yml`; manual **deploy-pwa-staging** / **deploy-pwa-production**.
+- PWA host/project via GitHub Environment vars `PWA_PAGES_PROJECT`, `PWA_PAGES_BRANCH`, `NUXT_PUBLIC_SITE_URL` (Phase 1: staging on `jobbie.sk`; Phase 2: `staging.jobbie.sk` + prod `jobbie.sk`).
+
+Changed:
+- Docs: `NUXT_PUBLIC_API_BASE_URL` is API origin without `/api` suffix.
+
+## 2026-06-12 — VPS deploy: pass env vars through sudo
+
+Fixed:
+- GitHub Actions SSH deploy passes `BACKEND_VERSION`, `GHCR_*`, and `HEALTH_URL` on the `sudo` line — default `sudo bash` stripped them (`BACKEND_VERSION is required`).
+
+## 2026-06-12 — Staging & production deployment manual
+
+Docs:
+- [`docs/staging-production-manual.md`](./staging-production-manual.md) — full runbook: architecture, Git/GitHub (`staging`/`main`), CI/CD workflows, VPS bootstrap (staging + prod), env files, migrations, PWA, Stripe, release checklist, troubleshooting.
+
+## 2026-06-12 — Branch-based backend deploy (staging / main)
+
+Added:
+- `backend-ghcr` triggers on push to **`staging`** and **`main`** (path-filtered); auto image tags `staging-YYYY.MM.DD-<sha7>` vs `YYYY.MM.DD-<sha7>`; `:latest` only on `main` and `backend-v*` tags.
+- `deploy-production` job in `backend-ghcr` + workflow **deploy-production** (SSH via `PROD_SSH_*`, `PROD_GHCR_TOKEN`, `production` environment).
+- Docs: branch promotion flow, production GitHub secrets, optional production environment approval.
+
+Changed:
+- `deploy_staging.sh` success message is environment-neutral (same script for staging and prod VPS).
+
+## 2026-06-12 — Health check CORS bypass and Typesense compose probe
 
 Fixed:
 - `GET /health` skips credentialed CORS middleware so Docker, `curl`, and `deploy_staging.sh` work without an `Origin` header in production.

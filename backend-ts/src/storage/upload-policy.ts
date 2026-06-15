@@ -19,6 +19,8 @@ export const CHAT_MEDIA_MAX_BYTES = 15 * 1024 * 1024;
 export const CV_PHOTO_DATA_URL_MAX_CHARS = 7_000_000;
 
 export const JOB_PHOTO_MAX_EDGE_PX = 1920;
+/** List-card thumbnails written alongside full job photos at finalize. */
+export const JOB_PHOTO_THUMB_MAX_EDGE_PX = 640;
 export const PROFILE_AVATAR_MAX_EDGE_PX = 512;
 export const CV_PHOTO_MAX_EDGE_PX = 512;
 
