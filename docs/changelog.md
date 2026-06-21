@@ -1,4 +1,10 @@
-﻿## 2026-06-19 — Backend dead code cleanup
+﻿## 2026-06-21 — Deploy health check URL sanitization
+
+Fixed:
+- `deploy_backend.sh` strips CR/LF from `HEALTH_URL` and `APP_DOMAIN` before `curl` (GitHub `vars.STAGING_HEALTH_URL` with an embedded newline caused `curl: (3) URL rejected: Malformed input`).
+- SSH deploy workflows strip newlines from `HEALTH_URL` before invoking the script.
+
+## 2026-06-19 — Backend dead code cleanup
 
 Changed:
 - Removed unused helpers, Nest providers (`TwilioSmsService`, `PaidPlanAccessService` class), and auth guard stack (`RolesGuard`, `AppRoleGuard`, `AdminMfaGuard`) from public `backend-ts` API — admin MFA/roles remain in [`jobbie-admin/api`](../jobbie-admin/api).

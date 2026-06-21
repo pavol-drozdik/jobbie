@@ -312,8 +312,8 @@ Append `jobbie-staging-deploy.pub` to staging VPS:
 
 | Variable | Default |
 |----------|---------|
-| `STAGING_HEALTH_URL` | Optional override; default `https://{APP_DOMAIN}/health` from VPS `.env` |
-| `PROD_HEALTH_URL` | `https://api.jobbie.sk/health` |
+| `STAGING_HEALTH_URL` | Optional override; default `https://{APP_DOMAIN}/health` from VPS `.env`. Single line, no trailing newline (e.g. `https://api.cocreate.cz/health`). |
+| `PROD_HEALTH_URL` | `https://api.jobbie.sk/health` (single line) |
 
 **Cloudflare (PWA deploy)** — repository **Secrets** (or per-environment if you prefer):
 

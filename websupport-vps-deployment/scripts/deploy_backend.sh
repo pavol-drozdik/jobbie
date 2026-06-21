@@ -36,6 +36,20 @@ compose_cmd() {
   fi
 }
 
+# GitHub Actions vars and hand-edited .env values often include trailing CR/LF.
+trim_env() {
+  local v="$1"
+  v="${v//$'\r'/}"
+  v="${v//$'\n'/}"
+  v="${v#"${v%%[![:space:]]*}"}"
+  v="${v%"${v##*[![:space:]]}"}"
+  printf '%s' "$v"
+}
+
+if [[ -n "${HEALTH_URL:-}" ]]; then
+  HEALTH_URL="$(trim_env "${HEALTH_URL}")"
+fi
+
 if [[ -n "${GHCR_TOKEN:-}" ]]; then
   if [[ -z "${GHCR_USER:-}" ]]; then
     echo "GHCR_USER is required when GHCR_TOKEN is set (private GHCR package)."
@@ -52,6 +66,7 @@ fi
 
 if [[ -z "${HEALTH_URL:-}" ]]; then
   APP_DOMAIN="$(grep -E '^APP_DOMAIN=' "${ENV_FILE}" | head -n1 | cut -d= -f2- | tr -d '"' | tr -d "'" | xargs)"
+  APP_DOMAIN="$(trim_env "${APP_DOMAIN}")"
   if [[ -n "${APP_DOMAIN}" ]]; then
     HEALTH_URL="https://${APP_DOMAIN}/health"
   fi
@@ -60,6 +75,10 @@ if [[ -z "${HEALTH_URL:-}" ]]; then
   echo "HEALTH_URL is required (set env var or APP_DOMAIN in ${ENV_FILE})." >&2
   exit 1
 fi
+if [[ "${HEALTH_URL}" != */health ]]; then
+  HEALTH_URL="${HEALTH_URL%/}/health"
+fi
+echo "Health check URL: ${HEALTH_URL}"
 
 NEW_IMAGE="${GHCR_IMAGE}:${BACKEND_VERSION}"
 if grep -q '^BACKEND_IMAGE=' "${ENV_FILE}"; then
