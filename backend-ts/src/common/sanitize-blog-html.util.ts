@@ -54,5 +54,3 @@ export function sanitizeBlogBodyHtml(html: string | null | undefined): string {
   }).trim();
   return addLazyLoadingToImages(stripUntrustedImages(purified));
 }
-
-export { isTrustedBlogImageSrc } from '../blog/blog-image-trust.util';

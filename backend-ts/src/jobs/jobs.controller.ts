@@ -19,8 +19,6 @@ import { Throttle } from '@nestjs/throttler';
 import { JwksAuthGuard } from '../auth/jwks-auth.guard';
 import { OptionalAuth } from '../auth/optional-auth.decorator';
 import { Public } from '../auth/public.decorator';
-import { RequireScopes } from '../auth/scopes.decorator';
-import { PermissionsGuard } from '../auth/permissions.guard';
 import { sanitizeRichTextHtml } from '../common/sanitize-html.util';
 import { CurrentUserDecorator } from '../auth/current-user.decorator';
 import { CurrentUser } from '../auth/auth.types';

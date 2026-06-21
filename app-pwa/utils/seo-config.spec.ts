@@ -5,7 +5,7 @@ import {
   pathShouldNoindex,
   SEO_SITEMAP_STATIC_PATHS,
 } from '~/utils/seo-route-policy'
-import { normalizeSiteUrl, parseAllowIndexing } from '~/utils/seo-config'
+import { normalizeSiteUrl, parseAllowIndexing, formatBrandedSeoTitle, SEO_DEFAULT_TITLE } from '~/utils/seo-config'
 import {
   buildFindCatalogCanonicalQuery,
   findCatalogHasNonCanonicalFacets,
@@ -29,6 +29,18 @@ describe('normalizeSiteUrl', () => {
   it('strips trailing slash and adds scheme', () => {
     expect(normalizeSiteUrl('https://example.com/')).toBe('https://example.com')
     expect(normalizeSiteUrl('example.com')).toBe('https://example.com')
+  })
+})
+
+describe('formatBrandedSeoTitle', () => {
+  it('appends brand suffix once', () => {
+    expect(formatBrandedSeoTitle('Blog')).toBe('Blog — JOBBIE')
+    expect(formatBrandedSeoTitle('Jan Novák | Profil')).toBe('Jan Novák | Profil — JOBBIE')
+  })
+
+  it('falls back to default page title when empty', () => {
+    expect(formatBrandedSeoTitle('')).toBe(`${SEO_DEFAULT_TITLE} — JOBBIE`)
+    expect(formatBrandedSeoTitle('   ')).toBe(`${SEO_DEFAULT_TITLE} — JOBBIE`)
   })
 })
 

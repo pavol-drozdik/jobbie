@@ -79,14 +79,15 @@ import type { BlogListItem } from '~/composables/useBlog'
 import { BLOG_CATEGORIES, type BlogCategoryId } from '~/utils/blog'
 import BlogFeaturedCard from '~/components/blog/BlogFeaturedCard.vue'
 import BlogPostCard from '~/components/blog/BlogPostCard.vue'
+import { S } from '~/utils/strings'
 import { ROUTES } from '~/utils/app-routes'
 import { fetchPublicBlogList } from '~/composables/fetch-public-blog-list'
 
 definePageMeta({ layout: 'app', layoutMainFlushTop: true })
 
 usePageSeo({
-  title: 'Blog',
-  description: 'Tipy, novinky a inšpirácia zo sveta práce a brigád na Jobbie.',
+  title: S.seoBlogTitle,
+  description: S.seoBlogDescription,
   canonicalPath: ROUTES.blog,
 })
 

@@ -14,6 +14,8 @@ export type CheckoutBillingDetailsInput = {
   address_city?: string | null;
   address_postal_code?: string | null;
   address_country?: string | null;
+  /** Required true for individual checkout (SK billing attestation). */
+  billing_attestation_sk_residence?: boolean | null;
 };
 
 /** Stripe Customer.address from checkout billing or profile text. */

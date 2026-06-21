@@ -186,9 +186,8 @@ import LoggedOutFeatureHero from '~/components/marketing/LoggedOutFeatureHero.vu
 definePageMeta({ layout: 'app', middleware: ['worker-only'] })
 
 usePageSeo(() => ({
-  title: 'Ponuky na email',
-  description:
-    'Nastav si upozornenia na nové pracovné ponuky a dostávaj ich priamo do emailu podľa tvojich preferencií.',
+  title: S.seoJobAlertsTitle,
+  description: S.seoJobAlertsDescription,
   canonicalPath: '/ponuky-na-email',
 }))
 

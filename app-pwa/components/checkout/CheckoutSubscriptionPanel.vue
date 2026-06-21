@@ -7,6 +7,9 @@
     <p class="mb-8 mt-2 text-[17px] font-normal leading-normal text-black/55">
       {{ planTrialDays > 0 ? S.checkoutPageSubtitleSubscriptionTrial : S.checkoutPageSubtitleSubscription }}
     </p>
+    <p class="mb-6 text-sm leading-relaxed text-black/55">
+      {{ S.checkoutSkBillingPolicyNotice }}
+    </p>
 
     <p
       v-if="successMessage"

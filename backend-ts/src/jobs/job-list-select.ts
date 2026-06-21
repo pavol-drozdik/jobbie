@@ -15,6 +15,3 @@ export const JOB_LIST_MEMORY_FILTER_SELECT = `${JOB_CARD_LIST_SELECT},descriptio
 
 /** Typesense / recommended / similar hydrate. */
 export const JOB_SEARCH_HYDRATE_SELECT = JOB_CARD_LIST_SELECT;
-
-/** @deprecated use JOB_CARD_LIST_SELECT */
-export const JOB_LIST_SELECT = JOB_SEARCH_HYDRATE_SELECT;

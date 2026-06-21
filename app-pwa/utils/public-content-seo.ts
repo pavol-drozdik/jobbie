@@ -64,12 +64,15 @@ export function buildJobDetailSeoMeta(job: Job): PublicContentSeoMeta {
   const plain = stripHtml(job.description || '').trim() || job.title
   const location = getJobPublicLocation(job).trim()
   const pay = getJobCardPayDisplay(job)
+  const category = getCategoryLabel(job.category)
   const parts = [job.title]
   if (location && location !== '—') parts.push(location)
+  if (category) parts.push(category)
   if (pay && pay !== '—') parts.push(pay)
+  const description = truncateMeta(parts.join(' · ') || plain)
   return {
     title: job.title,
-    description: truncateMeta(parts.join(' · ') || plain),
+    description,
     canonicalPath: ROUTES.jobDetail(job.id),
     ogImage: getJobCardThumbnailSrc(job),
     ogType: 'website',
@@ -79,11 +82,12 @@ export function buildJobDetailSeoMeta(job: Job): PublicContentSeoMeta {
 }
 
 export function buildBlogPostDetailSeoMeta(post: BlogPostDetail): PublicContentSeoMeta {
-  const description =
+  const description = truncateMeta(
     post.seo_description?.trim() ||
-    post.excerpt?.trim() ||
-    truncateMeta(stripHtml(post.body_html)) ||
-    post.title
+      post.excerpt?.trim() ||
+      stripHtml(post.body_html) ||
+      post.title,
+  )
   return {
     title: post.seo_title?.trim() || post.title,
     description,

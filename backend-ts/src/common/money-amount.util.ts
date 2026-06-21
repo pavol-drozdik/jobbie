@@ -1,5 +1,5 @@
 /** Normalize monetary amounts to two decimal places (hourly rate, fixed price, etc.). */
-export function normalizeMoneyAmount(value: number): number {
+function normalizeMoneyAmount(value: number): number {
   return Math.round(value * 100) / 100;
 }
 

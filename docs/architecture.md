@@ -120,7 +120,7 @@ Without Redis, the same work runs **inline** from crons.
 | `5 * * * *` | `jobs/job-listing-expiry.cron.ts` | Deactivate expired jobs |
 | `30 5 * * *` | `billing/credit-expiration.cron.ts` | Expire credit lots |
 | `15 6 1 * *` | `payments/subscription-monthly-credits.cron.ts` | Free-plan monthly credits |
-| `0 8 * * 1` | `notifications/notification-jobs.service.ts` | Weekly digest email |
+| `0 8 * * 1` | `notifications/notification-jobs.service.ts` | Weekly digest email *(disabled — stub)* |
 | Daily 11:00 | `notification-jobs.service.ts` | Re-engagement email |
 | `EVERY_DAY_AT_3AM` | `audit/audit-retention.service.ts` | Purge old audit rows |
 | `25 */2 * * *` | `newsletter/mailerlite-retry.cron.ts` | MailerLite retry |

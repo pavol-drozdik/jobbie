@@ -79,6 +79,18 @@
           </div>
         </div>
       </div>
+
+      <label
+        v-if="purchaserType === 'individual'"
+        class="mb-4 flex cursor-pointer items-start gap-3 text-sm leading-snug text-black/70"
+      >
+        <input
+          v-model="skResidenceAttestation"
+          type="checkbox"
+          class="mt-0.5 size-4 shrink-0 rounded border-black/20 text-marketing-green focus:ring-marketing-green"
+        >
+        <span>{{ S.checkoutSkResidenceAttestation }}</span>
+      </label>
     </template>
 
     <div class="pb-2">
@@ -112,6 +124,7 @@ import type { StripeTaxIdElement } from '@stripe/stripe-js'
 import {
   type CheckoutBillingPayload,
   type CheckoutPurchaserType,
+  isValidSkIcoFormat,
 } from '~/utils/checkout-billing'
 import {
   formFieldLabelClass,
@@ -224,6 +237,7 @@ const taxIdDic = ref('')
 const addressLine1 = ref('')
 const addressCity = ref('')
 const addressPostalCode = ref('')
+const skResidenceAttestation = ref(false)
 
 const usesCheckoutDeferred = computed(
   () =>
@@ -439,13 +453,23 @@ async function buildBillingPayload(): Promise<CheckoutBillingPayload | undefined
     return undefined
   }
   if (purchaserType.value === 'individual') {
+    if (!skResidenceAttestation.value) {
+      payError.value = S.checkoutSkResidenceAttestationRequired
+      return undefined
+    }
     return {
       purchaser_type: 'individual',
       address_line1: address.line1,
       address_city: address.city,
       address_postal_code: address.postal,
       address_country: 'SK',
+      billing_attestation_sk_residence: true,
     }
+  }
+  const ico = registrationNumber.value.trim()
+  if (!isValidSkIcoFormat(ico)) {
+    payError.value = S.checkoutBillingIcoInvalid
+    return undefined
   }
   if (!taxIdElement) {
     payError.value = 'Údaje firmy sa nepodarilo načítať.'
@@ -517,6 +541,7 @@ watch(
 )
 
 watch(purchaserType, () => {
+  skResidenceAttestation.value = false
   if (usesCheckoutDeferred.value) {
     activeSecret.value = ''
     void mountDeferredCheckoutElements()

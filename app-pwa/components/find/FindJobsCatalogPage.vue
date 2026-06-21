@@ -241,6 +241,7 @@ import { fetchPublicJobCatalog } from '~/composables/fetch-public-job-catalog'
 const props = defineProps<{
   isForeign: boolean
   pageTitle: string
+  seoTitle?: string
 }>()
 
 const route = useRoute()
@@ -504,7 +505,7 @@ usePageSeo(() => {
   const site = normalizeSiteUrl(String(runtimeConfig.public.siteUrl || ''))
   const itemList = site ? buildJobCatalogItemListJsonLd(jobs.value, site) : null
   return {
-    title: props.pageTitle,
+    title: props.seoTitle ?? props.pageTitle,
     description: catalogSeoDescription.value,
     canonicalPath: catalogPath.value,
     canonicalQuery: Object.keys(canonicalQ).length > 0 ? canonicalQ : undefined,

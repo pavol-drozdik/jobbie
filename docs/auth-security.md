@@ -98,8 +98,8 @@ Middleware and guards are **UX only** — backend must enforce the same rules.
 
 | Mechanism | Where |
 |-----------|--------|
-| `profiles.role` | `company` vs individual — `RolesGuard` |
-| `profiles.app_role` | `admin` — `AppRoleGuard` + `AdminMfaGuard` |
+| `profiles.role` | `company` vs individual — enforced in services/controllers |
+| `profiles.app_role` | `admin` — [`jobbie-admin/api`](../jobbie-admin/api) (`AppRoleGuard` + `AdminMfaGuard`) |
 | `permission_scopes` | Derived from `app_role` + `extra_permission_scopes`; if `app_role` is still `user`, **`profiles.role = company` maps to employer scopes** for API checks (see `effectiveAppRoleForScopes` in [`scopes.ts`](../backend-ts/src/auth/scopes.ts)) |
 | `profiles.account_status` | `active` / `suspended` / `closed` — `AccountStatusGuard` |
 
@@ -114,7 +114,7 @@ Scope check API: `GET /api/auth/scope-check`.
 | Feature | Implementation |
 |---------|----------------|
 | User MFA | Supabase TOTP — [`pages/auth/mfa.vue`](../app-pwa/pages/auth/mfa.vue) |
-| Admin routes | `AdminMfaGuard` requires JWT claim `aal === 'aal2'` |
+| Admin routes | Desktop admin API (`jobbie-admin/api`) — `AdminMfaGuard` requires JWT claim `aal === 'aal2'` |
 | Sensitive mutations | `@RequireRecentLogin()` — `api_user_sessions.last_step_up_at` within **15 minutes** |
 
 Step-up endpoint: `POST /api/auth/session/step-up`. Fresh login (`POST /api/auth/session`) sets `last_step_up_at` for all users; step-up with `aal1` is allowed only when the account has no verified TOTP factor.

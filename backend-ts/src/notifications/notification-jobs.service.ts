@@ -11,6 +11,9 @@ import { BACKGROUND_QUEUE_NAME } from '../queue/background-queue.module';
 
 const PROFILE_BATCH = 200;
 
+/** Stub weekly digest emails are disabled until real digest content ships. */
+const WEEKLY_DIGEST_EMAIL_ENABLED = false;
+
 @Injectable()
 export class NotificationJobsService {
   private readonly logger = new Logger(NotificationJobsService.name);
@@ -24,6 +27,9 @@ export class NotificationJobsService {
 
   @Cron('0 8 * * 1')
   async weeklyDigest(): Promise<void> {
+    if (!WEEKLY_DIGEST_EMAIL_ENABLED) {
+      return;
+    }
     if (this.backgroundQueue) {
       const week = Math.floor(Date.now() / (7 * 24 * 3600 * 1000));
       await this.backgroundQueue.add(
@@ -61,6 +67,10 @@ export class NotificationJobsService {
   }
 
   async runWeeklyDigest(): Promise<void> {
+    if (!WEEKLY_DIGEST_EMAIL_ENABLED) {
+      this.logger.debug('weeklyDigest skipped (disabled)');
+      return;
+    }
     const client = this.supabase.getClient();
     let cursorId: string | null = null;
     for (;;) {

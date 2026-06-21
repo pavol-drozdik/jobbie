@@ -31,7 +31,7 @@ export function trustSectionBlocks(section: TrustContentSection): readonly Trust
 export const TRUST_SECURITY_PAGE: TrustContentPage = {
   title: 'Bezpečnosť',
   intro:
-    'Bezpečnosť účtov, platieb a osobných údajov berieme vážne. Nižšie je prehľad hlavných opatrení platformy JOBBIE.',
+    'Bezpečnosť účtov, platieb a osobných údajov na Jobbie berieme vážne. Prehľad opatrení pre prihlásenie, platby cez Stripe, ochranu údajov a nahlasovanie obsahu.',
   updatedAt: '2026-06-01',
   sections: [
     {
@@ -70,7 +70,7 @@ export const TRUST_SECURITY_PAGE: TrustContentPage = {
 export const TRUST_TERMS_PAGE: TrustContentPage = {
   title: 'Všeobecné podmienky',
   intro:
-    'Používaním platformy JOBBIE súhlasíte s týmito všeobecnými podmienkami. Ak s nimi nesúhlasíte, službu nepoužívajte.',
+    'Používaním platformy Jobbie na hľadanie práce, brigád a služieb súhlasíte s týmito všeobecnými podmienkami. Ak s nimi nesúhlasíte, službu nepoužívajte.',
   updatedAt: '2026-06-01',
   sections: [
     {

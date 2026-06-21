@@ -22,7 +22,6 @@ import {
   type Address,
   type Charge,
   type CheckoutSessionCreateParams,
-  type CheckoutSubscriptionData,
   type CustomerUpdateParams,
   type Event,
   type Invoice,
@@ -37,8 +36,11 @@ import {
   type SubscriptionCreateParams,
 } from './stripe-types';
 import { CreditsService } from '../billing/credits.service';
+import { isPublicSubscriptionPlanSlug } from '../billing/public-pricing-catalog';
 import { SubscriptionTrialService } from '../billing/subscription-trial.service';
+import { SkRpoLookupService } from '../registry/sk-rpo-lookup.service';
 import { SupabaseService } from '../supabase/supabase.service';
+import { assertSkBillingEligible } from './sk-billing-eligibility';
 import { CreditPackDto } from './payments.dto';
 import {
   isStripeTestMode,
@@ -129,6 +131,7 @@ export class StripeService {
     private audit: AuditService,
     private credits: CreditsService,
     private subscriptionTrial: SubscriptionTrialService,
+    private skRpoLookup: SkRpoLookupService,
   ) {
     const key = this.config.get<string>('STRIPE_SECRET_KEY');
     if (key) {
@@ -188,10 +191,6 @@ export class StripeService {
 
   getDefaultCreditsPriceId(): string | null {
     return this.config.get<string>('STRIPE_PRICE_ID_CREDITS') ?? null;
-  }
-
-  getPublishableKey(): string | null {
-    return this.config.get<string>('STRIPE_PUBLISHABLE_KEY') ?? null;
   }
 
   private async loadProfileBillingContext(userId: string): Promise<{
@@ -424,37 +423,6 @@ export class StripeService {
     return trialPeriodDays;
   }
 
-  private async buildCheckoutSubscriptionData(
-    userId: string,
-    planId: string,
-    stripePriceId: string,
-  ): Promise<CheckoutSubscriptionData> {
-    const stripe = this.getStripe();
-    const priceTrialDays =
-      await this.subscriptionTrial.getTrialPeriodDaysForPrice(
-        stripe,
-        stripePriceId,
-      );
-    const trialPeriodDays =
-      await this.subscriptionTrial.resolveSubscriptionTrialDays(
-        userId,
-        stripe,
-        stripePriceId,
-      );
-    const data: CheckoutSubscriptionData = {
-      metadata: { user_id: userId, plan_id: planId },
-    };
-    this.subscriptionTrial.applyTrialToCheckoutSubscriptionData(
-      data,
-      trialPeriodDays,
-      {
-        suppressPriceDefaultTrial:
-          priceTrialDays > 0 && trialPeriodDays < 1,
-      },
-    );
-    return data;
-  }
-
   private async resolveSubscriptionPaymentClientSecret(
     subscription: Subscription,
   ): Promise<{
@@ -602,6 +570,7 @@ export class StripeService {
       billing,
       profileCtx,
     );
+    await assertSkBillingEligible(effectiveBilling, this.skRpoLookup);
     const customerId = await this.ensureStripeCustomer(userId, customerEmail);
     await this.applyCheckoutBillingDetails(
       userId,
@@ -666,55 +635,6 @@ export class StripeService {
       await this.attachInvoicePaymentIntentExtras(pi.id, customerEmail, metadata);
     }
     return this.paymentIntentResponseFromStripe(pi, secret);
-  }
-
-  async createPaymentIntentJobPost(
-    companyId: string,
-    jobId: string,
-  ): Promise<{ client_secret: string }> {
-    const priceId = this.config.get<string>('STRIPE_PRICE_ID_JOB_POST');
-    if (!priceId) {
-      throw new ServiceUnavailableException('Stripe price not configured');
-    }
-    const stripe = this.getStripe();
-    const price = await stripe.prices.retrieve(priceId);
-    const amount = price.unit_amount ?? 0;
-    const currency = price.currency ?? 'eur';
-    if (amount < 1) {
-      throw new ServiceUnavailableException('Invalid job post price');
-    }
-    const pi = await stripe.paymentIntents.create({
-      amount,
-      currency,
-      automatic_payment_methods: { enabled: true },
-      metadata: {
-        company_id: companyId,
-        job_id: jobId,
-        user_id: companyId,
-      },
-    });
-    return {
-      client_secret: pi.client_secret ?? '',
-    };
-  }
-
-  getCreditsConfigHint(): {
-    stripeConfigured: boolean;
-    hasDefaultPrice: boolean;
-    hasProductId: boolean;
-    hasCreditProductIds: boolean;
-  } {
-    const stripeConfigured = !!this.config.get<string>('STRIPE_SECRET_KEY');
-    const hasDefaultPrice = !!this.getDefaultCreditsPriceId();
-    const hasProductId = !!this.config.get<string>('STRIPE_PRODUCT_ID_CREDITS');
-    const raw = this.config.get<string>('STRIPE_CREDIT_PRODUCT_IDS');
-    const hasCreditProductIds = !!raw?.split(',').some((id) => id.trim());
-    return {
-      stripeConfigured,
-      hasDefaultPrice,
-      hasProductId,
-      hasCreditProductIds,
-    };
   }
 
   private isValidStripePriceId(value: unknown): value is string {
@@ -812,132 +732,72 @@ export class StripeService {
     }
   }
 
-  createCheckoutSession(
-    companyId: string,
-    jobId: string,
-    successUrl: string,
-    cancelUrl: string,
-  ): Promise<{ checkout_url: string; session_id: string }> {
-    const priceId = this.config.get<string>('STRIPE_PRICE_ID_JOB_POST');
-    if (!priceId) {
-      throw new ServiceUnavailableException('Stripe price not configured');
-    }
-    return this.getStripe()
-      .checkout.sessions.create({
-        mode: 'payment',
-        payment_method_types: ['card'],
-        line_items: [{ price: priceId, quantity: 1 }],
-        metadata: {
-          company_id: companyId,
-          job_id: jobId,
-          user_id: companyId,
-        },
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        branding_settings: this.getCheckoutBrandingSettings(),
-      } as CheckoutSessionCreateParams)
-      .then((s) => ({
-        checkout_url: s.url ?? '',
-        session_id: s.id,
-      }));
-  }
-
-  createCreditsCheckoutSession(
-    userId: string,
-    priceId: string,
-    creditsAmount: number,
-    successUrl: string,
-    cancelUrl: string,
-  ): Promise<{ checkout_url: string; session_id: string }> {
-    const creditMeta = {
-      user_id: userId,
-      credits: String(creditsAmount),
-      type: 'credits',
-      price_id: priceId,
-    };
-    return this.getStripe()
-      .checkout.sessions.create({
-        mode: 'payment',
-        line_items: [{ price: priceId, quantity: 1 }],
-        metadata: creditMeta,
-        payment_intent_data: { metadata: creditMeta },
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        branding_settings: this.getCheckoutBrandingSettings(),
-      } as CheckoutSessionCreateParams)
-      .then((s) => ({
-        checkout_url: s.url ?? '',
-        session_id: s.id,
-      }));
-  }
-
-  async createSubscriptionCheckoutSession(
+  /**
+   * Switch user to the free subscription plan (`price_monthly_cents === 0`).
+   * Cancels an active Stripe subscription when downgrading from a paid plan.
+   */
+  async activateFreeSubscriptionPlan(
     userId: string,
     planId: string,
-    stripePriceId: string,
-    options: {
-      embedded?: boolean;
-      returnUrl?: string;
-      successUrl?: string;
-      cancelUrl?: string;
-    },
-  ): Promise<{
-    checkout_url: string;
-    session_id: string;
-    client_secret?: string;
-  }> {
-    const stripe = this.getStripe();
-    const subscriptionData = await this.buildCheckoutSubscriptionData(
-      userId,
-      planId,
-      stripePriceId,
-    );
-    if (options.embedded) {
-      const returnUrl = options.returnUrl?.trim();
-      if (!returnUrl) {
-        throw new ServiceUnavailableException('return_url is required for embedded checkout');
-      }
-      const returnUrlWithSession = returnUrl.includes('{CHECKOUT_SESSION_ID}')
-        ? returnUrl
-        : `${returnUrl}${returnUrl.includes('?') ? '&' : '?'}session_id={CHECKOUT_SESSION_ID}`;
-      const session = await stripe.checkout.sessions.create({
-        mode: 'subscription',
-        line_items: [{ price: stripePriceId, quantity: 1 }],
-        ui_mode: 'embedded_page',
-        return_url: returnUrlWithSession,
-        subscription_data: subscriptionData,
-      });
-      let clientSecret = session.client_secret ?? undefined;
-      if (!clientSecret) {
-        const refreshed = await stripe.checkout.sessions.retrieve(session.id);
-        clientSecret = refreshed.client_secret ?? undefined;
-      }
-      if (!clientSecret) {
-        this.logger.warn(
-          `Embedded subscription checkout ${session.id} missing client_secret (ui_mode=${String(session.ui_mode)})`,
-        );
-      }
-      return {
-        checkout_url: session.url ?? '',
-        session_id: session.id,
-        client_secret: clientSecret,
-      };
+    confirmDowngrade: boolean,
+  ): Promise<void> {
+    const supabase = this.supabaseService.getClient();
+    const { data: plan, error } = await supabase
+      .from('subscription_plans')
+      .select('id, slug, price_monthly_cents')
+      .eq('id', planId)
+      .single();
+    if (error || !plan) {
+      throw new NotFoundException('Plán nebol nájdený.');
     }
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      line_items: [{ price: stripePriceId, quantity: 1 }],
-      branding_settings: this.getCheckoutBrandingSettings(),
-      subscription_data: subscriptionData,
-      success_url: options.successUrl ?? '',
-      cancel_url: options.cancelUrl ?? '',
-      locale: 'sk',
-      tax_id_collection: { enabled: true },
-      billing_address_collection: 'required',
-    } as CheckoutSessionCreateParams);
-    return {
-      checkout_url: session.url ?? '',
-      session_id: session.id,
+    const p = plan as {
+      id: string;
+      slug: string;
+      price_monthly_cents: number;
     };
+    if (!isPublicSubscriptionPlanSlug(p.slug)) {
+      throw new BadRequestException('Tento plán už nie je dostupný.');
+    }
+    if (p.price_monthly_cents !== 0) {
+      throw new BadRequestException(
+        'Platené predplatné aktivujte na /platba.',
+      );
+    }
+    const { data: currentSub } = await supabase
+      .from('user_subscriptions')
+      .select('plan_id, stripe_subscription_id, subscription_plans(slug, price_monthly_cents)')
+      .eq('user_id', userId)
+      .maybeSingle();
+    const curPlan = (currentSub as {
+      subscription_plans?: { slug?: string; price_monthly_cents?: number };
+      stripe_subscription_id?: string | null;
+    } | null)?.subscription_plans;
+    const wasPaid = (curPlan?.price_monthly_cents ?? 0) > 0;
+    if (wasPaid && !confirmDowngrade) {
+      throw new BadRequestException(
+        'Prechod na bezplatný plán vyžaduje potvrdenie. Zruší sa aktuálne predplatné.',
+      );
+    }
+    const stripeSubId = (
+      currentSub as { stripe_subscription_id?: string | null } | null
+    )?.stripe_subscription_id;
+    if (stripeSubId?.trim()) {
+      await this.cancelStripeSubscriptionBeforeAccountDeletion(userId);
+    }
+    const { error: upsertError } = await supabase.from('user_subscriptions').upsert(
+      {
+        user_id: userId,
+        plan_id: p.id,
+        status: 'active',
+        stripe_subscription_id: null,
+      },
+      { onConflict: 'user_id' },
+    );
+    if (upsertError) {
+      throw new BadRequestException(
+        'Nepodarilo sa aktivovať bezplatný plán. Skúste znova.',
+      );
+    }
   }
 
   async applyCheckoutBillingDetails(
@@ -1262,6 +1122,7 @@ export class StripeService {
       billing,
       profileCtx,
     );
+    await assertSkBillingEligible(effectiveBilling, this.skRpoLookup);
     const customerId = await this.ensureStripeCustomer(userId, customerEmail);
     await this.applyCheckoutBillingDetails(
       userId,

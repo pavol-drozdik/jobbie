@@ -41,8 +41,8 @@
 <script setup lang="ts">
 
 import LoggedOutFeatureHero from '~/components/marketing/LoggedOutFeatureHero.vue'
-
 import CvDatabasePage from '~/components/cv-database/CvDatabasePage.vue'
+import { S } from '~/utils/strings'
 
 
 
@@ -57,17 +57,10 @@ definePageMeta({
 
 
 usePageSeo({
-
-  title: 'Databáza životopisov',
-
-  description:
-
-    'Prehľadávajte životopisy uchádzačov podľa zručností a lokality. Pre zamestnávateľov na platforme JOBBIE.',
-
+  title: S.seoCvDatabaseTitle,
+  description: S.seoCvDatabaseDescription,
   canonicalPath: '/databaza-zivotopisov',
-
   noindex: true,
-
 })
 
 

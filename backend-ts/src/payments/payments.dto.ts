@@ -8,7 +8,9 @@ import {
   ValidateNested,
   MaxLength,
   ValidateIf,
+  Equals,
 } from 'class-validator';
+import { SK_BILLING_INDIVIDUAL_MESSAGE } from './sk-billing-eligibility';
 import { Type } from 'class-transformer';
 
 function toOptionalBoolean(value: unknown): boolean | undefined {
@@ -34,64 +36,15 @@ export interface CreditPackDto {
 const STRIPE_PRICE_ID_VALIDATION =
   'Vyberte platný balík kreditov (chýba Stripe Price ID v katalógu).';
 
-export class CreateCreditsCheckoutDto {
-  @IsNotEmpty({ message: STRIPE_PRICE_ID_VALIDATION })
-  @IsString({ message: STRIPE_PRICE_ID_VALIDATION })
-  price_id!: string;
-
-  @IsOptional()
-  @IsString()
-  success_url?: string;
-
-  @IsOptional()
-  @IsString()
-  cancel_url?: string;
-}
-
-export class CreateCheckoutSessionDto {
-  @IsString()
-  job_id!: string;
-
-  @IsOptional()
-  @IsString()
-  success_url?: string;
-
-  @IsOptional()
-  @IsString()
-  cancel_url?: string;
-}
-
-export class CreateSubscriptionCheckoutDto {
+/** Downgrade / activate the free (`zadarmo`) subscription plan — no Stripe checkout. */
+export class ActivateFreePlanDto {
   @IsString()
   plan_id!: string;
-
-  @IsOptional()
-  @IsString()
-  success_url?: string;
-
-  @IsOptional()
-  @IsString()
-  cancel_url?: string;
 
   @IsOptional()
   @Transform(({ value }) => toOptionalBoolean(value))
   @IsBoolean()
   confirm_downgrade?: boolean;
-
-  @IsOptional()
-  @Transform(({ value }) => toOptionalBoolean(value))
-  @IsBoolean()
-  embedded?: boolean;
-
-  @IsOptional()
-  @IsString()
-  return_url?: string;
-}
-
-export interface CreateCheckoutSessionResponseDto {
-  checkout_url: string;
-  session_id: string;
-  client_secret?: string;
 }
 
 export type SubscriptionBuyerType = 'individual' | 'company';
@@ -135,6 +88,12 @@ export class CheckoutBillingDetailsDto {
   @IsOptional()
   @IsString()
   address_country?: string | null;
+
+  @ValidateIf((o: CheckoutBillingDetailsDto) => o.purchaser_type === 'individual')
+  @Transform(({ value }) => toOptionalBoolean(value))
+  @IsBoolean()
+  @Equals(true, { message: SK_BILLING_INDIVIDUAL_MESSAGE })
+  billing_attestation_sk_residence?: boolean;
 }
 
 export class CreatePaymentIntentCreditsDto {
@@ -146,11 +105,6 @@ export class CreatePaymentIntentCreditsDto {
   @ValidateNested()
   @Type(() => CheckoutBillingDetailsDto)
   billing?: CheckoutBillingDetailsDto;
-}
-
-export class CreatePaymentIntentJobDto {
-  @IsString()
-  job_id!: string;
 }
 
 export class ConfirmCreditsPurchaseDto {

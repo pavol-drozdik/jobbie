@@ -245,14 +245,12 @@ const { phase: newsletterPhase, submit: submitNewsletter, resetPhase: resetNewsl
   useNewsletterSubscribe()
 
 const tutorialLinkLabels = [
-  S.footerGuideJobEmailAlerts,
   S.footerGuideHowItWorks,
   S.footerGuideHowToRegister,
   S.footerGuideCreateService,
+  S.footerGuideCreateJob,
   S.footerGuideCreateProfile,
-  S.footerGuideTopService,
-  S.footerGuideAddVoucher,
-  S.footerGuideSignUpCta,
+  S.footerGuideTopServiceOrJob,
 ] as const
 
 const newsletterName = ref<string>('')

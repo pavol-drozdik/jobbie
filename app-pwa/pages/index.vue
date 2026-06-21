@@ -347,9 +347,8 @@ usePageSeo(() => {
   const site = siteUrl.value
   const faqLd = buildFaqPageJsonLd(HOME_DESIGN_FAQ_BY_ROLE.brigadnik)
   return {
-    title: 'Nájdi prácu, ktorá ti sadne — Jobbie',
-    description:
-      'Spájame uchádzačov s firmami na Slovensku — brigády, sezónne práce, kosenie trávy a ďalšie ponuky. Rýchlo, jednoducho a zadarmo pre uchádzačov.',
+    title: S.seoHomeTitle,
+    description: S.seoHomeDescription,
     canonicalPath: ROUTES.home,
     alternateFeeds: site ? buildJobsAlternateFeeds(site) : [],
     jsonLd: faqLd,

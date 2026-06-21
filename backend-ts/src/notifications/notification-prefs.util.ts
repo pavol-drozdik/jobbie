@@ -19,7 +19,7 @@ export const CATEGORY_DEFAULTS: Record<NotificationCategory, Record<Notification
   messages: { in_app: true, email: true, push: true, sms: false },
   applications: { in_app: true, email: true, push: true, sms: false },
   marketing: { in_app: true, email: false, push: false, sms: false },
-  digest: { in_app: true, email: true, push: false, sms: false },
+  digest: { in_app: true, email: false, push: false, sms: false },
   job_updates: { in_app: true, email: true, push: true, sms: false },
   payments: { in_app: true, email: true, push: true, sms: false },
   reviews: { in_app: true, email: true, push: false, sms: false },

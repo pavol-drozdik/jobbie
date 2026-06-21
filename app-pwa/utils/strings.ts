@@ -258,8 +258,8 @@
   errorPageCtaHome: 'Prejsť na úvod',
   errorPageCtaSearch: 'Hľadať ponuky',
   errorPageCtaBack: 'Späť',
-  errorPageTitle404: '404 — JOBBIE',
-  errorPageTitleError: 'Chyba — JOBBIE',
+  errorPageTitle404: '404',
+  errorPageTitleError: 'Chyba',
   blogPostNotFound: 'Článok sa nenašiel.',
   jobListingInactiveNotice:
     'Lehota na prihlásenie na túto ponuku uplynula. Detail ponuky a konverzácie ostávajú dostupné pre zúčastnené strany.',
@@ -369,20 +369,37 @@
   faqRoleWorker: 'Uchádzač',
   faqRoleProvider: 'Profesionál',
   footerAbout: 'O nás',
-  seoContactPageTitle: 'Kontakt',
-  seoSecurityPageTitle: 'Bezpečnosť',
+  seoContactPageTitle: 'Kontakt a podpora Jobbie',
+  seoSecurityPageTitle: 'Bezpečnosť platformy',
   seoFaqPageSubtitle:
     'Odpovede pre zamestnávateľov, uchádzačov a profesionálov na platforme JOBBIE.',
   seoFaqPageDescription:
     'Často kladené otázky o Jobbie — registrácia, brigády, cenník, chat, podpora a ochrana údajov.',
+  seoHomeTitle: 'Brigády a práca na Slovensku aj v zahraničí',
+  seoHomeDescription:
+    'Jobbie spája uchádzačov, zamestnávateľov a profesionálov. Brigády, sezónne práce a pracovné ponuky na Slovensku aj v zahraničí — registrácia zadarmo, prihlásenie jedným klikom.',
   seoHomeDefinition:
     'Jobbie (JOBBIE) je slovenská online platforma na hľadanie brigád a dočasných prác. Zamestnávatelia zverejňujú ponuky, uchádzači sa prihlasujú a komunikujú cez chat; profesionáli sa zobrazujú v katalógu Profesionáli.',
   seoCatalogJobsDescription:
-    'Prehľad aktuálnych brigád a pracovných ponúk na Slovensku. Filtrujte podľa mesta, kategórie a typu práce.',
+    'Prehľad brigád a pracovných ponúk na Slovensku. Filtruj podľa mesta, kategórie a typu práce a prihlás sa priamo na Jobbie — zadarmo pre uchádzačov.',
+  seoCatalogJobsTitle: 'Brigády a pracovné ponuky',
   seoCatalogForeignDescription:
-    'Zahraničné pracovné ponuky a brigády. Prehľadajte inzeráty a prihláste sa priamo v Jobbie.',
+    'Zahraničné pracovné ponuky a brigády v jednom katalógu. Filtruj podľa krajiny a kategórie, pozri detaily a prihlás sa cez Jobbie bez zbytočných formulárov.',
+  seoCatalogForeignTitle: 'Zahraničné pracovné ponuky',
+  seoCatalogProfessionalsTitle: 'Profesionáli a služby',
   seoCatalogProfessionalsDescription:
-    'Katalóg profesionálov a firiem na Jobbie. Nájdite pomoc podľa kategórie a lokality.',
+    'Nájdite kosenie trávy, údržbu záhrady, remeselníkov a ďalšie služby vo vašom okolí. Katalóg profesionálov a firiem na Jobbie.',
+  seoBlogTitle: 'Blog o práci a brigádach',
+  seoBlogDescription:
+    'Tipy pre uchádzačov i zamestnávateľov, novinky z Jobbie a rady k brigádam, kariére a hľadaniu práce na Slovensku.',
+  seoJobAlertsTitle: 'Upozornenia na pracovné ponuky e-mailom',
+  seoJobAlertsDescription:
+    'Nastavte si e-mailové upozornenia na nové pracovné ponuky podľa mesta, kategórie a typu práce. Bezplatné pre uchádzačov na Jobbie.',
+  seoCvDatabaseTitle: 'Databáza životopisov pre zamestnávateľov',
+  seoCvDatabaseDescription:
+    'Prehľadávajte životopisy uchádzačov podľa zručností, jazykov a lokality. Nástroj pre zamestnávateľov na platforme Jobbie.',
+  seoProfileFallbackDescription:
+    'Verejný profil na Jobbie — prezentácia skúseností, služieb a kontaktu. Brigády, práca a profesionáli na jednej platforme.',
   footerBlog: 'Blog',
   footerWorkers: 'Uchádzači',
   footerFindJobs: 'Hľadať brigády',
@@ -430,10 +447,9 @@
   footerGuideHowItWorks: 'Ako to funguje',
   footerGuideHowToRegister: 'Ako sa registrovať',
   footerGuideCreateService: 'Ako vytvoriť službu',
-  footerGuideCreateProfile: 'Ako si vytvoriť profil',
-  footerGuideTopService: 'Ako topovať službu',
-  footerGuideAddVoucher: 'Ako pridať voucher',
-  footerGuideSignUpCta: 'Zaregistrovať sa',
+  footerGuideCreateJob: 'Ako vytvoriť pracovnú ponuku',
+  footerGuideCreateProfile: 'Ako vytvoriť profil',
+  footerGuideTopServiceOrJob: 'Ako topovať službu alebo pracovnú ponuku',
   footerQuickMenuHeading: 'RÝCHLE MENU',
   footerQuickFindWork: 'Hľadať prácu',
   footerQuickAddListing: 'Pridať inzerát',
@@ -577,8 +593,6 @@
   checkoutLoadingPayment: 'Pripravujeme platobný formulár…',
   checkoutNoClientSecret:
     'Server nevrátil platobné údaje. Obnovte stránku alebo sa vráťte na cenník a skúste znova.',
-  checkoutNoCheckoutUrl:
-    'Nepodarilo sa pripraviť platbu. Skúste znova alebo kontaktujte podporu.',
   checkoutSubscriptionPayCta: 'Pokračovať na platbu',
   checkoutRedirectingStripe: 'Presmerovanie na Stripe…',
   checkoutStripeSecureNote: 'Platbu dokončíte na zabezpečenej stránke Stripe.',
@@ -589,6 +603,13 @@
   checkoutBillingCity: 'Mesto',
   checkoutBillingPostalCode: 'PSČ',
   checkoutBillingAddressRequired: 'Vyplňte fakturačnú adresu (ulica, mesto, PSČ).',
+  checkoutSkBillingPolicyNotice:
+    'Kredity a predplatné sú dostupné len pre odberateľov s fakturačnou adresou na Slovensku.',
+  checkoutSkResidenceAttestation:
+    'Potvrdzujem, že mám fakturačnú adresu na Slovensku.',
+  checkoutSkResidenceAttestationRequired:
+    'Vyplňte fakturačnú adresu na Slovensku a potvrďte súhlas.',
+  checkoutBillingIcoInvalid: 'Zadajte platné slovenské IČO.',
   checkoutSubscriptionSuccess: 'Predplatné bolo úspešne aktivované.',
   checkoutSubscriptionTrialSuccess:
     'Skúšobné obdobie je aktívne. Prvá platba prebehne po jeho skončení.',
@@ -601,15 +622,16 @@
   checkoutStripeNotConfigured:
     'Platobná brána nie je nakonfigurovaná (chýba NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY).',
   checkoutStripeLoadFailed: 'Nepodarilo sa načítať Stripe.',
-  checkoutHostedFallbackCta: 'Otvoriť platbu v Stripe',
   checkoutPaymentFailed: 'Platba nebola dokončená.',
   checkoutPaymentNoIntentId:
     'Platba sa nepodarila dokončiť. Skontrolujte kartu a údaje vo formulári, potom to skúste znova.',
   checkoutPaymentFormNotReady: 'Platobný formulár sa ešte načítava. Počkajte chvíľu.',
   checkoutCreditsSuccess: 'Kredity boli úspešne pripísané na váš účet.',
-  pricingPageTitle: 'Cenník',
+  pricingPageTitle: 'Cenník pre firmy',
   pricingPageSubtitle:
-    'Jednorazové kredity, mesačné plány alebo doplnkové marketingové služby pre firmy a profesionálov.',
+    'Kredity na zverejnenie ponúk, mesačné plány pre firmy a doplnkové marketingové služby. Pre uchádzačov je registrácia zvyčajne zadarmo.',
+  pricingSkBillingNotice:
+    'Platené kredity a predplatné sú dostupné len pre fakturačnú adresu na Slovensku. Zahraničné firmy nás môžu kontaktovať.',
   pricingTrialAfterHint: 'prvá platba až po skúšobnom období',
   pricingTabCredits: 'Jednorazové kredity',
   pricingTabPlans: 'Mesačné plány',
@@ -2222,7 +2244,6 @@
   jobEmailAlertsWizardErrSave: 'Upozornenie sa nepodarilo uložiť. Skúste to znova.',
   jobEmailAlertsWizardNotFound: 'Upozornenie sa nenašlo.',
   jobEmailAlertsWizardEmployerOnly: 'E-mailové upozornenia sú dostupné len pre uchádzačov o prácu.',
-  footerGuideJobEmailAlerts: 'Ponuky na email',
 
   applicantsPageTitle: 'Správca uchádzačov',
   applicantsSearchJobsPlaceholder: 'Hľadať podľa názvu ponuky...',

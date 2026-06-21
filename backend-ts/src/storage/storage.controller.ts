@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  GoneException,
   Get,
   Inject,
   Param,
@@ -83,23 +82,5 @@ export class StorageController {
       mime: finalized.result.mime,
       size: finalized.result.size,
     };
-  }
-
-  /** @deprecated Use POST /storage/uploads/init + finalize */
-  @Post('job-photo')
-  @Throttle(UPLOAD_THROTTLE)
-  uploadJobPhotoDeprecated(): never {
-    throw new GoneException(
-      'Multipart upload removed. Use POST /api/storage/uploads/init then finalize.',
-    );
-  }
-
-  /** @deprecated Use POST /storage/uploads/init + finalize */
-  @Post('profile-avatar')
-  @Throttle(UPLOAD_THROTTLE)
-  uploadProfileAvatarDeprecated(): never {
-    throw new GoneException(
-      'Multipart upload removed. Use POST /api/storage/uploads/init then finalize.',
-    );
   }
 }

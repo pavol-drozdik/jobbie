@@ -165,6 +165,7 @@ export class SubscriptionCreditsService {
       title: 'Mesačné kredity pripísané',
       body: `Na váš účet bolo pripísaných ${monthly} kreditov z predplatného.`,
       metadata: {},
+      omitExternalChannels: true,
     });
     return { applied: true };
   }
@@ -260,6 +261,7 @@ export class SubscriptionCreditsService {
       title: 'Mesačné kredity (Zadarmo)',
       body: `Na váš účet bolo pripísaných ${credits} kreditov za mesiac ${periodYyyymm}.`,
       metadata: {},
+      omitExternalChannels: true,
     });
   }
 }

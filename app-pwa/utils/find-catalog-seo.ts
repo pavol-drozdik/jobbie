@@ -1,5 +1,7 @@
 /** Job catalog URL/canonical helpers — avoid crawl traps from facet query params. */
 
+import { S } from './strings'
+
 const CANONICAL_QUERY_KEYS = ['q', 'category', 'location'] as const
 
 const NOINDEX_FACET_KEYS = [
@@ -97,14 +99,11 @@ export function parseFindCatalogPageFromRoute(
 }
 
 export function buildFindCatalogSeoDescription(isForeign: boolean): string {
-  if (isForeign) {
-    return 'Zahraničné pracovné ponuky na Jobbie — filtruj podľa krajiny, kategórie a typu práce.'
-  }
-  return 'Pracovné ponuky a brigády na Jobbie — vyhľadávaj letné brigády, kosenie trávy, pomoc v domácnosti a ďalšie práce podľa lokality a kategórie.'
+  return isForeign ? S.seoCatalogForeignDescription : S.seoCatalogJobsDescription
 }
 
 export function buildProfessionalsCatalogSeoDescription(): string {
-  return 'Profesionáli a služby na Jobbie — nájdi kosenie, údržbu záhrady, remeselníkov a sezónne služby vo svojom okolí.'
+  return S.seoCatalogProfessionalsDescription
 }
 
 export { CANONICAL_QUERY_KEYS, NOINDEX_FACET_KEYS }

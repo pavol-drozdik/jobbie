@@ -35,7 +35,7 @@ After adding or changing Nest payment routes (e.g. `create-payment-intent-subscr
 - `GET|POST /api/applications`, `GET /api/applications/:id`
 - `GET|POST|PATCH|DELETE /api/job-alerts` — per-user job email alert criteria (job seekers); dispatch uses SMTP + Typesense when configured
 - `POST /api/chat/rooms?application_id=`, `GET /api/chat/rooms`, `POST /api/chat/messages`, `GET /api/chat/rooms/:room_id/messages`
-- `POST /api/payments/checkout-session`, `POST /api/payments/checkout-subscription`, `POST /api/payments/create-payment-intent-credits`, `POST /api/payments/create-payment-intent-subscription`, `POST /api/payments/confirm-credits`, `POST /api/payments/confirm-subscription`, `POST /api/payments/webhook` (raw body for Stripe signature)
+- `POST /api/payments/checkout-session`, `POST /api/payments/activate-free-plan`, `POST /api/payments/create-payment-intent-credits`, `POST /api/payments/create-payment-intent-subscription`, `POST /api/payments/confirm-credits`, `POST /api/payments/confirm-subscription`, `POST /api/payments/webhook` (raw body for Stripe signature). Deprecated: `POST /api/payments/checkout-subscription`.
 
 ## Stripe subscriptions and webhooks
 

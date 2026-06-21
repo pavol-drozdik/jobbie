@@ -55,16 +55,18 @@ const profileSeoTitle = computed(() => {
   const p = initialDetail.value?.profile
   if (!p) return 'Profil'
   if (p.role === 'company') {
-    return p.company_name?.trim() || p.display_name?.trim() || 'Profil firmy'
+    const name = p.company_name?.trim() || p.display_name?.trim()
+    return name ? `${name} | Profil firmy` : 'Profil firmy'
   }
-  return p.display_name?.trim() || 'Profil'
+  const name = p.display_name?.trim()
+  return name ? `${name} | Profil` : 'Profil'
 })
 
 const profileSeoDescription = computed(() => {
   const p = initialDetail.value?.profile
   const text = p?.bio?.trim() || p?.description?.trim()
-  if (text) return text.slice(0, 320)
-  return 'Verejný profil na platforme JOBBIE.'
+  if (text) return text.length > 160 ? `${text.slice(0, 159).trim()}…` : text
+  return S.seoProfileFallbackDescription
 })
 
 usePageSeo(() => ({

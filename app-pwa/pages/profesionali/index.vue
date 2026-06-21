@@ -251,7 +251,7 @@ usePageSeo(() => {
     ? buildProfessionalAdCatalogItemListJsonLd(companyAds.value, site)
     : null
   return {
-    title: S.firmyTitle,
+    title: S.seoCatalogProfessionalsTitle,
     description: buildProfessionalsCatalogSeoDescription(),
     canonicalPath: ROUTES.professionalsCatalog,
     alternateFeeds: site ? buildAdsAlternateFeeds(site) : [],

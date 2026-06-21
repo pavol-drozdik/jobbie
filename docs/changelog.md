@@ -1,4 +1,63 @@
-﻿## 2026-06-15 — Staging deploy health check fallback
+﻿## 2026-06-19 — Backend dead code cleanup
+
+Changed:
+- Removed unused helpers, Nest providers (`TwilioSmsService`, `PaidPlanAccessService` class), and auth guard stack (`RolesGuard`, `AppRoleGuard`, `AdminMfaGuard`) from public `backend-ts` API — admin MFA/roles remain in [`jobbie-admin/api`](../jobbie-admin/api).
+- Removed legacy payment routes (`checkout-session`, `checkout-credits`, `create-payment-intent-job`, `checkout-subscription`, `GET config`, `GET credit-packs-config`) and gone multipart storage routes (`job-photo`, `profile-avatar`).
+- Public blog detail sanitizes `body_html` via `sanitizeBlogBodyHtml` on read.
+
+Docs:
+- [`backend.md`](./backend.md), [`payments-credits.md`](./payments-credits.md), [`SECURITY.md`](./SECURITY.md), [`auth-security.md`](./auth-security.md).
+
+## 2026-06-19 — Remove legacy subscription Checkout Session
+
+Changed:
+- Removed Stripe hosted/embedded Checkout Session for subscriptions (`createSubscriptionCheckoutSession`, `StripeEmbeddedCheckout.vue`).
+- Added `POST /api/payments/activate-free-plan` for downgrade to `zadarmo`; PWA `usePricingPlanCheckout` uses it.
+- `POST /api/payments/checkout-subscription` now returns `400` (deprecated — use `/platba` or `activate-free-plan`).
+
+## 2026-06-19 — SK-only billing for credits and subscriptions
+
+Added:
+- Backend: `assertSkBillingEligible` on credit/subscription PaymentIntent creation — SK address, individual attestation, company IČO + RPO lookup.
+- PWA `/platba`: SK policy notice, individual residence checkbox, client IČO format check; `/cennik` billing notice with contact link.
+
+Security:
+- Non-SK `address_country` or invalid company IČO returns `400` before Stripe PaymentIntent is created.
+
+Docs:
+- [`payments-credits.md`](./payments-credits.md) — SK-only purchase policy section.
+
+## 2026-06-15 — No email for monthly credit grants
+
+Changed:
+- Subscription monthly credit grants (paid + free plan) notify in-app only — no SMTP email or web push (`omitExternalChannels`).
+- One-time credit pack purchases (`Kredity pripísané` webhook) — in-app only, no email or push.
+
+## 2026-06-15 — Disable stub weekly digest email
+
+Changed:
+- Backend: weekly digest cron and `runWeeklyDigest` no-op (`WEEKLY_DIGEST_EMAIL_ENABLED = false`) — placeholder “týždenný prehľad” emails no longer send.
+- Default `digest` email preference off (backend + PWA matrix) until a real digest template exists.
+
+## 2026-06-15 — SEO title suffix and geographic scope
+
+Fixed:
+- PWA: removed double brand suffix (`— JOBBIE — JOBBIE`) — `usePageSeo` passes page-only title to `titleTemplate`; `formatBrandedSeoTitle` sets OG/Twitter titles.
+- Homepage and default meta copy now mention Slovensko aj v zahraničí; error page titles no longer embed brand (template adds it once).
+
+## 2026-06-15 — SEO titles and meta descriptions
+
+Changed:
+- PWA: improved static SEO copy (homepage, job/foreign/professional catalogs, blog, cenník, job alerts, trust pages) with keyword-focused Slovak titles and ~155-char descriptions.
+- `find-catalog-seo.ts` now reads catalog descriptions from `strings.ts`; job catalog pages pass dedicated `seoTitle` props.
+- Job/blog/profile detail meta: category in job descriptions, truncated blog/profile fallbacks, profile titles with `| Profil` suffix.
+
+## 2026-06-15 — Footer Návody column
+
+Changed:
+- `AppSiteFooter` **NÁVODY**: six labels only — ako to funguje, registrácia, služba, pracovná ponuka, profil, topovanie služby alebo ponuky.
+
+## 2026-06-15 — Staging deploy health check fallback
 
 Fixed:
 - Staging GitHub Actions deploy no longer falls back to `https://api.cocreate.cz/health` (wrong project). `deploy_backend.sh` derives `https://{APP_DOMAIN}/health` from the VPS `.env` when `STAGING_HEALTH_URL` / `HEALTH_URL` is unset.

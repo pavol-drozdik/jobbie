@@ -2,6 +2,7 @@ import {
   SEO_DEFAULT_DESCRIPTION,
   SEO_DEFAULT_OG_IMAGE_PATH,
   SEO_DEFAULT_TITLE,
+  formatBrandedSeoTitle,
   normalizeSiteUrl,
   parseAllowIndexing,
   parseLegalPublished,
@@ -79,12 +80,14 @@ export function usePageSeo(input: MaybeRefOrGetter<PageSeoInput>): void {
     parseLegalPublished(String(config.public.legalPublished ?? '')),
   )
   const resolved = computed(() => toValue(input))
-  const title = computed(() => {
+  /** Page-only title; `nuxt.config` `titleTemplate` appends ` — JOBBIE` to the document title. */
+  const pageTitle = computed(() => {
     const raw = resolved.value.title?.trim()
-    if (!raw) return SEO_DEFAULT_TITLE
-    if (raw.includes('—') || raw.includes('|')) return raw
-    return `${raw} — ${brand.brandName}`
+    return raw || SEO_DEFAULT_TITLE
   })
+  const brandedTitle = computed(() =>
+    formatBrandedSeoTitle(pageTitle.value, brand.brandName),
+  )
   const description = computed(
     () => resolved.value.description?.trim() || SEO_DEFAULT_DESCRIPTION,
   )
@@ -123,17 +126,17 @@ export function usePageSeo(input: MaybeRefOrGetter<PageSeoInput>): void {
     }))
   })
   useSeoMeta({
-    title: () => title.value,
+    title: () => pageTitle.value,
     description: () => description.value,
     robots: () => robotsContent.value,
-    ogTitle: () => title.value,
+    ogTitle: () => brandedTitle.value,
     ogDescription: () => description.value,
     ogType: () => resolved.value.ogType ?? 'website',
     ogUrl: () => canonicalUrl.value,
     ogImage: () => ogImageUrl.value,
     ogLocale: 'sk_SK',
     twitterCard: 'summary_large_image',
-    twitterTitle: () => title.value,
+    twitterTitle: () => brandedTitle.value,
     twitterDescription: () => description.value,
     twitterImage: () => ogImageUrl.value,
     ...(resolved.value.dateModified

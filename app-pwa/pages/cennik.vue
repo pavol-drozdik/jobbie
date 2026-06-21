@@ -72,6 +72,15 @@
 
 
 
+      <p class="mb-6 text-sm leading-relaxed text-black/55">
+        {{ S.pricingSkBillingNotice }}
+        <NuxtLink to="/kontakt" class="font-semibold text-marketing-green underline-offset-2 hover:underline">
+          Kontaktujte nás
+        </NuxtLink>.
+      </p>
+
+
+
       <p
 
         v-if="user && !isEmployer"

@@ -4,7 +4,7 @@ import type { TrustContentPage } from '~/utils/trust-page-content'
 export const TRUST_PRIVACY_PAGE: TrustContentPage = {
   title: 'Zásady ochrany osobných údajov',
   intro:
-    'Oficiálne zásady ochrany osobných údajov platformy Jobbie. Správcom osobných údajov je CoCreate s. r. o.',
+    'Oficiálne zásady ochrany osobných údajov platformy Jobbie (GDPR). Správcom osobných údajov je CoCreate s. r. o.',
   updatedAt: '2026-02-25',
   dateLabel: 'effective',
   sections: [

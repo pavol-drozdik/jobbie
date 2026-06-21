@@ -9,7 +9,6 @@ import {
   ServiceUnavailableException,
   NotFoundException,
   BadRequestException,
-  ForbiddenException,
 } from '@nestjs/common';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { Public } from '../auth/public.decorator';
@@ -39,12 +38,8 @@ import { SubscriptionCreditsService } from './subscription-credits.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { stripeWebhookDurationSeconds } from '../observability/metrics';
 import {
-  CreateCheckoutSessionDto,
-  CreateSubscriptionCheckoutDto,
-  CreateCreditsCheckoutDto,
-  CreateCheckoutSessionResponseDto,
+  ActivateFreePlanDto,
   CreatePaymentIntentCreditsDto,
-  CreatePaymentIntentJobDto,
   CreatePaymentIntentSubscriptionDto,
   ConfirmSubscriptionPurchaseDto,
   PaymentIntentResponseDto,
@@ -88,45 +83,10 @@ export class PaymentsController {
     });
   }
 
-  @Post('checkout-session')
-  @RequireRecentLogin()
-  async createCheckoutSession(
-    @CurrentUserDecorator() user: CurrentUser,
-    @Body()
-    body: CreateCheckoutSessionDto,
-  ): Promise<CreateCheckoutSessionResponseDto> {
-    await this.assertJobOwnedForLegacyCheckout(user.id, body.job_id);
-    const successUrl =
-      body.success_url ?? 'https://yourapp.com/jobs?paid=1';
-    const cancelUrl =
-      body.cancel_url ?? 'https://yourapp.com/jobs?cancel=1';
-    const result = await this.stripe.createCheckoutSession(
-      user.id,
-      body.job_id,
-      successUrl,
-      cancelUrl,
-    );
-    return result;
-  }
-
   @Get('credit-packs')
   @Public()
   async getCreditPacks(): Promise<CreditPackDto[]> {
     return this.stripe.listCreditPacks();
-  }
-
-  @Get('credit-packs-config')
-  @Public()
-  getCreditPacksConfig() {
-    return this.stripe.getCreditsConfigHint();
-  }
-
-  @Get('config')
-  @Public()
-  getConfig(): { publishableKey: string | null } {
-    return {
-      publishableKey: this.stripe.getPublishableKey(),
-    };
   }
 
   @Get('payment-method')
@@ -394,49 +354,6 @@ export class PaymentsController {
     return { ok: true };
   }
 
-  /** @deprecated Prefer credit-based publish via POST /jobs. Legacy Stripe per-job checkout. */
-  @Post('create-payment-intent-job')
-  @RequireRecentLogin()
-  async createPaymentIntentJob(
-    @CurrentUserDecorator() user: CurrentUser,
-    @Body() body: CreatePaymentIntentJobDto,
-  ): Promise<PaymentIntentResponseDto> {
-    await this.assertJobOwnedForLegacyCheckout(user.id, body.job_id);
-    return this.stripe.createPaymentIntentJobPost(user.id, body.job_id);
-  }
-
-  /**
-   * Legacy per-job Stripe flows must not activate or bill against another
-   * company's draft.
-   */
-  private async assertJobOwnedForLegacyCheckout(
-    userId: string,
-    jobId: string,
-  ): Promise<void> {
-    const { data: job, error } = await this.supabase
-      .getClient()
-      .from('job_offers')
-      .select('id, company_id, is_draft, is_active')
-      .eq('id', jobId)
-      .single();
-    if (error || !job) {
-      throw new NotFoundException('Ponuka nebola nájdená.');
-    }
-    const row = job as {
-      company_id: string;
-      is_draft?: boolean;
-      is_active?: boolean;
-    };
-    if (row.company_id !== userId) {
-      throw new ForbiddenException('Ponuka nepatrí aktuálnemu používateľovi.');
-    }
-    if (row.is_active === true && row.is_draft !== true) {
-      throw new BadRequestException(
-        'Ponuka je už zverejnená. Na publikovanie použite kredity.',
-      );
-    }
-  }
-
   private jobActivationOwnerId(meta: Record<string, string>): string | null {
     const ownerId = (meta.user_id ?? meta.company_id ?? '').trim();
     return ownerId || null;
@@ -482,136 +399,18 @@ export class PaymentsController {
     };
   }
 
-  @Post('checkout-credits')
+  @Post('activate-free-plan')
   @RequireRecentLogin()
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  async createCreditsCheckout(
+  async activateFreePlan(
     @CurrentUserDecorator() user: CurrentUser,
-    @Body() body: CreateCreditsCheckoutDto,
-  ): Promise<CreateCheckoutSessionResponseDto> {
-    const baseUrl =
-      this.config.get<string>('PUBLIC_API_URL') ??
-      'https://api.heycocreate.com';
-    const thanks = (credits: string) =>
-      `${baseUrl.replace(/\/$/, '')}/thanks?credits=${credits}`;
-    const successUrl = body.success_url ?? thanks('success');
-    const cancelUrl = body.cancel_url ?? thanks('cancel');
-    const packs = await this.stripe.listCreditPacks();
-    if (packs.length === 0) {
-      throw new ServiceUnavailableException(CREDITS_CATALOG_UNAVAILABLE);
-    }
-    if (!body.price_id?.trim()) {
-      throw new BadRequestException(
-        'Vyberte platný balík kreditov. Priame zadanie počtu kreditov nie je podporované.',
-      );
-    }
-    const pack = packs.find((p) => p.price_id === body.price_id);
-    if (!pack) {
-      throw new BadRequestException('Neplatný balík kreditov.');
-    }
-    return this.stripe.createCreditsCheckoutSession(
-      user.id,
-      pack.price_id,
-      pack.credits,
-      successUrl,
-      cancelUrl,
-    );
-  }
-
-  @Post('checkout-subscription')
-  @RequireRecentLogin()
-  async createSubscriptionCheckout(
-    @CurrentUserDecorator() user: CurrentUser,
-    @Body()
-    body: CreateSubscriptionCheckoutDto,
-  ): Promise<CreateCheckoutSessionResponseDto> {
-    const { data: plan, error } = await this.supabase
-      .getClient()
-      .from('subscription_plans')
-      .select('id, slug, price_monthly_cents, stripe_price_id')
-      .eq('id', body.plan_id)
-      .single();
-    if (error || !plan) {
-      throw new NotFoundException('Plán nebol nájdený.');
-    }
-    const p = plan as {
-      id: string;
-      slug: string;
-      price_monthly_cents: number;
-      stripe_price_id: string | null;
-    };
-    if (!isPublicSubscriptionPlanSlug(p.slug)) {
-      throw new BadRequestException('Tento plán už nie je dostupný.');
-    }
-    if (p.price_monthly_cents === 0) {
-      const { data: currentSub } = await this.supabase
-        .getClient()
-        .from('user_subscriptions')
-        .select('plan_id, stripe_subscription_id, subscription_plans(slug, price_monthly_cents)')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      const curPlan = (currentSub as {
-        subscription_plans?: { slug?: string; price_monthly_cents?: number };
-        stripe_subscription_id?: string | null;
-      } | null)?.subscription_plans;
-      const wasPaid = (curPlan?.price_monthly_cents ?? 0) > 0;
-      if (wasPaid && body.confirm_downgrade !== true) {
-        throw new BadRequestException(
-          'Prechod na bezplatný plán vyžaduje potvrdenie. Zruší sa aktuálne predplatné.',
-        );
-      }
-      const stripeSubId = (
-        currentSub as { stripe_subscription_id?: string | null } | null
-      )?.stripe_subscription_id;
-      if (stripeSubId?.trim()) {
-        await this.stripe.cancelStripeSubscriptionBeforeAccountDeletion(user.id);
-      }
-      await this.supabase
-        .getClient()
-        .from('user_subscriptions')
-        .upsert(
-          {
-            user_id: user.id,
-            plan_id: p.id,
-            status: 'active',
-            stripe_subscription_id: null,
-          },
-          { onConflict: 'user_id' },
-        );
-      return { checkout_url: '', session_id: '' };
-    }
-    const stripePriceId = resolveSubscriptionStripePriceId(
-      this.config,
-      p.slug,
-      p.stripe_price_id,
-    );
-    if (!stripePriceId) {
-      throw new ServiceUnavailableException(SUBSCRIPTION_STRIPE_NOT_CONFIGURED);
-    }
-    if (body.embedded) {
-      const returnUrl = body.return_url?.trim();
-      if (!returnUrl) {
-        throw new BadRequestException(
-          'Pre embedded platbu je potrebná adresa return_url.',
-        );
-      }
-      return this.stripe.createSubscriptionCheckoutSession(
-        user.id,
-        body.plan_id,
-        stripePriceId,
-        { embedded: true, returnUrl },
-      );
-    }
-    const successUrl =
-      body.success_url ?? 'https://yourapp.com/plany?success=1';
-    const cancelUrl =
-      body.cancel_url ?? 'https://yourapp.com/plany?cancel=1';
-    return this.stripe.createSubscriptionCheckoutSession(
+    @Body() body: ActivateFreePlanDto,
+  ): Promise<{ ok: boolean }> {
+    await this.stripe.activateFreeSubscriptionPlan(
       user.id,
       body.plan_id,
-      stripePriceId,
-      { successUrl, cancelUrl },
+      body.confirm_downgrade === true,
     );
+    return { ok: true };
   }
 
   // Raw body required for signature verify — see main.ts express.raw on this path.
@@ -661,6 +460,7 @@ export class PaymentsController {
               title: 'Kredity pripísané',
               body: 'Platba bola úspešná a kredity boli pripísané na váš účet.',
               metadata: {},
+              omitExternalChannels: true,
             });
           }
         }
@@ -699,6 +499,7 @@ export class PaymentsController {
             title: 'Kredity pripísané',
             body: 'Platba bola úspešná a kredity boli pripísané na váš účet.',
             metadata: {},
+            omitExternalChannels: true,
           });
         }
         const activatedPi = await this.activateJobFromStripeMetadata(meta);

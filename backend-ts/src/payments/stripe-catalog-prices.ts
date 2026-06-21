@@ -19,20 +19,7 @@ export const SANDBOX_SUBSCRIPTION_PRICE_IDS: Readonly<Record<string, string>> = 
   pro: 'price_1Td4bMEXgv7DHN4DotUoP8Hl',
 };
 
-/** Live Stripe Price IDs (Jobbie account). Apply via supabase/scripts/stripe-live-catalog-price-ids.sql */
-export const LIVE_CREDIT_PACK_PRICE_IDS: Readonly<Record<string, string>> = {
-  starter: 'price_1TctRwRAwyxxavecenOeaDKx',
-  popular: 'price_1TctRxRAwyxxavecThaNjaMl',
-  value: 'price_1TctRxRAwyxxavecZ1RNk5c7',
-  firmy: 'price_1TctRyRAwyxxavecZyT0rjiY',
-};
-
-export const LIVE_SUBSCRIPTION_PRICE_IDS: Readonly<Record<string, string>> = {
-  start: 'price_1TctRyRAwyxxavecMr00FKsW',
-  plus: 'price_1TctRzRAwyxxavectfFWptiG',
-  pro: 'price_1TctS0RAwyxxavecNkiFMNAb',
-};
-
+/** Live Stripe Price IDs: see `supabase/scripts/stripe-live-catalog-price-ids.sql` and DB `stripe_price_id` columns. */
 export function isStripeTestMode(config: ConfigService): boolean {
   const key = config.get<string>('STRIPE_SECRET_KEY')?.trim() ?? '';
   return key.startsWith('sk_test_');
