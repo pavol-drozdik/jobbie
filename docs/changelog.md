@@ -1,4 +1,9 @@
-﻿## 2026-06-21 — Cookie consent log: surface missing migration
+﻿## 2026-06-21 — CodeQL CI: opt-in SARIF upload
+
+Fixed:
+- `.github/workflows/codeql.yml` — SARIF upload only when repo variable `CODEQL_UPLOAD=true` (avoids CI failure when GitHub Code scanning is disabled). Analysis still runs; fork PRs never upload.
+
+## 2026-06-21 — Cookie consent log: surface missing migration
 
 Fixed:
 - Admin `GET /admin/consent/cookie-log` no longer returns empty list on DB errors; reports missing `cookie_consent_log` table with migration hint.

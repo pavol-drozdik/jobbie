@@ -1,3 +1,11 @@
+# CodeQL static analysis (TypeScript/JavaScript + GitHub Actions).
+#
+# Upload to GitHub Code Scanning requires the feature enabled in the repo:
+#   Settings → Code security → Code scanning → enable CodeQL
+# Then set repository variable CODEQL_UPLOAD=true (Settings → Secrets and variables → Actions → Variables).
+#
+# Without CODEQL_UPLOAD=true, analysis still runs but SARIF is not uploaded (CI stays green).
+
 name: codeql
 
 on:
@@ -10,6 +18,7 @@ on:
 
 permissions:
   contents: read
+  security-events: read
 
 jobs:
   analyze:
@@ -38,3 +47,11 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           category: '/language:${{ matrix.language }}'
+          # Opt-in: avoids CI failure when Code scanning is not enabled yet.
+          # Fork PRs never upload (no token access to base repo security tab).
+          upload: ${{ vars.CODEQL_UPLOAD == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+
+      - name: Upload skipped (Code scanning opt-in)
+        if: vars.CODEQL_UPLOAD != 'true'
+        run: |
+          echo "::notice::CodeQL ran without SARIF upload. Enable Code scanning in repo Settings, then set Actions variable CODEQL_UPLOAD=true."
