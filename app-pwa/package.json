@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=20.19.0"
   },
   "scripts": {
     "prepare": "nuxt prepare",
@@ -35,13 +35,13 @@
     "@nuxt/image": "^2.0.0",
     "@sentry/vue": "^10.57.0",
     "@stripe/stripe-js": "^9.8.0",
-    "@supabase/supabase-js": "^2.108.1",
+    "@supabase/supabase-js": "^2.108.2",
     "@tiptap/extension-placeholder": "^3.22.5",
     "@tiptap/extension-underline": "^3.22.5",
     "@tiptap/starter-kit": "^3.22.5",
     "@tiptap/vue-3": "^3.22.5",
     "chart.js": "^4.5.1",
-    "isomorphic-dompurify": "^3.3.0",
+    "isomorphic-dompurify": "^3.18.0",
     "nuxt": "^3.14.0",
     "pdfjs-dist": "^4.10.38",
     "posthog-js": "^1.386.6",

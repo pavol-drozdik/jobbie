@@ -1,4 +1,11 @@
-﻿## 2026-06-21 — Deploy health check URL sanitization
+﻿## 2026-06-21 — PWA dependency bumps (Dependabot CI)
+
+Changed:
+- `app-pwa`: `isomorphic-dompurify` ^3.18.0 (patched DOMPurify), `@supabase/supabase-js` ^2.108.2.
+- PWA CI and `engines.node` aligned to `>=20.19.0` / Node 22 in GitHub Actions (required by isomorphic-dompurify 3.17+).
+- Dependabot: ignore TypeScript 6 major bumps in `app-pwa` and `backend-ts` until toolchain migration.
+
+## 2026-06-21 — Deploy health check URL sanitization
 
 Fixed:
 - `deploy_backend.sh` strips CR/LF from `HEALTH_URL` and `APP_DOMAIN` before `curl` (GitHub `vars.STAGING_HEALTH_URL` with an embedded newline caused `curl: (3) URL rejected: Malformed input`).
