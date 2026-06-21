@@ -42,6 +42,7 @@ App icons: `jobbie-admin/build/icon.{svg,icns,ico}` (regenerate with `npm run ic
 |--------|------|
 | GET | `/health` (`ok`, `version`, `recentLoginMinutes`) |
 | GET | `/api/admin/overview` |
+| GET | `/api/admin/infrastructure` |
 | GET | `/api/admin/analytics/summary` |
 | GET | `/api/admin/analytics/external` |
 | GET | `/api/admin/analytics/external/test` |
@@ -87,6 +88,8 @@ User-facing content reports remain on the main API: `POST /api/reports`. Public 
 `GET /api/admin/analytics/summary?from=&to=&cohort_weeks=&search_days=` returns funnel, MRR/ARR, cohorts, API latency (sampled `api_request_logs`), search KPIs (`search_query_logs`), daily timeseries, marketplace snapshot, users breakdown, and revenue-in-period metrics. Requires migration `20260530120000_admin_analytics_extended.sql` (and earlier `20260503160000_admin_analytics_rpcs.sql`). Search data does **not** require `SEARCH_ANALYTICS_SECRET` in admin `.env` (service_role RPCs). That secret is only for optional `GET /search/analytics/summary` on the public API.
 
 **Prehľad** (`/overview`): open reports count, signups/jobs KPIs (today + 7d), failed Stripe webhooks (7d), last five **your** audit events, quick links.
+
+**Infra** (`/infrastructure`): staging and production VPS — API health latency, host CPU load / RAM / disk (SSH), Docker container stats, optional Nest Prometheus gauges (`GET /metrics` with bearer). Requires `VPS_STAGING_*` and `VPS_PRODUCTION_*` in `jobbie-admin/api/.env` (SSH host/user/key from GitHub deploy secrets; `METRICS_BEARER_TOKEN` from each VPS `.env.backend`). Throttled to 6 requests/min. Auto-refresh 60s in UI.
 
 **Podpora** (`/support`): UUID hub; job/ad detail with unpublish + public URL; user detail with billing, applications, chat rooms, grant credits, GDPR export, account close.
 

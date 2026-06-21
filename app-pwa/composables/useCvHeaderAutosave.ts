@@ -3,6 +3,7 @@ import type { CvAggregateResponseDto, CvHeaderResponseDto } from '~/types/cv'
 import type { CvSaveStatus } from '~/composables/useCv'
 import { parseCvPatchValidationError, type CvValidationErrorItem } from '~/composables/useCvValidation'
 import { sanitizeCvRichHtml } from '~/composables/useCvRichTextField'
+import { fieldUnchangedSinceSend, mergePatchResponse } from '~/utils/merge-patch-response'
 
 export interface CvHeaderAutosaveCallbacks {
   onValidationError?: (payload: {
@@ -10,6 +11,79 @@ export interface CvHeaderAutosaveCallbacks {
     items: CvValidationErrorItem[]
     byField: Record<string, string>
   }) => void
+}
+
+const HEADER_PATCH_KEYS = [
+  'display_title',
+  'template_key',
+  'visible_to_employers',
+  'optional_sections',
+  'first_name',
+  'last_name',
+  'gender',
+  'show_academic_title',
+  'title_before_name',
+  'title_after_name',
+  'birth_date',
+  'show_birth_date',
+  'email',
+  'phone',
+  'linkedin_url',
+  'show_contact_details',
+  'address_country',
+  'address_city',
+  'address_street',
+  'address_postal_code',
+  'address_district',
+  'about_me',
+  'hobbies',
+  'additional_skills_info',
+  'cv_title',
+  'driving_license_categories',
+  'desired_positions',
+  'desired_locations',
+  'employment_types',
+  'start_availability',
+  'salary_min',
+  'salary_currency',
+  'salary_period',
+  'weekend_work',
+  'night_work',
+  'open_to_relocate_commute',
+  'remote_work_only',
+  'has_disability',
+  'email_job_alerts',
+  'gdpr_consent',
+  'terms_consent',
+  'marketing_consent',
+] as const satisfies ReadonlyArray<keyof CvHeaderResponseDto>
+
+type HeaderPatchKey = (typeof HEADER_PATCH_KEYS)[number]
+
+function cloneHeader(h: CvHeaderResponseDto): CvHeaderResponseDto {
+  return JSON.parse(JSON.stringify(h)) as CvHeaderResponseDto
+}
+
+function serializePatchValue(key: HeaderPatchKey, value: unknown): unknown {
+  if (key === 'about_me' || key === 'hobbies' || key === 'additional_skills_info') {
+    if (value == null || String(value).trim() === '') return null
+    return sanitizeCvRichHtml(String(value))
+  }
+  return value
+}
+
+function buildHeaderPatchBody(
+  current: CvHeaderResponseDto,
+  baseline: CvHeaderResponseDto,
+): Record<string, unknown> {
+  const body: Record<string, unknown> = {}
+  for (const key of HEADER_PATCH_KEYS) {
+    const next = serializePatchValue(key, current[key])
+    if (!fieldUnchangedSinceSend(next, serializePatchValue(key, baseline[key]))) {
+      body[key] = next
+    }
+  }
+  return body
 }
 
 export function useCvHeaderAutosave(
@@ -23,132 +97,103 @@ export function useCvHeaderAutosave(
   saveStatus: Ref<CvSaveStatus>
   queueSave: () => void
   syncBaseline: () => void
+  flushSave: () => Promise<void>
 } {
   const { patchCv } = useCv()
   const saveStatus = ref<CvSaveStatus>('idle')
   let saveTimer: ReturnType<typeof setTimeout> | null = null
-  let lastConfirmedHeader: CvHeaderResponseDto | null = null
-
-  function cloneHeader(h: CvHeaderResponseDto): CvHeaderResponseDto {
-    return JSON.parse(JSON.stringify(h)) as CvHeaderResponseDto
-  }
-
-  function fieldUnchangedSinceSend(current: unknown, baseline: unknown): boolean {
-    if (Object.is(current, baseline)) return true
-    return JSON.stringify(current ?? null) === JSON.stringify(baseline ?? null)
-  }
-
-  /**
-   * Applies server PATCH result without clobbering fields the user edited while the request was in flight.
-   */
-  function mergeHeaderPatchResponse(
-    current: CvHeaderResponseDto,
-    updated: CvHeaderResponseDto,
-    baselineAtSend: CvHeaderResponseDto,
-  ): CvHeaderResponseDto {
-    const out: CvHeaderResponseDto = { ...current }
-    for (const key of Object.keys(updated) as Array<keyof CvHeaderResponseDto>) {
-      if (fieldUnchangedSinceSend(current[key], baselineAtSend[key])) {
-        ;(out as Record<string, unknown>)[key as string] = updated[key] as unknown
-      }
-    }
-    return out
-  }
+  let saveInFlight: Promise<void> | null = null
+  let dirtyWhileSaving = false
+  let lastPersistedHeader: CvHeaderResponseDto | null = null
 
   function syncBaseline(): void {
     const h = state.header.value
-    lastConfirmedHeader = h ? cloneHeader(h) : null
+    lastPersistedHeader = h ? cloneHeader(h) : null
+  }
+
+  async function persistHeader(): Promise<void> {
+    const id = cvId.value
+    const current = state.header.value
+    if (!current) return
+
+    const baseline = lastPersistedHeader ?? current
+    const baselineAtSend = cloneHeader(current)
+    const body = buildHeaderPatchBody(current, baseline)
+    if (Object.keys(body).length === 0) return
+
+    saveStatus.value = 'saving'
+    try {
+      const updated = await patchCv(id, body)
+      const latest = state.header.value
+      if (latest) {
+        const merged = mergePatchResponse(latest, updated, baselineAtSend)
+        state.header.value = merged
+        lastPersistedHeader = cloneHeader(merged)
+        if (state.aggregate.value) {
+          const cvPatch: Partial<CvHeaderResponseDto> = {}
+          for (const key of Object.keys(body)) {
+            const k = key as keyof CvHeaderResponseDto
+            cvPatch[k] = merged[k] as never
+          }
+          state.aggregate.value = {
+            ...state.aggregate.value,
+            cv: { ...state.aggregate.value.cv, ...cvPatch },
+          }
+        }
+      }
+      saveStatus.value = 'saved'
+      setTimeout(() => {
+        if (saveStatus.value === 'saved') saveStatus.value = 'idle'
+      }, 2000)
+    } catch (err) {
+      saveStatus.value = 'error'
+      const parsed = parseCvPatchValidationError(err)
+      state.callbacks?.onValidationError?.(parsed)
+    }
+  }
+
+  async function runSave(): Promise<void> {
+    if (saveInFlight) {
+      dirtyWhileSaving = true
+      await saveInFlight
+      if (!dirtyWhileSaving) return
+      dirtyWhileSaving = false
+    }
+
+    const task = persistHeader()
+    saveInFlight = task
+    try {
+      await task
+    } finally {
+      saveInFlight = null
+      if (dirtyWhileSaving) {
+        dirtyWhileSaving = false
+        await runSave()
+      }
+    }
   }
 
   function queueSave(): void {
-    const id = cvId.value
     if (!state.header.value) return
+    if (saveInFlight) {
+      dirtyWhileSaving = true
+      return
+    }
     saveStatus.value = 'saving'
     if (saveTimer) clearTimeout(saveTimer)
-    saveTimer = setTimeout(async () => {
+    saveTimer = setTimeout(() => {
       saveTimer = null
-      const h = state.header.value
-      if (!h) return
-      try {
-        const baselineAtSend = cloneHeader(h)
-        const body: Record<string, unknown> = {
-          display_title: h.display_title,
-          template_key: h.template_key,
-          visible_to_employers: h.visible_to_employers,
-          optional_sections: h.optional_sections,
-          first_name: h.first_name,
-          last_name: h.last_name,
-          gender: h.gender,
-          show_academic_title: h.show_academic_title,
-          title_before_name: h.title_before_name,
-          title_after_name: h.title_after_name,
-          birth_date: h.birth_date,
-          show_birth_date: h.show_birth_date,
-          email: h.email,
-          phone: h.phone,
-          linkedin_url: h.linkedin_url,
-          show_contact_details: h.show_contact_details,
-          address_country: h.address_country,
-          address_city: h.address_city,
-          address_street: h.address_street,
-          address_postal_code: h.address_postal_code,
-          address_district: h.address_district,
-          about_me:
-            h.about_me != null && String(h.about_me).trim() !== ''
-              ? sanitizeCvRichHtml(String(h.about_me))
-              : null,
-          hobbies:
-            h.hobbies != null && String(h.hobbies).trim() !== ''
-              ? sanitizeCvRichHtml(String(h.hobbies))
-              : null,
-          additional_skills_info:
-            h.additional_skills_info != null && String(h.additional_skills_info).trim() !== ''
-              ? sanitizeCvRichHtml(String(h.additional_skills_info))
-              : null,
-          cv_title: h.cv_title,
-          driving_license_categories: h.driving_license_categories,
-          desired_positions: h.desired_positions,
-          desired_locations: h.desired_locations,
-          employment_types: h.employment_types,
-          start_availability: h.start_availability,
-          salary_min: h.salary_min,
-          salary_currency: h.salary_currency,
-          salary_period: h.salary_period,
-          weekend_work: h.weekend_work,
-          night_work: h.night_work,
-          open_to_relocate_commute: h.open_to_relocate_commute,
-          remote_work_only: h.remote_work_only,
-          has_disability: h.has_disability,
-          email_job_alerts: h.email_job_alerts,
-          gdpr_consent: h.gdpr_consent,
-          terms_consent: h.terms_consent,
-          marketing_consent: h.marketing_consent,
-        }
-        const updated = await patchCv(id, body)
-        const current = state.header.value
-        const merged =
-          current != null ? mergeHeaderPatchResponse(current, updated, baselineAtSend) : updated
-        state.header.value = merged
-        if (state.aggregate.value) {
-          state.aggregate.value = { ...state.aggregate.value, cv: merged }
-        }
-        lastConfirmedHeader = cloneHeader(merged)
-        saveStatus.value = 'saved'
-        setTimeout(() => {
-          if (saveStatus.value === 'saved') saveStatus.value = 'idle'
-        }, 2000)
-      } catch (err) {
-        saveStatus.value = 'error'
-        const parsed = parseCvPatchValidationError(err)
-        state.callbacks?.onValidationError?.(parsed)
-        if (lastConfirmedHeader && state.header.value && state.aggregate.value) {
-          const restored = cloneHeader(lastConfirmedHeader)
-          state.header.value = restored
-          state.aggregate.value = { ...state.aggregate.value, cv: restored }
-        }
-      }
-    }, 800)
+      void runSave()
+    }, 600)
   }
 
-  return { saveStatus, queueSave, syncBaseline }
+  async function flushSave(): Promise<void> {
+    if (saveTimer) {
+      clearTimeout(saveTimer)
+      saveTimer = null
+    }
+    await runSave()
+  }
+
+  return { saveStatus, queueSave, syncBaseline, flushSave }
 }

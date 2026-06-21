@@ -23,6 +23,7 @@ const recentLoginMinutes = ref<number | null>(null)
 
 const navItems = [
   { to: '/overview', label: 'Prehľad' },
+  { to: '/infrastructure', label: 'Infra' },
   { to: '/support', label: 'Podpora' },
   { to: '/analytics', label: 'Analytics' },
   { to: '/audit', label: 'Audit' },

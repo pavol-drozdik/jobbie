@@ -13,6 +13,7 @@ Local-only admin panel for platform operators. **Not** deployed as a public webs
 ## Screens
 
 - **Prehľad** — operations home: KPIs, open reports, failed payments (7d), your recent audit, quick links (default route `/overview`)
+- **Infra** — staging + production VPS: API health, host CPU/RAM/disk, Docker stats, optional Prometheus app metrics (`/infrastructure`)
 - **Podpora** — UUID search, job/ad/user detail, unpublish, billing ledger, GDPR export / account close
 - **Analytics** — funnel, revenue, cohorts, API latency, search KPIs; custom date range; period compare; CSV export; optional PostHog / GA4 / Clarity / Search Console
 - **Audit** — `audit_events` filters (prefix chips, actor/subject), export, chain verify

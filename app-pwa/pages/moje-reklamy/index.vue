@@ -141,7 +141,7 @@
 
           <div
 
-            class="rounded-[20px] border border-black/[0.06] border-l-[4px] border-l-marketing-green bg-white pl-5 pr-6 py-6 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.1)] sm:pl-6 sm:pr-8 sm:py-7"
+            class="rounded-[20px] border border-black/[0.06] bg-marketing-panel px-5 py-6 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.1)] sm:px-8 sm:py-7"
 
           >
 

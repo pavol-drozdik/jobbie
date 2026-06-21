@@ -10,16 +10,16 @@ if (!key?.startsWith('sk_test_')) {
 const stripe = new Stripe(key, { apiVersion: '2026-05-27.dahlia' });
 
 const creditPacks = [
-  { slug: 'starter', name: 'JOBBIE Credits – Starter', desc: '5 credits', amount: 500 },
-  { slug: 'popular', name: 'JOBBIE Credits – Popular', desc: '12 credits', amount: 1000 },
-  { slug: 'value', name: 'JOBBIE Credits – Value', desc: '30 credits', amount: 2000 },
-  { slug: 'firmy', name: 'JOBBIE Credits – Firmy', desc: '75 credits', amount: 4500 },
+  { slug: 'starter', name: 'Kredity na využívanie online platformy', desc: '5 credits', amount: 500 },
+  { slug: 'popular', name: 'Kredity na využívanie online platformy', desc: '12 credits', amount: 1000 },
+  { slug: 'value', name: 'Kredity na využívanie online platformy', desc: '30 credits', amount: 2000 },
+  { slug: 'firmy', name: 'Kredity na využívanie online platformy', desc: '75 credits', amount: 4500 },
 ];
 
 const plans = [
-  { slug: 'start', name: 'JOBBIE Plan – Start', amount: 499 },
-  { slug: 'plus', name: 'JOBBIE Plan – Plus', amount: 999 },
-  { slug: 'pro', name: 'JOBBIE Plan – Pro', amount: 1999 },
+  { slug: 'start', name: 'Mesačné predplatné online platformy', amount: 499 },
+  { slug: 'plus', name: 'Mesačné predplatné online platformy', amount: 999 },
+  { slug: 'pro', name: 'Mesačné predplatné online platformy', amount: 1999 },
 ];
 
 const out = { livemode: null, creditPacks: {}, plans: {} };

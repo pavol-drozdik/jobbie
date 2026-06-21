@@ -71,7 +71,7 @@ async function renderFirstPage(): Promise<void> {
   const generation = ++pdfRenderGeneration
   try {
     const pdfjs = await import('pdfjs-dist')
-    const workerMod = await import('pdfjs-dist/build/pdf.worker.mjs?url')
+    const workerMod = await import('pdfjs-dist/build/pdf.worker.min.mjs?url')
     pdfjs.GlobalWorkerOptions.workerSrc = workerMod.default
     const task = pdfjs.getDocument({ url: props.signedUrl, withCredentials: false }).promise
     const pdf = await task
@@ -89,7 +89,7 @@ async function renderFirstPage(): Promise<void> {
     }
     canvas.height = Math.floor(viewport.height)
     canvas.width = Math.floor(viewport.width)
-    await page.render({ canvasContext: ctx, viewport }).promise
+    await page.render({ canvas, canvasContext: ctx, viewport }).promise
     if (generation !== pdfRenderGeneration) {
       return
     }

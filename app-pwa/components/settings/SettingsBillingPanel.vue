@@ -150,6 +150,20 @@
       >
 
         {{ S.settingsBillingPaymentMethodPastDueHint }}
+        <button
+          v-if="!changeCardOpen"
+          type="button"
+          class="ml-1 inline font-semibold text-marketing-green underline"
+
+          :disabled="!stripeCustomerLinked || changeCardBusy"
+
+          @click="startChangeCard"
+
+        >
+
+          {{ S.settingsBillingPaymentMethodChange }}
+
+        </button>
 
       </p>
 

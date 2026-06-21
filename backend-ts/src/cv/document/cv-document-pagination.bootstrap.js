@@ -57,9 +57,9 @@
     }
   }
 
-  /** Usable content height for one A4 sheet (slightly conservative vs DOM measure for PDF fonts). */
+  /** Usable content height for one A4 sheet (matches fixed `.cv-sheet` height minus print slack). */
   function getMaxPageHeight() {
-    return Math.floor((A4_HEIGHT_PX - 64) / 1.08)
+    return A4_HEIGHT_PX - 36
   }
 
   /** Keep section headings on the same page as the first entry under them. */
@@ -124,6 +124,10 @@
     return host
   }
 
+  function getAtlasMainContentBudget() {
+    return getMaxPageHeight() - Math.floor(40 * MM_TO_PX)
+  }
+
   function measureAtlasSheet(sidebarNodes, mainNodes, useChromeSidebar) {
     const host = getMeasureHost()
     const sheet = document.createElement('div')
@@ -139,12 +143,16 @@
     sheet.appendChild(aside)
     sheet.appendChild(main)
     host.replaceChildren(sheet)
-    const asideH = aside.scrollHeight
+    main.style.overflow = 'visible'
+    main.style.maxHeight = 'none'
+    main.style.minHeight = '0'
+    void sheet.offsetHeight
     const mainH = main.scrollHeight
     if (chrome && sidebarNodes.length === 0) {
       return mainH
     }
-    return Math.max(asideH, mainH, aside.offsetHeight, main.offsetHeight)
+    const sideH = aside.scrollHeight
+    return Math.max(mainH, sideH)
   }
 
   /** Rebuild breakable sections (heading + entries) when mounting paginated main column. */
@@ -159,7 +167,12 @@
         mainEl.appendChild(breakableSection)
         return
       }
-      if (kind === 'entry' && breakableSection) {
+      if (kind === 'entry') {
+        if (!breakableSection) {
+          breakableSection = document.createElement('section')
+          breakableSection.className = 'atlas-intro cv-breakable-section'
+          mainEl.appendChild(breakableSection)
+        }
         breakableSection.appendChild(node.cloneNode(true))
         return
       }
@@ -388,6 +401,19 @@
     if (!sidebarUnits.length && !mainUnits.length) return [sourcePage.cloneNode(true)]
     const pages = []
     const page1Sidebar = cloneUnits(sidebarUnits)
+    const allMain = cloneUnits(mainUnits)
+    const mainBudget = getAtlasMainContentBudget()
+    const mainOnlyH = measureAtlasSheet([], allMain, true)
+    const combinedH = measureAtlasSheet(page1Sidebar, allMain, false)
+    if (mainOnlyH <= mainBudget && combinedH <= maxH) {
+      return [
+        buildAtlasSheet({
+          sidebarNodes: page1Sidebar,
+          mainNodes: allMain,
+          chromeSidebar: false,
+        }),
+      ]
+    }
     const page1Main = []
     let mi = 0
     while (mi < mainUnits.length) {
@@ -413,15 +439,16 @@
     })
     while (mi < mainUnits.length) {
       const mainNodes = []
+      const mainBudget = getAtlasMainContentBudget()
       while (mi < mainUnits.length) {
         const bundle = takeNextPackUnits(mainUnits, mi)
         if (!bundle) break
         const trialMain = mainNodes.concat(bundle.nodes)
         const h = measureAtlasSheet([], cloneUnits(trialMain), true)
-        if (mainNodes.length > 0 && h > maxH) break
+        if (mainNodes.length > 0 && h > mainBudget) break
         bundle.nodes.forEach((n) => mainNodes.push(n))
         mi = bundle.nextIndex
-        if (h > maxH) break
+        if (h > mainBudget) break
       }
       if (!mainNodes.length && mi < mainUnits.length) {
         const bundle = takeNextPackUnits(mainUnits, mi)

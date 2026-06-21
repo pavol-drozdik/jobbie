@@ -1,6 +1,8 @@
 import {
   Controller,
   Get,
+  InternalServerErrorException,
+  Logger,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -16,6 +18,8 @@ import type { CookieConsentLogListDto } from './admin-consent-cookie-log.dto';
 @RequireAppRoles('admin')
 @RequireRecentLogin()
 export class AdminConsentCookieLogController {
+  private readonly logger = new Logger(AdminConsentCookieLogController.name);
+
   constructor(private readonly supabase: SupabaseService) {}
 
   @Get('cookie-log')
@@ -59,7 +63,18 @@ export class AdminConsentCookieLogController {
 
     const { data, error } = await q;
     if (error) {
-      return { items: [], next_cursor: null };
+      this.logger.warn(`cookie_consent_log query failed: ${error.message}`);
+      if (
+        /cookie_consent_log/i.test(error.message) &&
+        /does not exist|schema cache/i.test(error.message)
+      ) {
+        throw new InternalServerErrorException(
+          'Tabuľka cookie_consent_log neexistuje. Spustite migráciu supabase/migrations/20260715120000_cookie_consent_log.sql (Supabase SQL alebo supabase db push).',
+        );
+      }
+      throw new InternalServerErrorException(
+        `Cookie consent log: ${error.message}`,
+      );
     }
     const rows = (data ?? []) as CookieConsentLogListDto['items'];
     const hasMore = rows.length > limit;

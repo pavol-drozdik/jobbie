@@ -397,6 +397,10 @@ async function mountWithClientSecret(secret: string): Promise<void> {
 
 async function applyPrepareResult(prepared: PreparePaymentResult): Promise<boolean> {
   const secret = prepared.clientSecret
+  if (!secret) {
+    payError.value = S.checkoutPaymentFailed
+    return false
+  }
   if (!stripe || !elements) {
     await mountWithClientSecret(secret)
     return Boolean(stripe && elements)
@@ -425,7 +429,7 @@ async function applyPrepareResult(prepared: PreparePaymentResult): Promise<boole
         return false
       }
     } catch {
-      // Optional after setup-intent update; confirm still uses clientSecret.
+      // Optional after PI create; confirm still uses clientSecret.
     }
   }
   return true
@@ -564,12 +568,39 @@ async function handlePay() {
       return
     }
 
+    if (!stripe || !elements) {
+      payError.value = S.checkoutPaymentFormNotReady
+      return
+    }
+
     let secret = resolveEffectiveSecret()
-    if (!secret && props.preparePayment) {
+    const isDeferredCheckout = usesCheckoutDeferred.value && !secret && props.preparePayment
+
+    // Deferred: validate card in Elements before creating PI (Stripe recommended order).
+    if (isDeferredCheckout) {
+      const submitResult = await elements.submit()
+      const submitError = submitResult?.error
+      if (submitError) {
+        payError.value =
+          submitError.message ??
+          'Skontrolujte platobné a fakturačné údaje vo formulári.'
+        return
+      }
+
+      const raw = await props.preparePayment!(billing)
+      const prepared = normalizePreparePaymentResult(raw)
+      if (!prepared) {
+        return
+      }
+      const ready = await applyPrepareResult(prepared)
+      if (!ready) {
+        return
+      }
+      secret = prepared.clientSecret
+    } else if (!secret && props.preparePayment) {
       const raw = await props.preparePayment(billing)
       const prepared = normalizePreparePaymentResult(raw)
       if (!prepared) {
-        payError.value = S.checkoutPaymentFailed
         return
       }
       const ready = await applyPrepareResult(prepared)
@@ -579,17 +610,15 @@ async function handlePay() {
       secret = prepared.clientSecret
     }
 
-    if (!stripe || !elements) {
-      payError.value = S.checkoutPaymentFormNotReady
-      return
-    }
-
-    const submitResult = await elements.submit()
-    const submitError = submitResult?.error
-    if (submitError) {
-      payError.value =
-        submitError.message ?? 'Skontrolujte platobné a fakturačné údaje vo formulári.'
-      return
+    if (!isDeferredCheckout) {
+      const submitResult = await elements.submit()
+      const submitError = submitResult?.error
+      if (submitError) {
+        payError.value =
+          submitError.message ??
+          'Skontrolujte platobné a fakturačné údaje vo formulári.'
+        return
+      }
     }
 
     const confirmParams: {

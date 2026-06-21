@@ -48,11 +48,11 @@ export function renderAtlasPage(data: CvDocumentExportData): string {
       : ''
   const hobbiesBlock =
     data.showHobbies && data.hobbies.trim()
-      ? `<section data-cv-unit="atomic" style="margin-top: 18px;"><h2 class="section-title">Záujmy</h2><div class="small-copy rich-html-content">${renderCvRichField(data.hobbies)}</div></section>`
+      ? `<section data-cv-unit="atomic"><h2 class="section-title">Záujmy</h2><div class="small-copy rich-html-content">${renderCvRichField(data.hobbies)}</div></section>`
       : ''
   const extraBlock =
     data.showExtraInfo && data.extraInfo.trim()
-      ? `<section data-cv-unit="atomic" style="margin-top: 18px;"><h2 class="section-title">Doplňujúce informácie</h2><div class="small-copy rich-html-content">${renderCvRichField(data.extraInfo)}</div></section>`
+      ? `<section data-cv-unit="atomic"><h2 class="section-title">Doplňujúce informácie</h2><div class="small-copy rich-html-content">${renderCvRichField(data.extraInfo)}</div></section>`
       : ''
   const extraBlocksHtml = renderExtraBlocks(data.extraBlocks)
   return `
@@ -77,7 +77,7 @@ export function renderAtlasPage(data: CvDocumentExportData): string {
         ${summaryBlock}
         ${renderExperienceSection(data.experiences)}
         ${renderEducationSection(data.education)}
-        <div class="atlas-grid">
+        <div class="atlas-stack">
           ${extraBlock}
           ${hobbiesBlock}
           ${extraBlocksHtml}

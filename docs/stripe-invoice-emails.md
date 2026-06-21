@@ -2,14 +2,14 @@
 
 JOBBIE does **not** send billing emails via the app SMTP service. Paid **faktúry** (invoice PDF + hosted invoice page) are delivered by **Stripe** when you enable the correct Dashboard settings (test **and** live).
 
-Checkout creates real Stripe `Invoice` objects:
+Checkout creates Stripe `Invoice` objects:
 
-- **Credits** — Invoicing API (`invoiceItems` → `invoices.create` → `finalizeInvoice` → PaymentIntent on `/platba`)
-- **Subscriptions** — [Stripe Billing](https://docs.stripe.com/billing/subscriptions/overview) (`subscriptions.create` → recurring invoices)
+- **Credits** — standalone PaymentIntent on `/platba`; after `payment_intent.succeeded`, backend creates a finalized Invoice and marks it **paid** (`paid_out_of_band`). Abandoned open credit invoices are voided.
+- **Subscriptions** — [Stripe Billing](https://docs.stripe.com/billing/subscriptions/overview) (`subscriptions.create` → recurring invoices). Incomplete checkout subscriptions are canceled with their open first invoice voided; in-app history shows **paid** invoices only.
 
 With `collection_method: charge_automatically`, Stripe **does not email** the customer unless the toggles below are on. The API cannot replace these Dashboard settings.
 
-JOBBIE sets `receipt_email` on **invoice-backed** PaymentIntents (credits + subscriptions on `/platba`). For those payments, Stripe’s receipt email [includes a link to the hosted invoice](https://docs.stripe.com/receipts) and is sent **even when Dashboard receipt toggles are off**. This is separate from the full **invoice summary** email (PDF links) in section 1 — enable both for best coverage.
+JOBBIE sets `receipt_email` on credit PaymentIntents and subscription checkout PaymentIntents (`/platba`). For subscription invoice-backed payments, Stripe’s receipt email [includes a link to the hosted invoice](https://docs.stripe.com/receipts). Credit packs get the paid faktúra PDF via Dashboard **Successful payments** (section 1) after post-payment invoice creation. Enable both receipt and invoice-summary toggles for best coverage.
 
 ---
 

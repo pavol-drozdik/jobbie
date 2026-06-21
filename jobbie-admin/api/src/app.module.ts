@@ -12,6 +12,7 @@ import { AdminStorageModule } from './admin-storage/admin-storage.module';
 import { AdminOverviewModule } from './admin-overview/admin-overview.module';
 import { AdminContentModule } from './admin-content/admin-content.module';
 import { AdminConsentModule } from './admin-consent/admin-consent.module';
+import { AdminInfrastructureModule } from './admin-infrastructure/admin-infrastructure.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -36,6 +37,7 @@ import { HealthController } from './health.controller';
     AdminOverviewModule,
     AdminContentModule,
     AdminConsentModule,
+    AdminInfrastructureModule,
   ],
   controllers: [HealthController],
   providers: [

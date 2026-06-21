@@ -1,4 +1,122 @@
-﻿## 2026-06-21 — PWA dependency bumps (Dependabot CI)
+﻿## 2026-06-21 — Cookie consent log: surface missing migration
+
+Fixed:
+- Admin `GET /admin/consent/cookie-log` no longer returns empty list on DB errors; reports missing `cookie_consent_log` table with migration hint.
+
+## 2026-06-21 — Admin infra SSH fix; backend /metrics hardening
+
+Fixed:
+- **jobbie-admin:** `vps-ssh-metrics.service.ts` — `import * as path from 'path'` (CommonJS `path.resolve` was undefined); clearer error when `VPS_*_SSH_PRIVATE_KEY` is a placeholder.
+- **backend-ts:** `GET /metrics` uses `@Res({ passthrough: true })`, explicit `@Public()`, and try/catch around Prometheus export (401/503 as Nest exceptions).
+
+## 2026-06-21 — Admin analytics: PostHog cross-check fix
+
+Fixed:
+- Analytics **Web & marketing** no longer compares PostHog pageviews to platform signups (different metrics — false warning). Cross-check runs only when both PostHog and GA4 are configured (pageviews + active users).
+
+## 2026-06-21 — Invoice description restored; PDF logo watermark (Dashboard)
+
+Changed:
+- Credit invoice `description` (memo *Kredity na využívanie…*) is set again on Stripe PDF.
+
+Docs:
+- Large company name in the upper-right PDF corner is Stripe **Branding → Logo/Icon**, not API — remove in Dashboard (test + live).
+
+## 2026-06-21 — SK credit invoice PDF cleanup (no DPH footer, no pay link)
+
+Fixed:
+- Removed default DPH/legal footer text from Stripe faktúry; footer is poznámka (+ optional `STRIPE_INVOICE_FOOTER` only).
+- Credit invoices: no header `description` (removes large corner text on PDF).
+- Paid credit invoices: `attachPayment` with succeeded PI instead of only `paid_out_of_band`.
+- Customer `invoice_settings`: explicit `custom_fields: []` clears legacy konštantný symbol; no customer-level footer.
+- API/PWA: konštantný symbol never returned; no legal footer fallback in app.
+
+## 2026-06-21 — SK credit invoice content (bundle line, footer, buyer VAT)
+
+Fixed:
+- Credit-pack faktúry: jeden riadok **balík** (qty 1, cena balíka), popis obsahuje počet kreditov — nie jednotková cena ÷ počet.
+- Odstránený konštantný symbol z nových faktúr; staré PDF ho môžu mať v `custom_fields`.
+- Pätička: dodávateľ **nie je platiteľom DPH** pri predaji; `STRIPE_INVOICE_AUTOMATIC_TAX` predvolene vypnuté (zapnúť explicitne).
+- Odberateľské IČ DPH len cez custom field „IČ DPH“; `eu_vat` na Customer sa pri checkoute maže (žiadna duplicitná „SK VAT“ na PDF).
+- Uhradené kreditové faktúry bez `payment_settings` (žiadne „Zaplatiť online“ na PDF).
+
+Changed:
+- PWA `/nastavenia/fakturacia/:id`: konštantný symbol len ak existuje; fallback pätička zladená s backendom.
+
+Docs:
+- [stripe-invoice-sk-vat.md](./stripe-invoice-sk-vat.md) — PDF dodávateľ = Stripe Dashboard Business details; bundle line, buyer VAT, automatic tax.
+
+## 2026-06-21 — pdfjs-dist 6 (Dependabot PR #28)
+
+Changed:
+- `pdfjs-dist` 4.10.38 → 6.0.227 (chat PDF attachment thumbnails).
+- PWA `engines.node` → `>=22.13.0` (required by pdfjs-dist 6).
+- `pwa-bundle-budget` and `pwa-cloudflare-deploy` GitHub Actions jobs use Node 22 (was 20).
+
+## 2026-06-21 — Atlas CV PDF layout
+
+Fixed:
+- Atlas PDF — Doplňujúce informácie and Záujmy stack vertically (`.atlas-stack`) instead of a narrow two-column grid that broke letter-spaced headings and hobby text.
+- Atlas PDF — birth date in Kontakt renders as Slovak `DD. MM. YYYY` (e.g. `01. 01. 2000`) instead of ISO `YYYY-MM-DD`.
+- Atlas direct-print PDF — minimum A4 page height and fixed sidebar stripe (`::before`) so the blue panel fills the full page in Playwright output.
+- Atlas PDF — JS pagination packer restored (per-sheet full-height sidebar chrome) so the blue panel is continuous on every A4 page; editorial/minimalist/monochrome stay on direct CSS print.
+- Atlas PDF — fixed `.cv-sheet` height (excluded from `resume-page { height: auto }`) so page-1 sidebar fills full A4 when main content is taller.
+- Atlas PDF pagination — raised A4 height budget and single-page fast path so typical CVs are not split when sidebar + main fit on one sheet.
+- Atlas PDF sheets — absolute full-height sidebar panel per A4 page; pagination measures column overflow so main content is not clipped (fixes blank work experience).
+
+## 2026-06-21 — Credit invoice creation (Stripe amount+quantity)
+
+Fixed:
+- Post-payment SK faktúra for credit packs failed silently: Stripe rejects `amount` + `quantity` on the same invoice item. Line items now use `unit_amount` or `unit_amount_decimal` × počet kreditov.
+- Draft invoice cleanup before credit faktúra no longer deletes subscription draft invoices.
+
+## 2026-06-21 — Stripe Payment Element / PI payment method alignment
+
+Fixed:
+- Credit PaymentIntents and SetupIntents use `payment_method_types: ['card']` (not `automatic_payment_methods`) to match Payment Element deferred checkout.
+- Removed PI updates that enabled `automatic_payment_methods` on subscription invoice PaymentIntents (caused confirm error).
+- `/platba` deferred checkout: `elements.submit()` runs before PI creation; no remount that cleared entered card data; API errors from `preparePayment` are no longer masked as generic „Platba nebola dokončená“.
+
+## 2026-06-21 — SK faktúra vzory (CoCreate / kredity / predplatné)
+
+Changed:
+- Stripe faktúry: štandardizované popisy položiek, poznámky a obdobie predplatného podľa účtovných vzorov (predaj kreditov + mesačné predplatné, firma / FO).
+- Kreditové faktúry: množstvo = počet kreditov (ks), jednotková cena z uhradenej sumy.
+- Predplatné: webhook `invoice.created` upraví draft faktúru (popis, poznámka, obdobie).
+- Dodávateľ v aplikácii: predvolene CoCreate s. r. o. (`BILLING_SUPPLIER_*`, `BILLING_SUPPLIER_OR`).
+- PWA detail faktúry: stĺpec jednotka, poznámka, obdobie predplatného, OR dodávateľa.
+
+Docs:
+- [`docs/stripe-invoice-sk-vat.md`](./stripe-invoice-sk-vat.md).
+
+## 2026-06-21 — Invoice legal footer and past-due billing copy
+
+Changed:
+- PWA invoice detail always shows SK DPH legal footer (`settingsInvoiceLegalFooter`); pay section restored for open **subscription** invoices (`can_pay`).
+- Fakturácia past-due banner includes inline **Zmeniť kartu** action on `/nastavenia/fakturacia`.
+
+## 2026-06-21 — Post-payment credit invoices
+
+Changed:
+- Credit checkout (`create-payment-intent-credits`) uses a standalone PaymentIntent; SK faktúra is created only after `payment_intent.succeeded` (`paid_out_of_band` on Stripe Invoice).
+- Abandoned open credit invoices are voided on new checkout; incomplete subscription cancel voids the open first invoice; `payment_intent.canceled` voids legacy invoice-backed open invoices.
+- `GET /api/payments/invoices` and invoice detail return **paid** invoices and **open** subscription renewal invoices (past_due pay flow).
+
+Docs:
+- [`docs/payments-credits.md`](./payments-credits.md), [`docs/stripe-invoice-emails.md`](./stripe-invoice-emails.md).
+
+## 2026-06-21 — Admin Infra VPS dashboard
+
+Added:
+- **Infra** screen in `jobbie-admin` (`/infrastructure`): staging + production VPS cards with API health, host CPU/RAM/disk (SSH), Docker stats, optional Nest Prometheus metrics.
+- Admin API `GET /api/admin/infrastructure` (scope `overview`, throttle 6/min).
+- `websupport-vps-deployment/scripts/host_metrics.sh` — read-only JSON metrics script for SSH collection.
+
+Docs:
+- [`jobbie-admin/api/.env.example`](../jobbie-admin/api/.env.example) — `VPS_STAGING_*` / `VPS_PRODUCTION_*` env vars.
+- [`docs/admin-desktop.md`](./admin-desktop.md) — Infra endpoint and operator setup.
+
+## 2026-06-21 — PWA dependency bumps (Dependabot CI)
 
 Changed:
 - `app-pwa`: `isomorphic-dompurify` ^3.18.0 (patched DOMPurify), `@supabase/supabase-js` ^2.108.2.

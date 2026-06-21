@@ -67,6 +67,7 @@ const emit = defineEmits<{
 }>()
 
 import type { CheckoutBillingPayload } from '~/utils/checkout-billing'
+import type { PreparePaymentResult } from '~/utils/stripe-prepare-payment'
 
 const {
   pack,
@@ -87,7 +88,7 @@ const {
 
 async function prepareCheckoutPayment(
   billing?: CheckoutBillingPayload,
-): Promise<string | null> {
+): Promise<PreparePaymentResult | null> {
   error.value = null
   return createPaymentIntent(billing)
 }

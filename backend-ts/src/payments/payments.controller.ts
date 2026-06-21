@@ -519,6 +519,26 @@ export class PaymentsController {
           });
         }
       }
+      if (event.type === 'payment_intent.canceled') {
+        const pi = event.data.object as PaymentIntent;
+        try {
+          await this.stripe.voidAbandonedInvoiceForCanceledPaymentIntent(pi.id);
+        } catch (err) {
+          this.logger.warn(
+            `voidAbandonedInvoiceForCanceledPaymentIntent failed for ${pi.id}: ${String(err)}`,
+          );
+        }
+      }
+      if (event.type === 'invoice.created') {
+        const inv = event.data.object as Invoice;
+        try {
+          await this.stripe.applySkSubscriptionInvoiceTemplate(inv);
+        } catch (err) {
+          this.logger.warn(
+            `applySkSubscriptionInvoiceTemplate failed for ${inv.id}: ${String(err)}`,
+          );
+        }
+      }
       if (event.type === 'invoice.paid') {
         const inv = event.data.object as Invoice;
         const piId = getInvoicePaymentIntentId(inv);

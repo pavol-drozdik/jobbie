@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=22.13.0"
   },
   "scripts": {
     "prepare": "nuxt prepare",
@@ -43,7 +43,7 @@
     "chart.js": "^4.5.1",
     "isomorphic-dompurify": "^3.18.0",
     "nuxt": "^3.14.0",
-    "pdfjs-dist": "^4.10.38",
+    "pdfjs-dist": "^6.0.227",
     "posthog-js": "^1.386.6",
     "socket.io-client": "^4.7.0",
     "vue": "^3.5.30",

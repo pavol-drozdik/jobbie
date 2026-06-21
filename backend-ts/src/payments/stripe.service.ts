@@ -26,6 +26,7 @@ import {
   type Event,
   type Invoice,
   type InvoiceCreateParams,
+  type InvoiceItemCreateParams,
   type InvoiceLineItem,
   type PaymentIntent,
   type PaymentIntentUpdateParams,
@@ -48,18 +49,26 @@ import {
 } from './stripe-catalog-prices';
 import {
   buildInvoiceCustomFieldsSk,
+  buildSkInvoiceFooter,
   buildSkInvoicePaymentSettings,
   buildSkInvoiceRendering,
+  buildSkCardPaymentIntentTypes,
+  buildSkCreditInvoiceLineItem,
   type CheckoutBillingDetailsInput,
-  getInvoiceConstantSymbol,
+  filterStripeInvoiceCustomFields,
+  resolveInvoiceCustomFieldsSk,
+  getSkInvoiceLineUnit,
+  getSkInvoiceNote,
   getStripeAccountTaxIds,
   getBillingInvoiceSupplier,
-  getStripeInvoiceFooter,
   isStripeAutomaticTaxEnabled,
   normalizeSkEuVatId,
   resolveCustomerAddress,
+  SK_INVOICE_CREDIT_LINE_DESCRIPTION,
   SK_INVOICE_PAYMENT_METHOD_LABEL,
+  SK_INVOICE_SUBSCRIPTION_LINE_DESCRIPTION,
   type BillingInvoiceSupplierDto,
+  type SkInvoiceProductType,
   type StripeCustomerAddressInput,
 } from './stripe-invoice-sk';
 
@@ -80,6 +89,7 @@ export type PaymentMethodSummaryDto = {
 export type InvoiceDetailLineDto = {
   description: string;
   quantity: number | null;
+  unit: string | null;
   amount: number;
   currency: string;
 };
@@ -93,7 +103,7 @@ export type InvoiceDetailDto = {
   issued_at: number;
   delivery_at: number;
   variable_symbol: string | null;
-  constant_symbol: string;
+  constant_symbol: string | null;
   payment_method_label: string;
   currency: string;
   subtotal: number;
@@ -101,6 +111,9 @@ export type InvoiceDetailDto = {
   total: number;
   amount_due: number;
   amount_paid: number;
+  product_type: SkInvoiceProductType;
+  note: string;
+  subscription_period: { start: number; end: number } | null;
   lines: InvoiceDetailLineDto[];
   customer: {
     name: string | null;
@@ -269,6 +282,9 @@ export class StripeService {
     billing: CheckoutBillingDetailsInput | null | undefined,
     metadata: Record<string, string>,
     description: string,
+    productType: SkInvoiceProductType,
+    subscriptionPeriod?: { start: number; end: number } | null,
+    options?: { omitPaymentSettings?: boolean },
   ): InvoiceCreateParams {
     const params: InvoiceCreateParams = {
       customer: customerId,
@@ -277,11 +293,13 @@ export class StripeService {
       auto_advance: false,
       description,
       metadata,
-      custom_fields: buildInvoiceCustomFieldsSk(billing, this.config),
-      footer: getStripeInvoiceFooter(this.config),
-      payment_settings: buildSkInvoicePaymentSettings(),
+      custom_fields: resolveInvoiceCustomFieldsSk(billing),
+      footer: buildSkInvoiceFooter(productType, this.config, subscriptionPeriod),
       rendering: buildSkInvoiceRendering(),
     };
+    if (!options?.omitPaymentSettings) {
+      params.payment_settings = buildSkInvoicePaymentSettings();
+    }
     const accountTaxIds = getStripeAccountTaxIds(this.config);
     if (accountTaxIds?.length) {
       params.account_tax_ids = accountTaxIds;
@@ -292,11 +310,283 @@ export class StripeService {
     return params;
   }
 
+  private creditCheckoutMetadata(
+    userId: string,
+    priceId: string,
+    creditsAmount: number,
+    billing: CheckoutBillingDetailsInput,
+  ): Record<string, string> {
+    const metadata: Record<string, string> = {
+      user_id: userId,
+      credits: String(creditsAmount),
+      type: 'credits',
+      price_id: priceId,
+      purchaser_type: billing.purchaser_type,
+    };
+    const companyName = billing.company_name?.trim();
+    if (companyName) {
+      metadata.company_name = companyName.slice(0, 500);
+    }
+    const ico = billing.registration_number?.trim();
+    if (ico) {
+      metadata.registration_number = ico.slice(0, 500);
+    }
+    const dic = billing.tax_id?.trim();
+    if (dic) {
+      metadata.tax_id = dic.slice(0, 500);
+    }
+    const vat = billing.vat_id?.trim();
+    if (vat) {
+      metadata.vat_id = vat.slice(0, 500);
+    }
+    return metadata;
+  }
+
+  private billingFromPaymentIntentMetadata(
+    metadata: Record<string, string>,
+  ): CheckoutBillingDetailsInput {
+    return {
+      purchaser_type:
+        metadata.purchaser_type === 'company' ? 'company' : 'individual',
+      company_name: metadata.company_name?.trim() || null,
+      registration_number: metadata.registration_number?.trim() || null,
+      tax_id: metadata.tax_id?.trim() || null,
+      vat_id: metadata.vat_id?.trim() || null,
+    };
+  }
+
+  private isCreditPackOpenInvoice(inv: Invoice): boolean {
+    return (
+      inv.metadata?.type === 'credits' && !getInvoiceSubscriptionId(inv)
+    );
+  }
+
+  private isSubscriptionInvoice(invoice: Invoice): boolean {
+    return Boolean(getInvoiceSubscriptionId(invoice));
+  }
+
+  /** Paid invoices + open subscription renewal invoices (past_due); not abandoned credit checkouts. */
+  private isVisibleCustomerInvoice(invoice: Invoice): boolean {
+    if (invoice.status === 'paid') {
+      return true;
+    }
+    return invoice.status === 'open' && this.isSubscriptionInvoice(invoice);
+  }
+
+  private isPayableSubscriptionInvoice(invoice: Invoice): boolean {
+    return (
+      invoice.status === 'open' &&
+      this.isSubscriptionInvoice(invoice) &&
+      (invoice.amount_due ?? 0) > 0
+    );
+  }
+
+  private async voidOpenCustomerInvoices(
+    customerId: string,
+    filter?: (inv: Invoice) => boolean,
+  ): Promise<void> {
+    const stripe = this.getStripe();
+    let startingAfter: string | undefined;
+    for (let page = 0; page < 3; page++) {
+      const list = await stripe.invoices.list({
+        customer: customerId,
+        status: 'open',
+        limit: 20,
+        ...(startingAfter ? { starting_after: startingAfter } : {}),
+      });
+      for (const inv of list.data) {
+        if (filter && !filter(inv)) {
+          continue;
+        }
+        try {
+          await stripe.invoices.voidInvoice(inv.id);
+        } catch (err) {
+          this.logger.warn(
+            `voidInvoice failed for ${inv.id}: ${String(err)}`,
+          );
+        }
+      }
+      if (!list.has_more || list.data.length < 1) {
+        break;
+      }
+      startingAfter = list.data[list.data.length - 1]?.id;
+    }
+  }
+
+  private async voidSubscriptionOpenInvoice(subscriptionId: string): Promise<void> {
+    try {
+      const sub = await this.getStripe().subscriptions.retrieve(subscriptionId, {
+        expand: ['latest_invoice'],
+      });
+      const inv = sub.latest_invoice;
+      if (
+        inv &&
+        typeof inv === 'object' &&
+        inv.status === 'open' &&
+        inv.id
+      ) {
+        await this.getStripe().invoices.voidInvoice(inv.id);
+      }
+    } catch (err) {
+      this.logger.warn(
+        `voidSubscriptionOpenInvoice failed for ${subscriptionId}: ${String(err)}`,
+      );
+    }
+  }
+
+  private async voidOpenInvoiceForPaymentIntent(
+    paymentIntentId: string,
+  ): Promise<void> {
+    const stripe = this.getStripe();
+    const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+    const invoiceRef = (pi as PaymentIntent & { invoice?: string | { id?: string } | null })
+      .invoice;
+    const invoiceId =
+      typeof invoiceRef === 'string'
+        ? invoiceRef
+        : invoiceRef && typeof invoiceRef === 'object'
+          ? invoiceRef.id
+          : null;
+    if (!invoiceId) {
+      return;
+    }
+    try {
+      const inv = await stripe.invoices.retrieve(invoiceId);
+      if (inv.status === 'open') {
+        await stripe.invoices.voidInvoice(invoiceId);
+      }
+    } catch (err) {
+      this.logger.warn(
+        `voidOpenInvoiceForPaymentIntent failed for ${paymentIntentId}: ${String(err)}`,
+      );
+    }
+  }
+
+  /**
+   * SK faktúra for credit packs is created only after PaymentIntent succeeds
+   * (paid_out_of_band). Legacy invoice-backed PIs keep their Stripe invoice.
+   */
+  private async createPaidSkInvoiceForCreditPayment(
+    pi: PaymentIntent,
+    metadata: Record<string, string>,
+  ): Promise<string | null> {
+    const invoiceRef = (pi as PaymentIntent & { invoice?: string | { id?: string } | null })
+      .invoice;
+    if (invoiceRef) {
+      return typeof invoiceRef === 'string'
+        ? invoiceRef
+        : invoiceRef.id ?? null;
+    }
+    const existingInvoiceId = metadata.invoice_id?.trim();
+    if (existingInvoiceId) {
+      return existingInvoiceId;
+    }
+
+    const customerId =
+      typeof pi.customer === 'string' ? pi.customer : pi.customer?.id ?? null;
+    const priceId = metadata.price_id?.trim();
+    const creditsRaw = metadata.credits;
+    if (!customerId || !priceId || creditsRaw === undefined) {
+      return null;
+    }
+    const creditsAmount = parseInt(String(creditsRaw), 10);
+    if (creditsAmount < 1) {
+      return null;
+    }
+
+    const stripe = this.getStripe();
+    const billing = this.billingFromPaymentIntentMetadata(metadata);
+    const invoiceMetadata: Record<string, string> = {
+      ...metadata,
+      payment_intent_id: pi.id,
+    };
+    const description = SK_INVOICE_CREDIT_LINE_DESCRIPTION;
+
+    await this.voidOpenCustomerInvoices(customerId, (inv) =>
+      this.isCreditPackOpenInvoice(inv),
+    );
+
+    const drafts = await stripe.invoices.list({
+      customer: customerId,
+      status: 'draft',
+      limit: 20,
+    });
+    for (const inv of drafts.data) {
+      if (!getInvoiceSubscriptionId(inv)) {
+        await stripe.invoices.del(inv.id);
+      }
+    }
+
+    const totalCents = pi.amount_received ?? pi.amount ?? 0;
+    const lineItem = buildSkCreditInvoiceLineItem(totalCents, creditsAmount);
+    if (!lineItem) {
+      this.logger.warn(
+        `createPaidSkInvoiceForCreditPayment: invalid amount for PI ${pi.id}`,
+      );
+      return null;
+    }
+
+    await stripe.invoiceItems.create({
+      customer: customerId,
+      currency: (pi.currency ?? 'eur').toLowerCase(),
+      description: lineItem.description,
+      metadata: invoiceMetadata,
+      quantity: lineItem.quantity,
+      unit_amount_decimal: lineItem.unit_amount_decimal,
+    } as unknown as InvoiceItemCreateParams);
+
+    const finalized = await this.createAndFinalizeSkInvoice(
+      customerId,
+      billing,
+      invoiceMetadata,
+      description,
+      'credits',
+      null,
+      { omitPaymentSettings: true },
+    );
+
+    let paid: Invoice;
+    try {
+      paid = await stripe.invoices.attachPayment(finalized.id, {
+        payment_intent: pi.id,
+      });
+    } catch (err) {
+      this.logger.warn(
+        `attachPayment failed for PI ${pi.id} on invoice ${finalized.id}, trying paid_out_of_band: ${String(err)}`,
+      );
+      await stripe.invoices.pay(finalized.id, { paid_out_of_band: true });
+      paid = await stripe.invoices.retrieve(finalized.id);
+    }
+
+    if (paid.status !== 'paid') {
+      this.logger.warn(
+        `createPaidSkInvoiceForCreditPayment: invoice ${finalized.id} not paid after pay (status=${paid.status})`,
+      );
+      return null;
+    }
+
+    const mergedMetadata: Record<string, string> = {
+      ...(pi.metadata ?? {}),
+      invoice_id: paid.id,
+    };
+    try {
+      await stripe.paymentIntents.update(pi.id, { metadata: mergedMetadata });
+    } catch (err) {
+      this.logger.warn(
+        `Could not persist invoice_id on PI ${pi.id}: ${String(err)}`,
+      );
+    }
+    return paid.id;
+  }
+
   private async createAndFinalizeSkInvoice(
     customerId: string,
     billing: CheckoutBillingDetailsInput | null | undefined,
     metadata: Record<string, string>,
     description: string,
+    productType: SkInvoiceProductType,
+    subscriptionPeriod?: { start: number; end: number } | null,
+    options?: { omitPaymentSettings?: boolean },
   ): Promise<Invoice> {
     const stripe = this.getStripe();
     const base = this.buildSkInvoiceCreateParams(
@@ -304,6 +594,9 @@ export class StripeService {
       billing,
       metadata,
       description,
+      productType,
+      subscriptionPeriod,
+      options,
     );
     try {
       const invoice = await stripe.invoices.create(base);
@@ -326,40 +619,107 @@ export class StripeService {
   }
 
   /**
-   * Enables card, Apple Pay, and Google Pay on invoice-backed PaymentIntents.
+   * Align subscription invoice PDF with SK template (line text, poznámka, obdobie).
+   * Called from invoice.created while invoice is still draft.
    */
-  private async enableAutomaticPaymentMethodsOnPaymentIntent(
-    paymentIntentId: string,
-  ): Promise<void> {
+  async applySkSubscriptionInvoiceTemplate(invoice: Invoice): Promise<void> {
+    if (!getInvoiceSubscriptionId(invoice)) {
+      return;
+    }
+    if (invoice.status !== 'draft') {
+      return;
+    }
+    const stripe = this.getStripe();
+    const firstLine = invoice.lines?.data?.[0];
+    const periodStart = firstLine?.period?.start;
+    const periodEnd = firstLine?.period?.end;
+    const subscriptionPeriod =
+      typeof periodStart === 'number' &&
+      typeof periodEnd === 'number' &&
+      periodStart > 0 &&
+      periodEnd > 0
+        ? { start: periodStart, end: periodEnd }
+        : null;
+
     try {
-      await this.getStripe().paymentIntents.update(paymentIntentId, {
-        automatic_payment_methods: { enabled: true },
-      } as PaymentIntentUpdateParams);
+      await stripe.invoices.update(invoice.id, {
+        footer: buildSkInvoiceFooter(
+          'subscription',
+          this.config,
+          subscriptionPeriod,
+        ),
+        rendering: buildSkInvoiceRendering(),
+      });
     } catch (err) {
       this.logger.warn(
-        `automatic_payment_methods update failed for ${paymentIntentId}: ${String(err)}`,
+        `Could not update subscription invoice footer ${invoice.id}: ${String(err)}`,
       );
     }
+
+    for (const line of invoice.lines?.data ?? []) {
+      if (!line.id) {
+        continue;
+      }
+      try {
+        await stripe.invoiceItems.update(line.id, {
+          description: SK_INVOICE_SUBSCRIPTION_LINE_DESCRIPTION,
+        });
+      } catch (err) {
+        this.logger.warn(
+          `Could not update subscription line item ${line.id}: ${String(err)}`,
+        );
+      }
+    }
+  }
+
+  private resolveInvoiceProductType(invoice: Invoice): SkInvoiceProductType {
+    if (getInvoiceSubscriptionId(invoice)) {
+      return 'subscription';
+    }
+    if (invoice.metadata?.type === 'credits') {
+      return 'credits';
+    }
+    const lineDesc = invoice.lines?.data?.[0]?.description?.toLowerCase() ?? '';
+    if (lineDesc.includes('predplatn')) {
+      return 'subscription';
+    }
+    return 'credits';
+  }
+
+  private extractSubscriptionPeriod(
+    invoice: Invoice,
+    lineRows: InvoiceLineItem[],
+  ): { start: number; end: number } | null {
+    const line = lineRows[0] ?? invoice.lines?.data?.[0];
+    const start = line?.period?.start;
+    const end = line?.period?.end;
+    if (
+      typeof start === 'number' &&
+      typeof end === 'number' &&
+      start > 0 &&
+      end > 0
+    ) {
+      return { start, end };
+    }
+    return null;
   }
 
   /**
    * Invoice-backed PaymentIntents: Stripe rejects `customer` on update, but allows
    * `receipt_email`. Receipts for invoice payments include the hosted invoice link.
+   * Do not set automatic_payment_methods — subscription PIs use payment_method_types: ['card'].
    */
   private async attachInvoicePaymentIntentExtras(
     paymentIntentId: string,
     customerEmail: string,
     metadata: Record<string, string>,
   ): Promise<void> {
-    await this.enableAutomaticPaymentMethodsOnPaymentIntent(paymentIntentId);
     const email = customerEmail.trim();
-    if (!email) {
-      return;
+    const update: PaymentIntentUpdateParams = { metadata };
+    if (email) {
+      update.receipt_email = email;
     }
-    await this.getStripe().paymentIntents.update(paymentIntentId, {
-      metadata,
-      receipt_email: email,
-    });
+    await this.getStripe().paymentIntents.update(paymentIntentId, update);
   }
 
   private paymentIntentResponseFromStripe(
@@ -587,52 +947,31 @@ export class StripeService {
       effectiveBilling.purchaser_type,
     );
 
-    const drafts = await stripe.invoices.list({
-      customer: customerId,
-      status: 'draft',
-      limit: 20,
-    });
-    for (const inv of drafts.data) {
-      await stripe.invoices.del(inv.id);
-    }
-
-    const metadata: Record<string, string> = {
-      user_id: userId,
-      credits: String(creditsAmount),
-      type: 'credits',
-      price_id: priceId,
-    };
-
-    await stripe.invoiceItems.create({
-      customer: customerId,
-      pricing: { price: priceId },
-      quantity: 1,
-      description: `JOBBIE — ${creditsAmount} kreditov`,
-      metadata,
-    });
-
-    const finalized = await this.createAndFinalizeSkInvoice(
-      customerId,
-      effectiveBilling,
-      metadata,
-      `JOBBIE — nákup ${creditsAmount} kreditov`,
+    await this.voidOpenCustomerInvoices(customerId, (inv) =>
+      this.isCreditPackOpenInvoice(inv),
     );
 
-    const piRef = getInvoicePaymentIntentRef(finalized);
-    const pi =
-      piRef && typeof piRef === 'object'
-        ? piRef
-        : typeof piRef === 'string'
-          ? await stripe.paymentIntents.retrieve(piRef)
-          : null;
-    const secret = pi?.client_secret?.trim();
+    const metadata = this.creditCheckoutMetadata(
+      userId,
+      priceId,
+      creditsAmount,
+      effectiveBilling,
+    );
+
+    const pi = await stripe.paymentIntents.create({
+      amount,
+      currency,
+      customer: customerId,
+      metadata,
+      receipt_email: customerEmail,
+      description: SK_INVOICE_CREDIT_LINE_DESCRIPTION,
+      payment_method_types: buildSkCardPaymentIntentTypes(),
+    });
+    const secret = pi.client_secret?.trim();
     if (!secret) {
       throw new ServiceUnavailableException(
         'Nepodarilo sa vytvoriť platobný formulár pre kredity.',
       );
-    }
-    if (pi?.id) {
-      await this.attachInvoicePaymentIntentExtras(pi.id, customerEmail, metadata);
     }
     return this.paymentIntentResponseFromStripe(pi, secret);
   }
@@ -865,8 +1204,7 @@ export class StripeService {
       : {};
     const invoiceSettingsFields = {
       invoice_settings: {
-        custom_fields: buildInvoiceCustomFieldsSk(details, this.config),
-        footer: getStripeInvoiceFooter(this.config),
+        custom_fields: resolveInvoiceCustomFieldsSk(details),
       },
     };
 
@@ -892,27 +1230,56 @@ export class StripeService {
       });
     }
 
-    const vat = normalizeSkEuVatId(details.vat_id);
-    if (purchaserType === 'company' && vat) {
-      const normalized = vat;
+    if (isStripeAutomaticTaxEnabled(this.config)) {
+      const vat = normalizeSkEuVatId(details.vat_id);
+      if (purchaserType === 'company' && vat) {
+        const normalized = vat;
+        const existing = await stripe.customers.listTaxIds(customerId, {
+          limit: 20,
+        });
+        const has = existing.data.some(
+          (t) => t.value.replace(/\s+/g, '').toUpperCase() === normalized,
+        );
+        if (!has) {
+          try {
+            await stripe.customers.createTaxId(customerId, {
+              type: 'eu_vat',
+              value: normalized,
+            });
+          } catch (err) {
+            this.logger.warn(
+              `Stripe tax id create skipped for user ${userId}: ${String(err)}`,
+            );
+          }
+        }
+      }
+    } else {
+      await this.removeCustomerEuVatTaxIds(customerId);
+    }
+  }
+  /** Buyer IČ DPH is on invoice custom_fields only — remove duplicate „SK VAT“ on Customer. */
+  private async removeCustomerEuVatTaxIds(customerId: string): Promise<void> {
+    const stripe = this.getStripe();
+    try {
       const existing = await stripe.customers.listTaxIds(customerId, {
-        limit: 20,
+        limit: 100,
       });
-      const has = existing.data.some(
-        (t) => t.value.replace(/\s+/g, '').toUpperCase() === normalized,
-      );
-      if (!has) {
+      for (const taxId of existing.data) {
+        if (taxId.type !== 'eu_vat') {
+          continue;
+        }
         try {
-          await stripe.customers.createTaxId(customerId, {
-            type: 'eu_vat',
-            value: normalized,
-          });
+          await stripe.customers.deleteTaxId(customerId, taxId.id);
         } catch (err) {
           this.logger.warn(
-            `Stripe tax id create skipped for user ${userId}: ${String(err)}`,
+            `Could not delete customer eu_vat ${taxId.id}: ${String(err)}`,
           );
         }
       }
+    } catch (err) {
+      this.logger.warn(
+        `Could not list customer tax ids for ${customerId}: ${String(err)}`,
+      );
     }
   }
 
@@ -1153,6 +1520,7 @@ export class StripeService {
       limit: 10,
     });
     for (const sub of incomplete.data) {
+      await this.voidSubscriptionOpenInvoice(sub.id);
       try {
         await stripe.subscriptions.cancel(sub.id);
       } catch (err) {
@@ -1404,6 +1772,15 @@ export class StripeService {
   }
 
   /**
+   * Voids an open invoice linked to a canceled PaymentIntent (legacy invoice-backed checkout).
+   */
+  async voidAbandonedInvoiceForCanceledPaymentIntent(
+    paymentIntentId: string,
+  ): Promise<void> {
+    await this.voidOpenInvoiceForPaymentIntent(paymentIntentId);
+  }
+
+  /**
    * Loads credits from a succeeded PaymentIntent once (idempotent). Used by webhooks
    * and by the client after return_url redirect when webhooks are unavailable or delayed.
    */
@@ -1486,6 +1863,13 @@ export class StripeService {
           addCredits,
         );
         if (alreadyFulfilled) {
+          try {
+            await this.createPaidSkInvoiceForCreditPayment(pi, merged);
+          } catch (err) {
+            this.logger.error(
+              `createPaidSkInvoiceForCreditPayment retry failed for PI ${pi.id}: ${String(err)}`,
+            );
+          }
           return { applied: true, reason: 'ok' };
         }
         this.logger.warn(
@@ -1524,6 +1908,13 @@ export class StripeService {
       refType: 'payment_intent',
       refId: pi.id,
     });
+    try {
+      await this.createPaidSkInvoiceForCreditPayment(pi, merged);
+    } catch (err) {
+      this.logger.error(
+        `createPaidSkInvoiceForCreditPayment failed for PI ${pi.id}: ${String(err)}`,
+      );
+    }
     return { applied: true, reason: 'ok' };
   }
 
@@ -1659,7 +2050,7 @@ export class StripeService {
     const si = await this.getStripe().setupIntents.create({
       customer: customerId,
       usage: 'off_session',
-      automatic_payment_methods: { enabled: true },
+      payment_method_types: buildSkCardPaymentIntentTypes(),
     });
     if (!si.client_secret) {
       throw new ServiceUnavailableException('SetupIntent client_secret missing');
@@ -1902,7 +2293,7 @@ export class StripeService {
       );
     }
 
-    if (invoice.status === 'draft') {
+    if (!this.isVisibleCustomerInvoice(invoice)) {
       throw new NotFoundException('Faktúra nebola nájdená.');
     }
 
@@ -1923,15 +2314,20 @@ export class StripeService {
           ico: envSupplier.ico,
           dic: envSupplier.dic,
           vat: envSupplier.vat,
+          or: envSupplier.or,
           configured: false,
         };
 
-    const customFields = (invoice.custom_fields ?? [])
-      .filter(
-        (f): f is { name: string; value: string } =>
-          Boolean(f?.name?.trim() && f?.value?.trim()),
-      )
-      .map((f) => ({ name: f.name.trim(), value: f.value.trim() }));
+    const productType = this.resolveInvoiceProductType(invoice);
+
+    const customFields = filterStripeInvoiceCustomFields(
+      (invoice.custom_fields ?? [])
+        .filter(
+          (f): f is { name: string; value: string } =>
+            Boolean(f?.name?.trim() && f?.value?.trim()),
+        )
+        .map((f) => ({ name: f.name.trim(), value: f.value.trim() })),
+    );
 
     let lineRows: InvoiceLineItem[] = [];
     try {
@@ -1949,9 +2345,15 @@ export class StripeService {
     const lines: InvoiceDetailLineDto[] = lineRows.map((line) => ({
       description: line.description?.trim() || 'Položka',
       quantity: line.quantity ?? null,
+      unit: getSkInvoiceLineUnit(productType),
       amount: line.amount ?? 0,
       currency: line.currency ?? invoice.currency ?? 'eur',
     }));
+
+    const subscriptionPeriod =
+      productType === 'subscription'
+        ? this.extractSubscriptionPeriod(invoice, lineRows)
+        : null;
 
     const piRef = getInvoicePaymentIntentRef(invoice);
     const pi =
@@ -1962,16 +2364,15 @@ export class StripeService {
           : null;
     let clientSecret: string | null = getInvoicePaymentIntentClientSecret(invoice);
     if (
-      invoice.status === 'open' &&
+      this.isPayableSubscriptionInvoice(invoice) &&
       pi &&
       (pi.status === 'requires_payment_method' ||
         pi.status === 'requires_confirmation' ||
         pi.status === 'requires_action')
     ) {
       clientSecret = pi.client_secret ?? clientSecret;
-      if (pi.id && clientSecret) {
-        await this.enableAutomaticPaymentMethodsOnPaymentIntent(pi.id);
-      }
+    } else {
+      clientSecret = null;
     }
 
     const tax = getInvoiceTaxAmount(invoice);
@@ -1997,7 +2398,7 @@ export class StripeService {
       issued_at: issuedAt,
       delivery_at: deliveryAt,
       variable_symbol: invoice.number?.trim() || null,
-      constant_symbol: getInvoiceConstantSymbol(this.config),
+      constant_symbol: null,
       payment_method_label: SK_INVOICE_PAYMENT_METHOD_LABEL,
       currency: invoice.currency ?? 'eur',
       subtotal: invoice.subtotal ?? 0,
@@ -2013,7 +2414,14 @@ export class StripeService {
         custom_fields: customFields,
       },
       supplier,
-      footer: invoice.footer?.trim() || getStripeInvoiceFooter(this.config),
+      footer: invoice.footer?.trim() || buildSkInvoiceFooter(
+        productType,
+        this.config,
+        subscriptionPeriod,
+      ),
+      product_type: productType,
+      note: getSkInvoiceNote(productType),
+      subscription_period: subscriptionPeriod,
       invoice_pdf: invoice.invoice_pdf ?? null,
       can_pay: Boolean(clientSecret),
       payment_intent_client_secret: clientSecret,
@@ -2036,14 +2444,17 @@ export class StripeService {
       hosted_invoice_url: string | null;
     }>
   > {
-    const list = await this.getStripe().invoices.list({
-      customer: customerId,
-      limit: Math.min(limit, 100),
-    });
-    return list.data
-      .filter((inv) => inv.status !== 'draft')
-      .slice(0, Math.min(limit, 24))
-      .map((inv) => ({
+    const stripe = this.getStripe();
+    const cap = Math.min(limit, 100);
+    const [paidList, openList] = await Promise.all([
+      stripe.invoices.list({ customer: customerId, status: 'paid', limit: cap }),
+      stripe.invoices.list({ customer: customerId, status: 'open', limit: 20 }),
+    ]);
+    const merged = [...openList.data, ...paidList.data]
+      .filter((inv) => this.isVisibleCustomerInvoice(inv))
+      .sort((a, b) => (b.created ?? 0) - (a.created ?? 0))
+      .slice(0, Math.min(limit, 24));
+    return merged.map((inv) => ({
         id: inv.id,
         number: inv.number ?? null,
         created: inv.created,
@@ -2265,6 +2676,7 @@ export class StripeService {
     cancel_at_period_end?: boolean;
     current_period_end?: string | null;
   }> {
+    await this.voidSubscriptionOpenInvoice(subId);
     try {
       await this.getStripe().subscriptions.cancel(subId);
     } catch (err: unknown) {

@@ -780,6 +780,8 @@ df -h /
 free -h
 ```
 
+Optional: `websupport-vps-deployment/scripts/host_metrics.sh` prints JSON host + Docker stats (used by admin **Infra** over SSH; can also run manually on the VPS).
+
 ### Update compose file from repo
 
 When `docker-compose.yml` or `Caddyfile` changes in git:
@@ -799,6 +801,7 @@ Optional: Cloudflare R2 + `backup_manager.py`. See [README-DEPLOYMENT.md](../web
 |--------|--------|
 | Health | `GET /health` |
 | Metrics | `GET /metrics` (Bearer token) |
+| VPS host + Docker | JOBBIE Admin **Infra** (`jobbie-admin` → `/infrastructure`; SSH + health/metrics — see [admin-desktop.md](./admin-desktop.md)) |
 | Sentry | API + PWA DSN env vars |
 | Logs | `docker compose logs` |
 

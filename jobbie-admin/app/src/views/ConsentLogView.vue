@@ -82,7 +82,13 @@ async function fetchPage(append: boolean) {
     }
     const res = await adminApi<CookieConsentLogResponse>('/admin/consent/cookie-log', { query })
     if (!res.ok) {
-      error.value = res.body.slice(0, 200) || `HTTP ${res.status}`
+      try {
+        const parsed = JSON.parse(res.body) as { message?: string | string[] }
+        const raw = parsed.message
+        error.value = Array.isArray(raw) ? raw.join(' ') : (raw ?? res.body.slice(0, 200))
+      } catch {
+        error.value = res.body.slice(0, 200) || `HTTP ${res.status}`
+      }
       return
     }
     const page = res.data?.items ?? []

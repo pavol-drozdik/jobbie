@@ -35,6 +35,7 @@
             <li v-if="invoice.supplier.ico">IČO: {{ invoice.supplier.ico }}</li>
             <li v-if="invoice.supplier.dic">DIČ: {{ invoice.supplier.dic }}</li>
             <li v-if="invoice.supplier.vat">IČ DPH: {{ invoice.supplier.vat }}</li>
+            <li v-if="invoice.supplier.or" class="text-xs">{{ invoice.supplier.or }}</li>
           </ul>
           <p
             v-if="!invoice.supplier.configured"
@@ -79,12 +80,6 @@
           </dd>
         </div>
         <div>
-          <dt class="text-black/45">{{ S.settingsInvoiceConstantSymbol }}</dt>
-          <dd class="m-0 mt-0.5 font-semibold text-black">
-            {{ invoice.constant_symbol }}
-          </dd>
-        </div>
-        <div>
           <dt class="text-black/45">{{ S.settingsInvoiceIssued }}</dt>
           <dd class="m-0 mt-0.5 font-semibold text-black">
             {{ formatUnix(invoice.issued_at) }}
@@ -100,6 +95,12 @@
           <dt class="text-black/45">{{ S.settingsInvoiceDelivery }}</dt>
           <dd class="m-0 mt-0.5 font-semibold text-black">
             {{ formatUnix(invoice.delivery_at) }}
+          </dd>
+        </div>
+        <div v-if="invoice.subscription_period">
+          <dt class="text-black/45">{{ S.settingsInvoiceSubscriptionPeriod }}</dt>
+          <dd class="m-0 mt-0.5 font-semibold text-black">
+            {{ formatPeriod(invoice.subscription_period) }}
           </dd>
         </div>
         <div>
@@ -118,6 +119,7 @@
             <tr class="border-b border-black/10 text-left text-xs font-semibold uppercase tracking-wide text-black/45">
               <th class="pb-2 pr-3">{{ S.settingsInvoiceLineDescription }}</th>
               <th class="pb-2 pr-3 text-right">{{ S.settingsInvoiceLineQuantity }}</th>
+              <th class="pb-2 pr-3 text-right">{{ S.settingsInvoiceLineUnit }}</th>
               <th class="pb-2 text-right">{{ S.settingsInvoiceLineAmount }}</th>
             </tr>
           </thead>
@@ -130,6 +132,9 @@
               <td class="py-3 pr-3 text-black">{{ line.description }}</td>
               <td class="py-3 pr-3 text-right text-black/70">
                 {{ line.quantity ?? '—' }}
+              </td>
+              <td class="py-3 pr-3 text-right text-black/70">
+                {{ line.unit ?? '—' }}
               </td>
               <td class="py-3 text-right font-semibold text-black">
                 {{ formatMoney(line.amount, line.currency) }}
@@ -179,11 +184,16 @@
       </dl>
     </section>
 
+    <p v-if="invoice.note" class="m-0 text-sm leading-relaxed text-black/55">
+      <span class="font-semibold text-black/70">{{ S.settingsInvoiceNote }}:</span>
+      {{ invoice.note }}
+    </p>
+
     <p
-      v-if="invoice.footer"
+      v-if="displayFooter"
       class="m-0 text-xs leading-relaxed text-black/45"
     >
-      {{ invoice.footer }}
+      {{ displayFooter }}
     </p>
 
     <section v-if="invoice.can_pay && paySecret" :class="settingsCardClass">
@@ -235,11 +245,9 @@ const paySecret = computed(
   () => props.invoice.payment_intent_client_secret?.trim() || '',
 )
 
-const buyerCustomFields = computed(() =>
-  props.invoice.customer.custom_fields.filter(
-    (field) => field.name !== 'Konštantný symbol',
-  ),
-)
+const displayFooter = computed(() => props.invoice.footer?.trim() || '')
+
+const buyerCustomFields = computed(() => props.invoice.customer.custom_fields)
 
 const INVOICE_STATUS_LABELS: Record<string, string> = {
   paid: S.settingsInvoiceStatusPaid,
@@ -265,6 +273,10 @@ const statusBadgeClass = computed(() => {
   }
   return 'bg-marketing-surface text-black/70 ring-1 ring-black/10'
 })
+
+function formatPeriod(period: { start: number; end: number }): string {
+  return `${formatUnix(period.start)} – ${formatUnix(period.end)}`
+}
 
 function formatUnix(ts: number): string {
   try {

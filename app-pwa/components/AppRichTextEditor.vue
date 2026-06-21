@@ -187,6 +187,7 @@ watch(
   (v) => {
     const ed = editor.value
     if (!ed) return
+    if (ed.isFocused) return
     const next = v || ''
     if (ed.getHTML() === next) return
     skipEmit.value = true

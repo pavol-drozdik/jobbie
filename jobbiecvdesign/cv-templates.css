@@ -530,9 +530,9 @@ a {
     border-bottom: 1px solid var(--line);
 }
 
-.atlas-grid {
-    display: grid;
-    grid-template-columns: 1fr 0.82fr;
+.atlas-stack {
+    display: flex;
+    flex-direction: column;
     gap: 18px;
 }
 
@@ -1099,7 +1099,7 @@ a {
     .editorial-columns,
     .signal-header,
     .signal-grid,
-    .atlas-grid,
+    .atlas-stack,
     .minimalist-header,
     .minimalist-grid,
     .editorial-identity,

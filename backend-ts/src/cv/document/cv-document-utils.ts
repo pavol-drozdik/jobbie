@@ -132,6 +132,19 @@ export function formatBackendEducationPeriod(row: {
   return [row.start_date, row.end_date].filter(Boolean).join(' - ')
 }
 
+/** ISO `YYYY-MM-DD` → Slovak CV display `DD. MM. YYYY` (zero-padded, spaced dots). */
+export function formatCvBirthDate(raw: string | null | undefined): string {
+  const s = (raw ?? '').trim()
+  if (!s) {
+    return ''
+  }
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
+  if (iso) {
+    return `${iso[3]}. ${iso[2]}. ${iso[1]}`
+  }
+  return s
+}
+
 export function buildContactLineParts(data: {
   email: string
   phone: string
@@ -150,7 +163,7 @@ export function buildContactLineParts(data: {
     identity.push(data.gender)
   }
   if (data.birthDate) {
-    identity.push(`Narodenie: ${data.birthDate}`)
+    identity.push(`Narodenie: ${formatCvBirthDate(data.birthDate)}`)
   }
   if (identity.length) {
     parts.push(identity.join(' | '))
@@ -187,7 +200,7 @@ export function buildContactStackLines(data: {
     identity.push(data.gender)
   }
   if (data.birthDate) {
-    identity.push(`Narodenie: ${data.birthDate}`)
+    identity.push(`Narodenie: ${formatCvBirthDate(data.birthDate)}`)
   }
   if (identity.length) {
     lines.push(identity.join(' | '))

@@ -10,6 +10,7 @@ export type Subscription = StripeCore.Subscription;
 export type SubscriptionCreateParams = StripeCore.SubscriptionCreateParams;
 export type Invoice = StripeCore.Invoice;
 export type InvoiceCreateParams = StripeCore.InvoiceCreateParams;
+export type InvoiceItemCreateParams = StripeCore.InvoiceItemCreateParams;
 export type InvoiceLineItem = StripeCore.InvoiceLineItem;
 export type PaymentIntent = StripeCore.PaymentIntent;
 export type PaymentIntentUpdateParams = StripeCore.PaymentIntentUpdateParams;

@@ -7,7 +7,7 @@ export type CheckoutBillingDetailsInput = {
   registration_number?: string | null;
   /** DIČ (nie IČ DPH) — zobrazí sa na faktúre, nie ako eu_vat. */
   tax_id?: string | null;
-  /** IČ DPH (SK + 10 číslic) — Stripe eu_vat na zákazníkovi. */
+  /** IČ DPH (SK + 10 číslic) — na faktúre cez custom_fields (nie Stripe eu_vat). */
   vat_id?: string | null;
   address_line1?: string | null;
   address_line2?: string | null;
@@ -27,26 +27,70 @@ export type StripeCustomerAddressInput = {
   country: string;
 };
 
-export const DEFAULT_INVOICE_CONSTANT_SYMBOL = '0308';
-
 export const SK_INVOICE_PAYMENT_METHOD_LABEL = 'Kartou / online platba';
+
+/** Line item base text — Predaj kreditov (firma / FO). */
+export const SK_INVOICE_CREDIT_LINE_DESCRIPTION =
+  'Kredity na využívanie online platformy';
+
+/** Line item text — Mesačné predplatné (firma / FO). */
+export const SK_INVOICE_SUBSCRIPTION_LINE_DESCRIPTION =
+  'Mesačné predplatné online platformy';
+
+export const SK_INVOICE_CREDIT_UNIT = 'balík';
+
+export const SK_INVOICE_SUBSCRIPTION_UNIT = 'mesiac';
+
+export const SK_INVOICE_CREDIT_NOTE =
+  'Poskytnutie virtuálnych kreditov na využívanie funkcií a služieb online platformy podľa obchodných podmienok.';
+
+export const SK_INVOICE_SUBSCRIPTION_NOTE =
+  'Poskytnutie prístupu k funkciám a službám online platformy počas predplateného obdobia.';
+
+export const DEFAULT_BILLING_SUPPLIER = {
+  name: 'CoCreate s. r. o.',
+  ico: '56273975',
+  dic: '2122295694',
+  vat: 'SK2122259634',
+  or: 'Zapísaná v OR OS Žilina, oddiel Sro, vložka č. 85095/L',
+} as const;
 
 const MAX_INVOICE_CUSTOM_FIELDS = 4;
 
-const LATE_PAYMENT_FOOTER_SK =
-  'Dovoľujeme si Vás upozorniť, že v prípade nedodržania dátumu splatnosti uvedeného na faktúre Vám môžeme účtovať zákonný úrok z omeškania.';
+const STRIPE_LEGACY_CONSTANT_SYMBOL_FIELD = 'Konštantný symbol';
 
-const DEFAULT_INVOICE_FOOTER_SK = [
-  'Faktúra vyhotovená v súlade so zákonom č. 222/2004 Z. z. o dani z pridanej hodnoty.',
-  'Dodávateľ je platiteľom DPH (údaje dodávateľa sú uvedené v hlavičke faktúry).',
-  LATE_PAYMENT_FOOTER_SK,
-].join(' ');
+export type SkInvoiceProductType = 'credits' | 'subscription';
 
 export type InvoiceCustomField = { name: string; value: string };
 
-export function getInvoiceConstantSymbol(config?: ConfigService): string {
-  const raw = config?.get<string>('STRIPE_INVOICE_CONSTANT_SYMBOL')?.trim();
-  return raw || DEFAULT_INVOICE_CONSTANT_SYMBOL;
+export type SkCreditInvoiceLineItem = {
+  quantity: 1;
+  unit_amount_decimal: string;
+  description: string;
+};
+
+export function buildSkCreditInvoiceLineDescription(creditsAmount: number): string {
+  const count = Math.floor(creditsAmount);
+  if (count < 1) {
+    return SK_INVOICE_CREDIT_LINE_DESCRIPTION;
+  }
+  const label = count === 1 ? '1 kredit' : `${count} kreditov`;
+  return `${SK_INVOICE_CREDIT_LINE_DESCRIPTION} (${label})`;
+}
+
+/** Credit packs are sold as one bundle (qty 1 = pack price), not per-credit unit price. */
+export function buildSkCreditInvoiceLineItem(
+  totalCents: number,
+  creditsAmount: number,
+): SkCreditInvoiceLineItem | null {
+  if (totalCents < 1 || creditsAmount < 1) {
+    return null;
+  }
+  return {
+    quantity: 1,
+    unit_amount_decimal: String(totalCents),
+    description: buildSkCreditInvoiceLineDescription(creditsAmount),
+  };
 }
 
 export function normalizeSkEuVatId(raw: string | null | undefined): string | null {
@@ -99,25 +143,23 @@ export function resolveCustomerAddress(
   );
 }
 
-/** Up to 4 Stripe invoice custom fields (SK buyer IDs + konštantný symbol). */
+/** Strip legacy konštantný symbol from Stripe/customer defaults. */
+export function filterStripeInvoiceCustomFields(
+  customFields: Array<{ name: string; value: string }> | null | undefined,
+): InvoiceCustomField[] {
+  return (customFields ?? []).filter(
+    (f) =>
+      Boolean(f.name?.trim() && f.value?.trim()) &&
+      f.name.trim() !== STRIPE_LEGACY_CONSTANT_SYMBOL_FIELD,
+  );
+}
+
+/** Up to 4 Stripe invoice custom fields (SK buyer IČO / DIČ / IČ DPH). */
 export function buildInvoiceCustomFieldsSk(
   billing?: CheckoutBillingDetailsInput | null,
-  config?: ConfigService,
 ): InvoiceCreateParams['custom_fields'] {
-  const constantField: InvoiceCustomField = {
-    name: 'Konštantný symbol',
-    value: getInvoiceConstantSymbol(config),
-  };
-
-  if (!billing) {
-    return [constantField];
-  }
-
-  if (billing.purchaser_type === 'individual') {
-    return [
-      { name: 'Odberateľ', value: 'Fyzická osoba' },
-      constantField,
-    ];
+  if (!billing || billing.purchaser_type === 'individual') {
+    return undefined;
   }
 
   const buyerFields: InvoiceCustomField[] = [];
@@ -134,8 +176,22 @@ export function buildInvoiceCustomFieldsSk(
     buyerFields.push({ name: 'IČ DPH', value: vat });
   }
 
-  const cappedBuyer = buyerFields.slice(0, MAX_INVOICE_CUSTOM_FIELDS - 1);
-  return [...cappedBuyer, constantField];
+  if (buyerFields.length === 0) {
+    return undefined;
+  }
+  return buyerFields.slice(0, MAX_INVOICE_CUSTOM_FIELDS);
+}
+
+/** Explicit [] clears Stripe Customer invoice_settings defaults (e.g. legacy konštantný symbol). */
+export function resolveInvoiceCustomFieldsSk(
+  billing?: CheckoutBillingDetailsInput | null,
+): NonNullable<InvoiceCreateParams['custom_fields']> {
+  return buildInvoiceCustomFieldsSk(billing) ?? [];
+}
+
+/** Card-only checkout — matches Payment Element `paymentMethodTypes: ['card']` (no bank transfer). */
+export function buildSkCardPaymentIntentTypes(): ['card'] {
+  return ['card'];
 }
 
 /** Card-only invoice payment — no bank transfer / Pay by Square on PDF. */
@@ -149,14 +205,63 @@ export function buildSkInvoiceRendering(): NonNullable<InvoiceCreateParams['rend
   return { pdf: { page_size: 'a4' } };
 }
 
+/** Off by default — enable only when explicitly configured (platiteľ DPH). */
 export function isStripeAutomaticTaxEnabled(config: ConfigService): boolean {
   const raw = config.get<string>('STRIPE_INVOICE_AUTOMATIC_TAX')?.trim().toLowerCase();
-  return raw !== 'false' && raw !== '0' && raw !== 'no';
+  return raw === 'true' || raw === '1' || raw === 'yes';
 }
 
-export function getStripeInvoiceFooter(config: ConfigService): string {
-  const custom = config.get<string>('STRIPE_INVOICE_FOOTER')?.trim();
-  return custom || DEFAULT_INVOICE_FOOTER_SK;
+export function formatSkInvoiceDate(unixSeconds: number): string {
+  try {
+    return new Intl.DateTimeFormat('sk-SK', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(new Date(unixSeconds * 1000));
+  } catch {
+    return String(unixSeconds);
+  }
+}
+
+export function formatSkSubscriptionPeriod(
+  periodStart: number,
+  periodEnd: number,
+): string {
+  return `${formatSkInvoiceDate(periodStart)} – ${formatSkInvoiceDate(periodEnd)}`;
+}
+
+export function getSkInvoiceNote(type: SkInvoiceProductType): string {
+  return type === 'credits'
+    ? SK_INVOICE_CREDIT_NOTE
+    : SK_INVOICE_SUBSCRIPTION_NOTE;
+}
+
+export function getSkInvoiceLineUnit(type: SkInvoiceProductType): string {
+  return type === 'credits'
+    ? SK_INVOICE_CREDIT_UNIT
+    : SK_INVOICE_SUBSCRIPTION_UNIT;
+}
+
+/** Footer for Stripe PDF: poznámka (+ obdobie predplatného). No default legal boilerplate. */
+export function buildSkInvoiceFooter(
+  type: SkInvoiceProductType,
+  config?: ConfigService,
+  subscriptionPeriod?: { start: number; end: number } | null,
+): string {
+  const parts: string[] = [`Poznámka: ${getSkInvoiceNote(type)}`];
+  if (type === 'subscription' && subscriptionPeriod) {
+    parts.push(
+      `Obdobie predplatného: ${formatSkSubscriptionPeriod(
+        subscriptionPeriod.start,
+        subscriptionPeriod.end,
+      )}`,
+    );
+  }
+  const custom = config?.get<string>('STRIPE_INVOICE_FOOTER')?.trim();
+  if (custom) {
+    parts.push(custom);
+  }
+  return parts.join('\n\n');
 }
 
 export function getStripeAccountTaxIds(
@@ -179,6 +284,7 @@ export type BillingInvoiceSupplierDto = {
   ico: string | null;
   dic: string | null;
   vat: string | null;
+  or: string | null;
   configured: boolean;
 };
 
@@ -191,13 +297,15 @@ export function getBillingInvoiceSupplier(
   const ico = config.get<string>('BILLING_SUPPLIER_ICO')?.trim() ?? '';
   const dic = config.get<string>('BILLING_SUPPLIER_DIC')?.trim() ?? '';
   const vat = config.get<string>('BILLING_SUPPLIER_VAT')?.trim() ?? '';
-  const configured = Boolean(name || address || ico || dic || vat);
+  const or = config.get<string>('BILLING_SUPPLIER_OR')?.trim() ?? '';
+  const configured = Boolean(name || address || ico || dic || vat || or);
   return {
-    name: name || 'JOBBIE',
+    name: name || DEFAULT_BILLING_SUPPLIER.name,
     address: address || null,
-    ico: ico || null,
-    dic: dic || null,
-    vat: vat || null,
+    ico: ico || DEFAULT_BILLING_SUPPLIER.ico,
+    dic: dic || DEFAULT_BILLING_SUPPLIER.dic,
+    vat: vat || DEFAULT_BILLING_SUPPLIER.vat,
+    or: or || DEFAULT_BILLING_SUPPLIER.or,
     configured,
   };
 }
