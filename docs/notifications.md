@@ -29,7 +29,7 @@ Unread counts and mark-read flow via Nest API (not client-side Supabase DML on d
 |------|---------|---------|
 | Job email alerts | Cron `*/15` or BullMQ `job-email-alerts` | [`JobAlertsService`](../backend-ts/src/job-alerts/job-alerts.service.ts) |
 | Saved search alerts | Cron `*/15` or BullMQ `search-alerts` | [`SearchAlertsService`](../backend-ts/src/search/search-alerts.service.ts) |
-| Weekly digest | Monday 08:00 | [`NotificationJobsService`](../backend-ts/src/notifications/notification-jobs.service.ts) |
+| Weekly digest | *(disabled)* | [`NotificationJobsService`](../backend-ts/src/notifications/notification-jobs.service.ts) — stub email off until real digest content ships |
 | Re-engagement | Daily 11:00 | `NotificationJobsService` |
 
 Requires `SMTP_HOST`, `SMTP_FROM` (see [email-smtp.md](./email-smtp.md)). Links use `PUBLIC_APP_URL` / `PUBLIC_APP_ORIGIN`.
@@ -98,7 +98,7 @@ Valid unsubscribe categories must include `job_email_alerts` when adding new not
 |-----|----------|------------|
 | Job email alerts | Every 15 min | `job-email-alerts` |
 | Saved search alerts | Every 15 min | `search-alerts` |
-| Weekly digest | Mon 08:00 | Inline cron |
+| Weekly digest | *(disabled)* | Was Mon 08:00; re-enable when digest template has real content |
 | Re-engagement | Daily 11:00 | Inline cron |
 | MailerLite retry | Every 2h at :25 | Inline cron |
 

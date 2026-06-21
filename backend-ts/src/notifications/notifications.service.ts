@@ -25,8 +25,6 @@ import {
   EMAIL_BRAND,
 } from '../email/transactional-email.template';
 
-type LegacyPrefsKey = 'messages' | 'new_applications';
-
 /** Not shown in PWA Upozornenia (device/IP login signals belong in Nastavenia → Zariadenia). */
 const HIDDEN_IN_APP_FEED_TYPES: UserNotificationType[] = ['security_alert'];
 
@@ -89,16 +87,6 @@ export class NotificationsService {
     }
     return (data as { marketing_processing_consent?: boolean })
       .marketing_processing_consent === true;
-  }
-
-  /** @deprecated Use wantsChannel(userId, 'messages'|'applications', 'in_app') */
-  async wantsNotification(userId: string, key: LegacyPrefsKey): Promise<boolean> {
-    const category: NotificationCategory = key === 'messages' ? 'messages' : 'applications';
-    return this.wantsChannel(userId, category, 'in_app');
-  }
-
-  async wantsInApp(userId: string, category: NotificationCategory): Promise<boolean> {
-    return this.wantsChannel(userId, category, 'in_app');
   }
 
   private categoryForType(type: UserNotificationType): NotificationCategory {

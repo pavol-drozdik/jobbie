@@ -3,14 +3,14 @@ export function buildCvDocumentStyles(mode: 'preview' | 'pdf'): string {
   const minHeight = mode === 'pdf' ? '0' : 'var(--paper-height)';
   const resumePageOverflow = 'visible';
   const paginatedExportLayout = `
-body.cv-export-pdf .cv-page-export .resume-page,
-body.cv-export-preview .cv-page-export .resume-page {
+body.cv-export-pdf .cv-page-export .resume-page:not(.cv-sheet),
+body.cv-export-preview .cv-page-export .resume-page:not(.cv-sheet) {
   overflow: visible;
   height: auto;
   min-height: 0;
 }
-body.cv-export-pdf .cv-page-export .monochrome-page,
-body.cv-export-preview .cv-page-export .monochrome-page {
+body.cv-export-pdf .cv-page-export .monochrome-page:not(.cv-sheet),
+body.cv-export-preview .cv-page-export .monochrome-page:not(.cv-sheet) {
   min-height: 0;
 }
 body.cv-export-pdf .cv-page-export .monochrome-grid,
@@ -22,14 +22,13 @@ body.cv-export-preview .cv-page-export .monochrome-side {
   min-height: auto;
   align-self: auto;
 }
-#cv-pagination-measure-host .cv-sheet.atlas-page,
 #cv-pagination-measure-host .cv-sheet.monochrome-page,
 #cv-pagination-measure-host .cv-sheet.minimalist-page {
   height: auto;
   min-height: 0;
   max-height: none;
+  overflow: visible;
 }
-#cv-pagination-measure-host .cv-sheet .atlas-sidebar,
 #cv-pagination-measure-host .cv-sheet .monochrome-side {
   min-height: 0;
   height: auto;
@@ -58,11 +57,47 @@ body.cv-export-pdf .cv-sheet:last-child {
   break-after: auto;
 }
 .cv-sheet.atlas-page {
-  display: grid;
-  grid-template-columns: 40% 1fr;
+  position: relative;
+  display: block;
+  width: var(--paper-width);
   height: var(--paper-height);
   min-height: var(--paper-height);
-  align-items: stretch;
+  max-height: var(--paper-height);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.cv-sheet.atlas-page .atlas-sidebar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: var(--paper-height);
+  min-height: var(--paper-height);
+  margin: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  z-index: 1;
+  background-color: #102432;
+  background-image:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.22), transparent 34%),
+    linear-gradient(180deg, #17324a 0%, #102432 100%);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.cv-sheet.atlas-page .atlas-main {
+  position: relative;
+  margin-left: 40%;
+  width: 60%;
+  min-height: var(--paper-height);
+  max-height: var(--paper-height);
+  overflow: hidden;
+  box-sizing: border-box;
+  background: #ffffff;
+  z-index: 2;
+}
+.cv-sheet.atlas-page article.entry {
+  break-inside: auto;
+  page-break-inside: auto;
 }
 .cv-sheet.editorial-page .editorial-columns {
   display: grid;
@@ -92,22 +127,11 @@ body.cv-export-pdf .cv-sheet:last-child {
   flex: 1;
   min-height: 0;
 }
-.cv-sheet .atlas-sidebar,
 .cv-sheet .monochrome-side {
   min-height: 100%;
   height: 100%;
   align-self: stretch;
-}
-.cv-sheet .atlas-sidebar--chrome,
-.cv-sheet .monochrome-side--chrome {
-  min-height: 100%;
-  height: 100%;
-}
-.cv-sheet .atlas-sidebar--chrome {
-  min-height: var(--paper-height);
-  background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.22), transparent 34%),
-    linear-gradient(180deg, #17324a 0%, #102432 100%);
+  box-sizing: border-box;
 }
 .cv-sheet .monochrome-side--chrome {
   min-height: var(--paper-height);
@@ -126,6 +150,9 @@ body.cv-export-pdf .cv-page-export .resume-page {
   margin: 0 auto;
   width: var(--paper-width);
   box-shadow: none;
+}
+body.cv-export-pdf .cv-page-export .atlas-page {
+  min-height: var(--paper-height);
 }
 `
       : '';
@@ -492,9 +519,9 @@ body.cv-export-preview .cv-sheet {
 } .cv-page-export .atlas-intro {
     padding-bottom: 12px;
     border-bottom: 1px solid var(--line);
-} .cv-page-export .atlas-grid {
-    display: grid;
-    grid-template-columns: 1fr 0.82fr;
+} .cv-page-export .atlas-stack {
+    display: flex;
+    flex-direction: column;
     gap: 18px;
 } .cv-page-export .atlas-main .section-title {
     color: #17324a;
@@ -900,18 +927,14 @@ export function buildCvDocumentPrintStyles(): string {
  * Child elements (e.g. monochrome-header) repaint their own backgrounds on top.
  */
 @media print {
-  /* ─── Atlas ──────────────────────────────────────────────────────────────── */
-  /* Grid is 40% | 60%. Sidebar = left 40% = 84 mm of A4 210 mm.              */
+  /* ─── Atlas (direct-print templates only; Atlas PDF uses JS packer sheets) ─ */
   .cv-page-export .atlas-page {
-    background:
-      radial-gradient(circle at top left, rgba(255, 255, 255, 0.22), transparent 34%),
-      linear-gradient(90deg, #17324a 40%, transparent 40%);
-    background-attachment: fixed;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    position: relative;
+    min-height: var(--paper-height);
+    align-items: stretch;
   }
   .cv-page-export .atlas-sidebar {
-    background: transparent;
+    align-self: stretch;
   }
 
   /* ─── Monochrome ─────────────────────────────────────────────────────────── */

@@ -86,7 +86,19 @@ export class AdminScopeGuard implements CanActivate {
       .select('admin_role, app_role')
       .eq('id', user.id)
       .maybeSingle();
-    if (error || !data) {
+    if (error) {
+      // Legacy DB before 20260530170100_profiles_admin_role.sql — treat app_role=admin as super_admin.
+      if (/admin_role/i.test(error.message)) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn(
+            '[AdminScopeGuard] profiles.admin_role column missing; apply migration 20260530170100_profiles_admin_role.sql',
+          );
+        }
+        return resolveAdminDesktopRole(user.appRole, null);
+      }
+      return 'analyst';
+    }
+    if (!data) {
       return 'analyst';
     }
     const row = data as {

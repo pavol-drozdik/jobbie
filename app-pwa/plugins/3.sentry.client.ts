@@ -1,7 +1,11 @@
 /**
  * Client error tracking and Vue integration. Enable with NUXT_PUBLIC_SENTRY_DSN.
- * Sentry is loaded on idle so it does not compete with first paint.
+ * Loads only after analytics cookie consent.
  */
+import { isAnalyticsConsentGranted } from '~/utils/cookie-consent-state'
+
+let sentryInitialized = false
+
 export default defineNuxtPlugin((nuxtApp) => {
   if (!import.meta.client) {
     return
@@ -13,7 +17,13 @@ export default defineNuxtPlugin((nuxtApp) => {
   }
 
   const initSentry = (): void => {
+    if (sentryInitialized || !isAnalyticsConsentGranted()) {
+      return
+    }
     void import('@sentry/vue').then((Sentry) => {
+      if (!isAnalyticsConsentGranted()) {
+        return
+      }
       const tracesSampleRate = Number(config.sentryTracesSampleRate ?? 0)
       const router = useRouter()
       Sentry.init({
@@ -34,12 +44,22 @@ export default defineNuxtPlugin((nuxtApp) => {
         tracesSampleRate: Number.isFinite(tracesSampleRate) ? tracesSampleRate : 0,
         sendDefaultPii: false,
       })
+      sentryInitialized = true
     })
   }
 
-  if (typeof requestIdleCallback !== 'undefined') {
-    requestIdleCallback(initSentry, { timeout: 4000 })
-  } else {
-    setTimeout(initSentry, 2000)
+  const tryInit = (): void => {
+    if (isAnalyticsConsentGranted()) {
+      initSentry()
+    }
+  }
+
+  tryInit()
+
+  if (import.meta.client) {
+    window.addEventListener('jobbie:analytics-consent-changed', tryInit)
+    nuxtApp.hook('app:unmounted', () => {
+      window.removeEventListener('jobbie:analytics-consent-changed', tryInit)
+    })
   }
 })

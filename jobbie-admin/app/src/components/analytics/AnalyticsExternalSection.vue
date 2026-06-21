@@ -8,21 +8,52 @@ import { useAdminChart } from '../../composables/useAdminChart'
 const props = defineProps<{
   external: ExternalAnalyticsSummary | null
   loading: boolean
-  platformSignups?: number | null
 }>()
 
 const testing = ref(false)
 const testResult = ref<string | null>(null)
 
-const pageviewDivergence = computed(() => {
-  const signups = props.platformSignups
-  const pv = props.external?.posthog?.pageviews
-  if (signups == null || pv == null || !Number.isFinite(signups) || signups <= 0) {
+function divergenceWarning(
+  labelA: string,
+  valueA: number,
+  labelB: string,
+  valueB: number,
+  hint: string,
+): string | null {
+  if (!Number.isFinite(valueA) || !Number.isFinite(valueB) || valueA <= 0 || valueB <= 0) {
     return null
   }
-  const ratio = Math.abs(pv - signups) / signups
+  const ratio = Math.abs(valueA - valueB) / Math.max(valueA, valueB)
   if (ratio <= 0.3) return null
-  return `PostHog pageviews (${fmtNum(pv)}) sa líšia o viac ako 30 % od platformových registrácií (${fmtNum(signups)}) v tom istom období — skontrolujte meranie a filtre.`
+  return `${labelA} (${fmtNum(valueA)}) a ${labelB} (${fmtNum(valueB)}) sa líšia o viac ako 30 % v tom istom období — ${hint}`
+}
+
+/** Cross-check PostHog vs GA4 when both are configured (pageviews ≠ platform signups). */
+const crossCheckWarnings = computed(() => {
+  const warnings: string[] = []
+  const ph = props.external?.posthog
+  const ga = props.external?.ga4
+  if (!ph || !ga) return warnings
+
+  const pageviews = divergenceWarning(
+    'PostHog pageviews',
+    ph.pageviews,
+    'GA4 page views',
+    ga.page_views,
+    'skontrolujte cookie consent, domény a časové filtre.',
+  )
+  if (pageviews) warnings.push(pageviews)
+
+  const users = divergenceWarning(
+    'PostHog návštevníci',
+    ph.users,
+    'GA4 active users',
+    ga.active_users,
+    'PostHog meria len návštevníkov so súhlasom analytiky — rozdiel môže byť očakávaný.',
+  )
+  if (users) warnings.push(users)
+
+  return warnings
 })
 
 async function testConnections() {
@@ -81,12 +112,10 @@ watch(
       sú v sekcii vyššie.
     </p>
 
-    <ul v-if="warnings.length" class="external-warnings">
-      <li v-for="(w, i) in warnings" :key="i">{{ w }}</li>
+    <ul v-if="warnings.length || crossCheckWarnings.length" class="external-warnings">
+      <li v-for="(w, i) in warnings" :key="`api-${i}`">{{ w }}</li>
+      <li v-for="(w, i) in crossCheckWarnings" :key="`xcheck-${i}`">{{ w }}</li>
     </ul>
-    <p v-if="pageviewDivergence" class="external-warnings external-divergence">
-      {{ pageviewDivergence }}
-    </p>
     <div class="external-test-row">
       <button
         type="button"

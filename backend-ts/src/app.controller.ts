@@ -5,6 +5,10 @@ import {
   Res,
   Req,
   NotFoundException,
+  Logger,
+  ServiceUnavailableException,
+  UnauthorizedException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Response, Request } from 'express';
@@ -16,6 +20,8 @@ import { Public } from './auth/public.decorator';
 @Controller()
 @Public()
 export class AppController {
+  private readonly logger = new Logger(AppController.name);
+
   constructor(
     private config: ConfigService,
     private supabase: SupabaseService,
@@ -67,20 +73,32 @@ export class AppController {
    * user counts, and latency histograms for reconnaissance.
    */
   @Get('metrics')
-  async metrics(@Req() req: Request, @Res() res: Response): Promise<void> {
+  @Public()
+  async metrics(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<string> {
     const token = this.config.get<string>('METRICS_BEARER_TOKEN')?.trim();
     if (!token) {
-      res.status(503).send('Metrics disabled: set METRICS_BEARER_TOKEN');
-      return;
+      throw new ServiceUnavailableException(
+        'Metrics disabled: set METRICS_BEARER_TOKEN',
+      );
     }
     const auth = req.headers.authorization?.trim() ?? '';
     const expected = `Bearer ${token}`;
     if (!timingSafeStringEqual(auth, expected)) {
-      res.status(401).send('Unauthorized');
-      return;
+      throw new UnauthorizedException('Unauthorized');
     }
-    res.setHeader('Content-Type', metricsRegistry.contentType);
-    res.send(await metricsRegistry.metrics());
+    try {
+      res.setHeader('Content-Type', metricsRegistry.contentType);
+      return await metricsRegistry.metrics();
+    } catch (err) {
+      this.logger.error(
+        'Prometheus metrics export failed',
+        err instanceof Error ? err.stack : String(err),
+      );
+      throw new InternalServerErrorException('Metrics export failed');
+    }
   }
 
   /** Aggregate counts for marketing / home (no auth). */

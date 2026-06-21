@@ -5,7 +5,13 @@ audit. Each upgrade is a self-contained PR with its own regression suite —
 they are not part of the audit remediation merge so the surface area stays
 small and reviewable.
 
-## Stripe SDK 14 → 18
+## Stripe SDK 14 → 22
+
+**Status (2026-06-15):** Upgraded to `stripe@22.2.1` with `apiVersion: 2026-05-27.dahlia`.
+Compat helpers live in `backend-ts/src/payments/stripe-api-compat.ts` and types in
+`stripe-types.ts`. Replay webhook fixtures and smoke-test checkout after deploy.
+
+## Stripe SDK 14 → 18 (superseded)
 
 **Current:** `stripe@^14.25.0` (`backend-ts/package.json`).
 **Target:** `stripe@^18`.

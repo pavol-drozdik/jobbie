@@ -48,16 +48,6 @@ export type EmployerApplicationStatus = EmployerSettableStatus;
 
 
 
-/** @deprecated use EMPLOYER_SETTABLE_STATUSES */
-
-export const EMPLOYER_APPLICATION_STATUSES = EMPLOYER_SETTABLE_STATUSES;
-
-/** @deprecated use AUTO_REPLY_STATUS_TYPES */
-
-export const AUTO_MESSAGE_STATUS_TYPES = AUTO_REPLY_STATUS_TYPES;
-
-
-
 export class EmployerApplicantStatusPatchDto {
 
   @IsString()

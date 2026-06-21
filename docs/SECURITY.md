@@ -60,7 +60,7 @@ The Nest API uses `SUPABASE_SERVICE_ROLE_KEY` and **must enforce authorization i
 
 **Realtime:** Supabase client may keep access token in memory only (not `localStorage`) for channels.
 
-**Storage uploads:** PWA must **not** call `supabase.storage.upload`. Use `POST /api/storage/job-photo`, `POST /api/storage/profile-avatar`, `POST /api/cv/:id/photo` (multipart), and `POST /api/chat/rooms/:id/media`. Deploy API before migrations that revoke client INSERT on `job-photos` / `profile-avatars`.
+**Storage uploads:** PWA must **not** call `supabase.storage.upload`. Use `POST /api/storage/uploads/init` + `uploadToSignedUrl` + `POST /api/storage/uploads/:id/finalize` (see [uploads.md](./uploads.md)). Deploy API before migrations that revoke client INSERT on `job-photos` / `profile-avatars`.
 
 ## Adding a new protected endpoint
 

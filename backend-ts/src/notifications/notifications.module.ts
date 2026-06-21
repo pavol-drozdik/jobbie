@@ -6,7 +6,6 @@ import { NotificationsController } from './notifications.controller';
 import { PublicNotificationPreferencesController } from './public-notification-preferences.controller';
 import { NotificationsService } from './notifications.service';
 import { PushNotificationService } from './push-notification.service';
-import { TwilioSmsService } from './twilio-sms.service';
 import { PreferenceTokenService } from './preference-token.service';
 import { NotificationJobsService } from './notification-jobs.service';
 
@@ -19,7 +18,6 @@ import { NotificationJobsService } from './notification-jobs.service';
   providers: [
     NotificationsService,
     PushNotificationService,
-    TwilioSmsService,
     PreferenceTokenService,
     NotificationJobsService,
   ],

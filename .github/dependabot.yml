@@ -17,6 +17,10 @@ updates:
       stripe:
         patterns:
           - 'stripe'
+    ignore:
+      # TypeScript 6 needs a dedicated Nest/Vue toolchain pass; stay on 5.x.
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
 
   # PWA (Nuxt)
   - package-ecosystem: npm
@@ -38,6 +42,9 @@ updates:
     ignore:
       # Capacitor 7/8 needs a dedicated migration; stay on 6.x until planned.
       - dependency-name: '@capacitor/*'
+        update-types: ['version-update:semver-major']
+      # TypeScript 6 needs a dedicated Nuxt/Vue toolchain pass; stay on 5.x.
+      - dependency-name: 'typescript'
         update-types: ['version-update:semver-major']
 
   # GitHub Actions versions

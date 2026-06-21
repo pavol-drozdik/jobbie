@@ -9,6 +9,7 @@ import type {
   BlogListResponseDto,
   BlogPostDetailDto,
 } from './blog.dto';
+import { sanitizeBlogBodyHtml } from '../common/sanitize-blog-html.util';
 import { resolveBlogCoverImageUrl } from './blog-cover.util';
 import { resolveBlogExcerpt } from './blog-excerpt.util';
 
@@ -131,7 +132,7 @@ export class BlogService {
 
     return {
       ...this.toListItem(row),
-      body_html: row.body_html ?? '',
+      body_html: sanitizeBlogBodyHtml(row.body_html),
       seo_title: row.seo_title ?? null,
       seo_description: row.seo_description ?? null,
       author_name: row.author_name ?? null,
@@ -173,12 +174,6 @@ export class BlogService {
       reading_time_minutes: row.reading_time_minutes,
     };
   }
-}
-
-export function estimateReadingMinutes(html: string): number {
-  const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  const words = text ? text.split(' ').length : 0;
-  return Math.min(120, Math.max(1, Math.ceil(words / 200)));
 }
 
 export { resolveBlogExcerpt } from './blog-excerpt.util';

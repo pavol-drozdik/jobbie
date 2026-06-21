@@ -357,7 +357,7 @@ export default defineNuxtConfig({
     manifest: {
       name: 'JOBBIE',
       short_name: 'JOBBIE',
-      description: 'Nájdi prácu. Nájdi pomoc.',
+      description: 'Brigády a pracovné ponuky na Slovensku aj v zahraničí.',
       theme_color: BRAND_THEME_COLOR,
       background_color: '#ffffff',
       display: 'standalone',

@@ -219,7 +219,6 @@ watch(
         id="external"
         :external="externalPayload"
         :loading="externalLoading"
-        :platform-signups="payload.funnel?.signups"
         class="analytics-block"
       />
       <AnalyticsFunnelSection :summary="payload" class="analytics-block" />

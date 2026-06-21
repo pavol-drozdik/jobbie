@@ -371,14 +371,14 @@
                 <div class="grid grid-cols-1 gap-4 min-[821px]:grid-cols-2">
                   <div class="flex flex-col gap-2">
                     <label class="font-dmSans text-lg font-semibold text-black">Názov pracovnej pozície</label>
-                    <input v-model="expDraft[row.id]!.position" class="addjob-input cv-field" placeholder="Napr. Predavač" @change="saveExperience(row.id)">
+                    <input v-model="expDraft[row.id]!.position" class="addjob-input cv-field" placeholder="Napr. Predavač" @input="scheduleExperienceSave(row.id)">
                   </div>
                   <div class="flex flex-col gap-2">
                     <label class="font-dmSans text-lg font-semibold text-black">Zamestnávateľ</label>
                     <AppSkCompanyCombobox
                       v-model="expDraft[row.id]!.company"
                       placeholder="Názov firmy"
-                      @update:model-value="saveExperience(row.id)"
+                      @update:model-value="scheduleExperienceSave(row.id)"
                     />
                   </div>
                   <div class="col-span-full flex flex-col gap-2">
@@ -386,7 +386,7 @@
                     <AppSkMunicipalityCombobox
                       v-model="expDraft[row.id]!.city"
                       placeholder="napríklad Bratislava"
-                      @update:model-value="saveExperience(row.id)"
+                      @update:model-value="scheduleExperienceSave(row.id)"
                     />
                   </div>
                   <label class="col-span-full flex cursor-pointer items-center gap-2.5 text-base font-bold text-black/[0.68]">
@@ -526,7 +526,7 @@
                         v-model="eduDraft[row.id]!.school"
                         level="secondary"
                         placeholder="Názov školy"
-                        @update:model-value="saveEducation(row.id)"
+                        @update:model-value="scheduleEducationSave(row.id)"
                       />
                     </div>
                     <label class="col-span-full flex cursor-pointer items-center gap-2.5 text-base font-bold text-black/[0.68]">
@@ -537,11 +537,11 @@
                   <template v-else-if="eduDraft[row.id]!.education_kind === 'course_certificate'">
                     <div class="flex flex-col gap-2">
                       <label class="font-dmSans text-lg font-semibold text-black">Názov kurzu/školenia alebo certifikátu</label>
-                      <input v-model="eduDraft[row.id]!.school" class="addjob-input cv-field" placeholder="Názov kurzu" @change="saveEducation(row.id)">
+                      <input v-model="eduDraft[row.id]!.school" class="addjob-input cv-field" placeholder="Názov kurzu" @input="scheduleEducationSave(row.id)">
                     </div>
                     <div class="flex flex-col gap-2">
                       <label class="font-dmSans text-lg font-semibold text-black">Názov inštitúcie</label>
-                      <input v-model="eduDraft[row.id]!.institution" class="addjob-input cv-field" placeholder="Inštitúcia" @change="saveEducation(row.id)">
+                      <input v-model="eduDraft[row.id]!.institution" class="addjob-input cv-field" placeholder="Inštitúcia" @input="scheduleEducationSave(row.id)">
                     </div>
                   </template>
                   <template v-else>
@@ -551,12 +551,12 @@
                         v-model="eduDraft[row.id]!.school"
                         level="university"
                         placeholder="Názov školy"
-                        @update:model-value="saveEducation(row.id)"
+                        @update:model-value="scheduleEducationSave(row.id)"
                       />
                     </div>
                     <div class="flex flex-col gap-2">
                       <label class="font-dmSans text-lg font-semibold text-black">Odbor</label>
-                      <input v-model="eduDraft[row.id]!.field" class="addjob-input cv-field" placeholder="Odbor" @change="saveEducation(row.id)">
+                      <input v-model="eduDraft[row.id]!.field" class="addjob-input cv-field" placeholder="Odbor" @input="scheduleEducationSave(row.id)">
                     </div>
                   </template>
                   <div class="col-span-full flex flex-col gap-2">
@@ -670,7 +670,7 @@
                 <div class="grid grid-cols-1 gap-4 min-[821px]:grid-cols-2">
                   <div class="flex flex-col gap-2">
                     <label class="font-dmSans text-lg font-semibold text-black">Jazyk</label>
-                    <input v-model="langDraft[row.id]!.language" class="addjob-input cv-field" placeholder="Napr. Angličtina" @change="saveLanguage(row.id)">
+                    <input v-model="langDraft[row.id]!.language" class="addjob-input cv-field" placeholder="Napr. Angličtina" @input="onLangNameInput(row.id)">
                   </div>
                   <div class="flex flex-col gap-2">
                     <label class="font-dmSans text-lg font-semibold text-black">Úroveň</label>
@@ -985,12 +985,14 @@
 <script setup lang="ts">
 // CV editor: parentStep 1–3 wizard; section rows use *Draft maps until @change saves to API.
 // visible_to_employers controls employer DB visibility (GDPR — server enforces show_contact_details separately).
-import { computed, reactive, watch } from 'vue'
+import { computed, onMounted, reactive, watch } from 'vue'
 import type {
   CvAggregateResponseDto,
   CvHeaderResponseDto,
   EducationResponseDto,
   ExperienceResponseDto,
+  LanguageResponseDto,
+  SkillResponseDto,
 } from '~/types/cv'
 import {
   CV_DRIVING_LICENSE_CATEGORIES,
@@ -1028,9 +1030,9 @@ import {
   prepareCvProfilePhotoForUpload,
   validateImageUpload,
 } from '~/utils/image-compression'
-import { prepareCvRichTextForSave } from '~/composables/useCvRichTextField'
+import { checkCvRichTextPlainLimit } from '~/composables/useCvRichTextField'
+import { useCvSectionSaveQueue } from '~/composables/useCvSectionSaveQueue'
 import { richTextPlainLength } from '~/utils/rich-text-plain-length'
-import { useDebouncedFn } from '~/utils/debounce'
 
 const CV_RICH_LIMIT_HOBBIES = 250
 const CV_RICH_LIMIT_ABOUT = 500
@@ -1050,6 +1052,44 @@ const emit = defineEmits<{
   goStep: [step: number]
   setSection: [section: string]
 }>()
+
+const flushHeaderSave = inject<(() => Promise<void>) | undefined>('cvFlushHeaderSave', undefined)
+const registerSectionSaveFlusher = inject<((fn: () => Promise<void>) => void) | undefined>(
+  'cvRegisterSectionSaveFlusher',
+  undefined,
+)
+
+const noticeDialogOpen = ref(false)
+const noticeDialogMessage = ref('')
+
+function showNotice(message: string): void {
+  noticeDialogMessage.value = message
+  noticeDialogOpen.value = true
+}
+
+const sectionSaveTail = ref(Promise.resolve())
+
+async function runSectionSave(task: () => Promise<void>): Promise<void> {
+  const next = sectionSaveTail.value.then(task).catch((err: unknown) => {
+    showNotice(err instanceof Error ? err.message : 'Uloženie zlyhalo.')
+    throw err
+  })
+  sectionSaveTail.value = next.then(
+    () => undefined,
+    () => undefined,
+  )
+  await next
+}
+
+async function flushAllSectionSaves(): Promise<void> {
+  await Promise.all([
+    experienceSaveQueue.flush(),
+    educationSaveQueue.flush(),
+    skillSaveQueue.flush(),
+    languageSaveQueue.flush(),
+  ])
+  await sectionSaveTail.value
+}
 
 const shellRef = ref<HTMLElement | null>(null)
 const sidebarRef = ref<HTMLElement | null>(null)
@@ -1181,41 +1221,12 @@ const sortedExperience = computed(() => {
   return list
 })
 
-watch(
-  () => props.aggregate.experience,
-  (list) => {
-    for (const row of list) {
-      const start = isoDateToMonthYear(row.start_date)
-      const end = isoDateToMonthYear(row.end_date)
-      const sm = start.month != null && start.year != null ? `${monthOptions[start.month]}` : 'Mesiac'
-      const em = end.month != null && end.year != null ? `${monthOptions[end.month]}` : 'Mesiac'
-      expDraft[row.id] = {
-        position: row.position,
-        company: row.company,
-        city: row.city ?? '',
-        current: row.current,
-        fromYear: formatYearDraftValue(start.year),
-        fromMonth: sm,
-        toYear: formatYearDraftValue(end.year),
-        toMonth: em,
-        description: row.description ?? '',
-      }
-    }
-  },
-  { immediate: true, deep: true },
-)
-
-function expLabel(id: string): string {
-  const i = sortedExperience.value.findIndex((r) => r.id === id)
-  return `Zamestnanie ${sortedExperience.value.length - i}`
-}
-
-function applyExperienceDraftFromRow(id: string, row: ExperienceResponseDto): void {
+function experienceRowToDraft(row: ExperienceResponseDto): ExpDraft {
   const start = isoDateToMonthYear(row.start_date)
   const end = isoDateToMonthYear(row.end_date)
   const sm = start.month != null && start.year != null ? `${monthOptions[start.month]}` : 'Mesiac'
   const em = end.month != null && end.year != null ? `${monthOptions[end.month]}` : 'Mesiac'
-  expDraft[id] = {
+  return {
     position: row.position,
     company: row.company,
     city: row.city ?? '',
@@ -1228,7 +1239,42 @@ function applyExperienceDraftFromRow(id: string, row: ExperienceResponseDto): vo
   }
 }
 
+function expLabel(id: string): string {
+  const i = sortedExperience.value.findIndex((r) => r.id === id)
+  return `Zamestnanie ${sortedExperience.value.length - i}`
+}
+
+async function persistExperienceRow(id: string): Promise<void> {
+  const d = expDraft[id]
+  if (!d) return
+  const fromMy: CvMonthYear = monthYearFromYearAndSkLabel(d.fromYear, d.fromMonth, 1)
+  const endMy: CvMonthYear =
+    d.current ?
+      { month: null, year: null }
+    : monthYearFromYearAndSkLabel(d.toYear, d.toMonth, 12)
+  await patchSection<ExperienceResponseDto>(props.cvId, 'experience', id, {
+    position: d.position,
+    company: d.company,
+    city: d.city || null,
+    country: null,
+    start_date: monthYearToIsoFirstDay(fromMy),
+    end_date: d.current ? null : monthYearToIsoFirstDay(endMy),
+    current: d.current,
+    description: d.description || null,
+    bullets: [],
+  })
+}
+
+const experienceSaveQueue = useCvSectionSaveQueue((id) =>
+  runSectionSave(() => persistExperienceRow(id)),
+)
+
+function scheduleExperienceSave(id: string): void {
+  experienceSaveQueue.markDirty(id)
+}
+
 async function addExperience(): Promise<void> {
+  await flushAllSectionSaves()
   await postSection(props.cvId, 'experience', {
     position: '',
     company: '',
@@ -1242,25 +1288,8 @@ async function addExperience(): Promise<void> {
 }
 
 async function saveExperience(id: string): Promise<void> {
-  const d = expDraft[id]
-  if (!d) return
-  const fromMy: CvMonthYear = monthYearFromYearAndSkLabel(d.fromYear, d.fromMonth, 1)
-  const endMy: CvMonthYear =
-    d.current ?
-      { month: null, year: null }
-    : monthYearFromYearAndSkLabel(d.toYear, d.toMonth, 12)
-  const updated = await patchSection<ExperienceResponseDto>(props.cvId, 'experience', id, {
-    position: d.position,
-    company: d.company,
-    city: d.city || null,
-    country: null,
-    start_date: monthYearToIsoFirstDay(fromMy),
-    end_date: d.current ? null : monthYearToIsoFirstDay(endMy),
-    current: d.current,
-    description: d.description || null,
-    bullets: [],
-  })
-  applyExperienceDraftFromRow(id, updated)
+  scheduleExperienceSave(id)
+  await experienceSaveQueue.flush()
 }
 
 function onGenderPick(value: string): void {
@@ -1271,21 +1300,21 @@ function onExpMonth(id: string, field: 'fromMonth' | 'toMonth', value: string): 
   const d = expDraft[id]
   if (!d) return
   d[field] = value
-  void saveExperience(id)
+  scheduleExperienceSave(id)
 }
 
 function onExpFromYear(id: string, value: string): void {
   const d = expDraft[id]
   if (!d) return
   d.fromYear = value
-  void saveExperience(id)
+  scheduleExperienceSave(id)
 }
 
 function onExpToYear(id: string, value: string): void {
   const d = expDraft[id]
   if (!d) return
   d.toYear = value
-  void saveExperience(id)
+  scheduleExperienceSave(id)
 }
 
 async function onExpCurrent(id: string): Promise<void> {
@@ -1297,6 +1326,7 @@ async function onExpCurrent(id: string): Promise<void> {
 }
 
 async function removeExperience(id: string): Promise<void> {
+  await flushAllSectionSaves()
   await deleteSectionRow(props.cvId, 'experience', id)
   emit('reload')
 }
@@ -1324,29 +1354,23 @@ const sortedEducation = computed(() =>
   [...props.aggregate.education].sort((a, b) => (b.sort_order ?? 0) - (a.sort_order ?? 0)),
 )
 
-watch(
-  () => props.aggregate.education,
-  (list) => {
-    for (const row of list) {
-      const start = isoDateToMonthYear(row.start_date)
-      const end = isoDateToMonthYear(row.end_date)
-      eduDraft[row.id] = {
-        education_kind: (row.education_kind as EduDraft['education_kind']) || 'university',
-        school: row.school,
-        field: row.field ?? '',
-        institution: row.institution ?? '',
-        has_graduation: row.has_graduation,
-        fromYear: formatYearDraftValue(start.year ?? row.start_year),
-        toYear: row.currently_studying
-          ? CV_EDU_END_ONGOING
-          : formatYearDraftValue(end.year ?? row.end_year),
-        description: row.description ?? '',
-        currently_studying: row.currently_studying,
-      }
-    }
-  },
-  { immediate: true, deep: true },
-)
+function educationRowToDraft(row: EducationResponseDto): EduDraft {
+  const start = isoDateToMonthYear(row.start_date)
+  const end = isoDateToMonthYear(row.end_date)
+  return {
+    education_kind: (row.education_kind as EduDraft['education_kind']) || 'university',
+    school: row.school,
+    field: row.field ?? '',
+    institution: row.institution ?? '',
+    has_graduation: row.has_graduation,
+    fromYear: formatYearDraftValue(start.year ?? row.start_year),
+    toYear: row.currently_studying
+      ? CV_EDU_END_ONGOING
+      : formatYearDraftValue(end.year ?? row.end_year),
+    description: row.description ?? '',
+    currently_studying: row.currently_studying,
+  }
+}
 
 function eduLabel(id: string): string {
   const i = sortedEducation.value.findIndex((r) => r.id === id)
@@ -1365,29 +1389,11 @@ function formatYearDraftValue(year: number | null | undefined): string {
   return String(year)
 }
 
-function applyEducationDraftFromRow(id: string, row: EducationResponseDto): void {
-  const start = isoDateToMonthYear(row.start_date)
-  const end = isoDateToMonthYear(row.end_date)
-  eduDraft[id] = {
-    education_kind: (row.education_kind as EduDraft['education_kind']) || 'university',
-    school: row.school,
-    field: row.field ?? '',
-    institution: row.institution ?? '',
-    has_graduation: row.has_graduation,
-    fromYear: formatYearDraftValue(start.year ?? row.start_year),
-    toYear: row.currently_studying
-      ? CV_EDU_END_ONGOING
-      : formatYearDraftValue(end.year ?? row.end_year),
-    description: row.description ?? '',
-    currently_studying: row.currently_studying,
-  }
-}
-
 function onEduFromYear(id: string, value: string): void {
   const d = eduDraft[id]
   if (!d) return
   d.fromYear = value
-  void saveEducation(id)
+  scheduleEducationSave(id)
 }
 
 function onEduToYear(id: string, value: string): void {
@@ -1395,10 +1401,49 @@ function onEduToYear(id: string, value: string): void {
   if (!d) return
   d.toYear = value
   d.currently_studying = value === CV_EDU_END_ONGOING
-  void saveEducation(id)
+  scheduleEducationSave(id)
+}
+
+async function persistEducationRow(id: string): Promise<void> {
+  const d = eduDraft[id]
+  if (!d) return
+  const fromY = d.fromYear ? Number.parseInt(d.fromYear, 10) : null
+  const toRaw = d.toYear.trim()
+  const currently = toRaw === CV_EDU_END_ONGOING || d.currently_studying
+  const toY =
+    currently && toRaw === CV_EDU_END_ONGOING ? null : d.toYear ? Number.parseInt(d.toYear, 10) : null
+  const startIso = fromY != null ? monthYearToIsoFirstDay({ year: fromY, month: 1 }) : null
+  const endIso =
+    currently ? null : toY != null ? monthYearToIsoFirstDay({ year: toY, month: 12 }) : null
+  const row = props.aggregate.education.find((r) => r.id === id)
+  await patchSection<EducationResponseDto>(props.cvId, 'education', id, {
+    education_kind: d.education_kind,
+    school: d.school,
+    field: d.field || null,
+    institution: d.institution || null,
+    city: null,
+    country: null,
+    start_date: startIso,
+    end_date: endIso,
+    start_year: fromY,
+    end_year: toY,
+    currently_studying: currently,
+    has_graduation: d.education_kind === 'secondary' ? d.has_graduation : Boolean(row?.has_graduation),
+    description: d.description || null,
+    bullets: [],
+  })
+}
+
+const educationSaveQueue = useCvSectionSaveQueue((id) =>
+  runSectionSave(() => persistEducationRow(id)),
+)
+
+function scheduleEducationSave(id: string): void {
+  educationSaveQueue.markDirty(id)
 }
 
 async function addEducation(): Promise<void> {
+  await flushAllSectionSaves()
   await postSection(props.cvId, 'education', {
     education_kind: 'university',
     school: '',
@@ -1415,37 +1460,12 @@ async function addEducation(): Promise<void> {
 }
 
 async function saveEducation(id: string): Promise<void> {
-  const d = eduDraft[id]
-  if (!d) return
-  const fromY = d.fromYear ? Number.parseInt(d.fromYear, 10) : null
-  const toRaw = d.toYear.trim()
-  const currently = toRaw === CV_EDU_END_ONGOING || d.currently_studying
-  const toY =
-    currently && toRaw === CV_EDU_END_ONGOING ? null : d.toYear ? Number.parseInt(d.toYear, 10) : null
-  const startIso = fromY != null ? monthYearToIsoFirstDay({ year: fromY, month: 1 }) : null
-  const endIso =
-    currently ? null : toY != null ? monthYearToIsoFirstDay({ year: toY, month: 12 }) : null
-  const row = props.aggregate.education.find((r) => r.id === id)
-  const updated = await patchSection<EducationResponseDto>(props.cvId, 'education', id, {
-    education_kind: d.education_kind,
-    school: d.school,
-    field: d.field || null,
-    institution: d.institution || null,
-    city: null,
-    country: null,
-    start_date: startIso,
-    end_date: endIso,
-    start_year: fromY,
-    end_year: toY,
-    currently_studying: currently,
-    has_graduation: d.education_kind === 'secondary' ? d.has_graduation : Boolean(row?.has_graduation),
-    description: d.description || null,
-    bullets: [],
-  })
-  applyEducationDraftFromRow(id, updated)
+  scheduleEducationSave(id)
+  await educationSaveQueue.flush()
 }
 
 async function removeEducation(id: string): Promise<void> {
+  await flushAllSectionSaves()
   await deleteSectionRow(props.cvId, 'education', id)
   emit('reload')
 }
@@ -1457,24 +1477,13 @@ const skillLevelDropdownOptions: { value: string; label: string }[] = [
   ...skillLevels.map((l) => ({ value: l, label: l })),
 ]
 const sortedSkills = computed(() => [...props.aggregate.skills].sort((a, b) => (b.sort_order ?? 0) - (a.sort_order ?? 0)))
-watch(
-  () => props.aggregate.skills,
-  (list) => {
-    for (const row of list) {
-      skillDraft[row.id] = { skill_name: row.skill_name ?? '', level: row.level ?? '' }
-    }
-  },
-  { immediate: true, deep: true },
-)
+
 function skillLabel(id: string): string {
   const i = sortedSkills.value.findIndex((r) => r.id === id)
   return `Znalosť ${sortedSkills.value.length - i}`
 }
-async function addSkill(): Promise<void> {
-  await postSection(props.cvId, 'skills', { skill_name: '', level: null })
-  emit('reload')
-}
-async function saveSkill(id: string): Promise<void> {
+
+async function persistSkillRow(id: string): Promise<void> {
   const d = skillDraft[id]
   if (!d) return
   const trimmed = d.skill_name.trim()
@@ -1482,13 +1491,31 @@ async function saveSkill(id: string): Promise<void> {
     const row = await ensureCatalogSkill(trimmed)
     d.skill_name = row?.name ?? trimmed
   }
-  await patchSection(props.cvId, 'skills', id, {
+  await patchSection<SkillResponseDto>(props.cvId, 'skills', id, {
     skill_name: d.skill_name.trim(),
     level: d.level === '' ? null : d.level,
   })
+}
+
+const skillSaveQueue = useCvSectionSaveQueue((id) => runSectionSave(() => persistSkillRow(id)))
+
+function scheduleSkillSave(id: string): void {
+  skillSaveQueue.markDirty(id)
+}
+
+async function addSkill(): Promise<void> {
+  await flushAllSectionSaves()
+  await postSection(props.cvId, 'skills', { skill_name: '', level: null })
   emit('reload')
 }
+
+async function saveSkill(id: string): Promise<void> {
+  scheduleSkillSave(id)
+  await skillSaveQueue.flush()
+}
+
 async function removeSkill(id: string): Promise<void> {
+  await flushAllSectionSaves()
   await deleteSectionRow(props.cvId, 'skills', id)
   emit('reload')
 }
@@ -1509,33 +1536,42 @@ const languageLevelDropdownOptions: { value: string; label: string }[] = [
 const sortedLanguages = computed(() =>
   [...props.aggregate.languages].sort((a, b) => (b.sort_order ?? 0) - (a.sort_order ?? 0)),
 )
-watch(
-  () => props.aggregate.languages,
-  (list) => {
-    for (const row of list) {
-      langDraft[row.id] = { language: row.language ?? '', level: row.level ?? '' }
-    }
-  },
-  { immediate: true, deep: true },
-)
+
 function langLabel(id: string): string {
   const i = sortedLanguages.value.findIndex((r) => r.id === id)
   return `Jazyk ${sortedLanguages.value.length - i}`
 }
-async function addLanguage(): Promise<void> {
-  await postSection(props.cvId, 'languages', { language: '', level: null })
-  emit('reload')
-}
-async function saveLanguage(id: string): Promise<void> {
+
+async function persistLanguageRow(id: string): Promise<void> {
   const d = langDraft[id]
   if (!d) return
-  await patchSection(props.cvId, 'languages', id, {
+  await patchSection<LanguageResponseDto>(props.cvId, 'languages', id, {
     language: d.language.trim(),
     level: d.level === '' ? null : d.level,
   })
+}
+
+const languageSaveQueue = useCvSectionSaveQueue((id) =>
+  runSectionSave(() => persistLanguageRow(id)),
+)
+
+function scheduleLanguageSave(id: string): void {
+  languageSaveQueue.markDirty(id)
+}
+
+async function addLanguage(): Promise<void> {
+  await flushAllSectionSaves()
+  await postSection(props.cvId, 'languages', { language: '', level: null })
   emit('reload')
 }
+
+async function saveLanguage(id: string): Promise<void> {
+  scheduleLanguageSave(id)
+  await languageSaveQueue.flush()
+}
+
 async function removeLanguage(id: string): Promise<void> {
+  await flushAllSectionSaves()
   await deleteSectionRow(props.cvId, 'languages', id)
   emit('reload')
 }
@@ -1544,21 +1580,25 @@ async function onSkillName(id: string, value: string): Promise<void> {
   const d = skillDraft[id]
   if (!d) return
   d.skill_name = value
-  await saveSkill(id)
+  scheduleSkillSave(id)
 }
 
 function onSkillLevel(id: string, value: string): void {
   const d = skillDraft[id]
   if (!d) return
   d.level = value
-  void saveSkill(id)
+  scheduleSkillSave(id)
 }
 
 function onLangLevel(id: string, value: string): void {
   const d = langDraft[id]
   if (!d) return
   d.level = value
-  void saveLanguage(id)
+  scheduleLanguageSave(id)
+}
+
+function onLangNameInput(id: string): void {
+  scheduleLanguageSave(id)
 }
 
 const licenseButtons = CV_DRIVING_LICENSE_CATEGORIES
@@ -1641,70 +1681,54 @@ const aboutCount = computed(() => richTextPlainLength(props.header.about_me))
 const extraCount = computed(() => richTextPlainLength(props.header.additional_skills_info))
 
 function onHobbiesRichHtml(html: string): void {
-  const prepared = prepareCvRichTextForSave(html, CV_RICH_LIMIT_HOBBIES, 'Záujmy')
-  if ('error' in prepared) {
-    showNotice(prepared.error)
+  const check = checkCvRichTextPlainLimit(html, CV_RICH_LIMIT_HOBBIES, 'Záujmy')
+  if (!check.ok) {
+    showNotice(check.message ?? 'Text je príliš dlhý.')
     return
   }
-  patch({ hobbies: prepared.value || null })
+  patch({ hobbies: html.trim() ? html : null })
 }
 
 function onAboutRichHtml(html: string): void {
-  const prepared = prepareCvRichTextForSave(html, CV_RICH_LIMIT_ABOUT, 'Osobné zhrnutie')
-  if ('error' in prepared) {
-    showNotice(prepared.error)
+  const check = checkCvRichTextPlainLimit(html, CV_RICH_LIMIT_ABOUT, 'Osobné zhrnutie')
+  if (!check.ok) {
+    showNotice(check.message ?? 'Text je príliš dlhý.')
     return
   }
-  patch({ about_me: prepared.value || null })
+  patch({ about_me: html.trim() ? html : null })
 }
 
 function onExtraRichHtml(html: string): void {
-  const prepared = prepareCvRichTextForSave(html, CV_RICH_LIMIT_EXTRA, 'Doplňujúce informácie')
-  if ('error' in prepared) {
-    showNotice(prepared.error)
+  const check = checkCvRichTextPlainLimit(html, CV_RICH_LIMIT_EXTRA, 'Doplňujúce informácie')
+  if (!check.ok) {
+    showNotice(check.message ?? 'Text je príliš dlhý.')
     return
   }
-  patch({ additional_skills_info: prepared.value || null })
+  patch({ additional_skills_info: html.trim() ? html : null })
 }
-
-const debouncedSaveExperience = useDebouncedFn((id: string) => {
-  void saveExperience(id)
-}, 700)
-
-const debouncedSaveEducation = useDebouncedFn((id: string) => {
-  void saveEducation(id)
-}, 700)
 
 function onExpDescriptionHtml(id: string, html: string): void {
   const d = expDraft[id]
   if (!d) return
-  const prepared = prepareCvRichTextForSave(html, CV_RICH_LIMIT_SECTION, 'Popis práce')
-  if ('error' in prepared) {
-    showNotice(prepared.error)
+  const check = checkCvRichTextPlainLimit(html, CV_RICH_LIMIT_SECTION, 'Popis práce')
+  if (!check.ok) {
+    showNotice(check.message ?? 'Text je príliš dlhý.')
     return
   }
-  d.description = prepared.value
-  debouncedSaveExperience(id)
+  d.description = html.trim() ? html : ''
+  scheduleExperienceSave(id)
 }
 
 function onEduDescriptionHtml(id: string, html: string): void {
   const d = eduDraft[id]
   if (!d) return
-  const prepared = prepareCvRichTextForSave(html, CV_RICH_LIMIT_SECTION, 'Popis štúdia')
-  if ('error' in prepared) {
-    showNotice(prepared.error)
+  const check = checkCvRichTextPlainLimit(html, CV_RICH_LIMIT_SECTION, 'Popis štúdia')
+  if (!check.ok) {
+    showNotice(check.message ?? 'Text je príliš dlhý.')
     return
   }
-  d.description = prepared.value
-  debouncedSaveEducation(id)
-}
-
-const noticeDialogOpen = ref(false)
-const noticeDialogMessage = ref('')
-
-function showNotice(message: string): void {
-  noticeDialogMessage.value = message
-  noticeDialogOpen.value = true
+  d.description = html.trim() ? html : ''
+  scheduleEducationSave(id)
 }
 
 async function onPhotoFile(ev: Event): Promise<void> {
@@ -1798,8 +1822,88 @@ function inputStrOrNull(ev: Event): string | null {
 }
 
 function emitGoStep(step: number): void {
-  emit('goStep', step)
+  void (async () => {
+    await flushHeaderSave?.()
+    await flushAllSectionSaves()
+    emit('goStep', step)
+  })()
 }
+
+watch(
+  () => props.aggregate.experience,
+  (list) => {
+    for (const row of list) {
+      if (!experienceSaveQueue.isDirty(row.id)) {
+        expDraft[row.id] = experienceRowToDraft(row)
+      }
+    }
+    for (const id of Object.keys(expDraft)) {
+      if (!list.some((row) => row.id === id)) {
+        delete expDraft[id]
+        experienceSaveQueue.clearDirty(id)
+      }
+    }
+  },
+  { immediate: true },
+)
+
+watch(
+  () => props.aggregate.education,
+  (list) => {
+    for (const row of list) {
+      if (!educationSaveQueue.isDirty(row.id)) {
+        eduDraft[row.id] = educationRowToDraft(row)
+      }
+    }
+    for (const id of Object.keys(eduDraft)) {
+      if (!list.some((row) => row.id === id)) {
+        delete eduDraft[id]
+        educationSaveQueue.clearDirty(id)
+      }
+    }
+  },
+  { immediate: true },
+)
+
+watch(
+  () => props.aggregate.skills,
+  (list) => {
+    for (const row of list) {
+      if (!skillSaveQueue.isDirty(row.id)) {
+        skillDraft[row.id] = { skill_name: row.skill_name ?? '', level: row.level ?? '' }
+      }
+    }
+    for (const id of Object.keys(skillDraft)) {
+      if (!list.some((row) => row.id === id)) {
+        delete skillDraft[id]
+        skillSaveQueue.clearDirty(id)
+      }
+    }
+  },
+  { immediate: true },
+)
+
+watch(
+  () => props.aggregate.languages,
+  (list) => {
+    for (const row of list) {
+      if (!languageSaveQueue.isDirty(row.id)) {
+        langDraft[row.id] = { language: row.language ?? '', level: row.level ?? '' }
+      }
+    }
+    for (const id of Object.keys(langDraft)) {
+      if (!list.some((row) => row.id === id)) {
+        delete langDraft[id]
+        languageSaveQueue.clearDirty(id)
+      }
+    }
+  },
+  { immediate: true },
+)
+
+onMounted(() => {
+  registerSectionSaveFlusher?.(flushAllSectionSaves)
+})
 
 function scrollToSection(id: string): void {
   activeSection.value = id

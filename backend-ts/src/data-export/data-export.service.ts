@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import archiver = require('archiver');
 import { PassThrough } from 'stream';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CvService } from '../cv/cv.service';
@@ -39,6 +38,15 @@ export class DataExportService {
     const { data: consents } = await client
       .from('consent_events')
       .select('consent_type, granted, source, recorded_at')
+      .eq('user_id', userId)
+      .order('recorded_at', { ascending: false })
+      .limit(500);
+
+    const { data: cookieConsents } = await client
+      .from('cookie_consent_log')
+      .select(
+        'action, analytics, marketing, personalization, policy_version, source, page_path, recorded_at',
+      )
       .eq('user_id', userId)
       .order('recorded_at', { ascending: false })
       .limit(500);
@@ -96,6 +104,7 @@ export class DataExportService {
           }
         : null,
       consent_events: consents ?? [],
+      cookie_consent_log: cookieConsents ?? [],
       job_email_alerts: alerts ?? [],
       applications: applications ?? [],
       chat_rooms: (chatRooms ?? []).map((r) => ({
@@ -112,7 +121,10 @@ export class DataExportService {
     const payload = await this.buildExportPayload(userId);
     const json = JSON.stringify(payload, null, 2);
     return new Promise((resolve, reject) => {
-      const archive = archiver('zip', { zlib: { level: 9 } });
+      // archiver@8 is ESM — load at runtime so Jest does not parse index.js at import time.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { ZipArchive } = require('archiver') as typeof import('archiver');
+      const archive = new ZipArchive({ zlib: { level: 9 } });
       const stream = new PassThrough();
       const chunks: Buffer[] = [];
       stream.on('data', (chunk: Buffer) => chunks.push(chunk));

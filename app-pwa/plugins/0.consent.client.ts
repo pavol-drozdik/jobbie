@@ -1,9 +1,10 @@
 import { applyAnalyticsConsent, initGtagConsentDefault } from '~/utils/analytics-consent'
 import {
-  CONSENT_COOKIE_MAX_AGE,
-  CONSENT_COOKIE_NAME,
-  type CookieConsentPayload,
+  categoriesFromPayload,
+  ensureConsentVisitorId,
+  hasValidConsentChoice,
   setAnalyticsConsentGranted,
+  useConsentCookieRef,
 } from '~/utils/cookie-consent-state'
 import { openCookiePreferences } from '~/utils/cookie-consent-ui'
 
@@ -17,16 +18,12 @@ export default defineNuxtPlugin((nuxtApp) => {
   initGtagConsentDefault()
   nuxtApp.provide('openCookiePreferences', openCookiePreferences)
 
-  const consentCookie = useCookie<CookieConsentPayload | null>(CONSENT_COOKIE_NAME, {
-    maxAge: CONSENT_COOKIE_MAX_AGE,
-    sameSite: 'lax',
-    secure: !import.meta.dev,
-    path: '/',
-    default: () => null,
-  })
+  ensureConsentVisitorId()
+  const consentCookie = useConsentCookieRef()
 
-  if (consentCookie.value?.v === 1) {
-    applyAnalyticsConsent(consentCookie.value.analytics)
+  if (hasValidConsentChoice(consentCookie.value)) {
+    const categories = categoriesFromPayload(consentCookie.value)
+    applyAnalyticsConsent(categories.analytics)
     return
   }
 

@@ -17,6 +17,12 @@ export const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/infrastructure',
+      name: 'infrastructure',
+      component: () => import('./views/InfrastructureView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/support',
       name: 'support',
       component: () => import('./views/SupportHubView.vue'),
@@ -50,6 +56,12 @@ export const router = createRouter({
       path: '/audit',
       name: 'audit',
       component: () => import('./views/AuditView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/consent-log',
+      name: 'consent-log',
+      component: () => import('./views/ConsentLogView.vue'),
       meta: { requiresAuth: true },
     },
     {

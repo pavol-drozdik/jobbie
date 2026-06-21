@@ -9,7 +9,7 @@
       <button
         type="button"
         class="cursor-pointer border-none bg-transparent font-semibold text-black/80 underline decoration-black/35 underline-offset-2 outline-none hover:text-black hover:decoration-black/60 focus-visible:ring-2 focus-visible:ring-marketing-green focus-visible:ring-offset-2"
-        @click="showCookiePreferencesModal"
+        @click="showCookiePreferencesModal('footer')"
       >
         {{ S.footerCookieSettings }}
       </button>

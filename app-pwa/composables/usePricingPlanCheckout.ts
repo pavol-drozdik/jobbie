@@ -12,15 +12,9 @@ export type PricingMySubscription = {
 export function usePricingPlanCheckout(options: {
   returnBasePath: string
   publicMode?: boolean
-  embedded?: boolean
   showDowngradeConfirm?: boolean
 }) {
-  const {
-    returnBasePath,
-    publicMode = false,
-    embedded = false,
-    showDowngradeConfirm = false,
-  } = options
+  const { returnBasePath, publicMode = false, showDowngradeConfirm = false } = options
 
   const { requireEmployerCheckout } = usePricingCheckout(returnBasePath)
   const {
@@ -34,7 +28,6 @@ export function usePricingPlanCheckout(options: {
   const { session, refreshUser } = useAuth()
   const route = useRoute()
   const router = useRouter()
-  const requestURL = useRequestURL()
 
   const plans = ref<PlanRow[]>([])
   const mySub = ref<PricingMySubscription | null>(null)
@@ -48,27 +41,6 @@ export function usePricingPlanCheckout(options: {
   const visiblePlans = computed(() =>
     [...plans.value].sort((a, b) => a.sort_order - b.sort_order),
   )
-
-  function plansSuccessPath(): string {
-    if (publicMode) return `${returnBasePath}?success=1`
-    return embedded
-      ? `${ROUTES.profile}?tab=plans&success=1`
-      : `${ROUTES.pricing}?tab=plans&success=1`
-  }
-
-  function plansCancelPath(): string {
-    if (publicMode) return `${returnBasePath}?cancel=1`
-    return embedded
-      ? `${ROUTES.profile}?tab=plans&cancel=1`
-      : `${ROUTES.pricing}?tab=plans&cancel=1`
-  }
-
-  function getReturnUrl(path: string): string {
-    if (import.meta.client && typeof window !== 'undefined') {
-      return `${window.location.origin}${path}`
-    }
-    return `${requestURL.origin}${path}`
-  }
 
   async function load(): Promise<void> {
     loadError.value = null
@@ -103,22 +75,18 @@ export function usePricingPlanCheckout(options: {
         await navigateTo(ROUTES.checkoutPlan(planId, returnBasePath))
         return
       }
-      const successUrl = getReturnUrl(plansSuccessPath())
-      const cancelUrl = getReturnUrl(plansCancelPath())
-      const subscriptionBody = {
+      const body = {
         plan_id: planId,
-        success_url: successUrl,
-        cancel_url: cancelUrl,
         confirm_downgrade: confirmDowngrade,
       }
-      let res = await api('/api/payments/checkout-subscription', {
+      let res = await api<{ ok?: boolean }>('/api/payments/activate-free-plan', {
         method: 'POST',
-        body: subscriptionBody,
+        body,
       })
       if (!res.ok && isStepUpRequiredResponse(res) && (await tryRecoverFromStepUpRequired())) {
-        res = await api('/api/payments/checkout-subscription', {
+        res = await api<{ ok?: boolean }>('/api/payments/activate-free-plan', {
           method: 'POST',
-          body: subscriptionBody,
+          body,
         })
       }
       if (res.ok) {
@@ -166,7 +134,6 @@ export function usePricingPlanCheckout(options: {
 
   function isOnPlansRoute(): boolean {
     if (publicMode) return route.path === returnBasePath
-    if (embedded) return route.query.tab === 'plans'
     return route.path === ROUTES.pricing && route.query.tab === 'plans'
   }
 

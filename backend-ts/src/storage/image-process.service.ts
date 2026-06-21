@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-// sharp is CJS; default import compiles to .default which is undefined at runtime.
-import sharp = require('sharp');
+// sharp is CJS; default import compiles to .default which is undefined without esModuleInterop.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const sharp = require('sharp') as typeof import('sharp').default;
 import {
   CV_PHOTO_MAX_EDGE_PX,
   JOB_PHOTO_MAX_EDGE_PX,

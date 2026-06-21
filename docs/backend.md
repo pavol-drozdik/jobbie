@@ -42,10 +42,7 @@ Routes **without** `/api` prefix: `GET /health`, `GET /thanks`, `GET /metrics`, 
 | `SessionAuthGuard` | `auth/session-auth.guard.ts` | JWT from `jb_at` cookie or `Authorization: Bearer` |
 | `CsrfGuard` | `auth/csrf.guard.ts` | Mutations with session cookie |
 | `AccountStatusGuard` | `auth/account-status.guard.ts` | Blocks suspended/closed accounts |
-| `RolesGuard` | `auth/roles.guard.ts` | `company` vs individual |
-| `AppRoleGuard` | `auth/app-role.guard.ts` | e.g. `admin` |
-| `PermissionsGuard` | `auth/permissions.guard.ts` | Scoped employer permissions |
-| `AdminMfaGuard` | `auth/admin-mfa.guard.ts` | No-op unless `@RequireAppRoles('admin')` on a route (admin API moved to `jobbie-admin/`) |
+| `PermissionsGuard` | `auth/permissions.guard.ts` | Scoped employer permissions (`GET /api/auth/scope-check`) |
 | `RecentLoginGuard` | `auth/recent-login.guard.ts` | `@RequireRecentLogin()` — 15 min step-up |
 
 JWT verification: [`jwt-verify.service.ts`](../backend-ts/src/auth/jwt-verify.service.ts) (Supabase JWKS).
@@ -84,7 +81,7 @@ Prefix: `/api/{controller}` unless noted.
 | `locations` | SK municipalities (`GET/POST sk-municipalities`); `GET/POST sk-cv-skills` (CV znalosti catalog); `GET sk-companies` (RPO write-through cache); `GET sk-schools` (education institutions — Typesense fuzzy search when configured, else `search_sk_education_institutions` RPC) |
 | `subscribe` | Newsletter |
 | `blog` | Public blog list + post by slug (`@Public()`, keyset pagination) |
-| `storage` | Job photo, profile avatar |
+| `storage` | Signed uploads (`uploads/init`, `finalize`) |
 | `cv` | CV resources, `POST :cvId/photo` |
 | `metrics` | `POST web-vitals` |
 | `plans` | Subscription plans listing |

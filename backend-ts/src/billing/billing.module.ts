@@ -17,8 +17,6 @@ import { CvDatabaseQuotaService } from './cv-database-quota.service';
 
 import { SubscriptionLimitsService } from './subscription-limits.service';
 
-import { PaidPlanAccessService } from './paid-plan-access.service';
-
 import { ListingTopPromotionService } from './listing-top-promotion.service';
 
 import { SubscriptionTrialService } from './subscription-trial.service';
@@ -44,8 +42,6 @@ import { CreditExpirationCron } from './credit-expiration.cron';
 
     SubscriptionLimitsService,
 
-    PaidPlanAccessService,
-
     ListingTopPromotionService,
 
     BillingCatalogService,
@@ -64,8 +60,6 @@ import { CreditExpirationCron } from './credit-expiration.cron';
 
     SubscriptionLimitsService,
 
-    PaidPlanAccessService,
-
     ListingTopPromotionService,
 
     BillingCatalogService,
@@ -79,4 +73,3 @@ import { CreditExpirationCron } from './credit-expiration.cron';
 })
 
 export class BillingModule {}
-

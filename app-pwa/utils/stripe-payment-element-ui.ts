@@ -181,10 +181,93 @@ export const jobbieStripeWalletOptions = {
   googlePay: 'auto',
 } as const satisfies NonNullable<StripePaymentElementOptions['wallets']>
 
+/** ISO country for Stripe when Payment Element `fields.billingDetails.address` is `never`. */
+export const JOBBIE_STRIPE_BILLING_COUNTRY = 'SK'
+
+/** Matches Nest invoice/subscription `payment_method_types: ['card']` — not automatic PM. */
+export const JOBBIE_STRIPE_PAYMENT_METHOD_TYPES = ['card'] as const
+
+export type JobbieStripeConfirmBillingInput = {
+  name?: string | null
+  address_line1?: string | null
+  address_city?: string | null
+  address_state?: string | null
+  address_postal_code?: string | null
+  address_country?: string | null
+}
+
+function resolveJobbieStripeBillingState(
+  input?: JobbieStripeConfirmBillingInput | null,
+): string | undefined {
+  const explicit = input?.address_state?.trim()
+  if (explicit) return explicit
+  const city = input?.address_city?.trim()
+  if (city) return city
+  return undefined
+}
+
+/**
+ * Payment Element opts out of address collection; pass billing details on confirm.
+ * @see https://docs.stripe.com/payments/payment-element/control-billing-details-collection
+ */
+export function buildJobbiePaymentMethodConfirmData(
+  input?: JobbieStripeConfirmBillingInput | null,
+): {
+  billing_details: {
+    name?: string
+    address: {
+      country: string
+      line1?: string
+      city?: string
+      state?: string
+      postal_code?: string
+    }
+  }
+} {
+  const country = input?.address_country?.trim() || JOBBIE_STRIPE_BILLING_COUNTRY
+  const address: {
+    country: string
+    line1?: string
+    city?: string
+    state?: string
+    postal_code?: string
+  } = { country }
+  const line1 = input?.address_line1?.trim()
+  const city = input?.address_city?.trim()
+  const postal = input?.address_postal_code?.trim()
+  if (line1) address.line1 = line1
+  if (city) address.city = city
+  if (postal) address.postal_code = postal
+  const state = resolveJobbieStripeBillingState(input)
+  if (state) {
+    address.state = state
+  } else if (line1 || city || postal) {
+    // SK has no state field in our forms; Stripe requires state when hidden in Payment Element.
+    address.state = city || JOBBIE_STRIPE_BILLING_COUNTRY
+  }
+
+  const billing_details: {
+    name?: string
+    address: typeof address
+  } = { address }
+  const name = input?.name?.trim()
+  if (name) billing_details.name = name
+
+  return { billing_details }
+}
+
+export type JobbiePaymentElementOptionsConfig = {
+  /** Native form collects billing address (checkout); hide those fields in Payment Element. */
+  collectAddressExternally?: boolean
+}
+
 export function buildJobbiePaymentElementOptions(
   purchaserType: 'individual' | 'company' | null,
+  config?: JobbiePaymentElementOptionsConfig,
 ): StripePaymentElementOptions {
   const isCompany = purchaserType === 'company'
+  const collectAddressExternally = config?.collectAddressExternally === true
+
   return {
     wallets: jobbieStripeWalletOptions,
     layout: {
@@ -196,7 +279,16 @@ export function buildJobbiePaymentElementOptions(
         name: isCompany ? 'never' : 'auto',
         email: 'auto',
         phone: 'auto',
-        address: 'never',
+        address: collectAddressExternally
+          ? {
+              line1: 'never',
+              line2: 'never',
+              city: 'never',
+              postalCode: 'never',
+              country: 'never',
+              state: 'never',
+            }
+          : 'if_required',
       },
     },
   }
@@ -226,6 +318,7 @@ export function buildDeferredPaymentElementsOptions(
     mode: 'payment',
     amount,
     currency: currency.toLowerCase(),
+    paymentMethodTypes: [...JOBBIE_STRIPE_PAYMENT_METHOD_TYPES],
     ...buildStripeElementsBaseOptions(variant, locale),
   }
 }
@@ -238,6 +331,7 @@ export function buildDeferredSetupElementsOptions(
   return {
     mode: 'setup',
     currency: currency.toLowerCase(),
+    paymentMethodTypes: [...JOBBIE_STRIPE_PAYMENT_METHOD_TYPES],
     ...buildStripeElementsBaseOptions(variant, locale),
   }
 }

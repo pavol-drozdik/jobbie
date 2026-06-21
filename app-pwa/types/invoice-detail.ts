@@ -1,6 +1,7 @@
 export type InvoiceDetailLine = {
   description: string
   quantity: number | null
+  unit: string | null
   amount: number
   currency: string
 }
@@ -11,6 +12,7 @@ export type InvoiceDetailSupplier = {
   ico: string | null
   dic: string | null
   vat: string | null
+  or: string | null
   configured: boolean
 }
 
@@ -20,12 +22,20 @@ export type InvoiceDetail = {
   status: string | null
   created: number
   due_date: number | null
+  issued_at: number
+  delivery_at: number
+  variable_symbol: string | null
+  constant_symbol: string | null
+  payment_method_label: string
   currency: string
   subtotal: number
   tax: number
   total: number
   amount_due: number
   amount_paid: number
+  product_type: 'credits' | 'subscription'
+  note: string
+  subscription_period: { start: number; end: number } | null
   lines: InvoiceDetailLine[]
   customer: {
     name: string | null

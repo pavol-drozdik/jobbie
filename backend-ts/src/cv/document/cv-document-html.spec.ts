@@ -9,7 +9,7 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { buildCvDocument, buildCvDocumentPrint, CV_DOCUMENT_FONT_LINK } from './cv-document-html'
 import { buildCvPdfPrintDocument } from './cv-document-preview-html'
-import { buildCvDocumentStyles } from './cv-document-styles'
+import { buildCvDocumentStyles, buildCvDocumentPrintStyles } from './cv-document-styles'
 import type { CvDocumentExportData, CvDocumentUiTemplate } from './cv-document.types'
 import { CV_DRIVING_LICENSE_CATEGORIES } from '../cv.dto'
 
@@ -133,6 +133,31 @@ describe('buildCvDocument', () => {
     expect(html).toContain('class="atlas-intro cv-breakable-section"')
   })
 
+  it('keeps paginated cv-sheet at fixed A4 height', () => {
+    const styles = buildCvDocumentStyles('pdf')
+    expect(styles).toContain('.resume-page:not(.cv-sheet)')
+    expect(styles).toContain('min-height: var(--paper-height)')
+  })
+
+  it('formats birth date as Slovak DD. MM. YYYY in Atlas contact', () => {
+    const data = sampleData('atlas')
+    data.birthDate = '2000-01-01'
+    const html = buildCvDocument(data)
+    expect(html).toContain('Narodenie: 01. 01. 2000')
+    expect(html).not.toContain('Narodenie: 2000-01-01')
+  })
+
+  it('uses atlas-stack for extra info and hobbies', () => {
+    const data = sampleData('atlas')
+    data.showExtraInfo = true
+    data.extraInfo = 'Flexibilita a zodpovedný prístup.'
+    data.showHobbies = true
+    data.hobbies = 'Šport a turistika'
+    const html = buildCvDocument(data)
+    expect(html).toContain('class="atlas-stack"')
+    expect(html).not.toContain('class="atlas-grid"')
+  })
+
   it('buildCvDocumentPrint produces direct-print HTML (no packer, has @page)', () => {
     const templates: CvDocumentUiTemplate[] = ['atlas', 'editorial', 'minimalist', 'monochrome']
     for (const template of templates) {
@@ -145,6 +170,10 @@ describe('buildCvDocument', () => {
       expect(html).not.toContain('__cvPaginationDone')
       expect(html).toContain(`${template}-page`)
     }
+    const atlasHtml = buildCvDocumentPrint(sampleData('atlas'))
+    expect(atlasHtml).toContain('atlas-stack')
+    const printStyles = buildCvDocumentPrintStyles()
+    expect(printStyles).toContain('min-height: var(--paper-height)')
   })
 
   it('atlas profile photo is 40mm circle without border class hook', () => {

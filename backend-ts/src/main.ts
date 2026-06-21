@@ -4,12 +4,12 @@ import { ValidationPipe } from '@nestjs/common';
 import { RedisIoAdapter } from './common/redis-io.adapter';
 import * as express from 'express';
 import cookieParser from 'cookie-parser';
-import cors from 'cors';
 import helmet from 'helmet';
 import { setupExpressErrorHandler } from '@sentry/node';
 import { AppModule } from './app.module';
 import {
   buildNestCorsOptions,
+  createExpressCorsMiddleware,
   shouldBypassCors,
 } from './common/http-cors.util';
 import {
@@ -37,7 +37,7 @@ async function bootstrap() {
     if (shouldBypassCors(req.path)) {
       return next();
     }
-    return cors(corsOptions)(req, res, next);
+    return createExpressCorsMiddleware(corsOptions)(req, res, next);
   });
   // Stripe webhook needs raw body for signature verification
   app.use(

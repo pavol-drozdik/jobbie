@@ -28,6 +28,14 @@ export function buildNecessaryCookieRows(ctx: CookieInventoryContext): CookieInv
         'Ukladá stav súhlasu používateľa s používaním cookies na tomto webe.',
     },
     {
+      name: 'jb_consent_vid',
+      domain: host,
+      expiry: '1 rok',
+      path: '/',
+      description:
+        'Anonymný identifikátor návštevníka na evidenciu súhlasu s cookies (auditný záznam).',
+    },
+    {
       name: 'jb_sid',
       domain: host,
       expiry: '30 dní',
@@ -119,5 +127,23 @@ export function buildAnalyticsCookieRows(ctx: CookieInventoryContext): CookieInv
       description:
         'PostHog — identifikácia návštevníka a stav analytiky (napr. ph_phc_* podľa konfigurácie).',
     },
+    {
+      name: 'sentry_*',
+      domain: host,
+      expiry: 'Relácia',
+      path: '/',
+      description:
+        'Sentry — technická analytika chýb a výkonu (načítaná po súhlase s analytickými cookies).',
+    },
   ]
+}
+
+/** Marketingové cookies — len po súhlase (žiadne aktívne služby v predvolenej inštancii). */
+export function buildMarketingCookieRows(_ctx: CookieInventoryContext): CookieInventoryRow[] {
+  return []
+}
+
+/** Personalizačné cookies — len po súhlase (žiadne aktívne služby v predvolenej inštancii). */
+export function buildPersonalizationCookieRows(_ctx: CookieInventoryContext): CookieInventoryRow[] {
+  return []
 }

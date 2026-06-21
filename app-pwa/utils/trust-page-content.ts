@@ -1,22 +1,37 @@
 /** User-facing trust / legal copy (SK). Not a substitute for formal legal review. */
 
+export type TrustContentBlock =
+  | { readonly kind: 'paragraph'; readonly text: string }
+  | { readonly kind: 'bullets'; readonly items: readonly string[] }
+
 export type TrustContentSection = {
   readonly id: string
   readonly title: string
-  readonly paragraphs: readonly string[]
+  /** @deprecated Prefer `blocks` for mixed paragraphs and lists. */
+  readonly paragraphs?: readonly string[]
+  readonly blocks?: readonly TrustContentBlock[]
+  /** Subsection heading level (default 2). */
+  readonly headingLevel?: 2 | 3
 }
 
 export type TrustContentPage = {
   readonly title: string
   readonly intro: string
   readonly updatedAt: string
+  /** `effective` → „Platné od“, `updated` → „Aktualizované:“ (default). */
+  readonly dateLabel?: 'effective' | 'updated'
   readonly sections: readonly TrustContentSection[]
+}
+
+export function trustSectionBlocks(section: TrustContentSection): readonly TrustContentBlock[] {
+  if (section.blocks?.length) return section.blocks
+  return (section.paragraphs ?? []).map((text) => ({ kind: 'paragraph' as const, text }))
 }
 
 export const TRUST_SECURITY_PAGE: TrustContentPage = {
   title: 'Bezpečnosť',
   intro:
-    'Bezpečnosť účtov, platieb a osobných údajov berieme vážne. Nižšie je prehľad hlavných opatrení platformy JOBBIE.',
+    'Bezpečnosť účtov, platieb a osobných údajov na Jobbie berieme vážne. Prehľad opatrení pre prihlásenie, platby cez Stripe, ochranu údajov a nahlasovanie obsahu.',
   updatedAt: '2026-06-01',
   sections: [
     {
@@ -52,18 +67,10 @@ export const TRUST_SECURITY_PAGE: TrustContentPage = {
   ],
 }
 
-export const TRUST_PRIVACY_PAGE: TrustContentPage = {
-  title: 'Ochrana osobných údajov',
-  intro:
-    'Oficiálne zásady ochrany osobných údajov platformy Jobbie. Správcom osobných údajov je CoCreate s. r. o. Kontakt: ahoj@jobbie.sk.',
-  updatedAt: '2026-02-25',
-  sections: [],
-}
-
 export const TRUST_TERMS_PAGE: TrustContentPage = {
   title: 'Všeobecné podmienky',
   intro:
-    'Používaním platformy JOBBIE súhlasíte s týmito všeobecnými podmienkami. Ak s nimi nesúhlasíte, službu nepoužívajte.',
+    'Používaním platformy Jobbie na hľadanie práce, brigád a služieb súhlasíte s týmito všeobecnými podmienkami. Ak s nimi nesúhlasíte, službu nepoužívajte.',
   updatedAt: '2026-06-01',
   sections: [
     {

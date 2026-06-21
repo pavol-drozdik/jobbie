@@ -26,7 +26,7 @@
         :header="header"
         :aggregate="aggregate"
         @patch-header="onHeaderPartial"
-        @reload="refresh"
+        @reload="onReload"
         @go-step="onGoStep"
         @set-section="onSetSection"
       />
@@ -56,7 +56,7 @@ const loadError = ref<string | null>(null)
 const patchErrorSummary = ref<string | null>(null)
 const patchErrorItems = ref<CvValidationErrorItem[]>([])
 
-const { saveStatus, queueSave, syncBaseline } = useCvHeaderAutosave(cvIdRef, {
+const { saveStatus, queueSave, syncBaseline, flushSave } = useCvHeaderAutosave(cvIdRef, {
   header,
   aggregate,
   callbacks: {
@@ -88,29 +88,67 @@ async function refresh(): Promise<void> {
   }
 }
 
+async function onReload(): Promise<void> {
+  await flushSave()
+  await flushSectionSavesRef.value?.()
+  await refresh()
+}
+
+const flushSectionSavesRef = ref<(() => Promise<void>) | null>(null)
+
+function registerSectionSaveFlusher(fn: () => Promise<void>): void {
+  flushSectionSavesRef.value = fn
+}
+
+provide('cvFlushHeaderSave', flushSave)
+provide('cvRegisterSectionSaveFlusher', registerSectionSaveFlusher)
+
 function onHeaderPartial(partial: Partial<CvHeaderResponseDto>): void {
   if (!header.value) return
   header.value = { ...header.value, ...partial }
-  if (aggregate.value) {
-    aggregate.value = { ...aggregate.value, cv: { ...header.value } }
-  }
   queueSave()
 }
 
 async function onGoStep(target: number): Promise<void> {
+  await flushSave()
+  await flushSectionSavesRef.value?.()
   const s = Math.max(0, Math.min(2, target))
-  if (s === 0) {
-    await patchProgress(props.cvId, { wizard_step: 'template', wizard_section: null })
-  } else if (s === 1) {
-    await patchProgress(props.cvId, { wizard_step: 'editor', wizard_section: 'personal' })
-  } else {
-    await patchProgress(props.cvId, { wizard_step: 'final', wizard_section: null })
+  try {
+    const updated = await patchProgress(
+      props.cvId,
+      s === 0
+        ? { wizard_step: 'template', wizard_section: null }
+        : s === 1
+          ? { wizard_step: 'editor', wizard_section: 'personal' }
+          : { wizard_step: 'final', wizard_section: null },
+    )
+    if (header.value) {
+      header.value = {
+        ...header.value,
+        wizard_step: updated.wizard_step,
+        wizard_section: updated.wizard_section,
+      }
+    }
+    if (aggregate.value) {
+      aggregate.value = {
+        ...aggregate.value,
+        cv: {
+          ...aggregate.value.cv,
+          wizard_step: updated.wizard_step,
+          wizard_section: updated.wizard_section,
+        },
+      }
+    }
+  } catch (e) {
+    patchErrorSummary.value = e instanceof Error ? e.message : 'Nepodarilo sa uložiť krok sprievodcu.'
+    return
   }
-  await refresh()
   step.value = s
 }
 
 async function onSetSection(section: string): Promise<void> {
+  await flushSave()
+  await flushSectionSavesRef.value?.()
   const key = section === 'personal' ? 'personal'
     : section === 'experience' ? 'work'
     : section === 'education' ? 'education'
@@ -136,5 +174,15 @@ onMounted(async () => {
     return
   }
   step.value = 0
+})
+
+onBeforeUnmount(() => {
+  void flushSave()
+  void flushSectionSavesRef.value?.()
+})
+
+onBeforeRouteLeave(async () => {
+  await flushSave()
+  await flushSectionSavesRef.value?.()
 })
 </script>

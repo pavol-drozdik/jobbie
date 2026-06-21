@@ -7,6 +7,9 @@
     <p class="mb-8 mt-2 text-[17px] font-normal leading-normal text-black/55">
       {{ S.checkoutPageSubtitleCredits }}
     </p>
+    <p class="mb-6 text-sm leading-relaxed text-black/55">
+      {{ S.checkoutSkBillingPolicyNotice }}
+    </p>
 
     <p
       v-if="successMessage"
@@ -64,6 +67,7 @@ const emit = defineEmits<{
 }>()
 
 import type { CheckoutBillingPayload } from '~/utils/checkout-billing'
+import type { PreparePaymentResult } from '~/utils/stripe-prepare-payment'
 
 const {
   pack,
@@ -84,7 +88,7 @@ const {
 
 async function prepareCheckoutPayment(
   billing?: CheckoutBillingPayload,
-): Promise<string | null> {
+): Promise<PreparePaymentResult | null> {
   error.value = null
   return createPaymentIntent(billing)
 }

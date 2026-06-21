@@ -1,5 +1,5 @@
 import { ConfigService } from '@nestjs/config';
-import Stripe from 'stripe';
+import type { StripeClient } from '../payments/stripe-types';
 import { SubscriptionTrialService } from './subscription-trial.service';
 import { SupabaseService } from '../supabase/supabase.service';
 
@@ -9,7 +9,7 @@ describe('SubscriptionTrialService', () => {
     subRow?: Record<string, unknown> | null;
     priceTrialDays?: number;
     fallbackDays?: string;
-  }): { service: SubscriptionTrialService; stripe: Stripe } {
+  }): { service: SubscriptionTrialService; stripe: StripeClient } {
     const config = {
       get: (key: string) =>
         key === 'SUBSCRIPTION_TRIAL_FALLBACK_PERIOD_DAYS'
@@ -62,7 +62,7 @@ describe('SubscriptionTrialService', () => {
       subscriptions: {
         list: async () => ({ data: [] }),
       },
-    } as unknown as Stripe;
+    } as unknown as StripeClient;
     return {
       service: new SubscriptionTrialService(supabase, config),
       stripe,

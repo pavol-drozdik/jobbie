@@ -186,17 +186,21 @@ Details: [database.md](./database.md#credit-ledger-rpcs).
 
 
 
-1. Client requests checkout / PaymentIntent — server resolves `price_id` from `credit_packs`.
+1. Client requests checkout — server creates a standalone PaymentIntent (`createPaymentIntentCredits`); SK faktúra is **not** created yet.
 
-2. User pays in Stripe.
+2. User pays in Stripe (`/platba` Payment Element).
 
-3. `POST /api/payments/webhook` — verify signature; claim `stripe_webhook_events`.
+3. `payment_intent.succeeded` webhook (or `confirm-credits`) — verify signature; claim `stripe_webhook_events`.
 
 4. Insert `stripe_credit_fulfillments` (`payment_intent_id`).
 
 5. `grant_credits` RPC (`source = purchase`).
 
-6. On duplicate webhook (`23505`), verify ledger row exists before returning success.
+6. Create finalized Stripe Invoice and mark **paid** (`paid_out_of_band`) with SK custom fields.
+
+7. On duplicate webhook (`23505`), verify ledger row exists before returning success; retry invoice creation if needed.
+
+8. In-app notification only for successful credit fulfillment — no SMTP email or push (`omitExternalChannels` on `payment_received`).
 
 
 
@@ -208,6 +212,30 @@ Implementation: [`stripe.service.ts`](../backend-ts/src/payments/stripe.service.
 
 
 
+## SK-only purchase policy
+
+Credits and paid subscriptions on `/platba` are available only to buyers with a **Slovak billing address**. This is a **payment restriction**, not a platform ban — users abroad can still browse jobs, CVs, and listings; only checkout is blocked for non-SK billing.
+
+| Buyer type | Requirements |
+|------------|----------------|
+| **Firma** (`purchaser_type: company`) | `address_country: SK`, street + city + postal code; valid 8-digit IČO verified via [`SkRpoLookupService`](../backend-ts/src/registry/sk-rpo-lookup.service.ts) (RPO active subject). Optional DIČ / IČ DPH per existing checkout. |
+| **Fyzická osoba** (`purchaser_type: individual`) | SK billing address fields + `billing_attestation_sk_residence: true` (checkbox on PWA). No IČO. |
+
+Server guard: [`assertSkBillingEligible`](../backend-ts/src/payments/sk-billing-eligibility.ts) runs in `createPaymentIntentCredits` and `createSubscriptionPaymentIntent` **before** any Stripe Customer update or PaymentIntent creation. Returns `400` with Slovak messages.
+
+**Out of scope:** eFaktúra / Peppol, IP-based blocks (audit-only logging optional), blocking non-SK users from catalog features.
+
+## Subscription plan changes (free vs paid)
+
+| Action | API | UI |
+|--------|-----|-----|
+| Buy paid plan / credits | `POST /api/payments/create-payment-intent-subscription` or `create-payment-intent-credits` | `/platba` |
+| Switch to free plan (`zadarmo`) | `POST /api/payments/activate-free-plan` | `/cennik` (downgrade confirm) |
+
+Legacy hosted Checkout, per-job Stripe checkout, and `GET /api/payments/config` were removed from the public API. Paid checkout uses `/platba` (Payment Element) only.
+
+
+
 ## Subscription flow (Stripe Billing)
 
 Paid plans use **native Stripe [Subscriptions](https://docs.stripe.com/billing/subscriptions/overview)** — not a custom recurring charge loop. JOBBIE stores entitlements in Postgres (`user_subscriptions`, credits, limits); Stripe owns billing, invoices, renewals, and dunning.
@@ -216,7 +244,7 @@ Paid plans use **native Stripe [Subscriptions](https://docs.stripe.com/billing/s
 |---------|---------------|--------|
 | Recurring billing | `Subscription` + recurring `Price` (`interval: month`) | `subscription_plans.stripe_price_id` |
 | First payment on `/platba` | `subscriptions.create` → `latest_invoice.payment_intent` | [`createSubscriptionPaymentIntent`](../backend-ts/src/payments/stripe.service.ts) |
-| Checkout (legacy) | Checkout Session `mode: 'subscription'` | [`createSubscriptionCheckoutSession`](../backend-ts/src/payments/stripe.service.ts) |
+| Free plan downgrade | `POST /api/payments/activate-free-plan` | [`activateFreeSubscriptionPlan`](../backend-ts/src/payments/stripe.service.ts) |
 | Access / credits | `invoice.paid` (`subscription_create` / `subscription_cycle`) | [`SubscriptionCreditsService`](../backend-ts/src/payments/subscription-credits.service.ts) |
 | User cancel | `subscriptions.update({ cancel_at_period_end: true })` | `POST /api/payments/cancel-subscription` with required `reason_code` (+ optional `reason_detail` for `other`) → [`cancelUserSubscriptionAtPeriodEnd`](../backend-ts/src/payments/stripe.service.ts); audit `subscription.canceled_by_user`; Stripe metadata `cancel_reason_code` |
 | Resume cancel | `subscriptions.update({ cancel_at_period_end: false })` | `POST /api/payments/resume-subscription` → [`resumeUserSubscription`](../backend-ts/src/payments/stripe.service.ts); audit `subscription.resumed_by_user` |
@@ -228,13 +256,13 @@ Paid plans use **native Stripe [Subscriptions](https://docs.stripe.com/billing/s
 
 **Free trial (Stripe-controlled):** on each subscription **Price** in Stripe, add metadata `trial_period_days` = `30` (or `jobbie_trial_days`). Avoid the Dashboard “trial on Price” catalog field (Stripe discourages it). To **disable**, remove that metadata. Optional dev fallback: `SUBSCRIPTION_TRIAL_FALLBACK_PERIOD_DAYS` when Prices have no trial yet. JOBBIE applies the trial only for **first-time** paid subscribers (`profiles.subscription_trial_used_at` + no prior Stripe subscription history). Catalog: `GET /api/billing/config` → `subscriptionTrial` + per-plan `trialPeriodDays`; `GET /api/plans` → `trial_period_days`; PWA `/cennik` shows badge when either field is &gt; 0.
 
-**Credits (contrast):** one-time packs use the **Invoicing API** (invoice item → invoice → PI), not a Subscription — see [Purchase flow (one-off credits)](#purchase-flow-one-off-credits).
+**Credits (contrast):** one-time packs use a standalone **PaymentIntent** at checkout; the SK faktúra is issued only after success (`paid_out_of_band`), not a Subscription — see [Purchase flow (one-off credits)](#purchase-flow-one-off-credits).
 
 1. User pays → Stripe `Subscription` becomes `active` or `trialing`; `user_subscriptions` updated via webhook.
-2. **`invoice.paid`** → monthly credits granted (idempotent via `subscription_period_credit_grants` / `stripe_invoice_id`).
-3. **Free plan (`zadarmo`)** → no Stripe Subscription; cron `subscription-monthly-credits.cron.ts` (`15 6 1 * *`) grants credits.
+2. **`invoice.paid`** → monthly credits granted (idempotent via `subscription_period_credit_grants` / `stripe_invoice_id`). In-app notification only — no SMTP email or push for monthly grant events.
+3. **Free plan (`zadarmo`)** → no Stripe Subscription; cron `subscription-monthly-credits.cron.ts` (`15 6 1 * *`) grants credits (in-app notification only).
 
-In-app billing (Fakturácia): payment method via SetupIntent (`GET/POST /api/payments/payment-method*`), resume cancel (`POST /api/payments/resume-subscription`), invoice list (`GET /api/payments/invoices`), invoice detail + pay open invoice (`GET /api/payments/invoices/:invoiceId` — Payment Element when `can_pay`). Seller block on detail: `invoice_supplier` from `GET /api/billing/config` (`BILLING_SUPPLIER_*` env). PWA: `/nastavenia/fakturacia/[invoiceId]`. Plan changes: `/cennik` + `/platba`. [`payments.controller.ts`](../backend-ts/src/payments/payments.controller.ts).
+In-app billing (Fakturácia): payment method via SetupIntent (`GET/POST /api/payments/payment-method*`), resume cancel (`POST /api/payments/resume-subscription`), invoice list (`GET /api/payments/invoices` — paid + open subscription renewals), invoice detail (`GET /api/payments/invoices/:invoiceId` — Payment Element when `can_pay` on past_due subscription invoice). Seller block on detail: `invoice_supplier` from `GET /api/billing/config` (`BILLING_SUPPLIER_*` env). PWA: `/nastavenia/fakturacia/[invoiceId]` shows legal DPH footer and **Uhradiť faktúru** / **Zaplatiť** when applicable. Plan changes: `/cennik` + `/platba`. [`payments.controller.ts`](../backend-ts/src/payments/payments.controller.ts).
 
 
 
@@ -356,9 +384,8 @@ After DB updates, flush Redis keys if `REDIS_URL` is set: `catalog:credit-packs`
 1. `GET /api/payments/credit-packs` — each pack has `price_id` starting with `price_`.
 2. On `/platba`, user selects **Fyzická osoba / Firma**, fills billing + sees Payment Element (card, Google Pay, Apple Pay when available) on one screen; single **Zaplatiť** → `POST /api/payments/create-payment-intent-credits` or `create-payment-intent-subscription` with `{ price_id | plan_id, billing }` — billing is applied to the Stripe Customer **before** the invoice is finalized (IČO/DIČ on invoice PDF via `custom_fields` for companies), then Payment Element confirms in the same action.
 3. `confirm-credits` / `confirm-subscription` still accept `billing` for idempotent profile sync (return URL).
-4. Company invoice PDF: Stripe Dashboard invoice email toggles — [stripe-invoice-emails.md](./stripe-invoice-emails.md).
-5. Legacy: `POST /api/payments/checkout-subscription` with a paid plan `plan_id` — returns `checkout_url`.
-6. Customer invoice/receipt emails: [stripe-invoice-emails.md](./stripe-invoice-emails.md) (Dashboard, test + live).
+4. Free plan: `POST /api/payments/activate-free-plan` with `{ plan_id, confirm_downgrade? }`.
+5. Company invoice PDF: Stripe Dashboard invoice email toggles — [stripe-invoice-emails.md](./stripe-invoice-emails.md).
 
 After adding payment routes, **rebuild and restart** the Nest API (`npm run build` then restart `start:dev` / production process). A stale process returns `Cannot POST /api/payments/...` (404).
 
@@ -371,12 +398,12 @@ After adding payment routes, **rebuild and restart** the Nest API (`npm run buil
 ## PWA integration
 
 - Pricing UI: `/cennik` — credit packs and subscription plans only (no per-action cost table). Packs from `GET /api/payments/credit-packs`; plans from `GET /api/plans`.
-- Checkout UI: `/platba` — auth card uses `rounded-[24px]` + `overflow-hidden` (same as login). **Deferred** Payment Element mounts on load (catalog amount); PaymentIntent is created on **Zaplatiť** after billing validation so company data still reaches Stripe before invoice finalize. Shared appearance + Apple/Google Pay via `utils/stripe-payment-element-ui.ts` on checkout, invoice pay, and saved payment method forms.
-- **Apple Pay / Google Pay:** Payment Element `wallets: auto`; invoice-backed PIs get `automatic_payment_methods` on the server. Register production (and staging) hostnames under Stripe Dashboard → **Settings → Payment method domains** (HTTPS required). Wallets may not appear on `http://localhost`.
-- Credits: `POST /api/payments/create-payment-intent-credits` with optional `billing` creates a Stripe **Invoice** (`charge_automatically`, `preferred_locales: sk`, company `custom_fields`) → PI; fulfillment via `payment_intent.succeeded` / `confirm-credits` (not `invoice.paid` alone).
-- Subscriptions: `POST /api/payments/create-payment-intent-subscription` with optional `billing` → `confirm-subscription`; recurring invoices via Stripe Billing (`invoice.paid`, `invoice.payment_failed`, `invoice.payment_action_required`).
+- Checkout UI: `/platba` — auth card uses `rounded-[24px]` + `overflow-hidden` (same as login). **Deferred** Payment Element mounts on load (catalog amount); PaymentIntent is created on **Zaplatiť** after billing validation so company data still reaches Stripe before payment. Shared appearance + Apple/Google Pay via `utils/stripe-payment-element-ui.ts` on checkout and saved payment method forms.
+- **Apple Pay / Google Pay:** Payment Element `wallets: auto`; server uses `payment_method_types: ['card']` (aligned with Elements — no `automatic_payment_methods` on PIs). Register production (and staging) hostnames under Stripe Dashboard → **Settings → Payment method domains** (HTTPS required). Wallets may not appear on `http://localhost`.
+- Credits: `POST /api/payments/create-payment-intent-credits` with `billing` creates a standalone **PaymentIntent**; after success, backend issues a paid SK **Invoice** (`paid_out_of_band`). Fulfillment via `payment_intent.succeeded` / `confirm-credits`. Abandoned open credit invoices are voided; in-app faktúry list shows **paid** only.
+- Subscriptions: `POST /api/payments/create-payment-intent-subscription` with `billing` → `confirm-subscription`; recurring invoices via Stripe Billing (`invoice.paid`, `invoice.payment_failed`, `invoice.payment_action_required`).
+- Free plan: `POST /api/payments/activate-free-plan` (no Stripe session).
 - Stripe Dashboard: [stripe-invoice-emails.md](./stripe-invoice-emails.md) (Invoicing + customer emails, test + live); company VAT via Tax ID Element / profile.
-- Legacy hosted/embedded Checkout Session API (`checkout-subscription`) remains for other clients.
 
 - Per-action costs (`CREDIT_COSTS`) appear in publish/promote wizards only, not on `/cennik`.
 

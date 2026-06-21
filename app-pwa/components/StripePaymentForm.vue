@@ -79,6 +79,18 @@
           </div>
         </div>
       </div>
+
+      <label
+        v-if="purchaserType === 'individual'"
+        class="mb-4 flex cursor-pointer items-start gap-3 text-sm leading-snug text-black/70"
+      >
+        <input
+          v-model="skResidenceAttestation"
+          type="checkbox"
+          class="mt-0.5 size-4 shrink-0 rounded border-black/20 text-marketing-green focus:ring-marketing-green"
+        >
+        <span>{{ S.checkoutSkResidenceAttestation }}</span>
+      </label>
     </template>
 
     <div class="pb-2">
@@ -112,6 +124,7 @@ import type { StripeTaxIdElement } from '@stripe/stripe-js'
 import {
   type CheckoutBillingPayload,
   type CheckoutPurchaserType,
+  isValidSkIcoFormat,
 } from '~/utils/checkout-billing'
 import {
   formFieldLabelClass,
@@ -122,6 +135,7 @@ import {
   buildClientSecretElementsOptions,
   buildDeferredPaymentElementsOptions,
   buildDeferredSetupElementsOptions,
+  buildJobbiePaymentMethodConfirmData,
   buildJobbiePaymentElementOptions,
   jobbieStripeElementsMountClass,
   type JobbieStripeAppearanceVariant,
@@ -223,6 +237,7 @@ const taxIdDic = ref('')
 const addressLine1 = ref('')
 const addressCity = ref('')
 const addressPostalCode = ref('')
+const skResidenceAttestation = ref(false)
 
 const usesCheckoutDeferred = computed(
   () =>
@@ -294,7 +309,9 @@ function mountPaymentOnElements(generation: number): boolean {
   paymentElement = null
   paymentElement = elements.create(
     'payment',
-    buildJobbiePaymentElementOptions(purchaserType.value),
+    buildJobbiePaymentElementOptions(purchaserType.value, {
+      collectAddressExternally: props.collectBusinessBilling,
+    }),
   )
   if (generation !== mountGeneration) {
     paymentElement.unmount()
@@ -380,6 +397,10 @@ async function mountWithClientSecret(secret: string): Promise<void> {
 
 async function applyPrepareResult(prepared: PreparePaymentResult): Promise<boolean> {
   const secret = prepared.clientSecret
+  if (!secret) {
+    payError.value = S.checkoutPaymentFailed
+    return false
+  }
   if (!stripe || !elements) {
     await mountWithClientSecret(secret)
     return Boolean(stripe && elements)
@@ -408,7 +429,7 @@ async function applyPrepareResult(prepared: PreparePaymentResult): Promise<boole
         return false
       }
     } catch {
-      // Optional after setup-intent update; confirm still uses clientSecret.
+      // Optional after PI create; confirm still uses clientSecret.
     }
   }
   return true
@@ -436,13 +457,23 @@ async function buildBillingPayload(): Promise<CheckoutBillingPayload | undefined
     return undefined
   }
   if (purchaserType.value === 'individual') {
+    if (!skResidenceAttestation.value) {
+      payError.value = S.checkoutSkResidenceAttestationRequired
+      return undefined
+    }
     return {
       purchaser_type: 'individual',
       address_line1: address.line1,
       address_city: address.city,
       address_postal_code: address.postal,
       address_country: 'SK',
+      billing_attestation_sk_residence: true,
     }
+  }
+  const ico = registrationNumber.value.trim()
+  if (!isValidSkIcoFormat(ico)) {
+    payError.value = S.checkoutBillingIcoInvalid
+    return undefined
   }
   if (!taxIdElement) {
     payError.value = 'Údaje firmy sa nepodarilo načítať.'
@@ -478,7 +509,11 @@ function syncTaxIdVisibility(): void {
 }
 
 function syncPaymentBillingFields(): void {
-  paymentElement?.update(buildJobbiePaymentElementOptions(purchaserType.value))
+  paymentElement?.update(
+    buildJobbiePaymentElementOptions(purchaserType.value, {
+      collectAddressExternally: props.collectBusinessBilling,
+    }),
+  )
 }
 
 onMounted(() => {
@@ -510,6 +545,7 @@ watch(
 )
 
 watch(purchaserType, () => {
+  skResidenceAttestation.value = false
   if (usesCheckoutDeferred.value) {
     activeSecret.value = ''
     void mountDeferredCheckoutElements()
@@ -532,12 +568,39 @@ async function handlePay() {
       return
     }
 
+    if (!stripe || !elements) {
+      payError.value = S.checkoutPaymentFormNotReady
+      return
+    }
+
     let secret = resolveEffectiveSecret()
-    if (!secret && props.preparePayment) {
+    const isDeferredCheckout = usesCheckoutDeferred.value && !secret && props.preparePayment
+
+    // Deferred: validate card in Elements before creating PI (Stripe recommended order).
+    if (isDeferredCheckout) {
+      const submitResult = await elements.submit()
+      const submitError = submitResult?.error
+      if (submitError) {
+        payError.value =
+          submitError.message ??
+          'Skontrolujte platobné a fakturačné údaje vo formulári.'
+        return
+      }
+
+      const raw = await props.preparePayment!(billing)
+      const prepared = normalizePreparePaymentResult(raw)
+      if (!prepared) {
+        return
+      }
+      const ready = await applyPrepareResult(prepared)
+      if (!ready) {
+        return
+      }
+      secret = prepared.clientSecret
+    } else if (!secret && props.preparePayment) {
       const raw = await props.preparePayment(billing)
       const prepared = normalizePreparePaymentResult(raw)
       if (!prepared) {
-        payError.value = S.checkoutPaymentFailed
         return
       }
       const ready = await applyPrepareResult(prepared)
@@ -547,27 +610,36 @@ async function handlePay() {
       secret = prepared.clientSecret
     }
 
-    if (!stripe || !elements) {
-      payError.value = S.checkoutPaymentFormNotReady
-      return
-    }
-
-    const submitResult = await elements.submit()
-    const submitError = submitResult?.error
-    if (submitError) {
-      payError.value =
-        submitError.message ?? 'Skontrolujte platobné a fakturačné údaje vo formulári.'
-      return
+    if (!isDeferredCheckout) {
+      const submitResult = await elements.submit()
+      const submitError = submitResult?.error
+      if (submitError) {
+        payError.value =
+          submitError.message ??
+          'Skontrolujte platobné a fakturačné údaje vo formulári.'
+        return
+      }
     }
 
     const confirmParams: {
       return_url: string
-      payment_method_data?: { billing_details: { name: string } }
+      payment_method_data?: ReturnType<typeof buildJobbiePaymentMethodConfirmData>
     } = { return_url: props.returnUrl }
-    if (billing?.purchaser_type === 'company' && billing.company_name?.trim()) {
-      confirmParams.payment_method_data = {
-        billing_details: { name: billing.company_name.trim() },
-      }
+    if (props.collectBusinessBilling) {
+      confirmParams.payment_method_data = buildJobbiePaymentMethodConfirmData(
+        billing
+          ? {
+              name:
+                billing.purchaser_type === 'company'
+                  ? billing.company_name
+                  : undefined,
+              address_line1: billing.address_line1,
+              address_city: billing.address_city,
+              address_postal_code: billing.address_postal_code,
+              address_country: billing.address_country,
+            }
+          : null,
+      )
     }
 
     const confirmOptions: {

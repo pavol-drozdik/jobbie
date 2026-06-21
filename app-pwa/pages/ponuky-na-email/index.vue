@@ -28,7 +28,7 @@
         </div>
         <div class="mt-10 lg:mt-12">
           <div
-            class="rounded-[20px] border border-black/[0.06] border-l-[4px] border-l-marketing-green bg-white pl-5 pr-6 py-6 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.1)] sm:pl-6 sm:pr-8 sm:py-7"
+            class="rounded-[20px] border border-black/[0.06] bg-marketing-panel px-5 py-6 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.1)] sm:px-8 sm:py-7"
           >
             <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-4">
               <div class="flex shrink-0 justify-center sm:pt-0.5">
@@ -111,7 +111,7 @@
         <template v-else-if="!loadError">
           <div v-if="list.length === 0" class="mt-10 lg:mt-12">
             <div
-              class="rounded-[20px] border border-black/[0.06] border-l-[4px] border-l-marketing-green bg-white pl-5 pr-6 py-6 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.1)] sm:pl-6 sm:pr-8 sm:py-7"
+              class="rounded-[20px] border border-black/[0.06] bg-marketing-panel px-5 py-6 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.1)] sm:px-8 sm:py-7"
             >
               <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-4">
                 <div class="flex shrink-0 justify-center sm:pt-0.5">
@@ -186,9 +186,8 @@ import LoggedOutFeatureHero from '~/components/marketing/LoggedOutFeatureHero.vu
 definePageMeta({ layout: 'app', middleware: ['worker-only'] })
 
 usePageSeo(() => ({
-  title: 'Ponuky na email',
-  description:
-    'Nastav si upozornenia na nové pracovné ponuky a dostávaj ich priamo do emailu podľa tvojich preferencií.',
+  title: S.seoJobAlertsTitle,
+  description: S.seoJobAlertsDescription,
   canonicalPath: '/ponuky-na-email',
 }))
 

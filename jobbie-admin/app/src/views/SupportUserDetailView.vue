@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { adminApi } from '../composables/adminApi'
 import { useAdminAuth } from '../composables/adminAuth'
 import { useConfirm } from '../composables/useConfirm'
+import type { CookieConsentLogItem, CookieConsentLogResponse } from '../types/cookie-consent-log'
 import type { AdminUserDetail } from '../types/users'
 import type { ApplicationListItem, ChatRoomListItem, UserBillingSnapshot } from '../types/support'
 import { fmtNum } from '../utils/analytics-format'
@@ -21,10 +22,21 @@ const detail = ref<AdminUserDetail | null>(null)
 const billing = ref<UserBillingSnapshot | null>(null)
 const applications = ref<ApplicationListItem[]>([])
 const chatRooms = ref<ChatRoomListItem[]>([])
+const cookieConsentLog = ref<CookieConsentLogItem[]>([])
+const cookieConsentLoading = ref(false)
 const message = ref<string | null>(null)
 const grantAmount = ref(10)
 const grantReason = ref('')
 const closePhrase = ref('')
+
+async function loadCookieConsentLog() {
+  cookieConsentLoading.value = true
+  const res = await adminApi<CookieConsentLogResponse>('/admin/consent/cookie-log', {
+    query: { user_id: id.value, limit: '20' },
+  })
+  cookieConsentLoading.value = false
+  cookieConsentLog.value = res.ok ? (res.data?.items ?? []) : []
+}
 
 async function loadProfile() {
   loading.value = true
@@ -37,6 +49,7 @@ async function loadProfile() {
     return
   }
   detail.value = res.data ?? null
+  void loadCookieConsentLog()
 }
 
 async function loadBilling() {
@@ -202,6 +215,39 @@ onMounted(() => void loadProfile())
         <button type="button" class="btn btn-primary" @click="closeAccount">Zavrieť účet</button>
       </div>
       <p v-if="message" class="muted">{{ message }}</p>
+
+      <div class="cookie-consent-block">
+        <h2 class="section-title">Cookie súhlas</h2>
+        <p v-if="cookieConsentLoading" class="muted">Načítavam históriu…</p>
+        <p v-else-if="cookieConsentLog.length === 0" class="muted">Žiadne záznamy cookie súhlasu.</p>
+        <div v-else class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Čas</th>
+                <th>Akcia</th>
+                <th>Analytika</th>
+                <th>Marketing</th>
+                <th>Personalizácia</th>
+                <th>Zdroj</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in cookieConsentLog" :key="row.id">
+                <td class="mono">{{ row.recorded_at }}</td>
+                <td>{{ row.action }}</td>
+                <td>{{ row.analytics ? 'áno' : 'nie' }}</td>
+                <td>{{ row.marketing ? 'áno' : 'nie' }}</td>
+                <td>{{ row.personalization ? 'áno' : 'nie' }}</td>
+                <td>{{ row.source ?? '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" @click="router.push({ path: '/consent-log', query: { user_id: id } })">
+          Otvoriť celý audit cookie súhlasu
+        </button>
+      </div>
     </section>
 
     <section v-else-if="tab === 'billing'" class="section-card">
@@ -324,5 +370,17 @@ onMounted(() => void loadProfile())
   margin-top: 1.5rem;
   padding-top: 1rem;
   border-top: 1px solid var(--g200);
+}
+
+.cookie-consent-block {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--g200);
+}
+
+.section-title {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
 }
 </style>

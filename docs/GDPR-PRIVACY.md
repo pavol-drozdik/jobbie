@@ -2,9 +2,9 @@
 
 ## Public privacy policy (PWA)
 
-- PDF: [`app-pwa/public/docs/gdpr-jobbie.pdf`](../app-pwa/public/docs/gdpr-jobbie.pdf) — served at `/docs/gdpr-jobbie.pdf`
-- Page: `/ochrana-osobnych-udajov` (footer **Ochrana súkromia**) — embeds the PDF with download link
-- Source file for updates: replace the PDF in `public/docs/` and bump `GDPR_PRIVACY_POLICY_UPDATED_AT` in `app-pwa/utils/legal-documents.ts`
+- Page: `/ochrana-osobnych-udajov` (footer **Ochrana osobných údajov**) — full Slovak text in `app-pwa/utils/privacy-policy-content.ts`, rendered via `MarketingContentPage`
+- Updates: edit `privacy-policy-content.ts` and bump `GDPR_PRIVACY_POLICY_UPDATED_AT` in `app-pwa/utils/legal-documents.ts`
+- Legacy PDF (`public/docs/gdpr-jobbie.pdf`) is no longer linked from the PWA; remove from `public/docs/` when no longer needed for external references
 
 ## Data categories
 
@@ -15,7 +15,8 @@
 | Marketing | `profiles.marketing_processing_consent`, `subscribers`, CV `marketing_consent` | Owner; sends gated in `NotificationsService` |
 | Job alerts | `job_email_alerts`, `notification_preferences` | Owner; transactional sends when `is_active` |
 | Billing | `billing_details`, Stripe (server) | Owner on `GET /profiles/me` only |
-| Consent log | `consent_events` | Owner read; Nest inserts |
+| Consent log (marketing) | `consent_events` | Owner read; Nest inserts |
+| Cookie CMP audit | `cookie_consent_log` | Service role insert; admin read; included in user GDPR export when `user_id` set |
 
 ## User rights (API)
 

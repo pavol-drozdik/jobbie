@@ -34,10 +34,11 @@ The user-facing app lives in [`app-pwa/`](../app-pwa/) (Nuxt 3, client-rendered 
 
 ## Cookie consent
 
-- UI: [`components/consent/`](../app-pwa/components/consent/) — `AppCookieConsentHost` mounted in [`app.vue`](../app-pwa/app.vue); preferences modal lists cookies from [`utils/cookie-inventory.ts`](../app-pwa/utils/cookie-inventory.ts) (BFF, Turnstile when configured, PostHog/GTM when configured).
-- Store: `useCookieConsentStore()` — persists `jb_consent` (`{ v: 1, analytics, ts }`).
-- Re-open: footer / `layouts/default.vue` via `useCookieConsent()?.showPreferences()`.
-- Orchestration: [`utils/analytics-consent.ts`](../app-pwa/utils/analytics-consent.ts) — gtag Consent Mode + PostHog + GTM lazy load (GA4/Clarity in container).
+- UI: [`components/consent/`](../app-pwa/components/consent/) — `AppCookieConsentHost` in [`app.vue`](../app-pwa/app.vue) hosts banner + preferences modal; cookie table from [`utils/cookie-inventory.ts`](../app-pwa/utils/cookie-inventory.ts).
+- Store: `useCookieConsentStore()` — persists `jb_consent` v2 (`necessary`, `analytics`, `marketing`, `personalization`, `policy`, `ts`); visitor id `jb_consent_vid` for audit correlation.
+- Re-open: footer / `layouts/default.vue` via `openCookiePreferences('footer')`.
+- Logging: each choice → `POST /api/consent/cookie` (public, throttled) → `cookie_consent_log` (admin: jobbie-admin **Cookie súhlas**).
+- Orchestration: [`utils/analytics-consent.ts`](../app-pwa/utils/analytics-consent.ts) — gtag Consent Mode + PostHog + GTM + Sentry (when DSN set) only after **analytics** consent.
 
 ## Auth flow
 

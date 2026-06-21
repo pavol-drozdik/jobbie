@@ -1,8 +1,5 @@
 <template>
-  <MarketingContentPage
-    :page="TRUST_TERMS_PAGE"
-    :show-legal-review-banner="!brand.legalPublished"
-  />
+  <MarketingContentPage :page="TRUST_TERMS_PAGE" />
 </template>
 
 <script setup lang="ts">
@@ -10,11 +7,8 @@ import MarketingContentPage from '~/components/marketing/MarketingContentPage.vu
 import { TRUST_TERMS_PAGE } from '~/utils/trust-page-content'
 import { ROUTES } from '~/utils/app-routes'
 import { S } from '~/utils/strings'
-import { useBrandSeoConfig } from '~/utils/brand-seo'
 
 definePageMeta({ layout: 'app', layoutMainFlushTop: true })
-
-const brand = useBrandSeoConfig()
 
 usePageSeo({
   title: S.footerLinkTerms,

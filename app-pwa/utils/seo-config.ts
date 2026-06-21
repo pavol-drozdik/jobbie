@@ -28,12 +28,22 @@ export function normalizeSiteUrl(raw: string | undefined): string {
   }
 }
 
-export const SEO_DEFAULT_TITLE = 'Nájdi prácu. Nájdi pomoc.'
+export const SEO_DEFAULT_TITLE = 'Brigády a pracovné ponuky'
 export const SEO_DEFAULT_DESCRIPTION =
-  'Jobbie spája uchádzačov s firmami na Slovensku — brigády, sezónne práce (kosenie trávy, pomoc v záhrade), pracovné ponuky a služby profesionálov.'
+  'Jobbie — slovenská platforma pre brigády, sezónne práce, pracovné ponuky a služby profesionálov na Slovensku aj v zahraničí. Registrácia zadarmo.'
 /** Matches `BRAND_ICON_512_PATH` in `brand-assets.ts` (no alias — safe for `nuxt.config` jiti). */
 export const SEO_DEFAULT_OG_IMAGE_PATH = '/icon-512.png'
 export const SEO_BRAND_SUFFIX = 'JOBBIE'
+
+/** Full title for OG/Twitter; document `<title>` suffix comes from `nuxt.config` `titleTemplate`. */
+export function formatBrandedSeoTitle(
+  pageTitle: string,
+  brandName: string = SEO_BRAND_SUFFIX,
+): string {
+  const raw = pageTitle.trim()
+  if (!raw) return `${SEO_DEFAULT_TITLE} — ${brandName}`
+  return `${raw} — ${brandName}`
+}
 
 /** @deprecated Use `SEO_PUBLIC_SSR_ROUTE_PATTERNS` */
 export const SEO_PUBLIC_SSR_ROUTES = SEO_PUBLIC_SSR_ROUTE_PATTERNS

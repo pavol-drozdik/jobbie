@@ -202,9 +202,12 @@ import {
   getJobCardCityDisplay,
   getJobCardPayDisplay,
   getJobCardThumbnailSrc,
-  JOB_CARD_PLACEHOLDER_PATH,
 } from '~/utils/job'
 import type { Job } from '~/utils/job'
+import {
+  jobPhotoThumbnailSrcForStage,
+  type JobPhotoThumbnailFallbackStage,
+} from '~/utils/job-photo-url'
 import {
   hasActiveFindSnapshot,
   pushRecentFindFilter,
@@ -238,6 +241,7 @@ import { fetchPublicJobCatalog } from '~/composables/fetch-public-job-catalog'
 const props = defineProps<{
   isForeign: boolean
   pageTitle: string
+  seoTitle?: string
 }>()
 
 const route = useRoute()
@@ -284,7 +288,7 @@ const suggestions = ref<string[]>([])
 const openDropdown = ref<string | null>(null)
 const tierSilverActive = ref(false)
 const tierBronzeActive = ref(false)
-const thumbOverrides = ref<Record<string, string>>({})
+const thumbFallbackStages = ref<Record<string, JobPhotoThumbnailFallbackStage>>({})
 
 const PAGE_SIZE = 24
 /** Wage field: wait for typing pause before Typesense search (ms). */
@@ -501,7 +505,7 @@ usePageSeo(() => {
   const site = normalizeSiteUrl(String(runtimeConfig.public.siteUrl || ''))
   const itemList = site ? buildJobCatalogItemListJsonLd(jobs.value, site) : null
   return {
-    title: props.pageTitle,
+    title: props.seoTitle ?? props.pageTitle,
     description: catalogSeoDescription.value,
     canonicalPath: catalogPath.value,
     canonicalQuery: Object.keys(canonicalQ).length > 0 ? canonicalQ : undefined,
@@ -769,11 +773,19 @@ function profileInitials(name: string | null | undefined): string {
 }
 
 function thumbUrl(job: Job): string {
-  return thumbOverrides.value[job.id] ?? getJobCardThumbnailSrc(job)
+  const stage = thumbFallbackStages.value[job.id] ?? 0
+  return jobPhotoThumbnailSrcForStage(getJobCardThumbnailSrc(job), stage)
 }
 
 function onThumbError(job: Job): void {
-  thumbOverrides.value = { ...thumbOverrides.value, [job.id]: JOB_CARD_PLACEHOLDER_PATH }
+  const current = thumbFallbackStages.value[job.id] ?? 0
+  if (current >= 2) {
+    return
+  }
+  thumbFallbackStages.value = {
+    ...thumbFallbackStages.value,
+    [job.id]: (current + 1) as JobPhotoThumbnailFallbackStage,
+  }
 }
 
 function replaceRouteQuery(includeCursor = false): void {
@@ -1073,13 +1085,13 @@ watch(
   () => jobs.value,
   (list) => {
     const ids = new Set(list.map((j) => j.id))
-    const next = { ...thumbOverrides.value }
+    const next = { ...thumbFallbackStages.value }
     for (const id of Object.keys(next)) {
       if (!ids.has(id)) {
         delete next[id]
       }
     }
-    thumbOverrides.value = next
+    thumbFallbackStages.value = next
   },
 )
 
