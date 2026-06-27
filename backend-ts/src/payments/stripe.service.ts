@@ -10,11 +10,15 @@ import { ConfigService } from '@nestjs/config';
 import StripeSdk from 'stripe';
 import { AuditService } from '../audit/audit.service';
 import {
+  expandableRefId,
   getInvoicePaymentIntentClientSecret,
+  getInvoicePaymentIntentId,
   getInvoicePaymentIntentRef,
   getInvoiceSubscriptionId,
   getInvoiceSubscriptionRef,
   getInvoiceTaxAmount,
+  getSetupIntentClientSecretFromRef,
+  getSetupIntentId,
   getSubscriptionCurrentPeriodEndIso,
 } from './stripe-api-compat';
 import {
