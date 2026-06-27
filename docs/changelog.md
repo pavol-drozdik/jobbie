@@ -1,4 +1,14 @@
-﻿## 2026-06-27 — Production Discord alerting runbook
+﻿## 2026-06-27 — Subscription checkout Stripe expand depth
+
+Fixed:
+- **backend-ts:** `subscriptions.create` on `/platba` — shallow expand (`latest_invoice`, `pending_setup_intent` only). Deep expand `latest_invoice.payments.data.payment.payment_intent` exceeded Stripe’s 4-level limit and broke subscription checkout; PaymentIntent client secret is resolved via existing follow-up retrieve in `resolveSubscriptionPaymentClientSecret`.
+
+## 2026-06-27 — CV Minimalist header alignment
+
+Fixed:
+- **backend-ts:** Minimalist template — header summary and contact lines share last baseline (`align-items: last baseline`; matched lead/contact line-height; `CV_PDF_RENDERER_REVISION` 29).
+
+## 2026-06-27 — Production Discord alerting runbook
 
 Docs:
 - **websupport-vps-deployment:** [`OPS-DISCORD-ALERTING.md`](../websupport-vps-deployment/OPS-DISCORD-ALERTING.md) — replicate free-tier operator alerts (Sentry→Worker→Discord, Supabase content reports, Netdata CPU/RAM/disk/API health); example configs under `ops/netdata/`, `ops/sentry-discord-bridge.worker.example.js`, `ops/supabase/discord-content-report.example.ts`.

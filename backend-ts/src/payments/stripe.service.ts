@@ -1569,7 +1569,7 @@ export class StripeService {
         save_default_payment_method: 'on_subscription',
         payment_method_types: ['card'],
       },
-      expand: ['latest_invoice.payments.data.payment.payment_intent', 'pending_setup_intent'],
+      expand: ['latest_invoice', 'pending_setup_intent'],
       metadata: {
         user_id: userId,
         plan_id: planId,

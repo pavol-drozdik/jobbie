@@ -803,14 +803,12 @@ body.cv-export-preview .cv-sheet {
     display: grid;
     grid-template-columns: 1.15fr 0.85fr;
     gap: 18px;
+    align-items: last baseline;
     margin-bottom: 12mm;
     padding-bottom: 8mm;
     border-bottom: 1px solid rgba(19, 33, 47, 0.16);
 } .cv-page-export .minimalist-identity {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 18px;
-    align-items: end;
+    min-width: 0;
 } .cv-page-export .minimalist-name {
     margin: 0;
     font-family: "Space Grotesk", sans-serif;
@@ -827,12 +825,14 @@ body.cv-export-preview .cv-sheet {
 } .cv-page-export .minimalist-lead {
     margin: 14px 0 0;
     max-width: 92%;
+    line-height: 1.35;
 } .cv-page-export .minimalist-contact {
     display: grid;
-    align-content: start;
     justify-items: end;
     gap: 8px;
     text-align: right;
+} .cv-page-export .minimalist-contact > .small-copy {
+    line-height: 1.35;
 } .cv-page-export .minimalist-grid {
     display: grid;
     grid-template-columns: minmax(0, 1.65fr) minmax(0, 0.7fr);
