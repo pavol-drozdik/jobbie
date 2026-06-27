@@ -35,7 +35,7 @@
       </AppNativeSelect>
       <button
         type="button"
-        class="inline-flex h-10 cursor-pointer items-center justify-center rounded-full border border-black/15 bg-white px-3 text-sm font-semibold text-black/70 outline-none transition-colors hover:bg-black/[0.04] sm:h-12"
+        class="inline-flex h-10 is-clickable items-center justify-center rounded-full border border-black/15 bg-white px-3 text-sm font-semibold text-black/70 outline-none transition-colors hover:bg-black/[0.04] sm:h-12"
         :aria-label="removeLabel"
         @click="removeAt(idx)"
       >
@@ -44,7 +44,7 @@
     </div>
     <button
       type="button"
-      class="mt-1 inline-flex w-fit cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-sm font-semibold text-marketing-green hover:underline"
+      class="mt-1 inline-flex w-fit is-clickable items-center gap-1.5 border-0 bg-transparent p-0 text-sm font-semibold text-marketing-green hover:underline"
       @click="addRow"
     >
       <span aria-hidden="true" class="text-base leading-none">+</span>

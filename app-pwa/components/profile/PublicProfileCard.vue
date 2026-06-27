@@ -47,7 +47,7 @@
               <div class="relative z-[3] px-8 pb-7 pt-0 max-[900px]:px-6">
                 <div class="-mt-11 mb-4 flex items-end justify-between">
                   <div
-                    class="flex size-[88px] shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-violet-600 text-[30px] font-bold text-white shadow-[0px_3px_10px_rgba(0,0,0,0.15)]"
+                    class="flex size-[88px] shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-marketing-green text-[30px] font-bold text-white shadow-card"
                   >
                     <NuxtImg
                       v-if="avatarSrc"
@@ -78,7 +78,7 @@
                   </span>
                   <span
                     v-if="detail.profile.role === 'company'"
-                    class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-violet-100 px-3 py-1 text-sm font-bold text-violet-700"
+                    class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-marketing-panel px-3 py-1 text-sm font-bold text-marketing-green"
                   >
                     {{ S.profilePublicBadgeCompany }}
                   </span>
@@ -293,7 +293,7 @@
               <button
                 type="button"
                 disabled
-                class="flex h-12 w-full cursor-not-allowed items-center justify-center gap-2 rounded-full border-[1.5px] border-gray-200 bg-marketing-surface text-[15px] font-bold text-black/60 opacity-70"
+                class="flex h-12 w-full is-disabled-cursor items-center justify-center gap-2 rounded-full border-[1.5px] border-gray-200 bg-marketing-surface text-[15px] font-bold text-black/60 opacity-70"
                 :title="S.profilePublicSaveSoon"
               >
                 <AppIcon name="bookmark" :size="16" class="shrink-0" />

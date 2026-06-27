@@ -28,6 +28,11 @@ const cvPaginationBrowserStub = fileURLToPath(
   new URL('./utils/cv-document-pagination.browser-stub.ts', import.meta.url),
 )
 
+const stripePublishableKey = process.env.NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''
+if (stripePublishableKey && !stripePublishableKey.startsWith('pk_')) {
+  throw new Error('NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY must be a Stripe publishable key (pk_)')
+}
+
 const allowIndexing = parseAllowIndexing(process.env.NUXT_PUBLIC_ALLOW_INDEXING)
 const siteUrl = normalizeSiteUrl(process.env.NUXT_PUBLIC_SITE_URL)
 const isCapacitorBuild = process.env.NUXT_PUBLIC_CAPACITOR_BUILD === '1'
@@ -43,30 +48,63 @@ function supabaseImageHosts(): string[] {
   }
 }
 
-import { buildPlatformSecurityHeaders } from './utils/platform-csp'
-import { normalizePublicApiBase } from './utils/api-base-url'
+function buildPreconnectLinks(): Array<{
+  rel: string
+  href: string
+  crossorigin?: '' | 'anonymous' | 'use-credentials'
+}> {
+  const links: Array<{
+    rel: string
+    href: string
+    crossorigin?: '' | 'anonymous' | 'use-credentials'
+  }> = []
+  const seen = new Set<string>()
 
-const PRIVATE_NO_STORE_HEADERS = {
-  'cache-control': 'private, no-store, must-revalidate',
+  function addOrigin(raw: string | undefined): void {
+    const trimmed = raw?.trim()
+    if (!trimmed) return
+    try {
+      const origin = new URL(trimmed).origin
+      if (!origin.startsWith('https://') || seen.has(origin)) return
+      seen.add(origin)
+      links.push({ rel: 'preconnect', href: origin, crossorigin: 'anonymous' })
+    } catch {
+      /* ignore invalid URL */
+    }
+  }
+
+  addOrigin(normalizePublicApiBase(process.env.NUXT_PUBLIC_API_BASE_URL))
+  addOrigin(process.env.NUXT_PUBLIC_SUPABASE_URL)
+  const cdn = process.env.NUXT_PUBLIC_CDN_URL?.trim()
+  if (cdn) addOrigin(cdn)
+
+  return links.slice(0, 3)
+}
+
+import { normalizePublicApiBase } from './utils/api-base-url'
+import {
+  PRIVATE_DOCUMENT_CACHE_HEADERS,
+  PUBLIC_DOCUMENT_CACHE_HEADERS,
+} from './utils/cache-route-policy'
+
+/** Long-cache hashed assets; security headers come from `security-headers` middleware. */
+const STATIC_ASSET_CACHE_HEADERS = {
+  'cache-control': 'public, max-age=31536000, immutable',
 } as const
 
 function buildSeoRouteRules(): Record<string, object> {
-  const security = buildPlatformSecurityHeaders()
   const rules: Record<string, object> = {
     '/_nuxt/**': {
-      headers: {
-        'cache-control': 'public, max-age=31536000, immutable',
-      },
+      headers: { ...STATIC_ASSET_CACHE_HEADERS },
     },
     '/_ipx/**': {
-      headers: {
-        'cache-control': 'public, max-age=31536000, immutable',
-      },
+      headers: { ...STATIC_ASSET_CACHE_HEADERS },
     },
     '/assets/**': {
-      headers: {
-        'cache-control': 'public, max-age=31536000, immutable',
-      },
+      headers: { ...STATIC_ASSET_CACHE_HEADERS },
+    },
+    '/fonts/**': {
+      headers: { ...STATIC_ASSET_CACHE_HEADERS },
     },
     '/app/profile/settings': { redirect: { to: '/nastavenia', statusCode: 301 } },
     '/nastavenia/sukromie': { redirect: { to: '/nastavenia/profil', statusCode: 301 } },
@@ -78,29 +116,37 @@ function buildSeoRouteRules(): Record<string, object> {
     '/o-nas': { redirect: { to: '/', statusCode: 301 } },
     '/kontakt': { redirect: { to: '/', statusCode: 301 } },
     '/app/jobs/**': { redirect: { to: '/ponuka/**', statusCode: 301 } },
+    '/auth/signin': { redirect: { to: '/auth/login', statusCode: 301 } },
+    '/auth/signup': { redirect: { to: '/auth/register', statusCode: 301 } },
     '/dashboard/poskytovatel': { redirect: { to: '/dashboard/profesional', statusCode: 301 } },
-    '/nastavenia/**': { headers: { ...security, ...PRIVATE_NO_STORE_HEADERS } },
-    '/chat/**': { headers: { ...security, ...PRIVATE_NO_STORE_HEADERS } },
-    '/spravca-uchadzacov/**': { headers: { ...security, ...PRIVATE_NO_STORE_HEADERS } },
-    '/dashboard/**': { headers: { ...security, ...PRIVATE_NO_STORE_HEADERS } },
-    '/platba': { headers: { ...security, ...PRIVATE_NO_STORE_HEADERS } },
-    '/profil/**': { headers: { ...security, ...PRIVATE_NO_STORE_HEADERS } },
+    '/nastavenia/**': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
+    '/chat/**': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
+    '/spravca-uchadzacov/**': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
+    '/dashboard/**': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
+    '/platba': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
+    '/profil': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
+    '/auth/**': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
+    '/zivotopisy/**': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
+    '/zivotopisy': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
+    '/moje-reklamy/**': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
+    '/vytvorit-ponuku/**': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
+    '/vytvorit-zahranicnu-ponuku/**': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
+    '/messages/**': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
+    '/unsubscribe/**': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
+    '/preferences/**': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
+    '/app/**': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
   }
   if (!allowIndexing) {
     rules['/**'] = {
       headers: {
         'X-Robots-Tag': 'noindex, nofollow',
-        ...security,
       },
     }
     return rules
   }
-  rules['/**'] = { headers: { ...security } }
-  // CRITICAL: every per-route override below MUST spread the security
-  // headers into its own `headers` block. Nitro replaces (not merges) the
-  // `headers` object when the same route pattern is reconfigured, so a
-  // partial override that only sets `X-Robots-Tag` would silently drop CSP /
-  // HSTS / XFO on those pages.
+  // Platform security headers (CSP, X-Frame-Options, HSTS, …) are set once in
+  // `server/middleware/security-headers.ts`. Route rules here only add per-route
+  // cache, robots, or SSR flags — never duplicate security headers.
   for (const pattern of SEO_PUBLIC_SSR_ROUTE_PATTERNS) {
     const robots =
       pattern === '/databaza-zivotopisov'
@@ -108,7 +154,10 @@ function buildSeoRouteRules(): Record<string, object> {
         : 'index, follow'
     rules[pattern] = {
       ssr: true,
-      headers: { ...security, 'X-Robots-Tag': robots },
+      headers: {
+        ...PUBLIC_DOCUMENT_CACHE_HEADERS,
+        'X-Robots-Tag': robots,
+      },
     }
   }
   for (const pattern of SEO_NOINDEX_ROUTE_PATTERNS) {
@@ -117,8 +166,8 @@ function buildSeoRouteRules(): Record<string, object> {
       rules[pattern] = {
         ...prev,
         headers: {
-          ...security,
           ...(prev.headers ?? {}),
+          ...PRIVATE_DOCUMENT_CACHE_HEADERS,
           'X-Robots-Tag': 'noindex, nofollow',
         },
       }
@@ -126,7 +175,10 @@ function buildSeoRouteRules(): Record<string, object> {
     }
     rules[pattern] = {
       ssr: false,
-      headers: { ...security, 'X-Robots-Tag': 'noindex, nofollow' },
+      headers: {
+        ...PRIVATE_DOCUMENT_CACHE_HEADERS,
+        'X-Robots-Tag': 'noindex, nofollow',
+      },
     }
   }
   return rules
@@ -176,6 +228,7 @@ export default defineNuxtConfig({
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'referrer', content: 'strict-origin-when-cross-origin' },
         { name: 'description', content: SEO_DEFAULT_DESCRIPTION },
         ...(allowIndexing
           ? [{ name: 'robots', content: 'index, follow' }]
@@ -213,6 +266,15 @@ export default defineNuxtConfig({
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: BRAND_FAVICON_PATH },
         { rel: 'apple-touch-icon', href: BRAND_APPLE_TOUCH_ICON_PATH },
+        { rel: 'privacy-policy', href: '/ochrana-osobnych-udajov' },
+        {
+          rel: 'preload',
+          href: '/fonts/dm-sans-latin-wght-normal.woff2',
+          as: 'font',
+          type: 'font/woff2',
+          crossorigin: 'anonymous',
+        },
+        ...buildPreconnectLinks(),
       ],
     },
   },
@@ -238,7 +300,7 @@ export default defineNuxtConfig({
       apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:8000',
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL || '',
       supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY || '',
-      stripePublishableKey: process.env.NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
+      stripePublishableKey,
       turnstileSiteKey: process.env.NUXT_PUBLIC_TURNSTILE_SITE_KEY || '',
       /** Set to 1 to send sampled nav/click/submit batches to the API */
       auditClientEvents: process.env.NUXT_PUBLIC_AUDIT_CLIENT_EVENTS || '',
@@ -282,11 +344,7 @@ export default defineNuxtConfig({
   tailwindcss: {
     viewer: false,
   },
-  css: [
-    '~/assets/css/main.css',
-    '~/assets/css/cv-template-mini-sheets.css',
-    '~/assets/css/font-awesome.css',
-  ],
+  css: ['~/assets/css/main.css'],
   /** Hashed build assets: long cache when served by Nitro or mirrored CDN. */
   nitro: {
     /**

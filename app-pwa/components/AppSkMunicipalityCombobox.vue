@@ -86,9 +86,9 @@ const showUseCustom = computed(
 
 const triggerClass = computed(() => {
   if (isFilter.value) {
-    return 'flex h-[60px] w-full cursor-pointer select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none ring-marketing-green focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-60'
+    return 'flex h-[60px] w-full is-clickable select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none ring-marketing-green focus-visible:ring-2 disabled:is-disabled-cursor disabled:opacity-60'
   }
-  return 'app-form-dropdown__trigger flex h-14 w-full cursor-pointer select-none items-center justify-between rounded-full bg-marketing-soft px-5 text-left font-dmSans text-lg outline-none ring-marketing-green focus-visible:ring-2 disabled:cursor-not-allowed disabled:text-black/35 app-form-dropdown__trigger--bordered cv-field'
+  return 'app-form-dropdown__trigger flex h-14 w-full is-clickable select-none items-center justify-between rounded-full bg-marketing-soft px-5 text-left font-dmSans text-lg outline-none ring-marketing-green focus-visible:ring-2 disabled:is-disabled-cursor disabled:text-black/35 app-form-dropdown__trigger--bordered cv-field'
 })
 
 const panelClass = computed(() => {

@@ -308,7 +308,7 @@ export const TRUST_PRIVACY_PAGE: TrustContentPage = {
         },
         {
           kind: 'paragraph',
-          text: 'Ak sa domnievate, že zo strany prevádzkovateľa nedochádza k riadnemu nakladaniu s Vašimi osobnými údajmi, máte možnosť podať podnet alebo sťažnosť na Úrad na ochranu osobných údajov Slovenskej republiky, so sídlom Hraničná 12, 820 07 Bratislava 27, viac informácií nájdete na www.dataprotection.gov.sk.',
+          text: 'Ak sa domnievate, že zo strany prevádzkovateľa nedochádza k riadnemu nakladaniu s Vašimi osobnými údajmi, máte možnosť podať podnet alebo sťažnosť na Úrad na ochranu osobných údajov Slovenskej republiky, so sídlom Galvaniho Business Centrum II, Galvaniho 7/B, 821 04 Bratislava, Slovenská republika, viac informácií nájdete na www.dataprotection.gov.sk.',
         },
       ],
     },

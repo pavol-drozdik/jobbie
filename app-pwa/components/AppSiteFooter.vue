@@ -48,7 +48,7 @@
           </div>
           <button
             type="button"
-            class="flex w-fit cursor-pointer items-center gap-2 border-none bg-transparent p-0 font-dmSans text-[14.5px] font-medium text-marketing-abMuted transition-colors hover:text-marketing-abGreen focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marketing-green/40"
+            class="flex w-fit is-clickable items-center gap-2 border-none bg-transparent p-0 font-dmSans text-[14.5px] font-medium text-marketing-abMuted transition-colors hover:text-marketing-abGreen focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marketing-green/40"
             @click="openFooterCookieSettings"
           >
             <AppIcon name="shield-check" :size="18" class="shrink-0 text-marketing-abGreen" />
@@ -136,11 +136,11 @@
               <button
                 type="submit"
                 :disabled="newsletterPhase === 'loading'"
-                class="h-12 min-h-[48px] w-full cursor-pointer rounded-xl border-none bg-marketing-abGreen font-dmSans text-[16px] font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                class="h-12 min-h-[48px] w-full is-clickable rounded-xl border-none bg-marketing-abGreen font-dmSans text-[16px] font-bold text-white transition-opacity hover:opacity-90 disabled:is-disabled-cursor disabled:opacity-60"
               >
                 {{ newsletterPhase === 'loading' ? S.newsletterSubscribeSubmitting : S.footerNewsletterSubmit }}
               </button>
-              <label class="flex cursor-pointer items-start gap-2.5 pt-1 font-dmSans">
+              <label class="flex is-clickable items-start gap-2.5 pt-1 font-dmSans">
                 <AppCheckbox
                   v-model="newsletterConsent"
                   variant="default"
@@ -233,7 +233,6 @@ const footerQuickMenuItems = [
   { to: ROUTES.find, label: S.footerQuickForJobseekers },
   { to: ROUTES.jobHub, label: S.footerQuickForEmployers },
   { to: ROUTES.pricing, label: S.footerPricing },
-  { to: '/auth/login', label: S.signIn },
   { to: ROUTES.authRegister, label: S.register },
 ] as const
 

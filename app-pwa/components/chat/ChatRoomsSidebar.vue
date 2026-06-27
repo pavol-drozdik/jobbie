@@ -28,7 +28,7 @@
         >
           <a
             :href="href"
-            class="relative flex cursor-pointer items-center gap-3.5 px-5 py-3.5 no-underline text-inherit transition-colors hover:bg-[#f7fdf9]"
+            class="relative flex is-clickable items-center gap-3.5 px-5 py-3.5 no-underline text-inherit transition-colors hover:bg-[#f7fdf9]"
             :class="[
               room.id === activeRoomId ? 'bg-marketing-mint' : '',
               openingRoomId === room.id ? 'pointer-events-none opacity-60' : '',
@@ -81,6 +81,7 @@
 <script setup lang="ts">
 import { ROUTES } from '~/utils/app-routes'
 import { S } from '~/utils/strings'
+import { CHAT_AVATAR_PALETTE } from '~/utils/avatar-palette'
 import type { ChatRoomListItem } from '~/types/chat'
 
 const props = defineProps<{
@@ -121,7 +122,7 @@ function onRoomLinkClick(e: MouseEvent, roomId: string, navigate: () => void): v
   void openRoom(roomId, navigate)
 }
 
-const AVATAR_PALETTE = ['#7c3aed', '#0ea5e9', '#f59e0b', '#ef4444', '#10b981', '#6366f1']
+const AVATAR_PALETTE = CHAT_AVATAR_PALETTE
 
 function hashStr(s: string): number {
   let h = 0

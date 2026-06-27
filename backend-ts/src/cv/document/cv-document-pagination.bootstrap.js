@@ -111,6 +111,222 @@
     return units.map((el) => el.cloneNode(true))
   }
 
+  function isOrphanMainCoupledPage(page) {
+    if (page.sideNodes.length > 0) return false
+    if (page.mainNodes.length !== 1) return false
+    const kind = page.mainNodes[0].getAttribute('data-cv-unit')
+    return kind === 'atomic' || kind === 'section-head'
+  }
+
+  function isOrphanExtraInfoPage(page) {
+    if (page.mainNodes.length !== 1) return false
+    const node = page.mainNodes[0]
+    if (node.getAttribute('data-cv-unit') !== 'atomic') return false
+    const title = node.querySelector('h2.section-title')
+    return title != null && title.textContent.trim() === 'Doplňujúce informácie'
+  }
+
+  function isOrphanExtraInfoMainOnly(page) {
+    return isOrphanExtraInfoPage(page)
+  }
+
+  function shouldPackWithPrevious(unit) {
+    return unit.getAttribute('data-cv-pack') === 'with-previous'
+  }
+
+  function isEducationSectionHeadUnit(unit) {
+    if (!(unit instanceof Element)) return false
+    if (unit.getAttribute('data-cv-unit') !== 'section-head') return false
+    return (unit.textContent || '').trim() === 'Vzdelanie'
+  }
+
+  function hasEducationMainUnitsBetween(mainUnits, fromIndex, toIndex) {
+    for (let i = fromIndex; i < toIndex; i++) {
+      if (isEducationSectionHeadUnit(mainUnits[i])) {
+        return true
+      }
+    }
+    return false
+  }
+
+  function mainNodesContainEducation(nodes) {
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i]
+      if (isEducationSectionHeadUnit(node)) {
+        return true
+      }
+      if (node instanceof Element && typeof node.querySelector === 'function') {
+        const title = node.querySelector('h2.section-title')
+        if (title && (title.textContent || '').trim() === 'Vzdelanie') {
+          return true
+        }
+      }
+    }
+    return false
+  }
+
+  function documentHasEducationMainUnits(mainUnits) {
+    return mainUnits.some((unit) => isEducationSectionHeadUnit(unit))
+  }
+
+  function shouldBlockOrphanExtraMergeToPrev(prev, page, pages, pageIndex, mainUnits) {
+    if (!isOrphanExtraInfoPage(page)) {
+      return false
+    }
+    if (!documentHasEducationMainUnits(mainUnits)) {
+      return false
+    }
+    if (mainNodesContainEducation(prev.mainNodes)) {
+      return false
+    }
+    const prevEnd = prev.mainUnitEnd ?? 0
+    const pageStart = page.mainUnitStart ?? prevEnd
+    if (hasEducationMainUnitsBetween(mainUnits, prevEnd, pageStart)) {
+      return true
+    }
+    for (let i = pageIndex; i < pages.length; i++) {
+      if (mainNodesContainEducation(pages[i].mainNodes)) {
+        return true
+      }
+    }
+    return hasEducationMainUnitsBetween(mainUnits, pageStart, mainUnits.length)
+  }
+
+  function absorbWithPreviousPackUnits(pages, pagePayload, measurePage, pageLimit, mainUnits) {
+    if (!pages.length || !pagePayload.mainNodes.length) return false
+    const stickyNodes = pagePayload.mainNodes.filter((node) => shouldPackWithPrevious(node))
+    const regularNodes = pagePayload.mainNodes.filter((node) => !shouldPackWithPrevious(node))
+    if (!stickyNodes.length) return false
+    const prev = pages[pages.length - 1]
+    const prevEnd = prev.mainUnitEnd ?? 0
+    const stickyStart = pagePayload.mainUnitStart ?? prevEnd
+    if (hasEducationMainUnitsBetween(mainUnits, prevEnd, stickyStart)) {
+      return false
+    }
+    const mergedMain = prev.mainNodes.concat(stickyNodes)
+    const mergedH = measurePage(prev.header || null, prev.sideNodes, mergedMain)
+    const prevLimit = pageLimit(!!prev.header)
+    if (mergedH <= prevLimit * 1.2) {
+      pages[pages.length - 1] = {
+        header: prev.header,
+        sideNodes: cloneUnits(prev.sideNodes),
+        mainNodes: cloneUnits(mergedMain),
+        chromeSide: prev.chromeSide,
+        mainUnitStart: prev.mainUnitStart ?? 0,
+        mainUnitEnd: pagePayload.mainUnitEnd ?? prevEnd,
+      }
+      pagePayload.mainNodes = regularNodes
+      return !regularNodes.length && !pagePayload.sideNodes.length
+    }
+    if (prev.mainNodes.length > 0) {
+      const moved = prev.mainNodes[prev.mainNodes.length - 1]
+      const rebalancedPrevMain = prev.mainNodes.slice(0, -1)
+      const rebalancedCurrMain = [moved].concat(stickyNodes, regularNodes)
+      const prevH = measurePage(prev.header || null, prev.sideNodes, rebalancedPrevMain)
+      const currH = measurePage(null, pagePayload.sideNodes, rebalancedCurrMain)
+      if (
+        rebalancedPrevMain.length > 0 &&
+        prevH <= prevLimit &&
+        currH <= pageLimit(false)
+      ) {
+        pages[pages.length - 1] = {
+          header: prev.header,
+          sideNodes: cloneUnits(prev.sideNodes),
+          mainNodes: cloneUnits(rebalancedPrevMain),
+          chromeSide: prev.chromeSide,
+        }
+        pagePayload.mainNodes = rebalancedCurrMain
+        return false
+      }
+    }
+    return false
+  }
+
+  function rebalanceOrphanTrailingMainPage(pages, index, measureSheetFn, pageLimitFn) {
+    if (index <= 0 || index >= pages.length) return false
+    const page = pages[index]
+    const prev = pages[index - 1]
+    if (!isOrphanMainCoupledPage(page) && !isOrphanExtraInfoPage(page)) return false
+    if (!prev.mainNodes.length) return false
+    const moved = prev.mainNodes[prev.mainNodes.length - 1]
+    const rebalancedPrevMain = prev.mainNodes.slice(0, -1)
+    const rebalancedCurrMain = [moved].concat(page.mainNodes)
+    const prevLimit = pageLimitFn(!!prev.header)
+    const currLimit = pageLimitFn(false)
+    const prevH = measureSheetFn(
+      prev.header || null,
+      cloneUnits(prev.sideNodes),
+      cloneUnits(rebalancedPrevMain),
+    )
+    const currH = measureSheetFn(null, cloneUnits(page.sideNodes), cloneUnits(rebalancedCurrMain))
+    if (prevH <= prevLimit && currH <= currLimit && rebalancedPrevMain.length > 0) {
+      pages[index - 1] = {
+        header: prev.header,
+        sideNodes: prev.sideNodes,
+        mainNodes: cloneUnits(rebalancedPrevMain),
+        chromeSide: prev.chromeSide,
+      }
+      pages[index] = {
+        header: page.header,
+        sideNodes: page.sideNodes,
+        mainNodes: cloneUnits(rebalancedCurrMain),
+        chromeSide: page.chromeSide,
+      }
+      return true
+    }
+    return false
+  }
+
+  function tryCoupledSingleSheet(headerEl, sideUnits, mainUnits, maxH, measureSheetFn, buildSheetFn) {
+    if (!sideUnits.length && !mainUnits.length) return null
+    const headerNode = headerEl ? headerEl.cloneNode(true) : null
+    const fullH = measureSheetFn(headerNode, cloneUnits(sideUnits), cloneUnits(mainUnits))
+    if (fullH <= maxH) {
+      return [
+        buildSheetFn({
+          header: headerNode,
+          sideNodes: cloneUnits(sideUnits),
+          mainNodes: cloneUnits(mainUnits),
+          chromeSide: false,
+        }),
+      ]
+    }
+    return null
+  }
+
+  function mergeOrphanCoupledPages(pages, measureSheetFn, pageLimitFn, mainUnits) {
+    for (let i = pages.length - 1; i > 0; i--) {
+      const page = pages[i]
+      if (!isOrphanMainCoupledPage(page) && !isOrphanExtraInfoPage(page)) continue
+      const prev = pages[i - 1]
+      if (shouldBlockOrphanExtraMergeToPrev(prev, page, pages, i, mainUnits)) {
+        rebalanceOrphanTrailingMainPage(pages, i, measureSheetFn, pageLimitFn)
+        continue
+      }
+      const mergedMain = prev.mainNodes.concat(page.mainNodes)
+      const includeHeader = !!prev.header
+      const limit = pageLimitFn(includeHeader)
+      const h = measureSheetFn(
+        prev.header || null,
+        cloneUnits(prev.sideNodes),
+        cloneUnits(mergedMain),
+      )
+      const slackLimit = isOrphanExtraInfoPage(page) ? limit * 1.12 : limit
+      if (h <= slackLimit) {
+        pages[i - 1] = {
+          header: prev.header,
+          sideNodes: prev.sideNodes,
+          mainNodes: cloneUnits(mergedMain),
+          chromeSide: prev.chromeSide,
+        }
+        pages.splice(i, 1)
+        continue
+      }
+      rebalanceOrphanTrailingMainPage(pages, i, measureSheetFn, pageLimitFn)
+    }
+    return pages
+  }
+
   function getMeasureHost() {
     let host = document.getElementById('cv-pagination-measure-host')
     if (!host) {
@@ -126,6 +342,51 @@
 
   function getAtlasMainContentBudget() {
     return getMaxPageHeight() - Math.floor(40 * MM_TO_PX)
+  }
+
+  /** Rebuild breakable sections (heading + entries) when mounting paginated columns. */
+  function mountBreakableSectionUnits(containerEl, nodes, breakableSectionClass) {
+    let breakableSection = null
+    nodes.forEach((node) => {
+      const kind = node.getAttribute('data-cv-unit')
+      if (kind === 'section-head') {
+        breakableSection = document.createElement('section')
+        breakableSection.className = breakableSectionClass
+        breakableSection.appendChild(node.cloneNode(true))
+        containerEl.appendChild(breakableSection)
+        return
+      }
+      if (kind === 'entry') {
+        if (!breakableSection) {
+          breakableSection = document.createElement('section')
+          breakableSection.className = breakableSectionClass
+          containerEl.appendChild(breakableSection)
+        }
+        breakableSection.appendChild(node.cloneNode(true))
+        return
+      }
+      breakableSection = null
+      containerEl.appendChild(node.cloneNode(true))
+    })
+  }
+
+  function measureAtlasMainColumnHeight(mainNodes) {
+    const host = getMeasureHost()
+    const sheet = document.createElement('div')
+    sheet.className = 'cv-sheet resume-page atlas-page'
+    const aside = document.createElement('aside')
+    aside.className = 'atlas-sidebar atlas-sidebar--chrome'
+    const main = document.createElement('section')
+    main.className = 'atlas-main'
+    mountAtlasMainUnits(main, mainNodes)
+    sheet.appendChild(aside)
+    sheet.appendChild(main)
+    host.replaceChildren(sheet)
+    main.style.overflow = 'visible'
+    main.style.maxHeight = 'none'
+    main.style.minHeight = '0'
+    void sheet.offsetHeight
+    return main.scrollHeight
   }
 
   function measureAtlasSheet(sidebarNodes, mainNodes, useChromeSidebar) {
@@ -157,40 +418,86 @@
 
   /** Rebuild breakable sections (heading + entries) when mounting paginated main column. */
   function mountAtlasMainUnits(mainEl, nodes) {
-    let breakableSection = null
-    nodes.forEach((node) => {
-      const kind = node.getAttribute('data-cv-unit')
-      if (kind === 'section-head') {
-        breakableSection = document.createElement('section')
-        breakableSection.className = 'atlas-intro cv-breakable-section'
-        breakableSection.appendChild(node.cloneNode(true))
-        mainEl.appendChild(breakableSection)
-        return
-      }
-      if (kind === 'entry') {
-        if (!breakableSection) {
-          breakableSection = document.createElement('section')
-          breakableSection.className = 'atlas-intro cv-breakable-section'
-          mainEl.appendChild(breakableSection)
+    mountBreakableSectionUnits(mainEl, nodes, 'atlas-intro cv-breakable-section')
+  }
+
+  function mountMonochromeMainUnits(mainEl, nodes) {
+    mountBreakableSectionUnits(mainEl, nodes, 'cv-breakable-section')
+  }
+
+  function mountMonochromeSideUnits(sideEl, nodes) {
+    mountBreakableSectionUnits(sideEl, nodes, 'monochrome-card cv-breakable-section')
+  }
+
+  function mountEditorialMainUnits(mainEl, nodes) {
+    mountBreakableSectionUnits(mainEl, nodes, 'editorial-panel cv-breakable-section')
+  }
+
+  function mountEditorialSideUnits(sideEl, nodes) {
+    mountBreakableSectionUnits(sideEl, nodes, 'section-card cv-breakable-section')
+  }
+
+  function mountMinimalistMainUnits(mainEl, nodes) {
+    mountBreakableSectionUnits(mainEl, nodes, 'cv-breakable-section')
+  }
+
+  function mountMinimalistSideUnits(sideEl, nodes) {
+    mountBreakableSectionUnits(sideEl, nodes, 'cv-breakable-section')
+  }
+
+  /** Grid columns use max(main, side) height — not stretched sheet scrollHeight. */
+  function measureCoupledSheetHeight(sheet) {
+    if (sheet instanceof HTMLElement) {
+      sheet.style.height = 'auto'
+      sheet.style.minHeight = '0'
+      sheet.style.maxHeight = 'none'
+      sheet.style.overflow = 'visible'
+    }
+    const grid = sheet.querySelector('.monochrome-grid, .minimalist-grid, .editorial-columns')
+    if (grid instanceof HTMLElement) {
+      grid.style.alignItems = 'start'
+      grid.style.flex = 'none'
+      grid.style.minHeight = '0'
+    }
+    sheet
+      .querySelectorAll(
+        '.monochrome-main, .minimalist-main, .editorial-columns > div, aside.monochrome-side, aside.minimalist-side, aside.editorial-side',
+      )
+      .forEach((el) => {
+        if (el instanceof HTMLElement) {
+          el.style.minWidth = '0'
+          el.style.minHeight = '0'
+          el.style.height = 'auto'
+          el.style.alignSelf = 'start'
+          el.style.maxWidth = '100%'
         }
-        breakableSection.appendChild(node.cloneNode(true))
-        return
-      }
-      breakableSection = null
-      mainEl.appendChild(node.cloneNode(true))
-    })
+      })
+    void sheet.offsetHeight
+    let total = 0
+    const header = sheet.querySelector(
+      '.monochrome-header, .minimalist-header, .editorial-topbar',
+    )
+    if (header instanceof HTMLElement) {
+      total += header.offsetHeight
+    }
+    const main = sheet.querySelector('.monochrome-main, .minimalist-main, .editorial-columns > div')
+    const side = sheet.querySelector('aside.monochrome-side, aside.minimalist-side, aside.editorial-side')
+    const mainH = main instanceof HTMLElement ? main.scrollHeight : 0
+    const sideH = side instanceof HTMLElement ? side.scrollHeight : 0
+    total += Math.max(mainH, sideH)
+    if (
+      sheet.classList.contains('editorial-page') ||
+      sheet.classList.contains('minimalist-page')
+    ) {
+      const style = window.getComputedStyle(sheet)
+      total += parseFloat(style.paddingTop) || 0
+      total += parseFloat(style.paddingBottom) || 0
+    }
+    return total
   }
 
   function measureMonochromeSheet(headerNode, sideNodes, mainNodes) {
-    let host = document.getElementById('cv-pagination-measure-host')
-    if (!host) {
-      host = document.createElement('div')
-      host.id = 'cv-pagination-measure-host'
-      host.className = 'cv-page-export'
-      host.style.cssText =
-        'position:absolute;left:0;top:0;width:210mm;visibility:hidden;pointer-events:none;z-index:-1;'
-      document.body.appendChild(host)
-    }
+    const host = getMeasureHost()
     const sheet = document.createElement('div')
     sheet.className = 'cv-sheet resume-page monochrome-page'
     if (headerNode) sheet.appendChild(headerNode.cloneNode(true))
@@ -198,15 +505,35 @@
     grid.className = 'monochrome-grid'
     const main = document.createElement('div')
     main.className = 'monochrome-main'
-    mainNodes.forEach((n) => main.appendChild(n.cloneNode(true)))
+    mountMonochromeMainUnits(main, mainNodes)
     const side = document.createElement('aside')
     side.className = 'monochrome-side'
-    sideNodes.forEach((n) => side.appendChild(n.cloneNode(true)))
+    mountMonochromeSideUnits(side, sideNodes)
     grid.appendChild(main)
     grid.appendChild(side)
     sheet.appendChild(grid)
     host.replaceChildren(sheet)
-    return sheet.scrollHeight
+    return measureCoupledSheetHeight(sheet)
+  }
+
+  function measureMinimalistSheet(headerNode, sideNodes, mainNodes) {
+    const host = getMeasureHost()
+    const sheet = document.createElement('div')
+    sheet.className = 'cv-sheet resume-page minimalist-page'
+    if (headerNode) sheet.appendChild(headerNode.cloneNode(true))
+    const grid = document.createElement('section')
+    grid.className = 'minimalist-grid'
+    const main = document.createElement('div')
+    main.className = 'minimalist-main'
+    mountMinimalistMainUnits(main, mainNodes)
+    const side = document.createElement('aside')
+    side.className = 'minimalist-side'
+    mountMinimalistSideUnits(side, sideNodes)
+    grid.appendChild(main)
+    grid.appendChild(side)
+    sheet.appendChild(grid)
+    host.replaceChildren(sheet)
+    return measureCoupledSheetHeight(sheet)
   }
 
   function packCoupledAtlas(sidebarUnits, mainUnits, maxHeight) {
@@ -278,56 +605,71 @@
     mainUnits,
     maxFullHeight,
     headerHeight,
+    measureSheetFn,
   ) {
-    const contentMax = Math.max(maxFullHeight - headerHeight, maxFullHeight * 0.55)
     const pages = []
     let si = 0
     let mi = 0
     let pageIndex = 0
     const headerClone = headerEl ? headerEl.cloneNode(true) : null
 
+    function pageLimit(includeHeader) {
+      return includeHeader ? maxFullHeight : getMaxPageHeight()
+    }
+
+    function measurePage(headerNode, sideNodes, mainNodes) {
+      return measureSheetFn(headerNode, cloneUnits(sideNodes), cloneUnits(mainNodes))
+    }
+
     while (si < sideUnits.length || mi < mainUnits.length) {
       const sideNodes = []
       const mainNodes = []
+      const pageMainStart = mi
       let progressed = true
       const includeHeader = pageIndex === 0 && headerClone
+      const limit = pageLimit(includeHeader)
 
       while (progressed) {
         progressed = false
-        if (si < sideUnits.length) {
-          const sideBundle = takeNextPackUnits(sideUnits, si)
-          if (!sideBundle) {
-            break
-          }
-          const trialSide = sideNodes.concat(sideBundle.nodes)
-          const h = measureMonochromeSheet(
-            includeHeader ? headerClone : null,
-            cloneUnits(trialSide),
-            cloneUnits(mainNodes),
-          )
-          if (h <= (includeHeader ? maxFullHeight : contentMax)) {
-            sideBundle.nodes.forEach((n) => sideNodes.push(n))
-            si = sideBundle.nextIndex
-            progressed = true
-            continue
-          }
-        }
+        const headerNode = includeHeader ? headerClone : null
         if (mi < mainUnits.length) {
           const mainBundle = takeNextPackUnits(mainUnits, mi)
-          if (!mainBundle) {
-            break
+          if (mainBundle) {
+            const trialMain = mainNodes.concat(mainBundle.nodes)
+            const h = measurePage(headerNode, sideNodes, trialMain)
+            if (h <= limit) {
+              mainBundle.nodes.forEach((n) => mainNodes.push(n))
+              mi = mainBundle.nextIndex
+              progressed = true
+              continue
+            }
           }
-          const trialMain = mainNodes.concat(mainBundle.nodes)
-          const h = measureMonochromeSheet(
-            includeHeader ? headerClone : null,
-            cloneUnits(sideNodes),
-            cloneUnits(trialMain),
-          )
-          if (h <= (includeHeader ? maxFullHeight : contentMax)) {
-            mainBundle.nodes.forEach((n) => mainNodes.push(n))
-            mi = mainBundle.nextIndex
-            progressed = true
+        }
+        if (si < sideUnits.length) {
+          const sideBundle = takeNextPackUnits(sideUnits, si)
+          if (sideBundle) {
+            const trialSide = sideNodes.concat(sideBundle.nodes)
+            const h = measurePage(headerNode, trialSide, mainNodes)
+            if (h <= limit) {
+              sideBundle.nodes.forEach((n) => sideNodes.push(n))
+              si = sideBundle.nextIndex
+              progressed = true
+            }
           }
+        }
+      }
+
+      const headerNodeForFill = includeHeader ? headerClone : null
+      while (mi < mainUnits.length) {
+        const mainBundle = takeNextPackUnits(mainUnits, mi)
+        if (!mainBundle) break
+        const trialMain = mainNodes.concat(mainBundle.nodes)
+        const h = measurePage(headerNodeForFill, sideNodes, trialMain)
+        if (h <= limit) {
+          mainBundle.nodes.forEach((n) => mainNodes.push(n))
+          mi = mainBundle.nextIndex
+        } else {
+          break
         }
       }
 
@@ -343,16 +685,106 @@
         }
       }
 
-      pages.push({
+      const pagePayload = {
         header: includeHeader ? headerClone : null,
-        sideNodes: cloneUnits(sideNodes),
-        mainNodes: cloneUnits(mainNodes),
+        sideNodes: sideNodes.slice(),
+        mainNodes: mainNodes.slice(),
         chromeSide: pageIndex > 0 && sideNodes.length === 0,
+        mainUnitStart: pageMainStart,
+        mainUnitEnd: mi,
+      }
+
+      if (
+        pages.length > 0 &&
+        absorbWithPreviousPackUnits(pages, pagePayload, measurePage, pageLimit, mainUnits)
+      ) {
+        pageIndex += 1
+        continue
+      }
+
+      if (!pagePayload.mainNodes.length && !pagePayload.sideNodes.length) {
+        pageIndex += 1
+        continue
+      }
+
+      if (pages.length > 0 && isOrphanExtraInfoMainOnly(pagePayload)) {
+        const prev = pages[pages.length - 1]
+        if (!shouldBlockOrphanExtraMergeToPrev(prev, pagePayload, pages, pages.length, mainUnits)) {
+          const mergedMain = prev.mainNodes.concat(pagePayload.mainNodes)
+          const mergedH = measurePage(prev.header || null, prev.sideNodes, mergedMain)
+          const prevLimit = pageLimit(!!prev.header)
+          const prevEnd = prev.mainUnitEnd ?? 0
+          if (mergedH <= prevLimit * 1.15) {
+            pages[pages.length - 1] = {
+              header: prev.header,
+              sideNodes: cloneUnits(prev.sideNodes),
+              mainNodes: cloneUnits(mergedMain),
+              chromeSide: prev.chromeSide,
+              mainUnitStart: prev.mainUnitStart ?? 0,
+              mainUnitEnd: pagePayload.mainUnitEnd ?? prevEnd,
+            }
+            if (pagePayload.sideNodes.length) {
+              pages.push({
+                header: null,
+                sideNodes: cloneUnits(pagePayload.sideNodes),
+                mainNodes: [],
+                chromeSide: pagePayload.chromeSide,
+                mainUnitStart: pagePayload.mainUnitEnd ?? mi,
+                mainUnitEnd: pagePayload.mainUnitEnd ?? mi,
+              })
+            }
+            pageIndex += 1
+            continue
+          }
+          if (pagePayload.sideNodes.length) {
+            const rebalancedMain = prev.mainNodes.length
+              ? [prev.mainNodes[prev.mainNodes.length - 1]].concat(pagePayload.mainNodes)
+              : pagePayload.mainNodes
+            const rebalancedPrevMain = prev.mainNodes.length
+              ? prev.mainNodes.slice(0, -1)
+              : prev.mainNodes
+            const prevH = measurePage(prev.header || null, prev.sideNodes, rebalancedPrevMain)
+            const currH = measurePage(null, pagePayload.sideNodes, rebalancedMain)
+            if (
+              rebalancedPrevMain.length > 0 &&
+              prevH <= prevLimit &&
+              currH <= pageLimit(false)
+            ) {
+              pages[pages.length - 1] = {
+                header: prev.header,
+                sideNodes: cloneUnits(prev.sideNodes),
+                mainNodes: cloneUnits(rebalancedPrevMain),
+                chromeSide: prev.chromeSide,
+                mainUnitStart: prev.mainUnitStart ?? 0,
+                mainUnitEnd: (prev.mainUnitEnd ?? prevEnd) - 1,
+              }
+              pages.push({
+                header: null,
+                sideNodes: cloneUnits(pagePayload.sideNodes),
+                mainNodes: cloneUnits(rebalancedMain),
+                chromeSide: pagePayload.chromeSide,
+                mainUnitStart: (prev.mainUnitEnd ?? prevEnd) - 1,
+                mainUnitEnd: pagePayload.mainUnitEnd ?? mi,
+              })
+              pageIndex += 1
+              continue
+            }
+          }
+        }
+      }
+
+      pages.push({
+        header: pagePayload.header,
+        sideNodes: cloneUnits(pagePayload.sideNodes),
+        mainNodes: cloneUnits(pagePayload.mainNodes),
+        chromeSide: pagePayload.chromeSide,
+        mainUnitStart: pagePayload.mainUnitStart,
+        mainUnitEnd: pagePayload.mainUnitEnd,
       })
       pageIndex += 1
     }
 
-    return pages
+    return mergeOrphanCoupledPages(pages, measureSheetFn, pageLimit, mainUnits)
   }
 
   function buildAtlasSheet(page) {
@@ -376,15 +808,15 @@
     sheet.className = 'cv-sheet resume-page monochrome-page'
     if (page.header) sheet.appendChild(page.header.cloneNode(true))
     const grid = document.createElement('section')
-    grid.className = 'monochrome-grid'
+    grid.className = page.header ? 'monochrome-grid' : 'monochrome-grid monochrome-grid--continued'
     const main = document.createElement('div')
     main.className = 'monochrome-main'
-    page.mainNodes.forEach((n) => main.appendChild(n))
+    mountMonochromeMainUnits(main, page.mainNodes)
     const side = document.createElement('aside')
     side.className = page.chromeSide
       ? 'monochrome-side monochrome-side--chrome'
       : 'monochrome-side'
-    page.sideNodes.forEach((n) => side.appendChild(n))
+    mountMonochromeSideUnits(side, page.sideNodes)
     grid.appendChild(main)
     grid.appendChild(side)
     sheet.appendChild(grid)
@@ -403,7 +835,7 @@
     const page1Sidebar = cloneUnits(sidebarUnits)
     const allMain = cloneUnits(mainUnits)
     const mainBudget = getAtlasMainContentBudget()
-    const mainOnlyH = measureAtlasSheet([], allMain, true)
+    const mainOnlyH = measureAtlasMainColumnHeight(allMain)
     const combinedH = measureAtlasSheet(page1Sidebar, allMain, false)
     if (mainOnlyH <= mainBudget && combinedH <= maxH) {
       return [
@@ -420,8 +852,8 @@
       const bundle = takeNextPackUnits(mainUnits, mi)
       if (!bundle) break
       const trialMain = page1Main.concat(bundle.nodes)
-      const h = measureAtlasSheet(page1Sidebar, cloneUnits(trialMain), false)
-      if (h <= maxH) {
+      const mainH = measureAtlasMainColumnHeight(trialMain)
+      if (mainH <= maxH) {
         bundle.nodes.forEach((n) => page1Main.push(n))
         mi = bundle.nextIndex
         continue
@@ -481,14 +913,64 @@
         headerH = host.scrollHeight
       }
     }
+    const sideUnits = collectColumnUnits(side)
+    const mainUnits = collectColumnUnits(main)
+    const single = tryCoupledSingleSheet(
+      header,
+      sideUnits,
+      mainUnits,
+      maxH,
+      measureMonochromeSheet,
+      buildMonochromeSheet,
+    )
+    if (single) return single
     const pages = packCoupledMonochrome(
       header,
-      collectColumnUnits(side),
-      collectColumnUnits(main),
+      sideUnits,
+      mainUnits,
       maxH,
       headerH,
+      measureMonochromeSheet,
     )
     return pages.map(buildMonochromeSheet)
+  }
+
+  function measureEditorialSheet(topbarNode, sideNodes, mainNodes) {
+    const host = getMeasureHost()
+    const sheet = document.createElement('div')
+    sheet.className = 'cv-sheet resume-page editorial-page'
+    if (topbarNode) sheet.appendChild(topbarNode.cloneNode(true))
+    const cols = document.createElement('section')
+    cols.className = 'editorial-columns'
+    const main = document.createElement('div')
+    mountEditorialMainUnits(main, mainNodes)
+    const side = document.createElement('aside')
+    side.className = 'editorial-side'
+    mountEditorialSideUnits(side, sideNodes)
+    cols.appendChild(main)
+    cols.appendChild(side)
+    sheet.appendChild(cols)
+    host.replaceChildren(sheet)
+    return measureCoupledSheetHeight(sheet)
+  }
+
+  function buildEditorialSheet(page) {
+    const sheet = document.createElement('div')
+    sheet.className = 'cv-sheet resume-page editorial-page'
+    if (page.header) sheet.appendChild(page.header.cloneNode(true))
+    const cols = document.createElement('section')
+    cols.className = page.header
+      ? 'editorial-columns'
+      : 'editorial-columns editorial-columns--continued'
+    const mainEl = document.createElement('div')
+    mountEditorialMainUnits(mainEl, page.mainNodes)
+    const sideEl = document.createElement('aside')
+    sideEl.className = 'editorial-side'
+    mountEditorialSideUnits(sideEl, page.sideNodes)
+    cols.appendChild(mainEl)
+    cols.appendChild(sideEl)
+    sheet.appendChild(cols)
+    return sheet
   }
 
   function paginateEditorial(sourcePage) {
@@ -501,113 +983,49 @@
     if (!mainCol || !side) return paginateSingleColumn(sourcePage)
     let topH = 0
     if (topbar) {
-      const host = document.getElementById('cv-pagination-measure-host')
-      if (host) {
-        host.innerHTML = ''
-        host.appendChild(topbar.cloneNode(true))
-        topH = host.scrollHeight
-      }
+      const host = getMeasureHost()
+      host.innerHTML = ''
+      host.appendChild(topbar.cloneNode(true))
+      topH = host.scrollHeight
     }
-    const contentMax = Math.max(maxH - topH, maxH * 0.6)
     const sideUnits = collectColumnUnits(side)
     const mainUnits = collectColumnUnits(mainCol)
-    const topClone = topbar ? topbar.cloneNode(true) : null
-    const sheets = []
-    let si = 0
-    let mi = 0
-    let pageIndex = 0
-
-    while (si < sideUnits.length || mi < mainUnits.length) {
-      const sideNodes = []
-      const mainNodes = []
-      let progressed = true
-      while (progressed) {
-        progressed = false
-        if (si < sideUnits.length) {
-          const sideBundle = takeNextPackUnits(sideUnits, si)
-          if (!sideBundle) {
-            break
-          }
-          const trial = sideNodes.concat(sideBundle.nodes)
-          const h = measureEditorialPage(topClone && pageIndex === 0 ? topClone : null, trial, mainNodes)
-          const limit = pageIndex === 0 && topClone ? maxH : contentMax
-          if (h <= limit) {
-            sideBundle.nodes.forEach((n) => sideNodes.push(n))
-            si = sideBundle.nextIndex
-            progressed = true
-            continue
-          }
-        }
-        if (mi < mainUnits.length) {
-          const mainBundle = takeNextPackUnits(mainUnits, mi)
-          if (!mainBundle) {
-            break
-          }
-          const trial = mainNodes.concat(mainBundle.nodes)
-          const h = measureEditorialPage(topClone && pageIndex === 0 ? topClone : null, sideNodes, trial)
-          const limit = pageIndex === 0 && topClone ? maxH : contentMax
-          if (h <= limit) {
-            mainBundle.nodes.forEach((n) => mainNodes.push(n))
-            mi = mainBundle.nextIndex
-            progressed = true
-          }
-        }
-      }
-      if (!sideNodes.length && !mainNodes.length) {
-        if (si < sideUnits.length) {
-          const sideBundle = takeNextPackUnits(sideUnits, si)
-          sideBundle.nodes.forEach((n) => sideNodes.push(n))
-          si = sideBundle.nextIndex
-        } else if (mi < mainUnits.length) {
-          const mainBundle = takeNextPackUnits(mainUnits, mi)
-          mainBundle.nodes.forEach((n) => mainNodes.push(n))
-          mi = mainBundle.nextIndex
-        }
-      }
-      const sheet = document.createElement('div')
-      sheet.className = 'cv-sheet resume-page editorial-page'
-      if (pageIndex === 0 && topClone) sheet.appendChild(topClone.cloneNode(true))
-      const cols = document.createElement('section')
-      cols.className = 'editorial-columns'
-      const mainEl = document.createElement('div')
-      mainNodes.forEach((n) => mainEl.appendChild(n.cloneNode(true)))
-      const sideEl = document.createElement('aside')
-      sideEl.className = 'editorial-side'
-      sideNodes.forEach((n) => sideEl.appendChild(n.cloneNode(true)))
-      cols.appendChild(mainEl)
-      cols.appendChild(sideEl)
-      sheet.appendChild(cols)
-      sheets.push(sheet)
-      pageIndex += 1
-    }
-    return sheets.length ? sheets : paginateSingleColumn(sourcePage)
+    const single = tryCoupledSingleSheet(
+      topbar,
+      sideUnits,
+      mainUnits,
+      maxH,
+      measureEditorialSheet,
+      buildEditorialSheet,
+    )
+    if (single) return single
+    const pages = packCoupledMonochrome(
+      topbar,
+      sideUnits,
+      mainUnits,
+      maxH,
+      topH,
+      measureEditorialSheet,
+    )
+    return pages.length ? pages.map(buildEditorialSheet) : paginateSingleColumn(sourcePage)
   }
 
-  function measureEditorialPage(topbar, sideNodes, mainNodes) {
-    let host = document.getElementById('cv-pagination-measure-host')
-    if (!host) {
-      host = document.createElement('div')
-      host.id = 'cv-pagination-measure-host'
-      host.className = 'cv-page-export'
-      host.style.cssText =
-        'position:absolute;left:0;top:0;width:210mm;visibility:hidden;pointer-events:none;z-index:-1;'
-      document.body.appendChild(host)
-    }
+  function buildMinimalistSheet(page) {
     const sheet = document.createElement('div')
-    sheet.className = 'cv-sheet resume-page editorial-page'
-    if (topbar) sheet.appendChild(topbar.cloneNode(true))
-    const cols = document.createElement('section')
-    cols.className = 'editorial-columns'
-    const main = document.createElement('div')
-    mainNodes.forEach((n) => main.appendChild(n.cloneNode(true)))
-    const side = document.createElement('aside')
-    side.className = 'editorial-side'
-    sideNodes.forEach((n) => side.appendChild(n.cloneNode(true)))
-    cols.appendChild(main)
-    cols.appendChild(side)
-    sheet.appendChild(cols)
-    host.replaceChildren(sheet)
-    return sheet.scrollHeight
+    sheet.className = 'cv-sheet resume-page minimalist-page'
+    if (page.header) sheet.appendChild(page.header.cloneNode(true))
+    const gridEl = document.createElement('section')
+    gridEl.className = page.header ? 'minimalist-grid' : 'minimalist-grid minimalist-grid--continued'
+    const mainEl = document.createElement('div')
+    mainEl.className = 'minimalist-main'
+    mountMinimalistMainUnits(mainEl, page.mainNodes)
+    const sideEl = document.createElement('aside')
+    sideEl.className = 'minimalist-side'
+    mountMinimalistSideUnits(sideEl, page.sideNodes)
+    gridEl.appendChild(mainEl)
+    gridEl.appendChild(sideEl)
+    sheet.appendChild(gridEl)
+    return sheet
   }
 
   function paginateMinimalist(sourcePage) {
@@ -620,38 +1038,31 @@
     if (!main || !side) return paginateSingleColumn(sourcePage)
     let headerH = 0
     if (header) {
-      const host = document.getElementById('cv-pagination-measure-host')
-      if (host) {
-        host.innerHTML = ''
-        host.appendChild(header.cloneNode(true))
-        headerH = host.scrollHeight
-      }
+      const host = getMeasureHost()
+      host.innerHTML = ''
+      host.appendChild(header.cloneNode(true))
+      headerH = host.scrollHeight
     }
-    const contentMax = Math.max(maxH - headerH, maxH * 0.55)
+    const sideUnits = collectColumnUnits(side)
+    const mainUnits = collectColumnUnits(main)
+    const single = tryCoupledSingleSheet(
+      header,
+      sideUnits,
+      mainUnits,
+      maxH,
+      measureMinimalistSheet,
+      buildMinimalistSheet,
+    )
+    if (single) return single
     const pages = packCoupledMonochrome(
       header,
-      collectColumnUnits(side),
-      collectColumnUnits(main),
+      sideUnits,
+      mainUnits,
       maxH,
       headerH,
+      measureMinimalistSheet,
     )
-    return pages.map((page) => {
-      const sheet = document.createElement('div')
-      sheet.className = 'cv-sheet resume-page minimalist-page'
-      if (page.header) sheet.appendChild(page.header.cloneNode(true))
-      const gridEl = document.createElement('section')
-      gridEl.className = 'minimalist-grid'
-      const mainEl = document.createElement('div')
-      mainEl.className = 'minimalist-main'
-      page.mainNodes.forEach((n) => mainEl.appendChild(n))
-      const sideEl = document.createElement('aside')
-      sideEl.className = 'minimalist-side'
-      page.sideNodes.forEach((n) => sideEl.appendChild(n))
-      gridEl.appendChild(mainEl)
-      gridEl.appendChild(sideEl)
-      sheet.appendChild(gridEl)
-      return sheet
-    })
+    return pages.map(buildMinimalistSheet)
   }
 
   function measureSingleColumnPage(nodes, className) {

@@ -1,6 +1,7 @@
 <template>
   <div
     role="radiogroup"
+    :aria-label="ariaLabel"
     class="inline-flex flex-wrap items-stretch gap-1 rounded-full bg-black/[0.06] p-1"
   >
     <button
@@ -9,7 +10,7 @@
       type="button"
       role="radio"
       :aria-checked="modelValue === opt.value"
-      class="cursor-pointer rounded-full border-0 px-4 py-2 text-sm font-semibold outline-none ring-marketing-green transition-colors focus-visible:ring-2"
+      class="is-clickable rounded-full border-0 px-4 py-2 text-sm font-semibold outline-none ring-marketing-green transition-colors focus-visible:ring-2"
       :class="
         modelValue === opt.value
           ? 'bg-marketing-green text-white'
@@ -28,6 +29,7 @@ type Option = { value: string; label: string }
 defineProps<{
   modelValue: string
   options: ReadonlyArray<Option>
+  ariaLabel?: string
 }>()
 
 const emit = defineEmits<{

@@ -9,7 +9,7 @@
         v-for="sj in jobs"
         :key="sj.id"
         :to="ROUTES.jobDetail(sj.id)"
-        class="flex cursor-pointer items-center gap-3.5 rounded-[14px] p-3 no-underline transition-colors hover:bg-marketing-mint/60"
+        class="flex is-clickable items-center gap-3.5 rounded-[14px] p-3 no-underline transition-colors hover:bg-marketing-mint/60"
       >
         <img
           class="size-14 min-h-14 min-w-14 shrink-0 rounded-xl bg-marketing-panel object-cover"
@@ -38,7 +38,7 @@
       </NuxtLink>
       <NuxtLink
         :to="ROUTES.find"
-        class="flex cursor-pointer items-center justify-center gap-1.5 rounded-[14px] p-3 text-[15px] font-bold text-marketing-green no-underline transition-colors hover:bg-marketing-mint/60"
+        class="flex is-clickable items-center justify-center gap-1.5 rounded-[14px] p-3 text-[15px] font-bold text-marketing-green no-underline transition-colors hover:bg-marketing-mint/60"
       >
         {{ S.jobViewAllOffers }}
         <AppIcon name="arrow-right" :size="14" class="shrink-0" />

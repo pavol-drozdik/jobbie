@@ -41,7 +41,10 @@ import { isPublicSubscriptionPlanSlug } from '../billing/public-pricing-catalog'
 import { SubscriptionTrialService } from '../billing/subscription-trial.service';
 import { SkRpoLookupService } from '../registry/sk-rpo-lookup.service';
 import { SupabaseService } from '../supabase/supabase.service';
-import { assertSkBillingEligible } from './sk-billing-eligibility';
+import {
+  assertPurchaserTypeMatchesAccountRole,
+  assertSkBillingEligible,
+} from './sk-billing-eligibility';
 import { CreditPackDto } from './payments.dto';
 import {
   isStripeTestMode,
@@ -207,6 +210,7 @@ export class StripeService {
   }
 
   private async loadProfileBillingContext(userId: string): Promise<{
+    role: string | null;
     registered_office: string | null;
     billing_address: string | null;
     display_name: string | null;
@@ -217,11 +221,12 @@ export class StripeService {
       .getClient()
       .from('profiles')
       .select(
-        'registered_office, billing_details, display_name, first_name, last_name',
+        'role, registered_office, billing_details, display_name, first_name, last_name',
       )
       .eq('id', userId)
       .maybeSingle();
     const row = data as {
+      role?: string | null;
       registered_office?: string | null;
       billing_details?: { address?: string } | null;
       display_name?: string | null;
@@ -234,6 +239,7 @@ export class StripeService {
         ? bd.address
         : null;
     return {
+      role: row?.role?.trim() || null,
       registered_office: row?.registered_office?.trim() || null,
       billing_address: billingAddress?.trim() || null,
       display_name: row?.display_name?.trim() || null,
@@ -254,8 +260,10 @@ export class StripeService {
       [profileCtx.first_name, profileCtx.last_name].filter(Boolean).join(' ').trim() ||
       profileCtx.display_name ||
       undefined;
+    const purchaserType =
+      profileCtx.role === 'company' ? 'company' : 'individual';
     return {
-      purchaser_type: 'individual',
+      purchaser_type: purchaserType,
       company_name: personName || null,
     };
   }
@@ -930,7 +938,11 @@ export class StripeService {
       billing,
       profileCtx,
     );
-    await assertSkBillingEligible(effectiveBilling, this.skRpoLookup);
+    await assertSkBillingEligible(
+      effectiveBilling,
+      this.skRpoLookup,
+      profileCtx.role,
+    );
     const customerId = await this.ensureStripeCustomer(userId, customerEmail);
     await this.applyCheckoutBillingDetails(
       userId,
@@ -1144,11 +1156,23 @@ export class StripeService {
     details: CheckoutBillingDetailsInput,
     customerEmail?: string | null,
     profileCtx?: {
+      role?: string | null;
       registered_office: string | null;
       billing_address: string | null;
     } | null,
   ): Promise<void> {
     const supabase = this.supabaseService.getClient();
+    let accountRole = profileCtx?.role?.trim() || null;
+    if (!accountRole) {
+      const { data: roleRow } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .maybeSingle();
+      accountRole =
+        (roleRow as { role?: string | null } | null)?.role?.trim() || null;
+    }
+    assertPurchaserTypeMatchesAccountRole(accountRole, details);
     const profileUpdate: Record<string, unknown> = {};
     if (details.purchaser_type === 'company') {
       if (details.company_name !== undefined) {
@@ -1489,7 +1513,11 @@ export class StripeService {
       billing,
       profileCtx,
     );
-    await assertSkBillingEligible(effectiveBilling, this.skRpoLookup);
+    await assertSkBillingEligible(
+      effectiveBilling,
+      this.skRpoLookup,
+      profileCtx.role,
+    );
     const customerId = await this.ensureStripeCustomer(userId, customerEmail);
     await this.applyCheckoutBillingDetails(
       userId,

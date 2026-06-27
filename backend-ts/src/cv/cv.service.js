@@ -166,9 +166,9 @@ function cvOwnerIdsMatch(shellUserId, viewerUserId) {
 }
 function mapMergedCvRow(shell, personal, job) {
     const row = {
-        ...omitCvId(personal),
         ...omitCvId(job),
         ...shell,
+        ...omitCvId(personal),
     };
     const licenses = row.driving_license_categories;
     const licArr = Array.isArray(licenses)
@@ -316,6 +316,37 @@ let CvService = class CvService {
             .eq('cv_id', cvId)
             .maybeSingle();
         return data ?? null;
+    }
+    async ensureCvChildRows(cvId) {
+        const client = this.supabase.getClient();
+        const personal = await this.findPersonalRow(cvId);
+        if (!personal) {
+            const { error } = await client.from('cv_personal_info').insert({
+                cv_id: cvId,
+                show_academic_title: false,
+                show_birth_date: false,
+                show_contact_details: true,
+                address_optional_collapsed: false,
+                driving_license_categories: [],
+            });
+            if (error)
+                throw new common_1.NotFoundException(error.message);
+        }
+        const job = await this.findJobRow(cvId);
+        if (!job) {
+            const { error } = await client.from('cv_job_preferences').insert({
+                cv_id: cvId,
+                desired_positions: [],
+                desired_locations: [],
+                employment_types: [],
+                salary_currency: 'EUR',
+                salary_period: 'monthly',
+                has_disability: false,
+                email_job_alerts: false,
+            });
+            if (error)
+                throw new common_1.NotFoundException(error.message);
+        }
     }
     async assertWorkerRole(userId) {
         const { data, error } = await this.supabase
@@ -567,15 +598,51 @@ let CvService = class CvService {
         const { error: eShell } = await client.from('cvs').update(shellUp).eq('id', cvId);
         if (eShell)
             throw new common_1.NotFoundException(eShell.message);
-        if (Object.keys(personalUp).some((k) => k !== 'updated_at')) {
-            const { error: eP } = await client.from('cv_personal_info').update(personalUp).eq('cv_id', cvId);
+        const hasPersonalPatch = Object.keys(personalUp).some((k) => k !== 'updated_at');
+        const hasJobPatch = Object.keys(jobUp).some((k) => k !== 'updated_at');
+        if (hasPersonalPatch || hasJobPatch) {
+            await this.ensureCvChildRows(cvId);
+        }
+        if (hasPersonalPatch) {
+            const { data: personalRow, error: eP } = await client
+                .from('cv_personal_info')
+                .update(personalUp)
+                .eq('cv_id', cvId)
+                .select('*')
+                .maybeSingle();
             if (eP)
                 throw new common_1.NotFoundException(eP.message);
+            if (!personalRow)
+                throw new common_1.NotFoundException('Nepodarilo sa uložiť osobné údaje životopisu.');
+            for (const key of Object.keys(personalUp)) {
+                if (key === 'updated_at')
+                    continue;
+                const sent = personalUp[key];
+                const stored = personalRow[key];
+                if (key === 'about_me' || key === 'hobbies' || key === 'additional_skills_info') {
+                    const sentNorm = sent == null || String(sent).trim() === '' ? null : sanitizeCvRichTextField(sent);
+                    const storedNorm = stored == null || String(stored).trim() === '' ? null : String(stored);
+                    if (sentNorm !== storedNorm) {
+                        throw new common_1.NotFoundException('Nepodarilo sa uložiť osobné údaje životopisu.');
+                    }
+                    continue;
+                }
+                if (JSON.stringify(sent ?? null) !== JSON.stringify(stored ?? null)) {
+                    throw new common_1.NotFoundException('Nepodarilo sa uložiť osobné údaje životopisu.');
+                }
+            }
         }
-        if (Object.keys(jobUp).some((k) => k !== 'updated_at')) {
-            const { error: eJ } = await client.from('cv_job_preferences').update(jobUp).eq('cv_id', cvId);
+        if (hasJobPatch) {
+            const { data: jobRow, error: eJ } = await client
+                .from('cv_job_preferences')
+                .update(jobUp)
+                .eq('cv_id', cvId)
+                .select('*')
+                .maybeSingle();
             if (eJ)
                 throw new common_1.NotFoundException(eJ.message);
+            if (!jobRow)
+                throw new common_1.NotFoundException('Nepodarilo sa uložiť pracovné preferencie životopisu.');
         }
         const nextShell = await this.findShellRow(cvId);
         if (!nextShell)

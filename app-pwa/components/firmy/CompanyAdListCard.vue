@@ -99,7 +99,7 @@
 
           <div
 
-            class="flex size-10 min-w-10 shrink-0 items-center justify-center rounded-full bg-[#7c3aed] font-dmSans text-base font-bold text-white"
+            class="flex size-10 min-w-10 shrink-0 items-center justify-center rounded-full bg-marketing-green font-dmSans text-base font-bold text-white"
 
           >
 

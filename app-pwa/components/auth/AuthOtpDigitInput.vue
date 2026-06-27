@@ -15,7 +15,7 @@
       inputmode="numeric"
       :autocomplete="index === 0 ? 'one-time-code' : 'off'"
       maxlength="1"
-      class="size-[52px] shrink-0 rounded-xl border border-black/[0.06] bg-marketing-soft text-center font-dmSans text-[22px] font-semibold tabular-nums text-black outline-none ring-marketing-green transition-[border-color,box-shadow,background-color] duration-200 focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-60 sm:size-[58px] sm:text-[26px]"
+      class="size-[52px] shrink-0 rounded-xl border border-black/[0.06] bg-marketing-soft text-center font-dmSans text-[22px] font-semibold tabular-nums text-black outline-none ring-marketing-green transition-[border-color,box-shadow,background-color] duration-200 focus-visible:ring-2 disabled:is-disabled-cursor disabled:opacity-60 sm:size-[58px] sm:text-[26px]"
       :class="cellClass(index)"
       :disabled="disabled"
       :aria-label="`Číslica ${index + 1} z ${OTP_LENGTH}`"

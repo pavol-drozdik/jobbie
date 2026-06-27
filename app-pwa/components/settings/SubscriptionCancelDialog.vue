@@ -31,7 +31,7 @@
               <li v-for="opt in reasonOptions" :key="opt.value">
                 <button
                   type="button"
-                  class="flex w-full cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-left text-[15px] font-semibold transition-colors"
+                  class="flex w-full is-clickable items-center gap-3 rounded-2xl border px-4 py-3 text-left text-[15px] font-semibold transition-colors"
                   :class="
                     reasonCode === opt.value
                       ? 'border-marketing-green bg-marketing-mint/50 text-black'

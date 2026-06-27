@@ -8,7 +8,7 @@
       <label
         v-for="(opt, idx) in visibleOptions"
         :key="opt.id"
-        class="flex cursor-pointer items-start gap-2.5 text-sm leading-snug text-black/80"
+        class="flex is-clickable items-start gap-2.5 text-sm leading-snug text-black/80"
         :class="idx >= initialVisible && !showAll ? 'hidden' : ''"
       >
         <AppCheckbox
@@ -22,7 +22,7 @@
     <button
       v-if="canCollapse"
       type="button"
-      class="mt-3 inline-flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-sm font-semibold text-marketing-green hover:underline"
+      class="mt-3 inline-flex is-clickable items-center gap-1 border-0 bg-transparent p-0 text-sm font-semibold text-marketing-green hover:underline"
       @click="showAll = !showAll"
     >
       {{ showAll ? lessLabel : moreLabel }}

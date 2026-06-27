@@ -15,6 +15,7 @@ import CvCandidateCard from '~/components/cv-database/CvCandidateCard.vue'
 import CvCandidateDetailModal from '~/components/cv-database/CvCandidateDetailModal.vue'
 import { ROUTES } from '~/utils/app-routes'
 import { S } from '~/utils/strings'
+import { catalogFilterHeroClass } from '~/utils/marketing-ui'
 import type {
   CvDatabaseFiltersModel,
   CvDbAvailability,
@@ -645,7 +646,7 @@ const skeletonCount = 8
     ref="shellRef"
     class="mx-auto w-full max-w-[1400px] box-border px-5 pb-10 font-dmSans text-black/80"
   >
-    <section class="mb-[50px] mt-[30px] w-full max-w-[1400px] rounded-[20px] bg-[linear-gradient(155deg,rgb(21,128,61)_0%,rgb(34,197,94)_100%)] p-6 marketing:mt-[30px] marketing:p-[50px]">
+    <section :class="catalogFilterHeroClass">
       <h1 class="m-0 mb-5 font-dmSans text-[28px] font-extrabold leading-tight text-white marketing:mb-6 marketing:text-[34px]">
         {{ S.navCvDatabaseTitle }}
       </h1>

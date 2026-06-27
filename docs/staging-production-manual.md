@@ -8,6 +8,7 @@ End-to-end guide: **Git/GitHub branching**, **CI/CD**, **staging VPS**, **produc
 |-----|---------|
 | [deployment.md](./deployment.md) | Local dev, env var tables, PWA build |
 | [websupport-vps-deployment/README-DEPLOYMENT.md](../websupport-vps-deployment/README-DEPLOYMENT.md) | VPS bootstrap, backups, Typesense restore |
+| [websupport-vps-deployment/OPS-DISCORD-ALERTING.md](../websupport-vps-deployment/OPS-DISCORD-ALERTING.md) | Operator Discord alerts (Sentry, reports, Netdata) |
 | [database-operations-runbook.md](./database-operations-runbook.md) | DB backups, secret rotation |
 | [SECURITY.md](./SECURITY.md) | BFF cookies, CSRF, secrets |
 | [payments-credits.md](./payments-credits.md) | Stripe webhooks, catalog |
@@ -513,6 +514,8 @@ Mirror staging with **production** values:
 | Environment | `production` with required reviewers |
 
 Complete bootstrap and first `docker compose up -d` **before** merging to `main` with auto-deploy enabled, or the first **deploy-production** job will fail SSH/pull.
+
+After the stack is healthy, set up operator Discord notifications (Sentry bridge, content reports, Netdata): [OPS-DISCORD-ALERTING.md](../websupport-vps-deployment/OPS-DISCORD-ALERTING.md).
 
 ---
 

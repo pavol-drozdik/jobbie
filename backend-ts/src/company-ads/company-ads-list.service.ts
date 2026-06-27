@@ -16,6 +16,9 @@ import type { CompanyAdViewerContext } from './public-response.mapper';
 export const COMPANY_AD_LIST_SELECT =
   'id, owner_id, thumbnail_url, title, category, status, starts_at, ends_at, created_at, updated_at, profile_type, tagline, region, city, price_type, price_min, price_max, price_negotiable, availability, works_weekends, evening_hours, emergency_service, preferred_contact_method, show_phone_publicly, show_email_publicly, contact_email, contact_phone, website, services, service_areas';
 
+/** Public catalog: active ads whose owner account is not closed. */
+const COMPANY_AD_PUBLIC_LIST_SELECT = `${COMPANY_AD_LIST_SELECT}, profiles!inner(is_deleted)`;
+
 export type CompanyAdListQuery = {
   category?: string;
   q?: string;
@@ -85,9 +88,10 @@ export class CompanyAdsListService {
       this.supabase
         .getReadClient()
         .from('company_ads')
-        .select(COMPANY_AD_LIST_SELECT, { count: 'exact' })
+        .select(COMPANY_AD_PUBLIC_LIST_SELECT, { count: 'exact' })
         .eq('status', 'active')
-        .gt('ends_at', now);
+        .gt('ends_at', now)
+        .eq('profiles.is_deleted', false);
 
     let query = this.applyFilters(base(), params);
 
@@ -111,7 +115,9 @@ export class CompanyAdsListService {
       throw new ForbiddenException(error.message);
     }
 
-    let list = (rows ?? []) as AdRow[];
+    let list = ((rows ?? []) as Array<AdRow & { profiles?: unknown }>).map(
+      ({ profiles: _profiles, ...ad }) => ad as AdRow,
+    );
     list = await this.sortAdRowsTopFirst(list);
     list = list.slice(params.offset, params.offset + params.limit);
     const ownerIds = [...new Set(list.map((r) => String(r.owner_id)))];

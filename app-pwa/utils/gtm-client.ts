@@ -1,7 +1,14 @@
+import { isAnalyticsConsentGranted } from '~/utils/cookie-consent-state'
+
 let gtmLoaded = false
 let routerHookRegistered = false
+let consentListenerRegistered = false
 
 const GTM_CONTAINER_ID_PATTERN = /^GTM-[A-Z0-9]+$/i
+
+/** Third-party tags injected by GTM (not the container bootstrap). */
+const INJECTED_ANALYTICS_SCRIPT_RE =
+  /googletagmanager\.com\/gtag\/|google-analytics\.com|clarity\.ms|doubleclick\.net/i
 
 export function isGtmConfigured(): boolean {
   const config = useRuntimeConfig().public
@@ -10,7 +17,7 @@ export function isGtmConfigured(): boolean {
 }
 
 function pushPageView(pagePath: string): void {
-  if (!gtmLoaded) {
+  if (!gtmLoaded || !isAnalyticsConsentGranted()) {
     return
   }
   window.dataLayer = window.dataLayer ?? []
@@ -22,22 +29,39 @@ function pushPageView(pagePath: string): void {
   })
 }
 
+export function captureGtmPageView(): void {
+  if (!import.meta.client || !gtmLoaded) {
+    return
+  }
+  pushPageView(useRouter().currentRoute.value.fullPath)
+}
+
 function registerRouterPageviews(): void {
   if (routerHookRegistered) {
     return
   }
   const router = useRouter()
   router.afterEach((to) => {
-    if (gtmLoaded) {
-      pushPageView(to.fullPath)
-    }
+    pushPageView(to.fullPath)
   })
   routerHookRegistered = true
 }
 
+function registerConsentListener(): void {
+  if (!import.meta.client || consentListenerRegistered) {
+    return
+  }
+  window.addEventListener('jobbie:analytics-consent-changed', () => {
+    if (isAnalyticsConsentGranted()) {
+      captureGtmPageView()
+    }
+  })
+  consentListenerRegistered = true
+}
+
 /**
- * Load Google Tag Manager when analytics consent is granted.
- * Configure GA4, Clarity, and other tags inside the GTM container.
+ * Bootstrap Google Tag Manager on every page (Consent Mode gates tags until analytics consent).
+ * Configure GA4, Clarity, and other tags inside the GTM container with analytics_storage checks.
  */
 export function loadGtm(): void {
   if (!import.meta.client || gtmLoaded || !isGtmConfigured()) {
@@ -49,27 +73,32 @@ export function loadGtm(): void {
   const script = document.createElement('script')
   script.async = true
   script.src = `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(containerId)}`
+  script.addEventListener('load', () => {
+    captureGtmPageView()
+  })
   document.head.appendChild(script)
   registerRouterPageviews()
-  pushPageView(useRouter().currentRoute.value.fullPath)
+  registerConsentListener()
   gtmLoaded = true
 }
 
-export function unloadGtm(): void {
-  if (!import.meta.client) return
-  gtmLoaded = false
-  document
-    .querySelectorAll('script[src*="googletagmanager.com/gtm.js"]')
-    .forEach((el) => el.remove())
-  window.dataLayer = []
-  if (typeof window.gtag === 'function') {
-    try {
-      window.gtag('consent', 'update', {
-        analytics_storage: 'denied',
-        ad_storage: 'denied',
-      })
-    } catch {
-      /* ignore */
-    }
+/** Stop Clarity / GA tags injected by GTM; keep the container bootstrap for consent updates. */
+export function purgeInjectedAnalyticsScripts(): void {
+  if (!import.meta.client) {
+    return
   }
+  document.querySelectorAll('script[src]').forEach((el) => {
+    const src = el.getAttribute('src') ?? ''
+    if (INJECTED_ANALYTICS_SCRIPT_RE.test(src)) {
+      el.remove()
+    }
+  })
+  if (typeof window.clarity === 'function') {
+    ;(window as Window & { clarity?: (...args: unknown[]) => void }).clarity = () => {}
+  }
+}
+
+/** @deprecated Prefer purgeInjectedAnalyticsScripts + syncGtagConsent(false). */
+export function unloadGtm(): void {
+  purgeInjectedAnalyticsScripts()
 }

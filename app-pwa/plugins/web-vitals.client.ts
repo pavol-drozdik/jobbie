@@ -32,6 +32,7 @@ export default defineNuxtPlugin(() => {
     void api('/api/metrics/web-vitals', {
       method: 'POST',
       body: { path, metrics },
+      skipSessionExpiry: true,
     }).catch(() => {})
   }
 

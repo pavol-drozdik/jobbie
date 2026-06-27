@@ -82,10 +82,8 @@
 </template>
 
 <script setup lang="ts">
-import { resolveApiBearerToken } from '~/utils/api-bearer-token'
-import { fetchApi } from '~/utils/api-fetch'
-import { shouldPreferBffCookieAuth } from '~/utils/bff-csrf-state'
-import { refreshBffSessionFromApi } from '~/utils/bff-session-refresh'
+import { fetchApiBinary } from '~/utils/api-binary-fetch'
+import { parseApiErrorMessage, type ApiResultLike } from '~/utils/api-errors'
 import { S } from '~/utils/strings'
 
 const emit = defineEmits<{
@@ -97,15 +95,23 @@ const { getApiBaseUrl } = useApi()
 const { session } = useAuth()
 const working = ref(false)
 
-function exportRequestHeaders(): Record<string, string> {
-  const headers: Record<string, string> = { Accept: 'application/zip' }
-  const bearer = resolveApiBearerToken(session.value)
-  const useCookieAuth =
-    import.meta.client && shouldPreferBffCookieAuth(Boolean(bearer))
-  if (bearer && !useCookieAuth) {
-    headers.Authorization = `Bearer ${bearer}`
+async function responseToApiResult(res: Response): Promise<ApiResultLike> {
+  const body = await res.text()
+  let data: unknown
+  try {
+    data = JSON.parse(body) as unknown
+  } catch {
+    data = undefined
   }
-  return headers
+  return { status: res.status, ok: res.ok, body, data }
+}
+
+async function fetchExportZip(): Promise<Response> {
+  const base = getApiBaseUrl().replace(/\/$/, '')
+  return fetchApiBinary(`${base}/api/profiles/me/export`, session.value, {
+    accept: 'application/zip',
+    apiBaseUrl: base,
+  })
 }
 
 const includeItems = [
@@ -123,29 +129,14 @@ async function downloadExport(): Promise<void> {
   }
   working.value = true
   try {
-    const base = getApiBaseUrl().replace(/\/$/, '')
-    const exportUrl = `${base}/api/profiles/me/export`
-    let res = await fetchApi(exportUrl, {
-      method: 'GET',
-      credentials: 'include',
-      headers: exportRequestHeaders(),
-    })
-    if (res.status === 401 && import.meta.client) {
-      const refreshed = await refreshBffSessionFromApi(base)
-      if (refreshed.ok) {
-        res = await fetchApi(exportUrl, {
-          method: 'GET',
-          credentials: 'include',
-          headers: exportRequestHeaders(),
-        })
-      }
-    }
+    const res = await fetchExportZip()
     if (res.status === 429) {
       emit('failed', S.settingsExportDataRateLimited)
       return
     }
     if (!res.ok) {
-      emit('failed', S.settingsExportDataFailed)
+      const err = await responseToApiResult(res)
+      emit('failed', parseApiErrorMessage(err, S.settingsExportDataFailed))
       return
     }
     const blob = await res.blob()

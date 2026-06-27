@@ -143,7 +143,7 @@ onBeforeUnmount(() => {
   <div ref="rootRef" class="relative" :class="disabled ? 'cv-field-is-disabled' : ''">
     <button
       type="button"
-      class="app-form-dropdown__trigger flex h-14 w-full cursor-pointer select-none items-center justify-between rounded-full bg-marketing-soft px-5 text-left font-dmSans text-lg outline-none ring-marketing-green focus-visible:ring-2 disabled:cursor-not-allowed disabled:text-black/35 app-form-dropdown__trigger--bordered cv-field"
+      class="app-form-dropdown__trigger flex h-14 w-full is-clickable select-none items-center justify-between rounded-full bg-marketing-soft px-5 text-left font-dmSans text-lg outline-none ring-marketing-green focus-visible:ring-2 disabled:is-disabled-cursor disabled:text-black/35 app-form-dropdown__trigger--bordered cv-field"
       :disabled="disabled"
       @click.stop="toggleOpen"
     >

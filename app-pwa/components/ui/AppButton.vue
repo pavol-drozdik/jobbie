@@ -106,11 +106,11 @@ function onLinkClick(e: MouseEvent): void {
 
 const mergedClass = computed(() => {
   const base = [
-    'inline-flex cursor-pointer items-center justify-center gap-2 no-underline font-dmSans outline-none ring-marketing-green focus-visible:ring-2 focus-visible:ring-offset-0',
+    'inline-flex is-clickable items-center justify-center gap-2 no-underline font-dmSans outline-none ring-marketing-green focus-visible:ring-2 focus-visible:ring-offset-0',
     sizeClass.value,
     variantClass.value,
     props.block ? 'w-full' : '',
-    props.disabled && props.to ? 'pointer-events-none cursor-not-allowed opacity-50' : '',
+    props.disabled && props.to ? 'pointer-events-none is-disabled-cursor opacity-50' : '',
   ]
     .filter(Boolean)
     .join(' ')

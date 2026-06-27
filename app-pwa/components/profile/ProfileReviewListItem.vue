@@ -44,7 +44,7 @@
         class="relative shrink-0"
       >
         <summary
-          class="inline-flex size-9 cursor-pointer list-none items-center justify-center rounded-full border border-black/10 bg-white text-black/55 hover:bg-neutral-50 hover:text-black/75 [&::-webkit-details-marker]:hidden"
+          class="inline-flex size-9 is-clickable list-none items-center justify-center rounded-full border border-black/10 bg-white text-black/55 hover:bg-neutral-50 hover:text-black/75 [&::-webkit-details-marker]:hidden"
         >
           <span class="sr-only">{{ S.profileReviewMoreOptions }}</span>
           <span
@@ -57,14 +57,14 @@
         >
           <button
             type="button"
-            class="flex w-full cursor-pointer px-4 py-2.5 text-left text-[14px] font-semibold text-black/80 hover:bg-black/[0.04]"
+            class="flex w-full is-clickable px-4 py-2.5 text-left text-[14px] font-semibold text-black/80 hover:bg-black/[0.04]"
             @click="onEditClick"
           >
             {{ S.profileReviewEditAction }}
           </button>
           <button
             type="button"
-            class="flex w-full cursor-pointer px-4 py-2.5 text-left text-[14px] font-semibold text-red-700 hover:bg-red-50"
+            class="flex w-full is-clickable px-4 py-2.5 text-left text-[14px] font-semibold text-red-700 hover:bg-red-50"
             @click="onDeleteClick"
           >
             {{ S.firmyReviewDeleteTitle }}
@@ -106,11 +106,12 @@
 <script setup lang="ts">
 import { ROUTES } from '~/utils/app-routes'
 import { S } from '~/utils/strings'
+import { CHAT_AVATAR_PALETTE } from '~/utils/avatar-palette'
 import { employerInitials } from '~/utils/job'
 import type { ProfileReviewRow } from '~/components/profile/PublicProfileCard.vue'
 import type { CurrentProfile } from '~/composables/useAuth'
 
-const REVIEWER_PALETTE = ['#7c3aed', '#0ea5e9', '#f59e0b', '#ef4444', '#10b981', '#6366f1']
+const REVIEWER_PALETTE = CHAT_AVATAR_PALETTE
 
 function displayNameFromAuthProfile(p: CurrentProfile | null): string | null {
   if (!p) return null

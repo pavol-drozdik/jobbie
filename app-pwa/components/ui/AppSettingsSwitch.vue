@@ -3,7 +3,7 @@
     :id="id"
     type="button"
     role="switch"
-    class="relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border-0 p-0.5 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-marketing-green focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
+    class="relative inline-flex h-7 w-12 shrink-0 is-clickable items-center rounded-full border-0 p-0.5 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-marketing-green focus-visible:ring-offset-2 disabled:is-disabled-cursor disabled:opacity-45"
     :class="modelValue ? 'bg-marketing-green' : 'bg-black/15'"
     :aria-checked="modelValue"
     :aria-label="label"

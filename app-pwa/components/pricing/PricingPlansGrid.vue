@@ -83,7 +83,7 @@
                 variant="outline"
                 block
                 disabled
-                class="!h-11 !cursor-not-allowed !rounded-full !border-black/10 !bg-marketing-surface !text-[15px] !font-bold !text-black/40"
+                class="!h-11 !is-disabled-cursor !rounded-full !border-black/10 !bg-marketing-surface !text-[15px] !font-bold !text-black/40"
               >
                 Aktuálny
               </AppButton>

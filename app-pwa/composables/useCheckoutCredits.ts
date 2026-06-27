@@ -6,6 +6,7 @@ import {
   isPurchasableCreditPack,
   type CreditPackRow,
 } from '~/utils/credit-packs'
+import { parseApiErrorMessage } from '~/utils/api-errors'
 import { S } from '~/utils/strings'
 import { stripStripeReturnQueryFromBrowserUrl } from '~/utils/stripe-return-query'
 
@@ -30,12 +31,7 @@ type ProfileBillingPrefill = {
 
 export function useCheckoutCredits(options: { packSlug: string; returnPath: string }) {
   const { packSlug, returnPath } = options
-  const {
-    ensureRecentLoginForBilling,
-    billingStepUpUserMessage,
-    isStepUpRequiredResponse,
-    tryRecoverFromStepUpRequired,
-  } = useBillingStepUp()
+  const { ensureRecentLoginForBilling } = useBillingStepUp()
   const { api } = useApi()
   const { refreshUser } = useAuth()
   const { capture } = useAnalytics()
@@ -87,18 +83,12 @@ export function useCheckoutCredits(options: { packSlug: string; returnPath: stri
       payment_intent_id: id,
     }
     if (billing) body.billing = billing
-    let res = await api<{ message?: string }>('/api/payments/confirm-credits', {
+    const res = await api<{ message?: string }>('/api/payments/confirm-credits', {
       method: 'POST',
       body,
     })
-    if (!res.ok && isStepUpRequiredResponse(res) && (await tryRecoverFromStepUpRequired())) {
-      res = await api<{ message?: string }>('/api/payments/confirm-credits', {
-        method: 'POST',
-        body,
-      })
-    }
     if (!res.ok) {
-      error.value = await billingStepUpUserMessage(res)
+      error.value = parseApiErrorMessage(res, S.checkoutPaymentFailed)
       return false
     }
     error.value = null
@@ -170,7 +160,7 @@ export function useCheckoutCredits(options: { packSlug: string; returnPath: stri
     if (billing) {
       body.billing = billing
     }
-    let res = await api<{
+    const res = await api<{
       client_secret: string
       amount?: number
       currency?: string
@@ -178,18 +168,8 @@ export function useCheckoutCredits(options: { packSlug: string; returnPath: stri
       method: 'POST',
       body,
     })
-    if (!res.ok && isStepUpRequiredResponse(res) && (await tryRecoverFromStepUpRequired())) {
-      res = await api<{
-        client_secret: string
-        amount?: number
-        currency?: string
-      }>('/api/payments/create-payment-intent-credits', {
-        method: 'POST',
-        body,
-      })
-    }
     if (!res.ok) {
-      error.value = await billingStepUpUserMessage(res)
+      error.value = parseApiErrorMessage(res, S.checkoutPaymentFailed)
       return null
     }
     const secret = typeof res.data?.client_secret === 'string' ? res.data.client_secret.trim() : ''

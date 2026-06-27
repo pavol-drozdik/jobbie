@@ -3,7 +3,8 @@ import { SupabaseService } from '../supabase/supabase.service';
 
 export type ChatRoomDbRow = {
   id: string;
-  job_id: string;
+  job_id: string | null;
+  company_ad_id?: string | null;
   company_id: string;
   individual_id: string;
   application_id: string | null;
@@ -96,6 +97,42 @@ export class ChatRoomsService {
         job_id: input.jobId,
         company_id: input.companyId,
         individual_id: input.individualId,
+        application_id: null,
+      })
+      .select()
+      .single();
+    if (error || !created) {
+      throw new ForbiddenException('Failed to create room');
+    }
+    return { room: created as ChatRoomDbRow };
+  }
+
+  /**
+   * Profesionáli ad inquiry: one thread per (ad, inquirer). Caller must verify ad is live
+   * and owner allows platform contact.
+   */
+  async ensureRoomForCompanyAdInquiry(input: {
+    companyAdId: string;
+    ownerId: string;
+    inquirerId: string;
+  }): Promise<{ room: ChatRoomDbRow }> {
+    const client = this.supabase.getClient();
+    const { data: existing } = await client
+      .from('chat_rooms')
+      .select('*')
+      .eq('company_ad_id', input.companyAdId)
+      .eq('individual_id', input.inquirerId)
+      .maybeSingle();
+    if (existing) {
+      return { room: existing as ChatRoomDbRow };
+    }
+    const { data: created, error } = await client
+      .from('chat_rooms')
+      .insert({
+        company_ad_id: input.companyAdId,
+        job_id: null,
+        company_id: input.ownerId,
+        individual_id: input.inquirerId,
         application_id: null,
       })
       .select()

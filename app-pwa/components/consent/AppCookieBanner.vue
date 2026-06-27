@@ -23,6 +23,12 @@
           class="m-0 mt-3 text-[15px] leading-relaxed text-black/70"
         >
           {{ S.cookieBannerDescription }}
+          <NuxtLink
+            :to="ROUTES.privacy"
+            class="font-semibold text-marketing-green underline decoration-marketing-green/50 underline-offset-2 outline-none hover:decoration-marketing-green focus-visible:ring-2 focus-visible:ring-marketing-green/40"
+          >
+            {{ S.footerLinkPrivacy }}
+          </NuxtLink>.
         </p>
         <div class="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <AppButton variant="primary" block class="sm:flex-1" @click="emit('accept-all')">
@@ -42,6 +48,7 @@
 
 <script setup lang="ts">
 import { useId } from 'vue'
+import { ROUTES } from '~/utils/app-routes'
 import { S } from '~/utils/strings'
 
 defineProps<{

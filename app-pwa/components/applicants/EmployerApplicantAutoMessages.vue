@@ -57,7 +57,7 @@
           :key="t.status_type"
           class="rounded-2xl border border-black/[0.06] bg-marketing-surface/40 p-4 sm:p-5"
         >
-          <label class="flex cursor-pointer items-start gap-3">
+          <label class="flex is-clickable items-start gap-3">
             <AppCheckbox v-model="t.enabled" class="mt-1" />
             <span>
               <span class="block font-dmSans text-base font-semibold text-black">

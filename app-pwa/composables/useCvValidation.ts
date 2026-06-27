@@ -1,4 +1,5 @@
 import type { CvHeaderResponseDto } from '~/types/cv'
+import { ApiRequestError } from '~/utils/api-errors'
 
 export interface CvPersonalFieldErrors {
   first_name?: string
@@ -20,7 +21,8 @@ export function parseCvPatchValidationError(err: unknown): {
     items: [] as CvValidationErrorItem[],
     byField: {} as Record<string, string>,
   })
-  const data = (err as { data?: unknown })?.data
+  const data =
+    err instanceof ApiRequestError ? err.data : (err as { data?: unknown })?.data
   if (!data || typeof data !== 'object') {
     return fallback(err instanceof Error ? err.message : 'Chyba uloženia')
   }

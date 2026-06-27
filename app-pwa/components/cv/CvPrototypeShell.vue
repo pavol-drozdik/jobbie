@@ -20,7 +20,7 @@
             v-for="s in stepNav"
             :key="s.step"
             type="button"
-            class="grid w-full cursor-pointer grid-cols-[42px_minmax(0,1fr)] items-center gap-3 rounded-2xl border-0 bg-transparent p-2.5 text-left text-black/[0.58] transition-colors hover:bg-marketing-panel hover:text-marketing-green"
+            class="grid w-full is-clickable grid-cols-[42px_minmax(0,1fr)] items-center gap-3 rounded-2xl border-0 bg-transparent p-2.5 text-left text-black/[0.58] transition-colors hover:bg-marketing-panel hover:text-marketing-green"
             :class="parentStep + 1 === s.step ? 'bg-marketing-panel text-marketing-green' : ''"
             @click="emitGoStep(s.step - 1)"
           >
@@ -53,7 +53,7 @@
             :class="activeSection === sec.id ? 'bg-marketing-mint text-marketing-green' : ''"
             @click="scrollToSection(sec.id)"
           >
-            <i :class="['fa-solid w-5 text-center', sec.icon]" /> {{ sec.label }}
+            <AppIcon :name="sec.icon" :size="20" class="w-5 shrink-0" /> {{ sec.label }}
           </button>
         </div>
       </aside>
@@ -108,7 +108,7 @@
             <article
               v-for="tpl in templateCards"
               :key="tpl.key"
-              class="cursor-pointer rounded-[20px] border-2 border-transparent bg-marketing-soft p-4 transition-all hover:-translate-y-0.5"
+              class="is-clickable rounded-[20px] border-2 border-transparent bg-marketing-soft p-4 transition-all hover:-translate-y-0.5"
               :class="uiTemplate === tpl.key ? 'border-marketing-green shadow-[0_0_0_5px_rgba(34,197,94,0.14)]' : ''"
               @click="selectUiTemplate(tpl.key)"
             >
@@ -134,13 +134,13 @@
             <button
               type="button"
               disabled
-              class="inline-flex h-12 cursor-not-allowed items-center justify-center gap-2 rounded-full border-0 bg-marketing-soft px-5 text-[17px] font-extrabold text-black/[0.62] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)]"
+              class="inline-flex h-12 is-disabled-cursor items-center justify-center gap-2 rounded-full border-0 bg-marketing-soft px-5 text-[17px] font-extrabold text-black/[0.62] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)]"
             >
               <i class="fa-solid fa-arrow-left" /> Späť
             </button>
             <button
               type="button"
-              class="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full border-0 bg-marketing-green px-5 text-[17px] font-extrabold text-white"
+              class="inline-flex h-12 is-clickable items-center justify-center gap-2 rounded-full border-0 bg-marketing-green px-5 text-[17px] font-extrabold text-white"
               @click="emitGoStep(1)"
             >
               Pokračovať <i class="fa-solid fa-arrow-right" />
@@ -175,8 +175,8 @@
                 </div>
               </div>
               <div class="mb-7 grid grid-cols-1 gap-x-4 gap-y-4 min-[821px]:grid-cols-2">
-                <label class="relative min-h-[260px] cursor-pointer rounded-3xl border-2 border-dashed border-marketing-green/40 bg-marketing-soft">
-                  <input type="file" accept="image/jpeg,image/png,image/webp" class="absolute inset-0 z-[1] cursor-pointer opacity-0" @change="onPhotoFile">
+                <label class="relative min-h-[260px] is-clickable rounded-3xl border-2 border-dashed border-marketing-green/40 bg-marketing-soft">
+                  <input type="file" accept="image/jpeg,image/png,image/webp" class="absolute inset-0 z-[1] is-clickable opacity-0" @change="onPhotoFile">
                   <img
                     v-if="photoPreviewUrl"
                     :src="photoPreviewUrl"
@@ -204,7 +204,7 @@
                   <div class="flex flex-wrap gap-3">
                     <button
                       type="button"
-                      class="inline-flex h-12 cursor-pointer items-center gap-2 rounded-full border-2 border-marketing-green bg-white px-4 text-[17px] font-extrabold text-marketing-green"
+                      class="inline-flex h-12 is-clickable items-center gap-2 rounded-full border-2 border-marketing-green bg-white px-4 text-[17px] font-extrabold text-marketing-green"
                       @click="copyProfilePhoto"
                     >
                       <i class="fa-solid fa-copy" /> Skopírovať z profilového obrázku
@@ -260,6 +260,7 @@
                     type="text"
                     autocomplete="given-name"
                     @input="patch({ first_name: inputStrOrNull($event) })"
+                    @blur="void flushHeaderNow()"
                   >
                 </div>
                 <div class="flex flex-col gap-2">
@@ -270,6 +271,7 @@
                     type="text"
                     autocomplete="family-name"
                     @input="patch({ last_name: inputStrOrNull($event) })"
+                    @blur="void flushHeaderNow()"
                   >
                 </div>
               </div>
@@ -293,6 +295,7 @@
                     inputmode="email"
                     autocomplete="email"
                     @input="patch({ email: inputStrOrNull($event) })"
+                    @blur="void flushHeaderNow()"
                   >
                 </div>
                 <div class="flex flex-col gap-2">
@@ -356,17 +359,39 @@
                   <i class="fa-solid fa-plus" /> Pridať zamestnanie
                 </button>
               </div>
-              <div v-for="row in sortedExperience" :key="row.id" class="cv-soft-panel mt-3.5 rounded-[20px] bg-marketing-soft p-5">
+              <div v-for="(row, expIdx) in sortedExperience" :key="row.id" class="cv-soft-panel mt-3.5 rounded-[20px] bg-marketing-soft p-5">
                 <div class="mb-4 flex items-center justify-between gap-3">
                   <strong class="text-[19px] font-black">{{ expLabel(row.id) }}</strong>
-                  <button
-                    type="button"
-                    class="flex size-[38px] cursor-pointer items-center justify-center rounded-full border-0 bg-white text-red-500"
-                    :aria-label="S.cvDelete"
-                    @click="removeExperience(row.id)"
-                  >
-                    <AppIcon name="trash-2" :size="18" />
-                  </button>
+                  <div class="flex items-center gap-1.5">
+                    <template v-if="sortedExperience.length > 1">
+                      <button
+                        type="button"
+                        class="flex size-[38px] is-clickable items-center justify-center rounded-full border-0 bg-white text-black/55 disabled:cursor-not-allowed disabled:opacity-35"
+                        :disabled="reorderBusy || expIdx === 0"
+                        :aria-label="S.cvMoveUp"
+                        @click="moveExperience(row.id, 'up')"
+                      >
+                        <i class="fa-solid fa-chevron-up text-[15px]" aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        class="flex size-[38px] is-clickable items-center justify-center rounded-full border-0 bg-white text-black/55 disabled:cursor-not-allowed disabled:opacity-35"
+                        :disabled="reorderBusy || expIdx === sortedExperience.length - 1"
+                        :aria-label="S.cvMoveDown"
+                        @click="moveExperience(row.id, 'down')"
+                      >
+                        <i class="fa-solid fa-chevron-down text-[15px]" aria-hidden="true" />
+                      </button>
+                    </template>
+                    <button
+                      type="button"
+                      class="flex size-[38px] is-clickable items-center justify-center rounded-full border-0 bg-white text-red-500"
+                      :aria-label="S.cvDelete"
+                      @click="removeExperience(row.id)"
+                    >
+                      <AppIcon name="trash-2" :size="18" />
+                    </button>
+                  </div>
                 </div>
                 <div class="grid grid-cols-1 gap-4 min-[821px]:grid-cols-2">
                   <div class="flex flex-col gap-2">
@@ -389,7 +414,7 @@
                       @update:model-value="scheduleExperienceSave(row.id)"
                     />
                   </div>
-                  <label class="col-span-full flex cursor-pointer items-center gap-2.5 text-base font-bold text-black/[0.68]">
+                  <label class="col-span-full flex is-clickable items-center gap-2.5 text-base font-bold text-black/[0.68]">
                     <AppCheckbox v-model="expDraft[row.id]!.current" @update:model-value="onExpCurrent(row.id)" />
                     Aktuálne tu pracujem
                   </label>
@@ -491,17 +516,39 @@
                   <i class="fa-solid fa-plus" /> Pridať vzdelanie
                 </button>
               </div>
-              <div v-for="row in sortedEducation" :key="row.id" class="cv-soft-panel mt-3.5 rounded-[20px] bg-marketing-soft p-5">
+              <div v-for="(row, eduIdx) in sortedEducation" :key="row.id" class="cv-soft-panel mt-3.5 rounded-[20px] bg-marketing-soft p-5">
                 <div class="mb-4 flex items-center justify-between gap-3">
                   <strong class="text-[19px] font-black">{{ eduLabel(row.id) }}</strong>
-                  <button
-                    type="button"
-                    class="flex size-[38px] cursor-pointer items-center justify-center rounded-full border-0 bg-white text-red-500"
-                    :aria-label="S.cvDelete"
-                    @click="removeEducation(row.id)"
-                  >
-                    <AppIcon name="trash-2" :size="18" />
-                  </button>
+                  <div class="flex items-center gap-1.5">
+                    <template v-if="sortedEducation.length > 1">
+                      <button
+                        type="button"
+                        class="flex size-[38px] is-clickable items-center justify-center rounded-full border-0 bg-white text-black/55 disabled:cursor-not-allowed disabled:opacity-35"
+                        :disabled="reorderBusy || eduIdx === 0"
+                        :aria-label="S.cvMoveUp"
+                        @click="moveEducation(row.id, 'up')"
+                      >
+                        <i class="fa-solid fa-chevron-up text-[15px]" aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        class="flex size-[38px] is-clickable items-center justify-center rounded-full border-0 bg-white text-black/55 disabled:cursor-not-allowed disabled:opacity-35"
+                        :disabled="reorderBusy || eduIdx === sortedEducation.length - 1"
+                        :aria-label="S.cvMoveDown"
+                        @click="moveEducation(row.id, 'down')"
+                      >
+                        <i class="fa-solid fa-chevron-down text-[15px]" aria-hidden="true" />
+                      </button>
+                    </template>
+                    <button
+                      type="button"
+                      class="flex size-[38px] is-clickable items-center justify-center rounded-full border-0 bg-white text-red-500"
+                      :aria-label="S.cvDelete"
+                      @click="removeEducation(row.id)"
+                    >
+                      <AppIcon name="trash-2" :size="18" />
+                    </button>
+                  </div>
                 </div>
                 <div class="mb-4 flex flex-col gap-2">
                   <label class="font-dmSans text-lg font-semibold text-black">Aké vzdelanie chcete pridať?</label>
@@ -529,7 +576,7 @@
                         @update:model-value="scheduleEducationSave(row.id)"
                       />
                     </div>
-                    <label class="col-span-full flex cursor-pointer items-center gap-2.5 text-base font-bold text-black/[0.68]">
+                    <label class="col-span-full flex is-clickable items-center gap-2.5 text-base font-bold text-black/[0.68]">
                       <AppCheckbox v-model="eduDraft[row.id]!.has_graduation" @update:model-value="saveEducation(row.id)" />
                       Ukončená s maturitnou skúškou
                     </label>
@@ -611,7 +658,7 @@
                   <strong class="text-[19px] font-black">{{ skillLabel(row.id) }}</strong>
                   <button
                     type="button"
-                    class="flex size-[38px] cursor-pointer items-center justify-center rounded-full border-0 bg-white text-red-500"
+                    class="flex size-[38px] is-clickable items-center justify-center rounded-full border-0 bg-white text-red-500"
                     :aria-label="S.cvDelete"
                     @click="removeSkill(row.id)"
                   >
@@ -660,7 +707,7 @@
                   <strong class="text-[19px] font-black">{{ langLabel(row.id) }}</strong>
                   <button
                     type="button"
-                    class="flex size-[38px] cursor-pointer items-center justify-center rounded-full border-0 bg-white text-red-500"
+                    class="flex size-[38px] is-clickable items-center justify-center rounded-full border-0 bg-white text-red-500"
                     :aria-label="S.cvDelete"
                     @click="removeLanguage(row.id)"
                   >
@@ -894,7 +941,7 @@
                 </p>
               </div>
               <div class="grid grid-cols-1 gap-3">
-                <label class="flex cursor-pointer items-start gap-2.5 text-base font-bold leading-snug text-black/[0.68]">
+                <label class="flex is-clickable items-start gap-2.5 text-base font-bold leading-snug text-black/[0.68]">
                   <AppCheckbox
                     class="mt-0.5"
                     :model-value="header.weekend_work === true"
@@ -902,7 +949,7 @@
                   />
                   Práca aj na zmeny alebo cez víkendy
                 </label>
-                <label class="flex cursor-pointer items-start gap-2.5 text-base font-bold leading-snug text-black/[0.68]">
+                <label class="flex is-clickable items-start gap-2.5 text-base font-bold leading-snug text-black/[0.68]">
                   <AppCheckbox
                     class="mt-0.5"
                     :model-value="header.night_work === true"
@@ -910,7 +957,7 @@
                   />
                   Práca aj v noci
                 </label>
-                <label class="flex cursor-pointer items-start gap-2.5 text-base font-bold leading-snug text-black/[0.68]">
+                <label class="flex is-clickable items-start gap-2.5 text-base font-bold leading-snug text-black/[0.68]">
                   <AppCheckbox
                     class="mt-0.5"
                     :model-value="header.open_to_relocate_commute === true"
@@ -918,7 +965,7 @@
                   />
                   Som ochotný/á sa kvôli práci presťahovať alebo dochádzať z väčšej vzdialenosti
                 </label>
-                <label class="flex cursor-pointer items-start gap-2.5 text-base font-bold leading-snug text-black/[0.68]">
+                <label class="flex is-clickable items-start gap-2.5 text-base font-bold leading-snug text-black/[0.68]">
                   <AppCheckbox
                     class="mt-0.5"
                     :model-value="header.remote_work_only === true"
@@ -941,7 +988,7 @@
             <div class="flex flex-wrap gap-3">
               <button
                 type="button"
-                class="inline-flex h-12 items-center gap-2 rounded-full border-2 border-marketing-green bg-white px-5 text-[17px] font-extrabold text-marketing-green disabled:cursor-not-allowed disabled:opacity-50"
+                class="inline-flex h-12 items-center gap-2 rounded-full border-2 border-marketing-green bg-white px-5 text-[17px] font-extrabold text-marketing-green disabled:is-disabled-cursor disabled:opacity-50"
                 :disabled="previewBusy"
                 @click="openPreview"
               >
@@ -950,7 +997,7 @@
               </button>
               <button
                 type="button"
-                class="inline-flex h-12 items-center gap-2 rounded-full border-2 border-dashed border-black/25 bg-white px-5 text-[17px] font-extrabold text-black/55 disabled:cursor-not-allowed disabled:opacity-50"
+                class="inline-flex h-12 items-center gap-2 rounded-full border-2 border-dashed border-black/25 bg-white px-5 text-[17px] font-extrabold text-black/55 disabled:is-disabled-cursor disabled:opacity-50"
                 :disabled="htmlPreviewBusy"
                 title="Dočasný náhľad HTML pre úpravy šablón (nie PDF)"
                 @click="openHtmlPreview"
@@ -960,7 +1007,7 @@
               </button>
               <button
                 type="button"
-                class="inline-flex h-12 items-center gap-2 rounded-full border-2 border-marketing-green bg-white px-5 text-[17px] font-extrabold text-marketing-green disabled:cursor-not-allowed disabled:opacity-50"
+                class="inline-flex h-12 items-center gap-2 rounded-full border-2 border-marketing-green bg-white px-5 text-[17px] font-extrabold text-marketing-green disabled:is-disabled-cursor disabled:opacity-50"
                 :disabled="pdfExportBusy"
                 @click="downloadPdf"
               >
@@ -985,6 +1032,7 @@
 <script setup lang="ts">
 // CV editor: parentStep 1–3 wizard; section rows use *Draft maps until @change saves to API.
 // visible_to_employers controls employer DB visibility (GDPR — server enforces show_contact_details separately).
+import '~/assets/css/cv-template-mini-sheets.css'
 import { computed, onMounted, reactive, watch } from 'vue'
 import type {
   CvAggregateResponseDto,
@@ -1033,6 +1081,11 @@ import {
 import { checkCvRichTextPlainLimit } from '~/composables/useCvRichTextField'
 import { useCvSectionSaveQueue } from '~/composables/useCvSectionSaveQueue'
 import { richTextPlainLength } from '~/utils/rich-text-plain-length'
+import {
+  cvSectionReorderIds,
+  swapCvSectionRow,
+  type CvSectionReorderDirection,
+} from '~/utils/cv-section-order'
 
 const CV_RICH_LIMIT_HOBBIES = 250
 const CV_RICH_LIMIT_ABOUT = 500
@@ -1044,20 +1097,19 @@ const props = defineProps<{
   parentStep: number
   header: CvHeaderResponseDto
   aggregate: CvAggregateResponseDto
+  updateHeader: (partial: Partial<CvHeaderResponseDto>) => void
+  updateAggregate: (updater: (agg: CvAggregateResponseDto) => CvAggregateResponseDto) => void
+  queueSave: () => void
+  flushHeaderSave: () => Promise<boolean>
+  finishWizard: () => Promise<void>
+  registerSectionSaveFlusher: (fn: () => Promise<void>) => void
 }>()
 
 const emit = defineEmits<{
-  patchHeader: [partial: Partial<CvHeaderResponseDto>]
   reload: []
   goStep: [step: number]
   setSection: [section: string]
 }>()
-
-const flushHeaderSave = inject<(() => Promise<void>) | undefined>('cvFlushHeaderSave', undefined)
-const registerSectionSaveFlusher = inject<((fn: () => Promise<void>) => void) | undefined>(
-  'cvRegisterSectionSaveFlusher',
-  undefined,
-)
 
 const noticeDialogOpen = ref(false)
 const noticeDialogMessage = ref('')
@@ -1081,16 +1133,6 @@ async function runSectionSave(task: () => Promise<void>): Promise<void> {
   await next
 }
 
-async function flushAllSectionSaves(): Promise<void> {
-  await Promise.all([
-    experienceSaveQueue.flush(),
-    educationSaveQueue.flush(),
-    skillSaveQueue.flush(),
-    languageSaveQueue.flush(),
-  ])
-  await sectionSaveTail.value
-}
-
 const shellRef = ref<HTMLElement | null>(null)
 const sidebarRef = ref<HTMLElement | null>(null)
 useCvPrototypeStickySidebar(sidebarRef, shellRef)
@@ -1102,17 +1144,17 @@ const stepNav = [
 ] as const
 
 const sectionMenu = [
-  { id: 'personal', label: 'Osobné údaje', icon: 'fa-user' },
-  { id: 'experience', label: 'Pracovné skúsenosti', icon: 'fa-briefcase' },
-  { id: 'education', label: 'Vzdelanie', icon: 'fa-graduation-cap' },
-  { id: 'skills', label: 'Znalosti', icon: 'fa-screwdriver-wrench' },
-  { id: 'languages', label: 'Jazyky', icon: 'fa-language' },
-  { id: 'extras', label: 'Doplňujúce časti', icon: 'fa-circle-plus' },
+  { id: 'personal', label: 'Osobné údaje', icon: 'user' as const },
+  { id: 'experience', label: 'Pracovné skúsenosti', icon: 'briefcase' as const },
+  { id: 'education', label: 'Vzdelanie', icon: 'graduation-cap' as const },
+  { id: 'skills', label: 'Znalosti', icon: 'wrench' as const },
+  { id: 'languages', label: 'Jazyky', icon: 'languages' as const },
+  { id: 'extras', label: 'Doplňujúce časti', icon: 'plus' as const },
 ] as const
 
 const activeSection = ref<string>('personal')
 
-const { postSection, patchSection, deleteSectionRow } = useCv()
+const { postSection, patchSection, deleteSectionRow, reorderSection } = useCv()
 const { uploadCvPhoto } = useStorageUpload()
 const { ensureSkill: ensureCatalogSkill } = useSkCvSkillSearch()
 const cvIdRef = toRef(props, 'cvId')
@@ -1214,7 +1256,7 @@ type ExpDraft = {
   description: string
 }
 const expDraft = reactive<Record<string, ExpDraft>>({})
-const expOrder = ref<string[]>([])
+const reorderBusy = ref(false)
 
 const sortedExperience = computed(() => {
   const list = [...props.aggregate.experience].sort((a, b) => (b.sort_order ?? 0) - (a.sort_order ?? 0))
@@ -1275,7 +1317,7 @@ function scheduleExperienceSave(id: string): void {
 
 async function addExperience(): Promise<void> {
   await flushAllSectionSaves()
-  await postSection(props.cvId, 'experience', {
+  const newRow = await postSection<ExperienceResponseDto>(props.cvId, 'experience', {
     position: '',
     company: '',
     city: '',
@@ -1284,7 +1326,7 @@ async function addExperience(): Promise<void> {
     end_date: null,
     description: null,
   })
-  emit('reload')
+  props.updateAggregate((agg) => ({ ...agg, experience: [...agg.experience, newRow] }))
 }
 
 async function saveExperience(id: string): Promise<void> {
@@ -1328,7 +1370,34 @@ async function onExpCurrent(id: string): Promise<void> {
 async function removeExperience(id: string): Promise<void> {
   await flushAllSectionSaves()
   await deleteSectionRow(props.cvId, 'experience', id)
-  emit('reload')
+  props.updateAggregate((agg) => ({
+    ...agg,
+    experience: agg.experience.filter((r) => r.id !== id),
+  }))
+}
+
+async function moveExperience(id: string, direction: CvSectionReorderDirection): Promise<void> {
+  const current = sortedExperience.value
+  const next = swapCvSectionRow(current, id, direction)
+  if (next.map((r) => r.id).join() === current.map((r) => r.id).join()) return
+  reorderBusy.value = true
+  try {
+    await flushAllSectionSaves()
+    const ids = cvSectionReorderIds(next)
+    await reorderSection(props.cvId, 'experience', ids)
+    const orderMap = new Map(ids.map((rowId, idx) => [rowId, idx]))
+    props.updateAggregate((agg) => ({
+      ...agg,
+      experience: agg.experience.map((r) => ({
+        ...r,
+        sort_order: orderMap.has(r.id) ? orderMap.get(r.id)! : r.sort_order,
+      })),
+    }))
+  } catch (err) {
+    showNotice(err instanceof Error ? err.message : 'Nepodarilo sa zoradiť položky.')
+  } finally {
+    reorderBusy.value = false
+  }
 }
 
 type EduDraft = {
@@ -1444,7 +1513,7 @@ function scheduleEducationSave(id: string): void {
 
 async function addEducation(): Promise<void> {
   await flushAllSectionSaves()
-  await postSection(props.cvId, 'education', {
+  const newRow = await postSection<EducationResponseDto>(props.cvId, 'education', {
     education_kind: 'university',
     school: '',
     field: '',
@@ -1456,7 +1525,7 @@ async function addEducation(): Promise<void> {
     currently_studying: false,
     description: null,
   })
-  emit('reload')
+  props.updateAggregate((agg) => ({ ...agg, education: [...agg.education, newRow] }))
 }
 
 async function saveEducation(id: string): Promise<void> {
@@ -1467,7 +1536,34 @@ async function saveEducation(id: string): Promise<void> {
 async function removeEducation(id: string): Promise<void> {
   await flushAllSectionSaves()
   await deleteSectionRow(props.cvId, 'education', id)
-  emit('reload')
+  props.updateAggregate((agg) => ({
+    ...agg,
+    education: agg.education.filter((r) => r.id !== id),
+  }))
+}
+
+async function moveEducation(id: string, direction: CvSectionReorderDirection): Promise<void> {
+  const current = sortedEducation.value
+  const next = swapCvSectionRow(current, id, direction)
+  if (next.map((r) => r.id).join() === current.map((r) => r.id).join()) return
+  reorderBusy.value = true
+  try {
+    await flushAllSectionSaves()
+    const ids = cvSectionReorderIds(next)
+    await reorderSection(props.cvId, 'education', ids)
+    const orderMap = new Map(ids.map((rowId, idx) => [rowId, idx]))
+    props.updateAggregate((agg) => ({
+      ...agg,
+      education: agg.education.map((r) => ({
+        ...r,
+        sort_order: orderMap.has(r.id) ? orderMap.get(r.id)! : r.sort_order,
+      })),
+    }))
+  } catch (err) {
+    showNotice(err instanceof Error ? err.message : 'Nepodarilo sa zoradiť položky.')
+  } finally {
+    reorderBusy.value = false
+  }
 }
 
 const skillDraft = reactive<Record<string, { skill_name: string; level: string }>>({})
@@ -1554,6 +1650,16 @@ async function persistLanguageRow(id: string): Promise<void> {
 const languageSaveQueue = useCvSectionSaveQueue((id) =>
   runSectionSave(() => persistLanguageRow(id)),
 )
+
+async function flushAllSectionSaves(): Promise<void> {
+  await Promise.all([
+    experienceSaveQueue.flush(),
+    educationSaveQueue.flush(),
+    skillSaveQueue.flush(),
+    languageSaveQueue.flush(),
+  ])
+  await sectionSaveTail.value
+}
 
 function scheduleLanguageSave(id: string): void {
   languageSaveQueue.markDirty(id)
@@ -1811,7 +1917,11 @@ async function copyProfilePhoto(): Promise<void> {
 }
 
 function patch(p: Partial<CvHeaderResponseDto>): void {
-  emit('patchHeader', p)
+  props.updateHeader(p)
+}
+
+async function flushHeaderNow(): Promise<void> {
+  await props.flushHeaderSave()
 }
 
 /** Empty or whitespace-only → null; otherwise keep value as typed (trim only all-whitespace). */
@@ -1821,12 +1931,18 @@ function inputStrOrNull(ev: Event): string | null {
   return v
 }
 
-function emitGoStep(step: number): void {
-  void (async () => {
-    await flushHeaderSave?.()
+async function emitGoStep(step: number): Promise<void> {
+  const headerOk = await props.flushHeaderSave()
+  if (!headerOk) {
+    showNotice('Nepodarilo sa uložiť údaje životopisu. Skúste to znova.')
+    return
+  }
+  try {
     await flushAllSectionSaves()
-    emit('goStep', step)
-  })()
+  } catch {
+    return
+  }
+  emit('goStep', step)
 }
 
 watch(
@@ -1902,7 +2018,7 @@ watch(
 )
 
 onMounted(() => {
-  registerSectionSaveFlusher?.(flushAllSectionSaves)
+  props.registerSectionSaveFlusher(flushAllSectionSaves)
 })
 
 function scrollToSection(id: string): void {
@@ -1988,7 +2104,17 @@ async function downloadPdf(): Promise<void> {
 }
 
 async function onFinishWizard(): Promise<void> {
-  await navigateTo('/zivotopisy')
+  const headerOk = await props.flushHeaderSave()
+  if (!headerOk) {
+    showNotice('Nepodarilo sa uložiť údaje životopisu. Skúste to znova.')
+    return
+  }
+  try {
+    await flushAllSectionSaves()
+  } catch {
+    return
+  }
+  await props.finishWizard()
 }
 </script>
 

@@ -1,0 +1,17 @@
+## Netdata go.d httpcheck — JOBBIE API health
+## Install: /etc/netdata/go.d/httpcheck.conf
+## Also enable in /etc/netdata/go.d.conf under modules:  httpcheck: yes
+##
+## Use local Caddy (127.0.0.1) + Host header — NOT the public HTTPS URL.
+## Cloudflare can cache https://api.example.com/health and return 200 while Docker backend is down.
+
+jobs:
+  - name: jobbie_api_health
+    url: http://127.0.0.1/health
+    headers:
+      Host: api.example.com
+    update_every: 60
+    timeout: 5
+    status_accepted:
+      - 200
+    response_match: '"status":"ok"'

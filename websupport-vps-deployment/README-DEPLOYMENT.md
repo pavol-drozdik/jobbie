@@ -442,6 +442,35 @@ sudo docker compose exec backend node dist/scripts/backfill-typesense.js --schoo
 
 Important limitation: the existing `backfill-typesense.ts` fetches IDs in pages but accumulates all job/profile IDs in memory before indexing. That is acceptable only while table sizes are moderate. For large production datasets, replace it with a streaming page-by-page implementation before relying on it as the primary disaster fallback.
 
+## Production Discord alerting (operator)
+
+Free-tier notifications for production incidents — replicate on each new API VPS after Docker is healthy.
+
+| Alert | Channel | Where it runs |
+|-------|---------|---------------|
+| Sentry bugs (`backend-ts`, `app-pwa`) | `#bugs-prod` | Cloudflare Worker |
+| User content reports (`content_reports`) | `#moderation` | Supabase Edge Function |
+| CPU / RAM / disk ≥ 95% | `#ops-alerts` | Netdata on VPS |
+| API `/health` down | `#ops-alerts` | Netdata `httpcheck` on VPS |
+
+**Full runbook:** [`OPS-DISCORD-ALERTING.md`](./OPS-DISCORD-ALERTING.md)
+
+**Config templates** (copy to `/etc/netdata/` on the server):
+
+- [`ops/netdata/httpcheck.conf.example`](./ops/netdata/httpcheck.conf.example) — probe `http://127.0.0.1/health` with `Host: $APP_DOMAIN` (not the public URL; Cloudflare can cache `/health`)
+- [`ops/netdata/health.d/jobbie.conf.example`](./ops/netdata/health.d/jobbie.conf.example) — 95% thresholds, 6 h repeat
+- [`ops/netdata/health_alarm_notify.snippet.conf`](./ops/netdata/health_alarm_notify.snippet.conf) — Discord + `sysadmin` / `webmaster` roles
+- [`ops/sentry-discord-bridge.worker.example.js`](./ops/sentry-discord-bridge.worker.example.js) — Sentry Internal Integration bridge
+- [`ops/supabase/discord-content-report.example.ts`](./ops/supabase/discord-content-report.example.ts) — moderation webhook
+
+Quick Netdata install on the VPS:
+
+```bash
+curl -fsSL https://get.netdata.cloud/kickstart.sh | sudo bash -s -- --non-interactive
+```
+
+After enabling `httpcheck`, wait ~90 s, then `sudo netdatacli reload-health` so alarms attach to the new charts. Use `sudo docker compose` for stack commands if your user is not in the `docker` group.
+
 ## Security Notes
 
 Typesense is bound to `127.0.0.1:8108` on the VPS and is reachable to containers through Docker networking. It is not public.

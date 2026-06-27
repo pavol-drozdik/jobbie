@@ -104,6 +104,11 @@ if rg -n "from\(['\"]company_ads['\"]\)\.select\([^)]*street_address" app-pwa --
   warn "app-pwa must read street_address via company_ads_public, not company_ads base table"
 fi
 
+# Stripe publishable key must not be a secret key in env examples / CI
+if rg -n 'NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=sk_' app-pwa/.env.example .github 2>/dev/null; then
+  warn "NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY must be pk_ (publishable), never sk_"
+fi
+
 if [ "$FAILED" -eq 1 ]; then
   echo "security-check failed"
   exit 1

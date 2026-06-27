@@ -3,7 +3,7 @@ import type { CvAggregateResponseDto, CvHeaderResponseDto } from '~/types/cv'
 import type { CvSaveStatus } from '~/composables/useCv'
 import { parseCvPatchValidationError, type CvValidationErrorItem } from '~/composables/useCvValidation'
 import { sanitizeCvRichHtml } from '~/composables/useCvRichTextField'
-import { fieldUnchangedSinceSend, mergePatchResponse } from '~/utils/merge-patch-response'
+import { fieldUnchangedSinceSend } from '~/utils/merge-patch-response'
 
 export interface CvHeaderAutosaveCallbacks {
   onValidationError?: (payload: {
@@ -60,6 +60,10 @@ const HEADER_PATCH_KEYS = [
 
 type HeaderPatchKey = (typeof HEADER_PATCH_KEYS)[number]
 
+function isHeaderPatchKey(key: string): key is HeaderPatchKey {
+  return (HEADER_PATCH_KEYS as readonly string[]).includes(key)
+}
+
 function cloneHeader(h: CvHeaderResponseDto): CvHeaderResponseDto {
   return JSON.parse(JSON.stringify(h)) as CvHeaderResponseDto
 }
@@ -72,16 +76,27 @@ function serializePatchValue(key: HeaderPatchKey, value: unknown): unknown {
   return value
 }
 
-function buildHeaderPatchBody(
+export function buildCvHeaderPatchBody(
   current: CvHeaderResponseDto,
-  baseline: CvHeaderResponseDto,
+  baseline: CvHeaderResponseDto | null,
 ): Record<string, unknown> {
+  const base = baseline ?? ({} as CvHeaderResponseDto)
   const body: Record<string, unknown> = {}
   for (const key of HEADER_PATCH_KEYS) {
     const next = serializePatchValue(key, current[key])
-    if (!fieldUnchangedSinceSend(next, serializePatchValue(key, baseline[key]))) {
+    const prev = serializePatchValue(key, base[key])
+    if (!fieldUnchangedSinceSend(next, prev)) {
       body[key] = next
     }
+  }
+  return body
+}
+
+/** Sends every header field — used on explicit flush (finish, blur, navigation). */
+export function buildCvHeaderFullPatchBody(current: CvHeaderResponseDto): Record<string, unknown> {
+  const body: Record<string, unknown> = {}
+  for (const key of HEADER_PATCH_KEYS) {
+    body[key] = serializePatchValue(key, current[key])
   }
   return body
 }
@@ -97,102 +112,146 @@ export function useCvHeaderAutosave(
   saveStatus: Ref<CvSaveStatus>
   queueSave: () => void
   syncBaseline: () => void
-  flushSave: () => Promise<void>
+  flushSave: () => Promise<boolean>
 } {
   const { patchCv } = useCv()
   const saveStatus = ref<CvSaveStatus>('idle')
   let saveTimer: ReturnType<typeof setTimeout> | null = null
-  let saveInFlight: Promise<void> | null = null
-  let dirtyWhileSaving = false
   let lastPersistedHeader: CvHeaderResponseDto | null = null
+  let persistChain: Promise<boolean> = Promise.resolve(true)
 
   function syncBaseline(): void {
     const h = state.header.value
     lastPersistedHeader = h ? cloneHeader(h) : null
   }
 
-  async function persistHeader(): Promise<void> {
-    const id = cvId.value
+  function serverConfirmedField(key: HeaderPatchKey, sentVal: unknown, srvVal: unknown): boolean {
+    const sent = serializePatchValue(key, sentVal)
+    const srv = serializePatchValue(key, srvVal)
+    return fieldUnchangedSinceSend(srv, sent)
+  }
+
+const SKIP_SERVER_CONFIRM_KEYS = new Set<HeaderPatchKey>(['optional_sections'])
+
+  /** Returns true only when every field we sent is echoed back by the server. Never overwrites local edits. */
+  function confirmServerSave(
+    updated: CvHeaderResponseDto,
+    baselineAtSend: CvHeaderResponseDto,
+    body: Record<string, unknown>,
+  ): boolean {
+    const latest = state.header.value
+    if (!latest) return true
+
+    for (const key of Object.keys(body)) {
+      if (!isHeaderPatchKey(key)) continue
+      if (SKIP_SERVER_CONFIRM_KEYS.has(key)) continue
+      const k = key as keyof CvHeaderResponseDto
+      if (!fieldUnchangedSinceSend(latest[k], baselineAtSend[k])) continue
+      if (!serverConfirmedField(key, body[key], updated[k])) return false
+    }
+    return true
+  }
+
+  function applySuccessfulSave(
+    updated: CvHeaderResponseDto,
+    baselineAtSend: CvHeaderResponseDto,
+    body: Record<string, unknown>,
+  ): void {
+    const latest = state.header.value
+    if (latest) {
+      const merged = { ...latest }
+      for (const key of Object.keys(body)) {
+        if (!isHeaderPatchKey(key)) continue
+        const k = key as keyof CvHeaderResponseDto
+        if (fieldUnchangedSinceSend(latest[k], baselineAtSend[k])) {
+          merged[k] = updated[k] as never
+        }
+      }
+      state.header.value = merged
+    }
+    lastPersistedHeader = cloneHeader(updated)
+    if (state.aggregate.value) {
+      state.aggregate.value = {
+        ...state.aggregate.value,
+        cv: { ...state.aggregate.value.cv, ...updated },
+      }
+    }
+  }
+
+  async function persistOnce(forceFull = false): Promise<boolean> {
+    const id = cvId.value.trim()
     const current = state.header.value
-    if (!current) return
+    if (!id || !current) return true
 
-    const baseline = lastPersistedHeader ?? current
+    const body = forceFull
+      ? buildCvHeaderFullPatchBody(current)
+      : buildCvHeaderPatchBody(current, lastPersistedHeader)
+    if (Object.keys(body).length === 0) {
+      saveStatus.value = 'idle'
+      return true
+    }
+
     const baselineAtSend = cloneHeader(current)
-    const body = buildHeaderPatchBody(current, baseline)
-    if (Object.keys(body).length === 0) return
-
     saveStatus.value = 'saving'
     try {
       const updated = await patchCv(id, body)
-      const latest = state.header.value
-      if (latest) {
-        const merged = mergePatchResponse(latest, updated, baselineAtSend)
-        state.header.value = merged
-        lastPersistedHeader = cloneHeader(merged)
-        if (state.aggregate.value) {
-          const cvPatch: Partial<CvHeaderResponseDto> = {}
-          for (const key of Object.keys(body)) {
-            const k = key as keyof CvHeaderResponseDto
-            cvPatch[k] = merged[k] as never
-          }
-          state.aggregate.value = {
-            ...state.aggregate.value,
-            cv: { ...state.aggregate.value.cv, ...cvPatch },
-          }
-        }
+      if (!confirmServerSave(updated, baselineAtSend, body)) {
+        saveStatus.value = 'error'
+        state.callbacks?.onValidationError?.({
+          summary: 'Údaje sa nepodarilo uložiť na server. Skontrolujte pripojenie a skúste znova.',
+          items: [],
+          byField: {},
+        })
+        return false
       }
+      applySuccessfulSave(updated, baselineAtSend, body)
       saveStatus.value = 'saved'
       setTimeout(() => {
         if (saveStatus.value === 'saved') saveStatus.value = 'idle'
       }, 2000)
+      return true
     } catch (err) {
       saveStatus.value = 'error'
       const parsed = parseCvPatchValidationError(err)
       state.callbacks?.onValidationError?.(parsed)
+      return false
     }
   }
 
-  async function runSave(): Promise<void> {
-    if (saveInFlight) {
-      dirtyWhileSaving = true
-      await saveInFlight
-      if (!dirtyWhileSaving) return
-      dirtyWhileSaving = false
-    }
-
-    const task = persistHeader()
-    saveInFlight = task
-    try {
-      await task
-    } finally {
-      saveInFlight = null
-      if (dirtyWhileSaving) {
-        dirtyWhileSaving = false
-        await runSave()
+  async function persistUntilClean(forceFull = false): Promise<boolean> {
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const ok = await persistOnce(forceFull && attempt === 0)
+      if (!ok) return false
+      if (Object.keys(buildCvHeaderPatchBody(state.header.value!, lastPersistedHeader)).length === 0) {
+        return true
       }
     }
+    return Object.keys(buildCvHeaderPatchBody(state.header.value!, lastPersistedHeader)).length === 0
   }
 
   function queueSave(): void {
     if (!state.header.value) return
-    if (saveInFlight) {
-      dirtyWhileSaving = true
-      return
-    }
     saveStatus.value = 'saving'
     if (saveTimer) clearTimeout(saveTimer)
     saveTimer = setTimeout(() => {
       saveTimer = null
-      void runSave()
-    }, 600)
+      void flushSave()
+    }, 150)
   }
 
-  async function flushSave(): Promise<void> {
+  async function flushSave(): Promise<boolean> {
     if (saveTimer) {
       clearTimeout(saveTimer)
       saveTimer = null
     }
-    await runSave()
+    // Use delta diff so that if nothing changed since the last save the PATCH is skipped entirely.
+    // persistOnce short-circuits when buildCvHeaderPatchBody returns {} (lines 189-191).
+    const run = persistChain.then(() => persistUntilClean(false))
+    persistChain = run.then(
+      (ok) => ok,
+      () => false,
+    )
+    return run
   }
 
   return { saveStatus, queueSave, syncBaseline, flushSave }

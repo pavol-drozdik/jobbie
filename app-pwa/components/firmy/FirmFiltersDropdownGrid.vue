@@ -7,7 +7,7 @@
       <button
         id="firmy-filter-category"
         type="button"
-        class="flex h-[60px] w-full cursor-pointer select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
+        class="flex h-[60px] w-full is-clickable select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
         :class="ctx.categoryTriggerMuted ? 'text-black/30' : 'text-black/80'"
         @click.stop="ctx.toggleDropdown('category')"
       >
@@ -26,7 +26,7 @@
       >
         <button
           type="button"
-          class="mb-1 w-full cursor-pointer rounded-[10px] border-0 border-b border-black/10 bg-transparent px-4 py-3 text-left font-dmSans text-lg font-semibold text-black/80 transition-colors hover:bg-marketing-mint"
+          class="mb-1 w-full is-clickable rounded-[10px] border-0 border-b border-black/10 bg-transparent px-4 py-3 text-left font-dmSans text-lg font-semibold text-black/80 transition-colors hover:bg-marketing-mint"
           @click="ctx.clearCategories()"
         >
           {{ S.allCategories }}
@@ -35,7 +35,7 @@
           v-for="opt in ctx.categoryMultiOptions"
           :key="opt.value"
           type="button"
-          class="flex w-full cursor-pointer items-center gap-3 rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
+          class="flex w-full is-clickable items-center gap-3 rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
           @click="ctx.toggleCategory(opt.value)"
         >
           <span
@@ -70,7 +70,7 @@
       <button
         id="firmy-filter-sort"
         type="button"
-        class="flex h-[60px] w-full cursor-pointer select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
+        class="flex h-[60px] w-full is-clickable select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
         :class="ctx.sortTriggerMuted ? 'text-black/30' : 'text-black/80'"
         @click.stop="ctx.toggleDropdown('sort')"
       >
@@ -91,7 +91,7 @@
           v-for="opt in ctx.sortOptions"
           :key="opt.value"
           type="button"
-          class="w-full cursor-pointer rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
+          class="w-full is-clickable rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
           :class="{ 'bg-marketing-panel font-semibold': ctx.sort === opt.value }"
           @click="ctx.selectSort(opt.value)"
         >

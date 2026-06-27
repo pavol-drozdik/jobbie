@@ -97,7 +97,7 @@ onBeforeUnmount(() => {
     <button
       :id="id"
       type="button"
-      class="flex h-[60px] w-full cursor-pointer select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none ring-marketing-green focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-60"
+      class="flex h-[60px] w-full is-clickable select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none ring-marketing-green focus-visible:ring-2 disabled:is-disabled-cursor disabled:opacity-60"
       :class="triggerMuted ? 'text-black/30' : 'text-black/80'"
       :disabled="disabled"
       @click.stop="toggleOpen"

@@ -5,6 +5,7 @@ import type {
   CvDocumentUiTemplate,
 } from './cv-document.types'
 import { getSafeCvFileName } from './cv-document-html'
+import { formatEducationEndYear } from './cv-document-utils'
 
 const UI_TEMPLATES = new Set<CvDocumentUiTemplate>([
   'atlas',
@@ -78,9 +79,9 @@ function parseExperience(raw: unknown): CvDocumentExportData['experiences'] {
       city: asString(item.city, 120),
       current: asBool(item.current),
       fromYear: asString(item.fromYear, 8),
-      fromMonth: asString(item.fromMonth, 4),
+      fromMonth: asString(item.fromMonth, 16),
       toYear: asString(item.toYear, 8),
-      toMonth: asString(item.toMonth, 4),
+      toMonth: asString(item.toMonth, 16),
       description: sanitizeRichExportField(item.description, MAX_TEXT),
       bullets: asStringArray(item.bullets, MAX_BULLETS, 500),
     }
@@ -100,7 +101,7 @@ function parseEducation(raw: unknown): CvDocumentExportData['education'] {
       institution: asString(item.institution, 200),
       maturita: asBool(item.maturita),
       fromYear: asString(item.fromYear, 8),
-      toYear: asString(item.toYear, 8),
+      toYear: formatEducationEndYear(asString(item.toYear, 16)),
       description: sanitizeRichExportField(item.description, MAX_TEXT),
       bullets: asStringArray(item.bullets, MAX_BULLETS, 500),
     }

@@ -255,45 +255,51 @@
 
       <h2 class="form-label mb-1">{{ S.settingsBillingSectionDetails }}</h2>
 
-      <p class="mb-4 text-xs text-black/45">{{ S.settingsBillingSectionDetailsHint }}</p>
+      <p class="mb-4 text-xs text-black/45">
+        {{ isCompanyAccount ? S.settingsBillingSectionDetailsHint : S.settingsBillingSectionDetailsHintIndividual }}
+      </p>
 
       <form class="space-y-4" @submit.prevent="saveBillingDetails">
 
-        <div :class="fieldWrapClass">
-
-          <label :class="labelClass">{{ S.companyName }}</label>
-
-          <input v-model="companyName" type="text" :class="inputClass">
-
-        </div>
-
-        <div class="grid gap-3 sm:grid-cols-2">
+        <template v-if="isCompanyAccount">
 
           <div :class="fieldWrapClass">
 
-            <label :class="labelClass">IČO</label>
+            <label :class="labelClass">{{ S.companyName }}</label>
 
-            <input v-model="registrationNumber" type="text" :class="inputClass" autocomplete="off">
-
-          </div>
-
-          <div :class="fieldWrapClass">
-
-            <label :class="labelClass">DIČ</label>
-
-            <input v-model="taxId" type="text" :class="inputClass" autocomplete="off">
+            <input v-model="companyName" type="text" :class="inputClass">
 
           </div>
 
-          <div :class="[fieldWrapClass, 'sm:col-span-2']">
+          <div class="grid gap-3 sm:grid-cols-2">
 
-            <label :class="labelClass">IČ DPH</label>
+            <div :class="fieldWrapClass">
 
-            <input v-model="vatId" type="text" :class="inputClass" autocomplete="off">
+              <label :class="labelClass">IČO</label>
+
+              <input v-model="registrationNumber" type="text" :class="inputClass" autocomplete="off">
+
+            </div>
+
+            <div :class="fieldWrapClass">
+
+              <label :class="labelClass">DIČ</label>
+
+              <input v-model="taxId" type="text" :class="inputClass" autocomplete="off">
+
+            </div>
+
+            <div :class="[fieldWrapClass, 'sm:col-span-2']">
+
+              <label :class="labelClass">IČ DPH</label>
+
+              <input v-model="vatId" type="text" :class="inputClass" autocomplete="off">
+
+            </div>
 
           </div>
 
-        </div>
+        </template>
 
         <div :class="fieldWrapClass">
 
@@ -399,6 +405,7 @@
 
 <script setup lang="ts">
 
+import { parseApiErrorMessage } from '~/utils/api-errors'
 import { S } from '~/utils/strings'
 import { buildCvDatabaseUsageRows } from '~/utils/cv-database-usage-display'
 
@@ -412,9 +419,7 @@ const { user } = useAuth()
 
 const { api } = useApi()
 
-const { ensureRecentLoginForBilling, billingStepUpUserMessage, isStepUpRequiredResponse, tryRecoverFromStepUpRequired } =
-
-  useBillingStepUp()
+const { ensureRecentLoginForBilling } = useBillingStepUp()
 
 const { profile, load: loadProfile } = useSettingsProfile()
 
@@ -568,7 +573,7 @@ const vatId = ref('')
 
 const billingAddress = ref('')
 
-
+const isCompanyAccount = computed(() => user.value?.role === 'company')
 
 const cvUsageRows = computed(() => {
   const acc = account.value
@@ -718,21 +723,11 @@ async function startChangeCard(): Promise<void> {
 
   try {
 
-    let res = await api<{ client_secret: string }>('/api/payments/payment-method/setup', {
+    const res = await api<{ client_secret: string }>('/api/payments/payment-method/setup', {
 
       method: 'POST',
 
     })
-
-    if (!res.ok && isStepUpRequiredResponse(res) && (await tryRecoverFromStepUpRequired())) {
-
-      res = await api<{ client_secret: string }>('/api/payments/payment-method/setup', {
-
-        method: 'POST',
-
-      })
-
-    }
 
     const secret =
 
@@ -754,7 +749,7 @@ async function startChangeCard(): Promise<void> {
 
     paymentsErr.value =
 
-      (await billingStepUpUserMessage(res)) || S.settingsBillingPaymentMethodFailed
+      parseApiErrorMessage(res, S.settingsBillingPaymentMethodFailed)
 
   } finally {
 
@@ -788,13 +783,12 @@ function applyBillingFromProfile(): void {
 
   }
 
-  companyName.value = d.company_name ?? ''
-
-  registrationNumber.value = d.registration_number ?? ''
-
-  taxId.value = d.tax_id ?? ''
-
-  vatId.value = d.vat_id ?? ''
+  if (user.value?.role === 'company') {
+    companyName.value = d.company_name ?? ''
+    registrationNumber.value = d.registration_number ?? ''
+    taxId.value = d.tax_id ?? ''
+    vatId.value = d.vat_id ?? ''
+  }
 
   const bd = d.billing_details
 
@@ -885,38 +879,26 @@ async function saveBillingDetails(): Promise<void> {
       billingFormErr.value = gate.message
       return
     }
-    let res = await api('/api/billing/account', {
-      method: 'PATCH',
-      body: {
-        company_name: companyName.value.trim() || null,
-        registration_number: registrationNumber.value.trim() || null,
-        tax_id: taxId.value.trim() || null,
-        vat_id: vatId.value.trim() || null,
-        billing_details: {
-          address: billingAddress.value.trim() || null,
-        },
+    const body: Record<string, unknown> = {
+      billing_details: {
+        address: billingAddress.value.trim() || null,
       },
-    })
-    if (!res.ok && isStepUpRequiredResponse(res) && (await tryRecoverFromStepUpRequired())) {
-      res = await api('/api/billing/account', {
-        method: 'PATCH',
-        body: {
-          company_name: companyName.value.trim() || null,
-          registration_number: registrationNumber.value.trim() || null,
-          tax_id: taxId.value.trim() || null,
-          vat_id: vatId.value.trim() || null,
-          billing_details: {
-            address: billingAddress.value.trim() || null,
-          },
-        },
-      })
     }
+    if (isCompanyAccount.value) {
+      body.company_name = companyName.value.trim() || null
+      body.registration_number = registrationNumber.value.trim() || null
+      body.tax_id = taxId.value.trim() || null
+      body.vat_id = vatId.value.trim() || null
+    }
+    const res = await api('/api/billing/account', {
+      method: 'PATCH',
+      body,
+    })
     if (res.ok) {
       await loadProfile()
       emit('saved')
     } else {
-      const stepUpMsg = await billingStepUpUserMessage(res)
-      billingFormErr.value = stepUpMsg || S.saveFailed
+      billingFormErr.value = parseApiErrorMessage(res, S.saveFailed)
     }
   } finally {
     savingBilling.value = false

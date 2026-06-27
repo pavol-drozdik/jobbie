@@ -7,7 +7,7 @@ Authoritative business API: **NestJS 10** on Express, global prefix **`/api`**, 
 ```
 backend-ts/src/
 ├── auth/           # Guards, session BFF, JWT
-├── billing/        # Credits RPC, catalog, limits, expiration cron
+├── billing/        # Credits RPC, catalog, limits
 ├── payments/       # Stripe, webhooks, subscription credits
 ├── jobs/           # Job offers
 ├── company-ads/    # Company/service ads

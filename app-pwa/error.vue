@@ -1,6 +1,16 @@
 <template>
   <NuxtLayout name="app">
-    <AppHttpErrorPage :error="error" />
+    <AppHttpErrorPage v-if="error" :error="error" />
+    <div
+      v-else
+      class="flex min-h-[min(70vh,calc(100dvh-12rem))] items-center justify-center px-5 pb-16 pt-[calc(6.875rem+env(safe-area-inset-top))] font-dmSans md:pt-[calc(110px+env(safe-area-inset-top))]"
+      role="status"
+      aria-live="polite"
+    >
+      <p class="m-0 text-[15px] font-medium text-black/55">
+        {{ S.errorPageRecovering }}
+      </p>
+    </div>
   </NuxtLayout>
 </template>
 

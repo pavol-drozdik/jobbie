@@ -55,6 +55,18 @@ export class AdminAccountCloseService {
       .eq('company_id', targetUserId)
       .eq('is_deleted', false);
 
+    const now = new Date().toISOString();
+    const { error: adsErr } = await client
+      .from('company_ads')
+      .update({ status: 'archived', updated_at: now })
+      .eq('owner_id', targetUserId)
+      .eq('status', 'active');
+    if (adsErr) {
+      this.logger.warn(
+        `company_ads archive on account closure: ${adsErr.message}`,
+      );
+    }
+
     const deletedAt = new Date().toISOString();
     await client
       .from('job_email_alerts')

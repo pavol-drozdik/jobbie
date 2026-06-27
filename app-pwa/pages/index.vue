@@ -17,14 +17,20 @@
             type="button"
             role="tab"
             :aria-selected="homeCarouselRole === tab.role"
-            class="m-1 cursor-pointer whitespace-nowrap rounded-full border-none bg-transparent px-3 py-2 font-dmSans text-[15px] font-bold text-black transition-[background-color,color] duration-200 max-[600px]:px-3 max-[600px]:py-2 marketing:m-[5px] marketing:px-5 marketing:py-2.5 marketing:text-[22px] aria-selected:bg-marketing-green aria-selected:text-white"
-            :class="homeCarouselRole === tab.role ? 'bg-marketing-green text-white' : ''"
+            class="m-1 is-clickable whitespace-nowrap rounded-full border-none px-3 py-2 font-dmSans text-[15px] font-bold transition-[background-color,color] duration-200 max-[600px]:px-3 max-[600px]:py-2 marketing:m-[5px] marketing:px-5 marketing:py-2.5 marketing:text-[22px] aria-selected:bg-marketing-green aria-selected:text-white"
+            :class="homeCarouselRole === tab.role ? 'bg-marketing-green text-white' : 'bg-transparent text-black'"
             @click="selectHomeCarouselRole(tab.role)"
           >
             {{ tab.label }}
           </button>
         </div>
-        <div ref="homeCarouselEl" class="w-full touch-pan-y overflow-hidden">
+        <div
+          ref="homeCarouselEl"
+          class="w-full touch-pan-y overflow-hidden"
+          role="region"
+          aria-label="Ukážka funkcií Jobbie"
+          aria-live="polite"
+        >
           <div
             ref="homeCarouselTrackRef"
             class="flex gap-[30px] will-change-transform"
@@ -51,7 +57,7 @@
         <div class="mt-6 flex items-center justify-center gap-2.5">
           <button
             type="button"
-            class="mr-2 flex size-11 min-w-[44px] cursor-pointer items-center justify-center rounded-full border-none bg-marketing-green text-white"
+            class="mr-2 flex size-11 min-w-[44px] is-clickable items-center justify-center rounded-full border-none bg-marketing-green text-white"
             aria-label="Predchádzajúce"
             @click="homeCarouselGoDelta(-1)"
           >
@@ -61,14 +67,19 @@
             v-for="(_, i) in homeCarouselSlides"
             :key="`dot-${i}`"
             type="button"
-            class="h-2.5 cursor-pointer rounded-full border-none bg-black/20 p-0 transition-[background-color,width] duration-[250ms] ease-in-out"
-            :class="i === homeCarouselIndex ? 'w-7 bg-marketing-green' : 'w-2.5'"
-            :aria-label="`Slide ${i + 1}`"
+            class="flex size-11 is-clickable items-center justify-center rounded-full border-none bg-transparent p-0"
+            :aria-label="`Snímka ${i + 1} z ${homeCarouselSlides.length}`"
             @click="homeCarouselGoTo(i, true)"
-          />
+          >
+            <span
+              class="block h-2.5 rounded-full bg-black/20 transition-[background-color,width] duration-[250ms] ease-in-out"
+              :class="i === homeCarouselIndex ? 'w-7 bg-marketing-green' : 'w-2.5'"
+              aria-hidden="true"
+            />
+          </button>
           <button
             type="button"
-            class="ml-2 flex size-11 min-w-[44px] cursor-pointer items-center justify-center rounded-full border-none bg-marketing-green text-white"
+            class="ml-2 flex size-11 min-w-[44px] is-clickable items-center justify-center rounded-full border-none bg-marketing-green text-white"
             aria-label="Ďalšie"
             @click="homeCarouselGoDelta(1)"
           >
@@ -106,28 +117,36 @@
           </div>
         </div>
         <div class="w-full marketing:w-1/2">
-          <img
+          <NuxtImg
             class="mx-auto block w-full rounded-[20px] object-contain marketing:w-[90%]"
-            src="/img/phone-image.png"
-            alt=""
-            loading="lazy"
+            src="/img/phone-image.webp"
+            alt="Mobilná aplikácia Jobbie na telefóne"
             width="800"
             height="600"
-          >
+            sizes="(max-width: 900px) 90vw, 640px"
+            format="webp"
+            quality="82"
+            loading="lazy"
+            decoding="async"
+          />
         </div>
       </div>
     </section>
     <section class="mt-[72px] flex w-full flex-col items-center marketing:mt-[120px] marketingXl:mt-[140px]">
       <div class="box-border flex w-full max-w-[1400px] flex-col gap-6 px-5 marketing:flex-row marketing:items-center">
         <div class="order-2 w-full marketing:order-none marketing:w-1/2">
-          <img
+          <NuxtImg
             class="mx-auto block w-full rounded-[20px] object-contain marketing:w-[90%]"
-            src="/img/spotlight.png"
-            alt=""
-            loading="lazy"
+            src="/img/spotlight.webp"
+            alt="Profil a hodnotenia v aplikácii Jobbie"
             width="800"
             height="600"
-          >
+            sizes="(max-width: 900px) 90vw, 640px"
+            format="webp"
+            quality="82"
+            loading="lazy"
+            decoding="async"
+          />
         </div>
         <div class="order-1 w-full marketing:order-none marketing:w-1/2">
           <h2 class="mt-0 font-dmSans text-[32px] font-extrabold leading-[1.1] text-black marketing:text-[52px] marketing:leading-[1.05] marketingXl:text-[60px] marketingXl:leading-[60px]">
@@ -263,7 +282,7 @@
                 <div class="my-2.5 h-px w-full bg-[rgba(177,178,181,0.3)]" />
                 <div class="flex items-center justify-between text-marketing-green">
                   <div class="flex min-w-0 items-center gap-2">
-                    <div class="flex size-10 min-w-10 items-center justify-center rounded-full bg-violet-600 font-dmSans text-sm font-bold text-white">
+                    <div class="flex size-10 min-w-10 items-center justify-center rounded-full bg-marketing-green font-dmSans text-sm font-bold text-white">
                       {{ employerInitials(job.employer_name) }}
                     </div>
                     <span class="overflow-hidden text-ellipsis whitespace-nowrap font-dmSans text-sm font-bold leading-[1.1] text-black marketing:text-base">{{ job.employer_name || 'Zamestnávateľ' }}</span>
@@ -328,7 +347,8 @@ import {
 import { HOME_DESIGN_FAQ_BY_ROLE } from '~/utils/home-design-faq'
 import { HOME_MARKETING_REVIEWS_ENABLED } from '~/utils/home-reviews'
 import { HOME_DESIGN_CAROUSEL, type HomeDesignCarouselRole } from '~/utils/home-design-carousel'
-import { fetchPublicJobsHome } from '~/composables/fetch-public-jobs-home'
+import { usePageSeo } from '~/composables/usePageSeo'
+import { fetchPublicJobsHome } from '~/utils/fetch-public-jobs-home'
 import { normalizeSiteUrl } from '~/utils/seo-config'
 import { buildJobsAlternateFeeds } from '~/utils/seo-feed-links'
 import { buildFaqPageJsonLd } from '~/utils/seo-json-ld'
@@ -381,24 +401,42 @@ function listApplicableHomeCtaKinds(): HomeCtaKind[] {
   return out
 }
 
+function hashString(input: string): number {
+  let hash = 0
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash * 31 + input.charCodeAt(i)) | 0
+  }
+  return Math.abs(hash)
+}
+
 function pickHomeCtaKind(): void {
   const opts = listApplicableHomeCtaKinds()
-  homeCtaKind.value = opts[Math.floor(Math.random() * opts.length)]!
+  if (opts.length <= 1) {
+    homeCtaKind.value = opts[0] ?? 'customer'
+    return
+  }
+  const userId = profile.value?.id ?? session.value?.access_token ?? ''
+  homeCtaKind.value = opts[hashString(userId) % opts.length]!
 }
 
 watch(
   () =>
     [
       session.value?.access_token ?? '',
+      profile.value?.id ?? '',
       profile.value?.customer_role,
       profile.value?.worker_role,
       profile.value?.provider_role,
     ] as const,
   () => {
+    if (!import.meta.client) return
     pickHomeCtaKind()
   },
-  { immediate: true },
 )
+
+onMounted(() => {
+  pickHomeCtaKind()
+})
 
 const homeCta = computed(() => {
   const k = homeCtaKind.value
@@ -436,7 +474,9 @@ const latestJobsSectionRef = ref<HTMLElement | null>(null)
 const gridJobs = ref<Job[]>(initialHomeJobs.value?.grid ?? [])
 const thumbFallbackStages = ref<Record<string, JobPhotoThumbnailFallbackStage>>({})
 const loadingGrid = ref(!initialHomeJobs.value)
-const categoryJobCounts = ref<Record<string, number>>({})
+const categoryJobCounts = ref<Record<string, number>>(
+  initialHomeJobs.value?.categoryCounts ?? {},
+)
 
 const HOME_LATEST_LIMIT = 4
 const HOME_GRID_LIMIT = 8
@@ -619,22 +659,19 @@ watch(initialHomeJobs, (data) => {
   if (!data) return
   if (data.latest.length) latestJobs.value = data.latest
   if (data.grid.length) gridJobs.value = data.grid
+  if (Object.keys(data.categoryCounts).length) {
+    categoryJobCounts.value = data.categoryCounts
+  }
   loadingGrid.value = false
 })
 
 onMounted(async () => {
   if (!initialHomeJobs.value) {
     loadingGrid.value = true
-    await Promise.all([fetchLatestJobs(), fetchGridJobs()])
+    await Promise.all([fetchLatestJobs(), fetchGridJobs(), fetchCategoryJobCounts()])
     loadingGrid.value = false
-  }
-  await fetchCategoryJobCounts()
-  if (typeof document !== 'undefined' && document.fonts?.ready) {
-    try {
-      await document.fonts.ready
-    } catch {
-      /* ignore */
-    }
+  } else if (Object.keys(categoryJobCounts.value).length === 0) {
+    await fetchCategoryJobCounts()
   }
   requestAnimationFrame(() => homeCarouselGoTo(0, false))
   window.addEventListener('resize', onHomeCarouselResize)

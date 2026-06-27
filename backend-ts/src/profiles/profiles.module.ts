@@ -10,6 +10,7 @@ import { SkRpoLookupService } from '../registry/sk-rpo-lookup.service';
 import { ChatModule } from '../chat/chat.module';
 import { ProfileOpenChatService } from './profile-open-chat.service';
 import { ProfileActivityAuthorizationService } from './profile-activity-authorization.service';
+import { AccountClosureListingsService } from './account-closure-listings.service';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ProfileActivityAuthorizationService } from './profile-activity-authoriz
     SkRpoLookupService,
     ProfileOpenChatService,
     ProfileActivityAuthorizationService,
+    AccountClosureListingsService,
   ],
   exports: [ProfileActivityAuthorizationService],
 })

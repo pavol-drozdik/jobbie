@@ -18,7 +18,7 @@
 
           <div
 
-            class="flex h-12 w-12 min-h-12 min-w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#7c3aed] font-dmSans text-[17px] font-bold text-white"
+            class="flex h-12 w-12 min-h-12 min-w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-marketing-green font-dmSans text-[17px] font-bold text-white"
 
           >
 
@@ -366,7 +366,7 @@ function sbNavClass(isActive: boolean): string {
 
   const base =
 
-    'm-0 flex w-full cursor-pointer items-center gap-3 rounded-xl border-0 bg-transparent py-[11px] px-3.5 text-left font-dmSans text-base no-underline transition-colors outline-none'
+    'm-0 flex w-full is-clickable items-center gap-3 rounded-xl border-0 bg-transparent py-[11px] px-3.5 text-left font-dmSans text-base no-underline transition-colors outline-none'
 
   if (isActive) {
 

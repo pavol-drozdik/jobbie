@@ -19,7 +19,7 @@
           >
             <div class="flex items-center gap-3.5">
               <div
-                class="flex size-[52px] min-w-[52px] items-center justify-center rounded-full bg-violet-600 font-dmSans text-[22px] font-bold text-white marketing:size-14 marketing:min-w-14 marketing:text-[28px]"
+                class="flex size-[52px] min-w-[52px] items-center justify-center rounded-full bg-marketing-green font-dmSans text-[22px] font-bold text-white marketing:size-14 marketing:min-w-14 marketing:text-[28px]"
               >{{ r.initials }}</div>
               <div class="font-dmSans text-xl font-bold leading-[1.1] text-black marketing:text-[26px]">{{ r.name }}</div>
             </div>
@@ -49,7 +49,7 @@
           >
             <div class="flex items-center gap-3.5">
               <div
-                class="flex size-[52px] min-w-[52px] items-center justify-center rounded-full bg-violet-600 font-dmSans text-[22px] font-bold text-white marketing:size-14 marketing:min-w-14 marketing:text-[28px]"
+                class="flex size-[52px] min-w-[52px] items-center justify-center rounded-full bg-marketing-green font-dmSans text-[22px] font-bold text-white marketing:size-14 marketing:min-w-14 marketing:text-[28px]"
               >{{ r.initials }}</div>
               <div class="font-dmSans text-xl font-bold leading-[1.1] text-black marketing:text-[26px]">{{ r.name }}</div>
             </div>

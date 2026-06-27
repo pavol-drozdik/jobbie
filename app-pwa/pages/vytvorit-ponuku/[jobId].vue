@@ -19,7 +19,7 @@
     :redirect-path="redirectPath"
   />
   <div v-else class="min-h-screen bg-marketing-mint font-dmSans text-black">
-    <JobPostWizard v-if="jobId" :job-id="jobId" />
+    <JobPostWizard v-if="canEditJob" :job-id="jobId" />
   </div>
 </template>
 
@@ -27,6 +27,7 @@
 import { ROUTES } from '~/utils/app-routes'
 import { S } from '~/utils/strings'
 import LoggedOutFeatureHero from '~/components/marketing/LoggedOutFeatureHero.vue'
+import { isReservedJobWizardSegment } from '~/utils/job-post-hub'
 
 definePageMeta({ layout: 'app', middleware: ['customer-only'] })
 
@@ -34,4 +35,11 @@ const route = useRoute()
 const redirectPath = computed(() => route.fullPath || ROUTES.jobHub)
 const { user, loading: authLoading } = useAuth()
 const jobId = computed(() => String(route.params.jobId || ''))
+const canEditJob = computed(
+  () => Boolean(jobId.value) && !isReservedJobWizardSegment(jobId.value),
+)
+
+if (import.meta.client && isReservedJobWizardSegment(jobId.value)) {
+  await navigateTo(ROUTES.jobNew, { replace: true })
+}
 </script>

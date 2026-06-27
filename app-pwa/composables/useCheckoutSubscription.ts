@@ -3,6 +3,7 @@ import type { CheckoutBillingPayload } from '~/utils/checkout-billing'
 import type { PreparePaymentResult } from '~/utils/stripe-prepare-payment'
 import { filterPublicSubscriptionPlans } from '~/utils/pricing-catalog'
 import { ROUTES } from '~/utils/app-routes'
+import { parseApiErrorMessage } from '~/utils/api-errors'
 import { parseSafeApiErrorMessage } from '~/utils/safe-user-messages'
 import { stripStripeReturnQueryFromBrowserUrl } from '~/utils/stripe-return-query'
 import { resolvePlanTrialDays } from '~/utils/subscription-trial'
@@ -19,12 +20,7 @@ type ProfileBillingPrefill = {
 
 export function useCheckoutSubscription(options: { planId: string; returnPath: string }) {
   const { planId, returnPath } = options
-  const {
-    ensureRecentLoginForBilling,
-    billingStepUpUserMessage,
-    isStepUpRequiredResponse,
-    tryRecoverFromStepUpRequired,
-  } = useBillingStepUp()
+  const { ensureRecentLoginForBilling } = useBillingStepUp()
   const { api } = useApi()
   const { refreshUser } = useAuth()
   const { capture } = useAnalytics()
@@ -83,19 +79,12 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
       billing?: CheckoutBillingPayload
     } = isSetup ? { setup_intent_id: id } : { payment_intent_id: id }
     if (billing) body.billing = billing
-    let res = await api<{ ok: boolean }>('/api/payments/confirm-subscription', {
+    const res = await api<{ ok: boolean }>('/api/payments/confirm-subscription', {
       method: 'POST',
       body,
     })
-    if (!res.ok && isStepUpRequiredResponse(res) && (await tryRecoverFromStepUpRequired())) {
-      res = await api<{ ok: boolean }>('/api/payments/confirm-subscription', {
-        method: 'POST',
-        body,
-      })
-    }
     if (!res.ok) {
-      const stepUp = await billingStepUpUserMessage(res)
-      error.value = stepUp || parseSafeApiErrorMessage(res, S.checkoutPaymentFailed)
+      error.value = parseSafeApiErrorMessage(res, S.checkoutPaymentFailed)
       return false
     }
     error.value = null
@@ -166,7 +155,7 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
     if (billing) {
       body.billing = billing
     }
-    let res = await api<{
+    const res = await api<{
       client_secret: string
       amount?: number
       currency?: string
@@ -176,20 +165,8 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
       method: 'POST',
       body,
     })
-    if (!res.ok && isStepUpRequiredResponse(res) && (await tryRecoverFromStepUpRequired())) {
-      res = await api<{
-        client_secret: string
-        amount?: number
-        currency?: string
-        intent_type?: 'payment' | 'setup'
-        trial_period_days?: number
-      }>('/api/payments/create-payment-intent-subscription', {
-        method: 'POST',
-        body,
-      })
-    }
     if (!res.ok) {
-      error.value = await billingStepUpUserMessage(res)
+      error.value = parseApiErrorMessage(res, S.checkoutPaymentFailed)
       return null
     }
     const secret = typeof res.data?.client_secret === 'string' ? res.data.client_secret.trim() : ''

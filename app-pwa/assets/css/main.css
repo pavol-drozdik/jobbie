@@ -1,5 +1,4 @@
 @import '@fontsource-variable/dm-sans/wght.css';
-@import '@fontsource-variable/dm-sans/wght-italic.css';
 
 @tailwind base;
 @tailwind components;
@@ -1661,6 +1660,15 @@ a.btn-w,
     .applicant-status-dropdown .app-form-dropdown__trigger--toolbar {
       @apply w-auto min-w-[17rem];
     }
+  }
+}
+
+@layer utilities {
+  .is-clickable {
+    cursor: pointer;
+  }
+  .is-disabled-cursor {
+    cursor: not-allowed;
   }
 }
 

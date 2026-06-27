@@ -47,14 +47,14 @@ const props = defineProps<{
   error: {
     statusCode?: number
     message?: string
-  }
+  } | null | undefined
 }>()
 
 const router = useRouter()
 
 const isNotFound = computed(() => isNotFoundError(props.error))
 
-const statusCode = computed(() => props.error.statusCode ?? 500)
+const statusCode = computed(() => props.error?.statusCode ?? 500)
 
 const heading = computed(() =>
   isNotFound.value ? S.errorPageNotFoundHeading : S.errorPageGenericHeading,
@@ -62,7 +62,7 @@ const heading = computed(() =>
 
 const body = computed(() => {
   if (import.meta.dev) {
-    const msg = props.error.message?.trim()
+    const msg = props.error?.message?.trim()
     if (msg) return msg
   }
   return isNotFound.value ? S.errorPageNotFoundLead : S.errorPageGenericLead
@@ -70,8 +70,12 @@ const body = computed(() => {
 
 const canGoBack = computed(() => import.meta.client && window.history.length > 1)
 
-function goBack(): void {
-  clearError()
-  router.back()
+async function goBack(): Promise<void> {
+  if (canGoBack.value) {
+    await router.back()
+    void clearError()
+    return
+  }
+  await clearError({ redirect: ROUTES.home })
 }
 </script>

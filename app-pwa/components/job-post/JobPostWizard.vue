@@ -25,7 +25,7 @@
         <div v-show="currentStep === 0" class="grid gap-5">
         <JobPostSectionCard title="Thumbnail">
           <div
-            class="relative flex aspect-[4/3] w-full cursor-pointer flex-col items-center justify-center gap-2.5 overflow-hidden rounded-[20px] border-2 border-dashed border-marketing-green bg-marketing-soft transition-colors hover:bg-marketing-mint"
+            class="relative flex aspect-[4/3] w-full is-clickable flex-col items-center justify-center gap-2.5 overflow-hidden rounded-[20px] border-2 border-dashed border-marketing-green bg-marketing-soft transition-colors hover:bg-marketing-mint"
             role="button"
             tabindex="0"
             @keydown.enter.prevent="() => thumbInputRef?.click()"
@@ -37,7 +37,7 @@
               ref="thumbInputRef"
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
-              class="absolute inset-0 cursor-pointer opacity-0"
+              class="absolute inset-0 is-clickable opacity-0"
               :disabled="loading || uploadingCover"
               @change="onCoverChange"
             >
@@ -94,7 +94,7 @@
                 :class="[wizardTextInputClass, 'min-w-0 flex-1 sm:max-w-[280px]']"
                 :disabled="nastupAsap"
               >
-              <label class="flex cursor-pointer items-center gap-3">
+              <label class="flex is-clickable items-center gap-3">
                 <span class="relative inline-block h-7 w-12 shrink-0">
                   <input v-model="nastupAsap" type="checkbox" class="peer sr-only">
                   <span
@@ -179,7 +179,7 @@
           <div v-show="jobType === 'fuska'" class="flex flex-col gap-4">
             <div class="flex flex-col gap-2">
               <label :class="wizardFieldLabelClass">Dátum konania práce</label>
-              <label class="mb-2 flex cursor-pointer items-center gap-3">
+              <label class="mb-2 flex is-clickable items-center gap-3">
                 <span class="relative inline-block h-7 w-12 shrink-0">
                   <input v-model="fuskaNezalezi" type="checkbox" class="peer sr-only">
                   <span
@@ -340,11 +340,11 @@
           </div>
           <div :class="wizardFieldRowClass">
             <label :class="wizardFieldLabelClass">Možnosti</label>
-            <label class="flex cursor-pointer items-center gap-3">
+            <label class="flex is-clickable items-center gap-3">
               <AppCheckbox v-model="isUrgent" />
               <span class="font-dmSans text-lg font-semibold text-black">{{ S.urgentOnly }}</span>
             </label>
-            <label class="mt-3 flex cursor-pointer items-start gap-3">
+            <label class="mt-3 flex is-clickable items-start gap-3">
               <AppCheckbox v-model="isTopListing" class="mt-1" />
               <span class="font-dmSans text-lg font-semibold text-black">
                 {{ S.jobTopListingLabel }}
@@ -386,14 +386,14 @@
               </button>
             </div>
             <div
-              class="relative flex aspect-[4/3] w-[120px] shrink-0 cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[14px] border-2 border-dashed border-marketing-green bg-marketing-soft transition-colors hover:bg-marketing-mint"
+              class="relative flex aspect-[4/3] w-[120px] shrink-0 is-clickable flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[14px] border-2 border-dashed border-marketing-green bg-marketing-soft transition-colors hover:bg-marketing-mint"
             >
               <input
                 ref="galleryInputRef"
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/gif"
                 multiple
-                class="absolute inset-0 cursor-pointer opacity-0"
+                class="absolute inset-0 is-clickable opacity-0"
                 :disabled="loading || uploadingExtra"
                 @change="onExtraChange"
               >
@@ -577,7 +577,7 @@
           <button
             v-if="currentStep > 0"
             type="button"
-            class="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full border-0 bg-marketing-soft px-5 text-[17px] font-extrabold text-black/[0.62] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] hover:bg-marketing-panel disabled:opacity-50"
+            class="inline-flex h-12 is-clickable items-center justify-center gap-2 rounded-full border-0 bg-marketing-soft px-5 text-[17px] font-extrabold text-black/[0.62] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] hover:bg-marketing-panel disabled:opacity-50"
             :disabled="loading"
             @click="currentStep -= 1"
           >
@@ -589,7 +589,7 @@
             <button
               v-if="currentStep < 3"
               type="button"
-              class="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full border-0 bg-marketing-green px-5 text-[17px] font-extrabold text-white disabled:opacity-50"
+              class="inline-flex h-12 is-clickable items-center justify-center gap-2 rounded-full border-0 bg-marketing-green px-5 text-[17px] font-extrabold text-white disabled:opacity-50"
               :disabled="loading"
               @click="currentStep += 1"
             >
@@ -607,7 +607,7 @@
               </button>
               <button
                 type="submit"
-                class="inline-flex h-12 items-center justify-center gap-2 rounded-full border-0 bg-marketing-green px-5 text-[17px] font-extrabold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                class="inline-flex h-12 items-center justify-center gap-2 rounded-full border-0 bg-marketing-green px-5 text-[17px] font-extrabold text-white disabled:is-disabled-cursor disabled:opacity-60"
                 :disabled="loading"
               >
                 {{ loading ? S.loading : S.publishJobListing }}
@@ -641,6 +641,8 @@ import {
 import { creditCountLabel } from '~/utils/sk-plural'
 import { S } from '~/utils/strings'
 import { showNotFound } from '~/utils/not-found'
+import { waitForAuthReady } from '~/utils/wait-for-auth'
+import { useJobWizardBootstrap } from '~/utils/job-post-hub'
 import type { Job } from '~/utils/job'
 import {
   wizardFieldLabelClass,
@@ -694,6 +696,7 @@ const props = withDefaults(
 const supabase = useSupabase()
 const { api, getApiBaseUrl } = useApi()
 const { user } = useAuth()
+const wizardBootstrap = useJobWizardBootstrap()
 const currentStep = ref(0)
 const hydrating = ref(true)
 const loadError = ref<string | null>(null)
@@ -999,30 +1002,72 @@ async function loadBillingAccount(): Promise<void> {
   }
 }
 
-onMounted(async () => {
-  void loadBillingCatalog()
-  void loadBillingAccount()
-  hydrating.value = true
+async function hydrateFromApi(): Promise<boolean> {
+  let res = await api<Job>(`/api/jobs/${props.jobId}/for-edit`)
+  if (!res.ok && (res.status === 401 || res.status === 404)) {
+    const { refreshBffSessionFromApi } = await import('~/utils/bff-session-refresh')
+    const refreshed = await refreshBffSessionFromApi(getApiBaseUrl())
+    if (refreshed.ok) {
+      res = await api<Job>(`/api/jobs/${props.jobId}/for-edit`)
+    }
+  }
+  if (res.ok && res.data) {
+    form.hydrateFromJob(res.data as Job & Record<string, unknown>)
+    await form.resolveDomesticMunicipality(ensureMunicipality)
+    return true
+  }
+  if (res.status === 403) {
+    loadError.value = 'Nemáte oprávnenie upravovať tento inzerát.'
+    return false
+  }
+  if (res.status === 404) {
+    showNotFound(S.jobNotFound)
+    return false
+  }
+  loadError.value = 'Inzerát sa nepodarilo načítať.'
+  return false
+}
+
+async function hydrateWizard(): Promise<void> {
+  if (!props.jobId) {
+    hydrating.value = false
+    showNotFound(S.jobNotFound)
+    return
+  }
   loadError.value = null
+  hydrating.value = true
+  await waitForAuthReady()
   const { data } = await supabase.auth.getUser()
   if (!contactEmail.value && data.user?.email) {
     contactEmail.value = data.user.email
   }
-  const res = await api<Job>(`/api/jobs/${props.jobId}`)
-  if (res.ok && res.data) {
-    if (res.data.company_id !== user.value?.id) {
-      loadError.value = 'Nemáte oprávnenie upravovať tento inzerát.'
-    } else {
-      form.hydrateFromJob(res.data as Job & Record<string, unknown>)
-      await form.resolveDomesticMunicipality(ensureMunicipality)
-    }
-  } else if (res.status === 404) {
-    showNotFound(S.jobNotFound)
-  } else {
-    loadError.value = 'Inzerát sa nepodarilo načítať.'
+
+  const boot = wizardBootstrap.value
+  if (boot?.id === props.jobId) {
+    form.hydrateFromJob(boot as Job & Record<string, unknown>)
+    await form.resolveDomesticMunicipality(ensureMunicipality)
+    wizardBootstrap.value = null
+    hydrating.value = false
+    return
   }
+
+  await hydrateFromApi()
+  wizardBootstrap.value = null
   hydrating.value = false
+}
+
+onMounted(() => {
+  void loadBillingCatalog()
+  void loadBillingAccount()
+  void hydrateWizard()
 })
+
+watch(
+  () => props.jobId,
+  (id, prev) => {
+    if (id && id !== prev) void hydrateWizard()
+  },
+)
 
 function showActionError(message: string): void {
   error.value = message

@@ -1,5 +1,6 @@
 import { ROUTES } from '~/utils/app-routes'
 import type { PlanRow } from '~/composables/usePlans'
+import { parseApiErrorMessage } from '~/utils/api-errors'
 import { filterPublicSubscriptionPlans } from '~/utils/pricing-catalog'
 
 export type PricingMySubscription = {
@@ -17,12 +18,7 @@ export function usePricingPlanCheckout(options: {
   const { returnBasePath, publicMode = false, showDowngradeConfirm = false } = options
 
   const { requireEmployerCheckout } = usePricingCheckout(returnBasePath)
-  const {
-    ensureRecentLoginForBilling,
-    billingStepUpUserMessage,
-    isStepUpRequiredResponse,
-    tryRecoverFromStepUpRequired,
-  } = useBillingStepUp()
+  const { ensureRecentLoginForBilling } = useBillingStepUp()
   const { api } = useApi()
   const { load: loadPlansCatalog } = usePlans()
   const { session, refreshUser } = useAuth()
@@ -79,22 +75,16 @@ export function usePricingPlanCheckout(options: {
         plan_id: planId,
         confirm_downgrade: confirmDowngrade,
       }
-      let res = await api<{ ok?: boolean }>('/api/payments/activate-free-plan', {
+      const res = await api<{ ok?: boolean }>('/api/payments/activate-free-plan', {
         method: 'POST',
         body,
       })
-      if (!res.ok && isStepUpRequiredResponse(res) && (await tryRecoverFromStepUpRequired())) {
-        res = await api<{ ok?: boolean }>('/api/payments/activate-free-plan', {
-          method: 'POST',
-          body,
-        })
-      }
       if (res.ok) {
         await load()
         await refreshUser()
         successFlash.value = 'Predplatné bolo aktivované.'
       } else {
-        loadError.value = await billingStepUpUserMessage(res)
+        loadError.value = parseApiErrorMessage(res, 'Aktivácia predplatného zlyhala.')
       }
     } finally {
       actionLoading.value = null

@@ -20,6 +20,8 @@ import {
 
   Param,
 
+  ParseUUIDPipe,
+
   Patch,
 
   Post,
@@ -28,9 +30,13 @@ import {
 
   Req,
 
+  UseGuards,
+
   UseInterceptors,
 
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
+import { JwksAuthGuard } from '../auth/jwks-auth.guard';
 
 import { Request } from 'express';
 
@@ -96,6 +102,8 @@ import {
 
 import { companyAdViewerFromUser } from './public-response.mapper';
 import { CompanyAdsListService } from './company-ads-list.service';
+import { CompanyAdOpenChatService } from './company-ad-open-chat.service';
+import type { CompanyAdOpenChatResponseDto } from './company-ad-open-chat.service';
 import { IndexNowService } from '../seo/indexnow.service';
 
 
@@ -160,6 +168,7 @@ export class CompanyAdsController {
     private companyAdsList: CompanyAdsListService,
     private topPromotion: ListingTopPromotionService,
     private indexNow: IndexNowService,
+    private companyAdOpenChat: CompanyAdOpenChatService,
   ) {}
 
   private notifyAdPublishedIfActive(ad: { id: string; status?: string | null }): void {
@@ -390,6 +399,24 @@ export class CompanyAdsController {
 
     }
 
+    const { data: ownerProfile } = await this.supabase
+
+      .getClient()
+
+      .from('profiles')
+
+      .select('is_deleted')
+
+      .eq('id', ad.owner_id)
+
+      .maybeSingle();
+
+    if (!isOwner && (ownerProfile as { is_deleted?: boolean } | null)?.is_deleted) {
+
+      throw new NotFoundException('Reklama nebola nájdená.');
+
+    }
+
     const ownersMap = await this.companyAdsList.loadOwnersMap([
       String(ad.owner_id),
     ]);
@@ -402,6 +429,16 @@ export class CompanyAdsController {
     const [enriched] = attachShowTopBadgeToAds([dto], topAdIds);
     return enriched ?? dto;
 
+  }
+
+  @Post(':id/open-chat')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @UseGuards(JwksAuthGuard)
+  async openChat(
+    @Param('id', ParseUUIDPipe) companyAdId: string,
+    @CurrentUserDecorator() user: CurrentUser,
+  ): Promise<CompanyAdOpenChatResponseDto> {
+    return this.companyAdOpenChat.openChat(user.id, companyAdId);
   }
 
 

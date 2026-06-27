@@ -37,7 +37,7 @@
                 </div>
                 <div
                   v-if="job.is_foreign"
-                  class="rounded-full bg-violet-600/90 px-3.5 py-1.5 text-sm font-bold text-white backdrop-blur-sm"
+                  class="rounded-full bg-marketing-green/90 px-3.5 py-1.5 text-sm font-bold text-white backdrop-blur-sm"
                 >{{ S.jobDetailForeignBadge }}</div>
               </div>
               <div class="absolute right-[18px] top-[18px] z-10 flex items-start gap-2">
@@ -89,7 +89,7 @@
             />
             <div class="flex items-center gap-[18px] rounded-[20px] bg-white px-7 py-6 shadow-[0_0_12px_rgba(0,0,0,0.07)]">
               <div
-                class="flex size-[58px] min-h-[58px] min-w-[58px] shrink-0 items-center justify-center rounded-full bg-violet-600 text-xl font-bold text-white"
+                class="flex size-[58px] min-h-[58px] min-w-[58px] shrink-0 items-center justify-center rounded-full bg-marketing-green text-xl font-bold text-white"
               >{{ employerInitials(job.employer_name) }}</div>
               <div class="min-w-0 flex-1">
                 <div class="mb-0.5 text-[13px] font-medium text-black/40">{{ S.jobPostedBy }}</div>
@@ -99,11 +99,11 @@
               <NuxtLink
                 v-if="job.company_id"
                 :to="ROUTES.publicProfile(job.company_id)"
-                class="inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-gray-200 bg-marketing-soft px-5 py-2.5 text-[15px] font-semibold text-black no-underline transition-colors hover:border-marketing-green hover:text-marketing-green"
+                class="inline-flex shrink-0 is-clickable items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-gray-200 bg-marketing-soft px-5 py-2.5 text-[15px] font-semibold text-black no-underline transition-colors hover:border-marketing-green hover:text-marketing-green"
               >{{ S.jobViewProfile }}</NuxtLink>
               <span
                 v-else
-                class="inline-flex shrink-0 cursor-not-allowed items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-gray-200 bg-marketing-soft px-5 py-2.5 text-[15px] font-semibold text-black/35"
+                class="inline-flex shrink-0 is-disabled-cursor items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-gray-200 bg-marketing-soft px-5 py-2.5 text-[15px] font-semibold text-black/35"
               >{{ S.jobViewProfile }}</span>
             </div>
             <div class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9">
@@ -144,7 +144,7 @@
                     v-for="(url, i) in galleryPhotos"
                     :key="i"
                     type="button"
-                    class="relative aspect-[4/3] w-20 shrink-0 cursor-pointer overflow-hidden rounded-[10px] border-[2.5px] border-transparent transition-all hover:opacity-85"
+                    class="relative aspect-[4/3] w-20 shrink-0 is-clickable overflow-hidden rounded-[10px] border-[2.5px] border-transparent transition-all hover:opacity-85"
                     :class="i === gallerySelectedIndex ? 'border-marketing-green opacity-100' : 'opacity-60'"
                     :aria-label="`${S.jobGalleryTitle} ${i + 1}`"
                     @click="selectGalleryThumb(i)"
@@ -196,7 +196,7 @@
                   </div>
                   <div
                     v-if="job.is_foreign"
-                    class="rounded-full bg-violet-600/90 px-3.5 py-1.5 text-sm font-bold text-white backdrop-blur-sm"
+                    class="rounded-full bg-marketing-green/90 px-3.5 py-1.5 text-sm font-bold text-white backdrop-blur-sm"
                   >{{ S.jobDetailForeignBadge }}</div>
                 </div>
                 <div class="absolute right-[18px] top-[18px] z-10 flex items-start gap-2">
@@ -228,7 +228,7 @@
               </div>
               <div class="flex items-center gap-[18px] rounded-[20px] bg-white px-7 py-6 shadow-[0_0_12px_rgba(0,0,0,0.07)]">
                 <div
-                  class="flex size-[58px] min-h-[58px] min-w-[58px] shrink-0 items-center justify-center rounded-full bg-violet-600 text-xl font-bold text-white"
+                  class="flex size-[58px] min-h-[58px] min-w-[58px] shrink-0 items-center justify-center rounded-full bg-marketing-green text-xl font-bold text-white"
                 >{{ employerInitials(job.employer_name) }}</div>
                 <div class="min-w-0 flex-1">
                   <div class="mb-0.5 text-[13px] font-medium text-black/40">{{ S.jobPostedBy }}</div>
@@ -238,11 +238,11 @@
                 <NuxtLink
                   v-if="job.company_id"
                   :to="ROUTES.publicProfile(job.company_id)"
-                  class="inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-gray-200 bg-marketing-soft px-5 py-2.5 text-[15px] font-semibold text-black no-underline transition-colors hover:border-marketing-green hover:text-marketing-green"
+                  class="inline-flex shrink-0 is-clickable items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-gray-200 bg-marketing-soft px-5 py-2.5 text-[15px] font-semibold text-black no-underline transition-colors hover:border-marketing-green hover:text-marketing-green"
                 >{{ S.jobViewProfile }}</NuxtLink>
                 <span
                   v-else
-                  class="inline-flex shrink-0 cursor-not-allowed items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-gray-200 bg-marketing-soft px-5 py-2.5 text-[15px] font-semibold text-black/35"
+                  class="inline-flex shrink-0 is-disabled-cursor items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-gray-200 bg-marketing-soft px-5 py-2.5 text-[15px] font-semibold text-black/35"
                 >{{ S.jobViewProfile }}</span>
               </div>
               <div class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9">
@@ -283,7 +283,7 @@
                       v-for="(url, i) in galleryPhotos"
                       :key="i"
                       type="button"
-                      class="relative aspect-[4/3] w-20 shrink-0 cursor-pointer overflow-hidden rounded-[10px] border-[2.5px] border-transparent transition-all hover:opacity-85"
+                      class="relative aspect-[4/3] w-20 shrink-0 is-clickable overflow-hidden rounded-[10px] border-[2.5px] border-transparent transition-all hover:opacity-85"
                       :class="i === gallerySelectedIndex ? 'border-marketing-green opacity-100' : 'opacity-60'"
                       :aria-label="`${S.jobGalleryTitle} ${i + 1}`"
                       @click="selectGalleryThumb(i)"

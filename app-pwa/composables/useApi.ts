@@ -138,6 +138,7 @@ export function useApi() {
         method,
         headers,
         credentials,
+        cache: 'no-store',
         body: options.body ? JSON.stringify(options.body) : undefined,
         signal: options.signal,
       })

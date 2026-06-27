@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div
     class="font-dmSans flex min-h-screen items-center justify-center bg-marketing-mint px-5 py-10 antialiased"
   >
@@ -6,9 +6,7 @@
       class="flex w-full max-w-[1060px] flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.13)] md:flex-row"
     >
       <!-- Left marketing panel -->
-      <div
-        class="relative hidden w-full flex-col justify-between overflow-hidden bg-gradient-to-br from-[#15803d] to-[#22c55e] px-11 py-10 before:pointer-events-none before:absolute before:right-[-100px] before:top-[-80px] before:size-[320px] before:rounded-full before:bg-white/[0.07] after:pointer-events-none after:absolute after:bottom-10 after:left-[-60px] after:size-[200px] after:rounded-full after:bg-white/[0.07] md:flex md:min-h-[640px] md:w-[38%] md:min-w-[38%] md:max-w-[38%]"
-      >
+      <div :class="authMarketingPanelRegisterClass">
         <AppBrandLogo
           variant="mark"
           root-class="relative z-[1]"
@@ -57,10 +55,18 @@
           </template>
         </div>
 
+        <p
+          v-if="submitError"
+          class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600"
+          role="alert"
+        >
+          {{ submitError }}
+        </p>
+
         <!-- Step 1 -->
         <div v-show="currentStep === 1" class="flex flex-1 flex-col">
           <h2 class="m-0 mb-1.5 text-[30px] font-extrabold leading-[1.15] text-black">
-            Aký typ účtu <span class="text-marketing-green">chceš?</span>
+            Aký typ účtu <span class="text-marketing-green">chceš</span>
           </h2>
           <p class="mb-7 text-base font-normal leading-normal text-black/50">
             Vyber si, ako budeš Jobbie používať.
@@ -68,7 +74,7 @@
           <div class="grid flex-1 grid-cols-1 content-start gap-3.5 sm:grid-cols-2">
             <button
               type="button"
-              class="flex cursor-pointer flex-col gap-2.5 rounded-[18px] border-2 border-gray-200 p-7 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-marketing-green sm:px-6 sm:py-7"
+              class="flex is-clickable flex-col gap-2.5 rounded-[18px] border-2 border-gray-200 p-7 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-marketing-green sm:px-6 sm:py-7"
               :class="
                 accountType === 'individual'
                   ? 'border-marketing-green bg-marketing-mint'
@@ -87,7 +93,7 @@
             </button>
             <button
               type="button"
-              class="flex cursor-pointer flex-col gap-2.5 rounded-[18px] border-2 border-gray-200 p-7 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-marketing-green sm:px-6 sm:py-7"
+              class="flex is-clickable flex-col gap-2.5 rounded-[18px] border-2 border-gray-200 p-7 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-marketing-green sm:px-6 sm:py-7"
               :class="
                 accountType === 'company' ? 'border-marketing-green bg-marketing-mint' : 'border-gray-200 bg-white'
               "
@@ -134,7 +140,7 @@
           <div class="flex flex-1 flex-col gap-3">
             <button
               type="button"
-              class="flex cursor-pointer items-center gap-3.5 rounded-full border-2 border-gray-200 px-6 py-4 text-left transition-colors duration-200 hover:border-marketing-green"
+              class="flex is-clickable items-center gap-3.5 rounded-full border-2 border-gray-200 px-6 py-4 text-left transition-colors duration-200 hover:border-marketing-green"
               :class="customerRole ? 'border-marketing-green bg-marketing-mint' : ''"
               @click="customerRole = !customerRole"
             >
@@ -159,7 +165,7 @@
             </button>
             <button
               type="button"
-              class="flex cursor-pointer items-center gap-3.5 rounded-full border-2 border-gray-200 px-6 py-4 text-left transition-colors duration-200 hover:border-marketing-green"
+              class="flex is-clickable items-center gap-3.5 rounded-full border-2 border-gray-200 px-6 py-4 text-left transition-colors duration-200 hover:border-marketing-green"
               :class="workerRole ? 'border-marketing-green bg-marketing-mint' : ''"
               @click="workerRole = !workerRole"
             >
@@ -182,7 +188,7 @@
             </button>
             <button
               type="button"
-              class="flex cursor-pointer items-center gap-3.5 rounded-full border-2 border-gray-200 px-6 py-4 text-left transition-colors duration-200 hover:border-marketing-green"
+              class="flex is-clickable items-center gap-3.5 rounded-full border-2 border-gray-200 px-6 py-4 text-left transition-colors duration-200 hover:border-marketing-green"
               :class="providerRole ? 'border-marketing-green bg-marketing-mint' : ''"
               @click="providerRole = !providerRole"
             >
@@ -273,6 +279,7 @@
                 <input
                   v-model="birthDate"
                   type="date"
+                  :max="maxIndividualBirthDate"
                   :class="inputWithTrailingIconClass"
                 />
                 <i
@@ -377,7 +384,7 @@
         </div>
 
         <!-- Step 4 -->
-        <div v-show="currentStep === 4" class="flex flex-1 flex-col">
+        <form v-show="currentStep === 4" class="flex flex-1 flex-col" @submit.prevent="submitRegister">
           <h2 class="m-0 mb-1.5 text-[30px] font-extrabold leading-[1.15] text-black">
             Vytvor si <span class="text-marketing-green">účet</span>
           </h2>
@@ -440,11 +447,24 @@
                 </button>
               </div>
             </div>
-            <label class="mt-1 flex cursor-pointer items-start gap-2.5">
+            <label class="mt-1 flex is-clickable items-start gap-2.5">
               <AppCheckbox v-model="termsAgree" class="mt-1" />
-              <span class="text-sm font-medium text-black/70">{{ S.termsAgree }}</span>
+              <span class="text-sm font-medium leading-relaxed text-black/70">
+                {{ S.registerTermsAgreeIntro }}
+                <NuxtLink
+                  :to="ROUTES.terms"
+                  class="font-semibold text-marketing-green underline decoration-marketing-green/50 underline-offset-2 outline-none hover:decoration-marketing-green focus-visible:ring-2 focus-visible:ring-marketing-green/40"
+                  @click.stop
+                >{{ S.registerTermsAgreeTermsLabel }}</NuxtLink>
+                {{ S.registerTermsAgreeAnd }}
+                <NuxtLink
+                  :to="ROUTES.privacy"
+                  class="font-semibold text-marketing-green underline decoration-marketing-green/50 underline-offset-2 outline-none hover:decoration-marketing-green focus-visible:ring-2 focus-visible:ring-marketing-green/40"
+                  @click.stop
+                >{{ S.registerTermsAgreePrivacyLabel }}</NuxtLink>.
+              </span>
             </label>
-            <label class="flex cursor-pointer items-start gap-2.5">
+            <label class="flex is-clickable items-start gap-2.5">
               <AppCheckbox v-model="newsletterSubscribe" class="mt-1" />
               <span class="text-sm font-medium text-black/70">{{ S.jobAlertsNewsletterLabel }}</span>
             </label>
@@ -452,10 +472,12 @@
               v-if="turnstileSiteKey"
               class="flex min-h-[65px] w-full items-center justify-center"
             >
-              <div :key="turnstileKey" ref="turnstileContainer" class="w-full" />
+              <AuthTurnstileWidget
+                v-model="captchaToken"
+                :active="currentStep === 4"
+              />
             </div>
             <p v-show="showErr4" class="text-sm font-medium text-red-500">{{ err4Message }}</p>
-            <p v-if="submitError" class="text-sm font-medium text-red-500">{{ submitError }}</p>
           </div>
           <div class="my-3 flex items-center gap-3">
             <div class="h-px flex-1 bg-black/10" />
@@ -497,10 +519,9 @@
               <i class="fa-solid fa-arrow-left" /> Späť
             </button>
             <button
-              type="button"
-              class="ml-auto flex h-[52px] items-center gap-2 rounded-full bg-marketing-green px-9 text-base font-bold text-white transition-opacity hover:opacity-[0.88] disabled:cursor-not-allowed disabled:opacity-50"
+              type="submit"
+              class="ml-auto flex h-[52px] items-center gap-2 rounded-full bg-marketing-green px-9 text-base font-bold text-white transition-opacity hover:opacity-[0.88] disabled:is-disabled-cursor disabled:opacity-50"
               :disabled="saving"
-              @click="submitRegister"
             >
               {{ saving ? S.loading : 'Registrovať sa' }}
               <i class="fa-solid fa-check" />
@@ -512,14 +533,15 @@
               Prihlásiť sa
             </NuxtLink>
           </p>
-        </div>
+          <AuthLegalFooter class="mt-4" />
+        </form>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// 4-step signup: credentials → roles → preferences → welcome; state in useRegistration useState.
+// 4-step signup: credentials → roles → profile → access; state in useRegistration useState.
 import { ROUTES } from '~/utils/app-routes'
 import { resolveSafeInternalPath } from '~/utils/safe-navigation'
 import { S } from '~/utils/strings'
@@ -528,33 +550,22 @@ import {
   formTextInputClass,
   formTextInputTrailingIconCompactClass,
 } from '~/utils/form-field-ui'
+import { authMarketingPanelRegisterClass } from '~/utils/marketing-ui'
+import {
+  maxBirthDateForMinAge,
+  MIN_INDIVIDUAL_REGISTRATION_AGE,
+  validateIndividualRegistrationBirthDate,
+} from '~/utils/age-eligibility'
+import type { AccountType } from '~/composables/useRegistration'
 
 const fieldLabelClass = formFieldLabelClass
 const inputClass = formTextInputClass
 const inputWithTrailingIconClass = formTextInputTrailingIconCompactClass
-import type { AccountType } from '~/composables/useRegistration'
-
-declare global {
-  interface Window {
-    turnstile?: {
-      render: (
-        el: HTMLElement,
-        opts: {
-          sitekey: string
-          callback: (token: string) => void
-          'expired-callback'?: () => void
-        },
-      ) => string | undefined
-      reset?: (widgetId?: string) => void
-      remove?: (widgetId?: string) => void
-    }
-  }
-}
 
 const route = useRoute()
 const config = useRuntimeConfig().public
 const supabase = useSupabase()
-const { setCredentials, setRoles } = useRegistration()
+const { setCredentials, setRoles, getMetaForSignUp } = useRegistration()
 const { doSignUp, saving } = useRegistrationSignUp()
 const { submit: submitNewsletter } = useNewsletterSubscribe()
 
@@ -595,9 +606,7 @@ const submitError = ref<string | null>(null)
 const oauthLoading = ref(false)
 const turnstileSiteKey = computed(() => (config.turnstileSiteKey as string) || '')
 const captchaToken = ref('')
-const turnstileContainer = ref<HTMLElement | null>(null)
-const turnstileWidgetId = ref<string | undefined>(undefined)
-const turnstileKey = ref(0)
+const maxIndividualBirthDate = maxBirthDateForMinAge(MIN_INDIVIDUAL_REGISTRATION_AGE)
 
 const step3Description = computed(() =>
   accountType.value === 'company'
@@ -655,6 +664,12 @@ function validateStep(n: number): boolean {
         showErr3.value = true
         return false
       }
+      const birthDateError = validateIndividualRegistrationBirthDate(birthDate.value)
+      if (birthDateError) {
+        err3Message.value = birthDateError
+        showErr3.value = true
+        return false
+      }
     } else if (accountType.value === 'company') {
       if (!companyName.value.trim()) {
         err3Message.value = 'Vyplňte názov spoločnosti.'
@@ -707,13 +722,32 @@ function getPostLoginPath(): string {
 
 async function oauthGoogle(): Promise<void> {
   submitError.value = null
+  if (!validateStep(1) || !validateStep(2) || !validateStep(3)) {
+    return
+  }
   oauthLoading.value = true
   try {
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
     const redirectTo = `${origin}/auth/callback?redirect=${encodeURIComponent(getPostLoginPath())}`
+    const oauthMeta = getMetaForSignUp(undefined, {
+      accountType: accountType.value!,
+      email: '',
+      password: '',
+      termsAgree: false,
+      firstName: firstName.value.trim(),
+      lastName: lastName.value.trim(),
+      companyName: companyName.value.trim(),
+      registeredOffice: registeredOffice.value.trim(),
+      ico: ico.value.trim(),
+      dic: dic.value.trim(),
+      vatId: vatId.value.trim(),
+      birthDate: accountType.value === 'individual' ? birthDate.value.trim() : undefined,
+      companyProfileUsername:
+        accountType.value === 'company' ? companyProfileUsername.value.trim() : undefined,
+    })
     const { error: e } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo, skipBrowserRedirect: false },
+      options: { redirectTo, skipBrowserRedirect: false, data: oauthMeta },
     })
     if (e) submitError.value = e.message ?? 'OAuth zlyhal.'
   } catch {
@@ -723,32 +757,6 @@ async function oauthGoogle(): Promise<void> {
   }
 }
 
-function mountTurnstile(): void {
-  if (!import.meta.client || !turnstileSiteKey.value || !turnstileContainer.value) return
-  const siteKey = turnstileSiteKey.value
-  const mount = (): void => {
-    if (!window.turnstile?.render || !turnstileContainer.value) return
-    turnstileWidgetId.value = window.turnstile.render(turnstileContainer.value, {
-      sitekey: siteKey,
-      callback: (t: string) => {
-        captchaToken.value = t
-      },
-      'expired-callback': () => {
-        captchaToken.value = ''
-      },
-    })
-  }
-  if (window.turnstile?.render) {
-    mount()
-    return
-  }
-  const s = document.createElement('script')
-  s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js'
-  s.async = true
-  s.onload = mount
-  document.head.appendChild(s)
-}
-
 watch(
   () => currentStep.value,
   (step) => {
@@ -756,16 +764,7 @@ watch(
     submitError.value = null
     if (step !== 4) {
       captchaToken.value = ''
-      if (turnstileWidgetId.value && typeof window.turnstile?.remove === 'function') {
-        window.turnstile.remove(turnstileWidgetId.value)
-        turnstileWidgetId.value = undefined
-      }
-      return
     }
-    turnstileKey.value += 1
-    nextTick(() => {
-      if (turnstileSiteKey.value) mountTurnstile()
-    })
   },
 )
 
@@ -851,4 +850,21 @@ async function submitRegister(): Promise<void> {
     await navigateTo('/auth/register/confirm-email', { replace: true })
   }
 }
+
+function readAuthSignupFailedMessage(): string | null {
+  const reason = route.query.reason
+  if (reason !== 'auth_signup_failed') return null
+  const errRaw = route.query.error
+  const err = Array.isArray(errRaw) ? errRaw[0] : errRaw
+  if (typeof err !== 'string') return null
+  const trimmed = err.trim()
+  return trimmed || null
+}
+
+onMounted(() => {
+  const message = readAuthSignupFailedMessage()
+  if (message) {
+    submitError.value = message
+  }
+})
 </script>

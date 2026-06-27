@@ -68,7 +68,7 @@
             </div>
             <button
               type="submit"
-              class="m-0 flex size-11 shrink-0 cursor-pointer items-center justify-center self-center rounded-full border-none bg-marketing-green text-white transition-opacity hover:opacity-90 marketing:size-[52px]"
+              class="m-0 flex size-11 shrink-0 is-clickable items-center justify-center self-center rounded-full border-none bg-marketing-green text-white transition-opacity hover:opacity-90 marketing:size-[52px]"
               aria-label="Hľadať"
             >
               <AppIcon name="search" :size="20" class="text-white" />
@@ -89,7 +89,6 @@
                 v-for="(chip, index) in heroSearchBarChips"
                 :key="chip.key"
                 :to="{ path: ROUTES.find, query: chip.query }"
-                role="listitem"
                 class="inline-flex w-fit shrink-0 items-center gap-2 rounded-full border px-4 py-2 font-dmSans text-sm font-semibold no-underline transition-colors marketing:px-[18px] marketing:py-2.5 marketing:text-[15px]"
                 :class="heroChipLinkClass(index)"
               >
@@ -141,16 +140,23 @@
           </div>
         </div>
         <div class="relative flex w-full min-w-0 items-center justify-center marketing:items-end">
-          <img
-            :src="heroPhoneSrc"
-            alt=""
-            width="800"
-            height="800"
-            loading="eager"
-            fetchpriority="high"
-            decoding="async"
-            class="h-auto w-full max-w-[min(100%,380px)] object-contain object-center marketing:max-w-none"
-          >
+          <picture>
+            <source
+              media="(max-width: 899px)"
+              srcset="/img/jobbie-mobile-hero-760.webp"
+              type="image/webp"
+            >
+            <img
+              src="/img/jobbie-mobile-hero.webp"
+              alt="Ukážka mobilnej aplikácie Jobbie"
+              width="663"
+              height="960"
+              loading="eager"
+              fetchpriority="high"
+              decoding="async"
+              class="h-auto w-full max-w-[min(100%,380px)] object-contain object-center marketing:max-w-none"
+            >
+          </picture>
         </div>
       </div>
     </div>
@@ -170,17 +176,26 @@ import {
   type RecentFindFilterSnapshot,
 } from '~/utils/recent-find-filters'
 
-const HERO_PHONE_SRC = '/img/jobbie-mobile-hero.webp'
-const heroPhoneSrc = HERO_PHONE_SRC
+const HERO_PHONE_SRC_MOBILE = '/img/jobbie-mobile-hero-760.webp'
+const HERO_PHONE_SRC_DESKTOP = '/img/jobbie-mobile-hero.webp'
 
 useHead({
   link: [
     {
       rel: 'preload',
       as: 'image',
-      href: HERO_PHONE_SRC,
+      href: HERO_PHONE_SRC_MOBILE,
       type: 'image/webp',
       fetchpriority: 'high',
+      media: '(max-width: 899px)',
+    },
+    {
+      rel: 'preload',
+      as: 'image',
+      href: HERO_PHONE_SRC_DESKTOP,
+      type: 'image/webp',
+      fetchpriority: 'high',
+      media: '(min-width: 900px)',
     },
   ],
 })
@@ -190,6 +205,7 @@ const route = useRoute()
 const positionQuery = ref('')
 const locationQuery = ref('')
 const recentFindFilters = ref<RecentFindFilterSnapshot[]>([])
+const chipsHydrated = ref(false)
 const recentChipsScrollRef = ref<HTMLElement | null>(null)
 let recentChipsDragPointerId = -1
 let recentChipsDragStartClientX = 0
@@ -302,10 +318,12 @@ const recentFilterChips = computed((): HomeHeroSearchChip[] =>
   }),
 )
 
-const showRecentChips = computed((): boolean => recentFilterChips.value.length > 0)
+const showRecentChips = computed(
+  (): boolean => chipsHydrated.value && recentFilterChips.value.length > 0,
+)
 
 const heroSearchBarChips = computed((): HomeHeroSearchChip[] => {
-  if (recentFilterChips.value.length > 0) {
+  if (showRecentChips.value) {
     return recentFilterChips.value
   }
   return defaultCategoryChips
@@ -402,7 +420,7 @@ function onRecentChipsScrollPointerDown(e: PointerEvent): void {
 watch(
   () => route.path,
   (path) => {
-    if (path === ROUTES.home) {
+    if (path === ROUTES.home && chipsHydrated.value) {
       refreshRecentFindFilters()
     }
   },
@@ -410,6 +428,7 @@ watch(
 
 onMounted(() => {
   refreshRecentFindFilters()
+  chipsHydrated.value = true
 })
 
 onBeforeUnmount(() => {

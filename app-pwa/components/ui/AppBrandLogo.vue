@@ -9,6 +9,8 @@
     <img
       :src="imageSrc"
       alt=""
+      :width="logoDimensions.width"
+      :height="logoDimensions.height"
       :class="resolvedImageClass"
       decoding="async"
       fetchpriority="high"
@@ -49,4 +51,16 @@ const resolvedImageClass = computed(
       ? 'size-9 rounded-[10px]'
       : 'h-8 w-auto max-w-[min(100%,11rem)] sm:h-9'),
 )
+
+/** SVG viewBox 6823×2010 — reserve layout space for CLS. */
+const logoDimensions = computed((): { width: number; height: number } => {
+  if (props.variant === 'mark') {
+    return { width: 36, height: 36 }
+  }
+  const imageClass = resolvedImageClass.value
+  if (imageClass.includes('h-9')) {
+    return { width: 122, height: 36 }
+  }
+  return { width: 108, height: 32 }
+})
 </script>

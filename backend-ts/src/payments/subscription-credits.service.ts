@@ -154,7 +154,6 @@ export class SubscriptionCreditsService {
     await this.credits.grant(userId, monthly, {
       reason: 'monthly_plan_grant',
       source: 'subscription_grant',
-      expiresAt: this.credits.paidGrantExpiresAt(),
       stripeInvoiceId: invoice.id,
       refType: 'stripe_invoice',
       refId: invoice.id,
@@ -250,7 +249,6 @@ export class SubscriptionCreditsService {
     await this.credits.grant(userId, credits, {
       reason: 'monthly_plan_grant',
       source: 'free_grant',
-      expiresAt: this.credits.freeGrantExpiresAt(),
       grantPeriod: periodYyyymm,
       refType: 'subscription_period',
       refId: periodYyyymm,

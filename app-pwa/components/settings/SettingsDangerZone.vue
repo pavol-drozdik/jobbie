@@ -95,7 +95,7 @@
           <div class="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
             <button
               type="button"
-              class="inline-flex h-11 flex-1 cursor-pointer items-center justify-center rounded-full border border-black/15 bg-white px-5 text-[15px] font-semibold text-black/75 hover:bg-neutral-50 disabled:opacity-50 sm:flex-initial sm:min-w-[7.5rem]"
+              class="inline-flex h-11 flex-1 is-clickable items-center justify-center rounded-full border border-black/15 bg-white px-5 text-[15px] font-semibold text-black/75 hover:bg-neutral-50 disabled:opacity-50 sm:flex-initial sm:min-w-[7.5rem]"
               :disabled="deleting"
               @click="closeDeleteModal"
             >
@@ -103,7 +103,7 @@
             </button>
             <button
               type="button"
-              class="inline-flex h-11 flex-1 cursor-pointer items-center justify-center rounded-full bg-red-600 px-5 text-[15px] font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-initial sm:min-w-[7.5rem]"
+              class="inline-flex h-11 flex-1 is-clickable items-center justify-center rounded-full bg-red-600 px-5 text-[15px] font-semibold text-white hover:bg-red-700 disabled:is-disabled-cursor disabled:opacity-50 sm:flex-initial sm:min-w-[7.5rem]"
               :disabled="!canConfirmDelete || deleting"
               @click="confirmDelete"
             >
@@ -117,19 +117,13 @@
 </template>
 
 <script setup lang="ts">
-// GDPR delete: typed phrase modal, step-up auth, POST /api/profiles/me/delete + signOut.
+// GDPR delete: typed phrase modal, POST /api/profiles/me/delete + signOut.
 import { parseApiErrorMessage } from '~/utils/api-errors'
 import { S } from '~/utils/strings'
 
 const { signOut } = useAuth()
 const { api } = useApi()
 const { labelClass, dangerInputClass } = useSettingsFormStyles()
-const {
-  ensureRecentLoginForBilling,
-  billingStepUpUserMessage,
-  isStepUpRequiredResponse,
-  tryRecoverFromStepUpRequired,
-} = useBillingStepUp()
 
 const consequenceItems = [
   S.settingsDangerConsequenceProfile,
@@ -168,25 +162,13 @@ async function confirmDelete(): Promise<void> {
     return
   }
 
-  const gate = await ensureRecentLoginForBilling()
-  if (!gate.ok) {
-    deleteErr.value = gate.message
-    return
-  }
-
   deleting.value = true
   try {
-    let res = await api<{ message?: string | string[] }>('/api/profiles/me/delete', {
+    const res = await api<{ message?: string | string[] }>('/api/profiles/me/delete', {
       method: 'POST',
     })
-    if (!res.ok && isStepUpRequiredResponse(res) && (await tryRecoverFromStepUpRequired())) {
-      res = await api<{ message?: string | string[] }>('/api/profiles/me/delete', {
-        method: 'POST',
-      })
-    }
     if (!res.ok) {
-      const stepUpMsg = await billingStepUpUserMessage(res)
-      deleteErr.value = stepUpMsg || parseApiErrorMessage(res, S.settingsDeleteFailed)
+      deleteErr.value = parseApiErrorMessage(res, S.settingsDeleteFailed)
       return
     }
     showDeleteModal.value = false

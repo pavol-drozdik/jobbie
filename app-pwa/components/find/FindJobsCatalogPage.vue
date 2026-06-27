@@ -1,6 +1,6 @@
 <template>
   <div ref="findShellRef" class="mx-auto w-full max-w-[1400px] box-border px-5 pb-10 font-dmSans text-black/80">
-    <section class="mb-[50px] mt-[30px] w-full max-w-[1400px] rounded-[20px] bg-[linear-gradient(155deg,rgb(21,128,61)_0%,rgb(34,197,94)_100%)] p-6 marketing:p-[50px]">
+    <section :class="catalogFilterHeroClass">
       <h1 class="m-0 mb-5 font-dmSans text-[28px] font-extrabold leading-tight text-white marketing:mb-6 marketing:text-[34px]">
         {{ pageTitle }}
       </h1>
@@ -20,6 +20,7 @@
               list="job-suggest-list"
               class="list-search-input"
               placeholder="Aká brigáda ?"
+              :aria-label="S.navHladat"
               @input="onSearchInput"
             >
             <button
@@ -45,6 +46,7 @@
                 list="job-suggest-list"
                 class="list-search-input"
                 placeholder="Aká brigáda ?"
+                :aria-label="S.navHladat"
                 @input="onSearchInput"
               >
               <button
@@ -91,7 +93,7 @@
           {{ fetchError }}
           <button
             type="button"
-            class="mt-3 block w-full cursor-pointer border-none bg-transparent font-semibold text-marketing-green underline"
+            class="mt-3 block w-full is-clickable border-none bg-transparent font-semibold text-marketing-green underline"
             @click="() => fetchJobs(true)"
           >
             {{ S.listFetchRetry }}
@@ -158,7 +160,7 @@
             <div class="flex items-center justify-between text-marketing-green">
               <div class="flex items-center gap-2">
                 <div
-                  class="flex size-10 min-w-10 shrink-0 items-center justify-center rounded-full bg-[#7c3aed] font-dmSans text-base font-bold text-white"
+                  class="flex size-10 min-w-10 shrink-0 items-center justify-center rounded-full bg-marketing-green font-dmSans text-base font-bold text-white"
                 >
                   {{ profileInitials(job.employer_name) }}
                 </div>
@@ -193,6 +195,7 @@
 // Job catalog: filters in URL + provide(find-list-filters-context); search via Typesense with Postgres fallback.
 import { ROUTES } from '~/utils/app-routes'
 import { S } from '~/utils/strings'
+import { catalogFilterHeroClass } from '~/utils/marketing-ui'
 import {
   CATEGORIES,
   getCategoryLabel,

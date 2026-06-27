@@ -2,7 +2,12 @@ import type { CvAggregateResponseDto } from '../cv.dto'
 import { CV_DRIVING_LICENSE_CATEGORIES } from '../cv.dto'
 import type { CvDocumentExportData, CvDocumentExtraBlock, CvDocumentUiTemplate } from './cv-document.types'
 import { apiTemplateKeyToUi } from './cv-template-map'
-import { escapeHtml, formatMultiline, optionalSectionEnabled } from './cv-document-utils'
+import {
+  CV_EDUCATION_ONGOING_LABEL,
+  escapeHtml,
+  formatMultiline,
+  optionalSectionEnabled,
+} from './cv-document-utils'
 import { renderExperienceArticleFromBackend } from './cv-document-fragments'
 
 function displayName(cv: CvAggregateResponseDto['cv']): {
@@ -66,7 +71,11 @@ function mapEducation(agg: CvAggregateResponseDto): CvDocumentExportData['educat
         institution: row.institution ?? row.faculty ?? '',
         maturita: row.has_graduation,
         fromYear: row.start_year != null ? String(row.start_year) : '',
-        toYear: row.end_year != null ? String(row.end_year) : '',
+        toYear: row.currently_studying
+          ? CV_EDUCATION_ONGOING_LABEL
+          : row.end_year != null
+            ? String(row.end_year)
+            : '',
         description: row.description ?? '',
         bullets: row.bullets ?? [],
       }

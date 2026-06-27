@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
-import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching'
-import { NavigationRoute, registerRoute } from 'workbox-routing'
+import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching'
+import { registerRoute } from 'workbox-routing'
+import { NetworkOnly } from 'workbox-strategies'
 
 declare let self: ServiceWorkerGlobalScope
 
@@ -9,11 +10,16 @@ declare const __WB_MANIFEST: Array<{ url: string; revision: string | null | unde
 precacheAndRoute(self.__WB_MANIFEST)
 cleanupOutdatedCaches()
 
-/** SPA navigations: serve precached shell (same as prior generateSW navigateFallback). */
+/**
+ * Document navigations must hit the network so hybrid SSR + CSR routes get the
+ * correct HTML shell. Serving precached `/` (prerendered homepage) for every
+ * navigation breaks `/auth/*` and other CSR routes (hydration mismatch → 500).
+ * Cloudflare Pages already serves the right fallback per path; offline navigations
+ * are not supported.
+ */
 registerRoute(
-  new NavigationRoute(createHandlerBoundToURL('/'), {
-    denylist: [/^\/api\//],
-  }),
+  ({ request }) => request.mode === 'navigate',
+  new NetworkOnly(),
 )
 
 type PushPayload = {

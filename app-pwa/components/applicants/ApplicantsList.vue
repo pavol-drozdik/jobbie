@@ -13,7 +13,7 @@
       />
       <label
         for="applicants-select-all"
-        class="cursor-pointer font-dmSans text-sm font-medium text-black/60"
+        class="is-clickable font-dmSans text-sm font-medium text-black/60"
       >
         {{ S.applicantsColSelectAll }}
       </label>

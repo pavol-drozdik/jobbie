@@ -35,6 +35,9 @@
                   class="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[20px] font-semibold text-black/80 transition-colors outline-none ring-marketing-green hover:text-marketing-green focus-visible:ring-2"
                   :aria-expanded="desktopOpenGroupId === group.id"
                   :aria-controls="`nav-group-${group.id}`"
+                  @click="toggleDesktopGroup(group.id)"
+                  @keydown.enter.prevent="toggleDesktopGroup(group.id)"
+                  @keydown.space.prevent="toggleDesktopGroup(group.id)"
                 >
                   <span>{{ group.label }}</span>
                   <AppIcon
@@ -91,7 +94,7 @@
                 </NuxtLink>
                 <span
                   v-else
-                  class="inline-flex cursor-not-allowed items-center rounded-full px-3 py-1.5 text-[20px] font-semibold text-black/40"
+                  class="inline-flex is-disabled-cursor items-center rounded-full px-3 py-1.5 text-[20px] font-semibold text-black/40"
                   aria-disabled="true"
                 >
                   {{ item.label }}
@@ -104,19 +107,19 @@
               <div class="hidden items-center gap-2 marketing:flex">
                 <NuxtLink
                   :to="registerTo"
-                  class="inline-flex h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded-full border-none bg-white px-4 text-[20px] font-bold text-marketing-green no-underline"
+                  class="inline-flex h-10 is-clickable items-center justify-center whitespace-nowrap rounded-full border-none bg-white px-4 text-[20px] font-bold text-marketing-green no-underline"
                 >
                   {{ S.navRegister }}
                 </NuxtLink>
                 <NuxtLink
                   :to="loginTo"
-                  class="inline-flex h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded-full border-none bg-marketing-green px-4 text-[20px] font-bold text-white no-underline"
+                  class="inline-flex h-10 is-clickable items-center justify-center whitespace-nowrap rounded-full border-none bg-marketing-green px-4 text-[20px] font-bold text-white no-underline"
                 >
                   {{ S.signIn }}
                 </NuxtLink>
               </div>
             </template>
-            <template v-else>
+            <template v-else-if="showUserAuth">
               <div class="hidden items-center gap-0.5 marketing:flex">
                 <AppNotificationBell variant="desktop" />
                 <NuxtLink
@@ -135,7 +138,7 @@
               </div>
               <NuxtLink
                 :to="navItemProfile.to"
-                class="hidden h-10 max-w-[18rem] cursor-pointer items-center gap-1.5 rounded-full border-none bg-transparent px-3 text-[20px] font-semibold text-black/80 no-underline marketing:inline-flex"
+                class="hidden h-10 max-w-[18rem] is-clickable items-center gap-1.5 rounded-full border-none bg-transparent px-3 text-[20px] font-semibold text-black/80 no-underline marketing:inline-flex"
               >
                 <AppIcon :name="navItemProfile.icon" :size="20" class="shrink-0" />
                 <span class="hidden min-w-0 whitespace-nowrap min-[480px]:inline">{{ profileNavLabel }}</span>
@@ -254,7 +257,7 @@
                 </div>
               </template>
             </div>
-            <template v-if="!showGuestAuth">
+            <template v-if="showUserAuth">
               <NuxtLink
                 :to="navItemMessages.to"
                 class="flex items-center gap-3 rounded-xl px-3 py-3 text-base font-semibold no-underline transition-colors"
@@ -324,9 +327,20 @@ useGlobalSiteSeo()
 const layoutMainFlushTop = computed(() => route.meta.layoutMainFlushTop === true)
 const { user, profile, loading: authLoading } = useAuth()
 
-const showGuestAuth = computed(() => !authLoading.value && !user.value)
+/** Defer auth-dependent header chrome until after mount so SSR (guest) matches hydration. */
+const authUiMounted = ref(false)
+onMounted(() => {
+  authUiMounted.value = true
+})
 
-const authReady = computed(() => !authLoading.value)
+const showGuestAuth = computed(
+  () => authUiMounted.value && !authLoading.value && !user.value,
+)
+const showUserAuth = computed(
+  () => authUiMounted.value && !authLoading.value && Boolean(user.value),
+)
+
+const authReady = computed(() => authUiMounted.value && !authLoading.value)
 
 const navGroups = computed(() =>
   filterAppNavGroups({
@@ -542,6 +556,14 @@ function toggleMobileGroup(id: string): void {
     ...mobileOpenGroups.value,
     [id]: !mobileOpenGroups.value[id],
   }
+}
+
+function toggleDesktopGroup(id: string): void {
+  if (desktopCloseTimer) {
+    clearTimeout(desktopCloseTimer)
+    desktopCloseTimer = null
+  }
+  desktopOpenGroupId.value = desktopOpenGroupId.value === id ? null : id
 }
 </script>
 

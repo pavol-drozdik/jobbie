@@ -112,7 +112,7 @@ const props = defineProps<{
 
 type CvCompareRow = {
   key: string
-  kind: CvLimitKind | 'browse' | 'credits' | 'jobs'
+  kind: CvLimitKind | 'credits' | 'jobs'
   label: string
 }
 
@@ -122,7 +122,6 @@ const cvRowsBeforeTier: CvCompareRow[] = [
 ]
 
 const cvRowsAfterTier: CvCompareRow[] = [
-  { key: 'browse', kind: 'browse', label: S.pricingCvBrowse },
   { key: 'unlock', kind: 'unlock', label: S.pricingCvUnlock },
   { key: 'contact', kind: 'contact', label: S.pricingCvContact },
   { key: 'pdf', kind: 'pdf', label: S.pricingCvPdf },
@@ -143,13 +142,11 @@ const tierCosts = computed(() =>
 function cellValue(plan: PlanRow, row: CvCompareRow): string {
   if (row.kind === 'credits') return `${plan.monthly_credits} ${S.credits}`
   if (row.kind === 'jobs') return String(plan.max_active_jobs)
-  if (row.kind === 'browse') return S.pricingCvFreeLabel
   return cvMonthlyLimitLabel(plan, row.kind)
 }
 
 function cellClass(plan: PlanRow, row: CvCompareRow): string {
   const value = cellValue(plan, row)
-  if (row.kind === 'browse') return 'text-marketing-green'
   if (row.kind === 'credits' || row.kind === 'jobs') return 'text-black'
   if (value === S.pricingCvUnlimited || value === S.pricingCvFreeLabel) {
     return 'text-marketing-green'

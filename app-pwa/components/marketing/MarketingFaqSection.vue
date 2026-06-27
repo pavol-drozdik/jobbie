@@ -11,13 +11,19 @@
         {{ subtitle }}
       </p>
     </div>
-    <div v-if="showRoleTabs" class="flex w-fit max-w-full flex-wrap items-center justify-center self-center rounded-full bg-white p-1.5 shadow-[0_0_3px_0_rgba(0,0,0,0.2)]">
+    <div
+      v-if="showRoleTabs"
+      class="mx-[10px] flex w-fit max-w-full flex-wrap items-center justify-center self-center rounded-[999px] bg-white p-1.5 shadow-[0_0_3px_0_rgba(0,0,0,0.2)] marketing:rounded-full"
+      role="tablist"
+      aria-label="Rola"
+    >
       <button
         v-for="tab in roleTabs"
         :key="tab.role"
         type="button"
-        class="m-1 cursor-pointer whitespace-nowrap rounded-full border-none bg-transparent px-4 py-2 font-dmSans text-[15px] font-bold text-black transition-colors aria-selected:bg-marketing-green aria-selected:text-white"
-        :class="activeRole === tab.role ? 'bg-marketing-green text-white' : ''"
+        role="tab"
+        class="m-1 is-clickable whitespace-nowrap rounded-full border-none px-3 py-2 font-dmSans text-[15px] font-bold transition-[background-color,color] duration-200 max-[600px]:px-3 max-[600px]:py-2 marketing:m-[5px] marketing:px-5 marketing:py-2.5 marketing:text-[22px] aria-selected:bg-marketing-green aria-selected:text-white"
+        :class="activeRole === tab.role ? 'bg-marketing-green text-white' : 'bg-transparent text-black'"
         :aria-selected="activeRole === tab.role"
         @click="activeRole = tab.role"
       >

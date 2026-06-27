@@ -21,10 +21,6 @@ import { ListingTopPromotionService } from './listing-top-promotion.service';
 
 import { SubscriptionTrialService } from './subscription-trial.service';
 
-import { CreditExpirationCron } from './credit-expiration.cron';
-
-
-
 @Module({
 
   imports: [
@@ -49,8 +45,6 @@ import { CreditExpirationCron } from './credit-expiration.cron';
     CvDatabaseQuotaService,
 
     SubscriptionTrialService,
-
-    CreditExpirationCron,
 
   ],
 

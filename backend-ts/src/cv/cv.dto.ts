@@ -1,3 +1,14 @@
+import {
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsNumber,
+  IsObject,
+  IsOptional,
+  IsString,
+} from 'class-validator';
+
 export const CV_LINK_TYPES = [
   'linkedin', 'website', 'github', 'behance', 'twitter', 'instagram', 'other',
 ] as const;
@@ -36,169 +47,547 @@ export const CV_DRIVING_LICENSE_CATEGORIES = [
 ] as const;
 
 export class CvCreateDto {
+    @IsOptional()
+    @IsString()
     display_title?: string;
+
+    @IsOptional()
+    @IsIn(CV_TEMPLATE_KEYS)
     template_key?: CvTemplateKey;
 }
 export class CvHeaderPatchDto {
+    @IsOptional()
+    @IsString()
     display_title?: string | null;
+
+    @IsOptional()
+    @IsString()
     full_name?: string | null;
+
+    @IsOptional()
+    @IsString()
     headline?: string | null;
+
+    @IsOptional()
+    @IsString()
     bio?: string | null;
+
+    @IsOptional()
+    @IsString()
     phone?: string | null;
+
+    @IsOptional()
+    @IsString()
     email?: string | null;
+
+    @IsOptional()
+    @IsString()
     location?: string | null;
+
+    @IsOptional()
+    @IsString()
     photo_url?: string | null;
+
+    @IsOptional()
+    @IsString()
     first_name?: string | null;
+
+    @IsOptional()
+    @IsString()
     last_name?: string | null;
+
+    @IsOptional()
+    @IsBoolean()
     show_academic_title?: boolean;
+
+    @IsOptional()
+    @IsString()
     academic_title?: string | null;
+
+    @IsOptional()
+    @IsString()
     title_before_name?: string | null;
+
+    @IsOptional()
+    @IsString()
     title_after_name?: string | null;
+
+    @IsOptional()
+    @IsString()
     birth_date?: string | null;
+
+    @IsOptional()
+    @IsBoolean()
     show_birth_date?: boolean;
+
+    @IsOptional()
+    @IsString()
     linkedin_url?: string | null;
+
+    @IsOptional()
+    @IsBoolean()
     show_contact_details?: boolean;
+
+    @IsOptional()
+    @IsString()
     address_country?: string | null;
+
+    @IsOptional()
+    @IsString()
     address_postal_code?: string | null;
+
+    @IsOptional()
+    @IsString()
     address_district?: string | null;
+
+    @IsOptional()
+    @IsString()
     address_city?: string | null;
+
+    @IsOptional()
+    @IsString()
     address_street?: string | null;
+
+    @IsOptional()
+    @IsString()
     about_me?: string | null;
+
+    @IsOptional()
+    @IsString()
     cv_title?: string | null;
+
+    @IsOptional()
+    @IsBoolean()
     visible_to_employers?: boolean;
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
     driving_license_categories?: string[];
+
+    @IsOptional()
+    @IsInt()
     approximate_km_driven?: number | null;
+
+    @IsOptional()
+    @IsString()
     additional_skills_info?: string | null;
+
+    @IsOptional()
+    @IsString()
     hobbies?: string | null;
+
+    @IsOptional()
+    @IsString()
     highest_education_level?: string | null;
+
+    @IsOptional()
+    @IsBoolean()
     gdpr_consent?: boolean;
+
+    @IsOptional()
+    @IsBoolean()
     terms_consent?: boolean;
+
+    @IsOptional()
+    @IsBoolean()
     marketing_consent?: boolean;
+
+    @IsOptional()
+    @IsIn(CV_TEMPLATE_KEYS)
     template_key?: CvTemplateKey;
+
+    @IsOptional()
+    @IsIn(CV_WIZARD_STEPS)
     wizard_step?: CvWizardStep;
+
+    @IsOptional()
+    @IsString()
     wizard_section?: string | null;
+
+    @IsOptional()
+    @IsString()
     gender?: string | null;
+
+    @IsOptional()
+    @IsInt()
     birth_day?: number | null;
+
+    @IsOptional()
+    @IsInt()
     birth_month?: number | null;
+
+    @IsOptional()
+    @IsInt()
     birth_year?: number | null;
+
+    @IsOptional()
+    @IsBoolean()
     address_optional_collapsed?: boolean;
+
+    @IsOptional()
+    @IsString()
     photo_storage_path?: string | null;
+
+    @IsOptional()
+    @IsString()
     photo_original_mime?: string | null;
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
     desired_positions?: string[];
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
     desired_locations?: string[];
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
     employment_types?: string[];
+
+    @IsOptional()
+    @IsString()
     start_availability?: string | null;
+
+    @IsOptional()
+    @IsNumber()
     salary_min?: number | null;
+
+    @IsOptional()
+    @IsString()
     salary_currency?: string | null;
+
+    @IsOptional()
+    @IsString()
     salary_period?: string | null;
+
+    @IsOptional()
+    @IsBoolean()
     weekend_work?: boolean | null;
+
+    @IsOptional()
+    @IsBoolean()
     night_work?: boolean | null;
+
+    @IsOptional()
+    @IsBoolean()
     open_to_relocate_commute?: boolean | null;
+
+    @IsOptional()
+    @IsBoolean()
     remote_work_only?: boolean | null;
+
+    @IsOptional()
+    @IsBoolean()
     has_disability?: boolean;
+
+    @IsOptional()
+    @IsBoolean()
     email_job_alerts?: boolean;
+
+    @IsOptional()
+    @IsObject()
     pdf_settings?: Record<string, unknown>;
+
+    @IsOptional()
+    @IsObject()
     optional_sections?: Record<string, unknown>;
 }
 export class ExperienceUpsertDto {
+    @IsOptional()
+    @IsString()
     company?: string;
+
+    @IsOptional()
+    @IsString()
     position?: string;
+
+    @IsOptional()
+    @IsString()
     city?: string | null;
+
+    @IsOptional()
+    @IsString()
     country?: string | null;
+
+    @IsOptional()
+    @IsString()
     start_date?: string | null;
+
+    @IsOptional()
+    @IsString()
     end_date?: string | null;
+
+    @IsOptional()
+    @IsBoolean()
     current?: boolean;
+
+    @IsOptional()
+    @IsString()
     description?: string | null;
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
     bullets?: string[];
+
+    @IsOptional()
+    @IsString()
     achievements?: string | null;
 }
 export class EducationUpsertDto {
+    @IsOptional()
+    @IsIn(CV_EDUCATION_KINDS)
     education_kind?: CvEducationKind;
+
+    @IsOptional()
+    @IsString()
     school?: string;
+
+    @IsOptional()
+    @IsString()
     degree?: string | null;
+
+    @IsOptional()
+    @IsString()
     field?: string | null;
+
+    @IsOptional()
+    @IsString()
     start_date?: string | null;
+
+    @IsOptional()
+    @IsString()
     end_date?: string | null;
+
+    @IsOptional()
+    @IsString()
     city?: string | null;
+
+    @IsOptional()
+    @IsString()
     country?: string | null;
+
+    @IsOptional()
+    @IsString()
     institution?: string | null;
+
+    @IsOptional()
+    @IsString()
     faculty?: string | null;
+
+    @IsOptional()
+    @IsString()
     study_level?: string | null;
+
+    @IsOptional()
+    @IsInt()
     start_year?: number | null;
+
+    @IsOptional()
+    @IsInt()
     end_year?: number | null;
+
+    @IsOptional()
+    @IsBoolean()
     has_graduation?: boolean;
+
+    @IsOptional()
+    @IsBoolean()
     currently_studying?: boolean;
+
+    @IsOptional()
+    @IsString()
     description?: string | null;
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
     bullets?: string[];
+
+    @IsOptional()
+    @IsString()
     certificate_name?: string | null;
+
+    @IsOptional()
+    @IsString()
     certificate_url?: string | null;
+
+    @IsOptional()
+    @IsString()
     certificate_file_url?: string | null;
+
+    @IsOptional()
+    @IsInt()
     issued_year?: number | null;
 }
 export class SkillUpsertDto {
+    @IsOptional()
+    @IsString()
     skill_name?: string;
+
+    @IsOptional()
+    @IsIn(CV_SKILL_LEVELS)
     level?: CvSkillLevel | null;
 }
 export class SoftSkillUpsertDto {
-    skill_name: string;
+    @IsString()
+    skill_name!: string;
 }
 export class LanguageUpsertDto {
+    @IsOptional()
+    @IsString()
     language?: string;
+
+    @IsOptional()
+    @IsIn(CV_LANGUAGE_LEVELS)
     level?: CvLanguageLevel | null;
 }
 export class CertificationUpsertDto {
-    name: string;
+    @IsString()
+    name!: string;
+
+    @IsOptional()
+    @IsString()
     issuer?: string | null;
+
+    @IsOptional()
+    @IsString()
     issued_date?: string | null;
+
+    @IsOptional()
+    @IsInt()
     issued_year?: number | null;
+
+    @IsOptional()
+    @IsString()
     description?: string | null;
+
+    @IsOptional()
+    @IsString()
     certificate_url?: string | null;
+
+    @IsOptional()
+    @IsString()
     certificate_file_url?: string | null;
 }
 export class LinkUpsertDto {
-    type: CvLinkType;
-    url: string;
+    @IsIn(CV_LINK_TYPES)
+    type!: CvLinkType;
+
+    @IsString()
+    url!: string;
 }
 export class PortfolioLinkUpsertDto {
-    label: string;
-    url: string;
+    @IsString()
+    label!: string;
+
+    @IsString()
+    url!: string;
 }
 export class VolunteeringUpsertDto {
+    @IsOptional()
+    @IsString()
     role_title?: string;
+
+    @IsOptional()
+    @IsString()
     organization?: string;
+
+    @IsOptional()
+    @IsString()
     city?: string | null;
+
+    @IsOptional()
+    @IsString()
     country?: string | null;
+
+    @IsOptional()
+    @IsString()
     start_date?: string | null;
+
+    @IsOptional()
+    @IsString()
     end_date?: string | null;
+
+    @IsOptional()
+    @IsBoolean()
     current?: boolean;
+
+    @IsOptional()
+    @IsString()
     description?: string | null;
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
     bullets?: string[];
 }
 export class AwardUpsertDto {
-    title: string;
+    @IsString()
+    title!: string;
+
+    @IsOptional()
+    @IsString()
     issuer?: string | null;
+
+    @IsOptional()
+    @IsInt()
     issued_year?: number | null;
+
+    @IsOptional()
+    @IsString()
     description?: string | null;
 }
 export class ReferenceUpsertDto {
-    person_name: string;
+    @IsString()
+    person_name!: string;
+
+    @IsOptional()
+    @IsString()
     organization?: string | null;
+
+    @IsOptional()
+    @IsString()
     position?: string | null;
+
+    @IsOptional()
+    @IsString()
     email?: string | null;
+
+    @IsOptional()
+    @IsString()
     phone?: string | null;
+
+    @IsOptional()
+    @IsString()
     relationship_note?: string | null;
 }
 export class CvProgressPatchDto {
-    wizard_step: CvWizardStep;
+    @IsIn(CV_WIZARD_STEPS)
+    wizard_step!: CvWizardStep;
+
+    @IsOptional()
+    @IsString()
     wizard_section?: string | null;
 }
 export class CvPhotoUpsertDto {
     /** Legacy JSON upload; omit when sending multipart `file`. */
+    @IsOptional()
+    @IsString()
     data_url?: string;
+
+    @IsOptional()
+    @IsString()
     file_name?: string;
 }
 export class ReorderDto {
-    ids: string[];
+    @IsArray()
+    @IsString({ each: true })
+    ids!: string[];
 }
 export interface CvListItemResponseDto {
     id: string;

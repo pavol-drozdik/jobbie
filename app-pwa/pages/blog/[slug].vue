@@ -55,7 +55,7 @@
 
               <button
                 type="button"
-                class="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border-[1.5px] border-gray-200 bg-[#fafcfb] px-4 py-[7px] font-dmSans text-sm font-semibold text-black/55 transition-colors hover:border-marketing-green hover:text-marketing-green sm:ml-auto sm:w-auto"
+                class="flex w-full is-clickable items-center justify-center gap-1.5 rounded-full border-[1.5px] border-gray-200 bg-[#fafcfb] px-4 py-[7px] font-dmSans text-sm font-semibold text-black/55 transition-colors hover:border-marketing-green hover:text-marketing-green sm:ml-auto sm:w-auto"
                 @click="sharePost"
               >
                 <AppIcon name="share-2" :size="14" />

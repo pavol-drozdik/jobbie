@@ -25,7 +25,12 @@
         :parent-step="step"
         :header="header"
         :aggregate="aggregate"
-        @patch-header="onHeaderPartial"
+        :update-header="onHeaderPartial"
+        :update-aggregate="onUpdateAggregate"
+        :queue-save="queueSave"
+        :flush-header-save="flushSave"
+        :finish-wizard="onFinish"
+        :register-section-save-flusher="registerSectionSaveFlusher"
         @reload="onReload"
         @go-step="onGoStep"
         @set-section="onSetSection"
@@ -88,9 +93,13 @@ async function refresh(): Promise<void> {
   }
 }
 
+function onUpdateAggregate(updater: (agg: CvAggregateResponseDto) => CvAggregateResponseDto): void {
+  if (!aggregate.value) return
+  aggregate.value = updater(aggregate.value)
+}
+
 async function onReload(): Promise<void> {
-  await flushSave()
-  await flushSectionSavesRef.value?.()
+  if (!(await persistPendingEdits())) return
   await refresh()
 }
 
@@ -100,18 +109,31 @@ function registerSectionSaveFlusher(fn: () => Promise<void>): void {
   flushSectionSavesRef.value = fn
 }
 
-provide('cvFlushHeaderSave', flushSave)
-provide('cvRegisterSectionSaveFlusher', registerSectionSaveFlusher)
-
 function onHeaderPartial(partial: Partial<CvHeaderResponseDto>): void {
   if (!header.value) return
   header.value = { ...header.value, ...partial }
   queueSave()
 }
 
+async function persistPendingEdits(): Promise<boolean> {
+  const headerOk = await flushSave()
+  if (!headerOk) {
+    if (!patchErrorSummary.value) {
+      patchErrorSummary.value = 'Nepodarilo sa uložiť životopis. Opravte chyby a skúste znova.'
+    }
+    return false
+  }
+  try {
+    await flushSectionSavesRef.value?.()
+    return true
+  } catch {
+    patchErrorSummary.value = 'Nepodarilo sa uložiť časť životopisu. Skúste to znova.'
+    return false
+  }
+}
+
 async function onGoStep(target: number): Promise<void> {
-  await flushSave()
-  await flushSectionSavesRef.value?.()
+  if (!(await persistPendingEdits())) return
   const s = Math.max(0, Math.min(2, target))
   try {
     const updated = await patchProgress(
@@ -146,9 +168,41 @@ async function onGoStep(target: number): Promise<void> {
   step.value = s
 }
 
+async function onFinish(): Promise<void> {
+  if (!(await persistPendingEdits())) return
+  try {
+    const updated = await patchProgress(props.cvId, {
+      wizard_step: 'final',
+      wizard_section: null,
+    })
+    if (header.value) {
+      header.value = {
+        ...header.value,
+        wizard_step: updated.wizard_step,
+        wizard_section: updated.wizard_section,
+      }
+    }
+    if (aggregate.value) {
+      aggregate.value = {
+        ...aggregate.value,
+        cv: {
+          ...aggregate.value.cv,
+          wizard_step: updated.wizard_step,
+          wizard_section: updated.wizard_section,
+        },
+      }
+    }
+    syncBaseline()
+  } catch (e) {
+    patchErrorSummary.value = e instanceof Error ? e.message : 'Nepodarilo sa dokončiť životopis.'
+    return
+  }
+  await refresh()
+  await navigateTo(ROUTES.cvHub)
+}
+
 async function onSetSection(section: string): Promise<void> {
-  await flushSave()
-  await flushSectionSavesRef.value?.()
+  if (!(await persistPendingEdits())) return
   const key = section === 'personal' ? 'personal'
     : section === 'experience' ? 'work'
     : section === 'education' ? 'education'
@@ -165,15 +219,12 @@ onMounted(async () => {
   await refresh()
   if (!aggregate.value) return
   const cv = aggregate.value.cv
-  if (cv.wizard_step === 'final') {
-    step.value = 2
+  if (cv.wizard_step === 'template') {
+    step.value = 0
     return
   }
-  if (cv.wizard_step === 'editor') {
-    step.value = 1
-    return
-  }
-  step.value = 0
+  // Open on the data editor (not final settings) so saved fields are visible.
+  step.value = 1
 })
 
 onBeforeUnmount(() => {
@@ -182,7 +233,8 @@ onBeforeUnmount(() => {
 })
 
 onBeforeRouteLeave(async () => {
-  await flushSave()
-  await flushSectionSavesRef.value?.()
+  if (!(await persistPendingEdits())) {
+    return false
+  }
 })
 </script>

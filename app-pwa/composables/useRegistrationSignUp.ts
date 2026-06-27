@@ -1,4 +1,34 @@
 import type { RegistrationCredentials, RegistrationPreferences } from '~/composables/useRegistration'
+import { validateIndividualRegistrationBirthDate } from '~/utils/age-eligibility'
+import { isApiUnreachableStatus } from '~/utils/api-fetch'
+import { S } from '~/utils/strings'
+
+type CaptchaVerifyData = { ok?: boolean; skipped?: boolean }
+
+/** Returns a user-facing error when captcha verify failed; null when signup may proceed. */
+export function registrationCaptchaVerifyFailed(
+  status: number,
+  data?: CaptchaVerifyData,
+): string | null {
+  if (isApiUnreachableStatus(status)) {
+    return S.resetPasswordNetworkError
+  }
+  if (!data?.skipped && data?.ok !== true) {
+    return 'Overenie captcha zlyhalo.'
+  }
+  return null
+}
+
+function mapSignUpError(message: string | undefined): string {
+  const raw = message?.trim() ?? ''
+  if (/individual_registration_minimum_age/i.test(raw)) {
+    return 'Registrácia je dostupná len pre osoby staršie ako 16 rokov.'
+  }
+  if (/individual_registration_(requires|invalid)_birth_date/i.test(raw)) {
+    return 'Vyberte platný dátum narodenia.'
+  }
+  return raw || 'Registrácia zlyhala.'
+}
 
 export type SignUpResult =
   | { ok: true; needsEmailConfirmation: false }
@@ -37,29 +67,46 @@ export function useRegistrationSignUp() {
         saving.value = false
         return { ok: false, error: msg }
       }
-      const verify = await fetch(`${config.apiBaseUrl}/api/auth/captcha/verify`, {
+      const verifyRes = await api<CaptchaVerifyData>('/api/auth/captcha/verify', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ token: captchaToken }),
+        body: { token: captchaToken },
+        skipSessionExpiry: true,
       })
-      const vr = (await verify.json()) as { ok?: boolean; skipped?: boolean }
-      if (!vr.skipped && vr.ok !== true) {
-        const msg = 'Overenie captcha zlyhalo.'
-        error.value = msg
+      const captchaError = registrationCaptchaVerifyFailed(
+        verifyRes.status,
+        verifyRes.data,
+      )
+      if (captchaError) {
+        error.value = captchaError
         saving.value = false
-        return { ok: false, error: msg }
+        return { ok: false, error: captchaError }
       }
     }
     try {
+      if (effectiveCredentials.accountType === 'individual') {
+        const birthDateError = validateIndividualRegistrationBirthDate(
+          effectiveCredentials.birthDate ?? '',
+        )
+        if (birthDateError) {
+          error.value = birthDateError
+          return { ok: false, error: birthDateError }
+        }
+      }
       const meta = getMetaForSignUp(prefsOverride ?? undefined, effectiveCredentials, effectiveRoles ?? undefined)
+      const trimmedCaptcha = captchaToken?.trim()
+      const signUpOptions: { data: typeof meta; captchaToken?: string } = { data: meta }
+      if (trimmedCaptcha) {
+        signUpOptions.captchaToken = trimmedCaptcha
+      }
       const { error: e } = await supabase.auth.signUp({
         email: effectiveCredentials.email,
         password: effectiveCredentials.password,
-        options: { data: meta },
+        options: signUpOptions,
       })
       if (e) {
-        error.value = e.message ?? 'Registrácia zlyhala.'
-        return { ok: false, error: e.message ?? 'Registrácia zlyhala.' }
+        const msg = mapSignUpError(e.message)
+        error.value = msg
+        return { ok: false, error: msg }
       }
 
       let sessionData = await supabase.auth.getSession()

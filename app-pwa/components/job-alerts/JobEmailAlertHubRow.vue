@@ -42,7 +42,7 @@
         </button>
         <details ref="moreDetailsRef" class="relative shrink-0">
         <summary
-          class="inline-flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full border border-black/10 bg-white text-[13px] font-semibold text-black/55 hover:bg-neutral-50 hover:text-black/75 [&::-webkit-details-marker]:hidden"
+          class="inline-flex h-10 w-10 is-clickable list-none items-center justify-center rounded-full border border-black/10 bg-white text-[13px] font-semibold text-black/55 hover:bg-neutral-50 hover:text-black/75 [&::-webkit-details-marker]:hidden"
         >
           <span class="sr-only">{{ S.cvHubMoreOptions }}</span>
           <span aria-hidden="true" class="select-none text-[1.05rem] leading-none tracking-[-0.1em] text-black/40">⋮</span>
@@ -52,7 +52,7 @@
         >
           <button
             type="button"
-            class="flex w-full cursor-pointer px-4 py-2.5 text-left text-[14px] font-semibold text-red-700 hover:bg-red-50"
+            class="flex w-full is-clickable px-4 py-2.5 text-left text-[14px] font-semibold text-red-700 hover:bg-red-50"
             @click="onDeleteClick"
           >
             {{ S.jobAlertsDelete }}

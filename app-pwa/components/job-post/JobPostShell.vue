@@ -14,7 +14,7 @@
             v-for="(s, idx) in activeSteps"
             :key="idx"
             type="button"
-            class="grid w-full cursor-pointer grid-cols-[42px_minmax(0,1fr)] items-center gap-3 rounded-2xl border-0 p-2.5 text-left transition-colors hover:bg-marketing-panel hover:text-marketing-green"
+            class="grid w-full is-clickable grid-cols-[42px_minmax(0,1fr)] items-center gap-3 rounded-2xl border-0 p-2.5 text-left transition-colors hover:bg-marketing-panel hover:text-marketing-green"
             :class="
               modelValue === idx
                 ? 'bg-marketing-panel text-marketing-green'

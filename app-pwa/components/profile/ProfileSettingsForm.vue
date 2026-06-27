@@ -155,11 +155,11 @@ onMounted(() => {
 
 function acctTypeBtnClass(isActive: boolean): string {
   const base =
-    'inline-flex items-center gap-2 rounded-full border-[1.5px] px-[22px] py-2.5 font-dmSans text-base font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60'
+    'inline-flex items-center gap-2 rounded-full border-[1.5px] px-[22px] py-2.5 font-dmSans text-base font-semibold transition-colors disabled:is-disabled-cursor disabled:opacity-60'
   if (isActive) {
     return `${base} border-marketing-green bg-marketing-green text-white`
   }
-  return `${base} cursor-pointer border-[#e5e7eb] bg-marketing-surface text-black/50 hover:border-marketing-green/40 hover:text-black/70`
+  return `${base} is-clickable border-[#e5e7eb] bg-marketing-surface text-black/50 hover:border-marketing-green/40 hover:text-black/70`
 }
 
 async function selectAccountType(nextType: UserRole): Promise<void> {

@@ -58,12 +58,14 @@ type ProfileSummary = {
   display_name?: string | null;
   first_name?: string | null;
   last_name?: string | null;
+  company_name?: string | null;
   logo_url?: string | null;
 };
 
 type ChatRoomDbRow = {
   id: string;
-  job_id: string;
+  job_id: string | null;
+  company_ad_id?: string | null;
   company_id: string;
   individual_id: string;
   application_id: string | null;
@@ -129,6 +131,7 @@ export class ChatController {
     applicationStatus = 'pending',
     profileById?: Map<string, ProfileSummary>,
     jobTitleByJobId?: Map<string, string | null>,
+    companyAdTitleById?: Map<string, string | null>,
     lastMessageByRoomId?: Map<string, { content: string; created_at: string }>,
     unreadByRoomId?: Map<string, number>,
   ): Promise<ChatRoomResponseDto> {
@@ -138,19 +141,33 @@ export class ChatController {
     if (!p) {
       const { data: profile } = await client
         .from('profiles')
-        .select('id, is_deleted, display_name, first_name, last_name, logo_url')
+        .select('id, is_deleted, display_name, first_name, last_name, company_name, logo_url')
         .eq('id', otherUserId)
         .maybeSingle();
       p = profile as ProfileSummary | null;
     }
-    let jobTitle = jobTitleByJobId?.get(room.job_id) ?? null;
-    if (jobTitle === undefined) {
-      const { data: jobRow } = await client
-        .from('job_offers')
-        .select('title')
-        .eq('id', room.job_id)
-        .maybeSingle();
-      jobTitle = (jobRow as { title?: string | null } | null)?.title?.trim() || null;
+    let jobTitle: string | null = null;
+    const companyAdId = room.company_ad_id?.trim() || null;
+    if (companyAdId) {
+      jobTitle = companyAdTitleById?.get(companyAdId) ?? null;
+      if (jobTitle === undefined) {
+        const { data: adRow } = await client
+          .from('company_ads')
+          .select('title')
+          .eq('id', companyAdId)
+          .maybeSingle();
+        jobTitle = (adRow as { title?: string | null } | null)?.title?.trim() || null;
+      }
+    } else if (room.job_id) {
+      jobTitle = jobTitleByJobId?.get(room.job_id) ?? null;
+      if (jobTitle === undefined) {
+        const { data: jobRow } = await client
+          .from('job_offers')
+          .select('title')
+          .eq('id', room.job_id)
+          .maybeSingle();
+        jobTitle = (jobRow as { title?: string | null } | null)?.title?.trim() || null;
+      }
     }
     let last = lastMessageByRoomId?.get(room.id);
     if (!last) {
@@ -187,6 +204,7 @@ export class ChatController {
     return {
       id: room.id,
       job_id: room.job_id,
+      company_ad_id: room.company_ad_id ?? null,
       company_id: room.company_id,
       individual_id: room.individual_id,
       application_id: room.application_id,
@@ -273,11 +291,11 @@ export class ChatController {
       const { data: profiles } = await this.supabase
         .getClient()
         .from('profiles')
-        .select('id, is_deleted, display_name, first_name, last_name, logo_url')
+        .select('id, is_deleted, display_name, first_name, last_name, company_name, logo_url')
         .in('id', otherIds);
       for (const p of (profiles ?? []) as ProfileSummary[]) profilesById.set(p.id, p);
     }
-    const jobIds = [...new Set(rooms.map((r) => r.job_id).filter(Boolean))];
+    const jobIds = [...new Set(rooms.map((r) => r.job_id).filter(Boolean))] as string[];
     const jobTitleByJobId = new Map<string, string | null>();
     if (jobIds.length > 0) {
       const { data: jobs } = await this.supabase
@@ -287,6 +305,24 @@ export class ChatController {
         .in('id', jobIds);
       for (const j of (jobs ?? []) as { id: string; title?: string | null }[]) {
         jobTitleByJobId.set(j.id, j.title?.trim() || null);
+      }
+    }
+    const companyAdIds = [
+      ...new Set(
+        rooms
+          .map((r) => r.company_ad_id)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    const companyAdTitleById = new Map<string, string | null>();
+    if (companyAdIds.length > 0) {
+      const { data: ads } = await this.supabase
+        .getClient()
+        .from('company_ads')
+        .select('id, title')
+        .in('id', companyAdIds);
+      for (const ad of (ads ?? []) as { id: string; title?: string | null }[]) {
+        companyAdTitleById.set(ad.id, ad.title?.trim() || null);
       }
     }
     const roomIds = rooms.map((r) => r.id);
@@ -320,9 +356,12 @@ export class ChatController {
           room,
           room.application_id
             ? (applicationStatusById.get(room.application_id) ?? 'pending')
-            : 'cv_outreach',
+            : room.company_ad_id
+              ? 'ad_inquiry'
+              : 'cv_outreach',
           profilesById,
           jobTitleByJobId,
+          companyAdTitleById,
           lastMessageByRoomId,
           unreadByRoomId,
         ),
@@ -354,6 +393,8 @@ export class ChatController {
       if (app && typeof (app as { status?: string }).status === 'string') {
         status = (app as { status: string }).status;
       }
+    } else if (room.company_ad_id) {
+      status = 'ad_inquiry';
     }
     return this.enrichRoomForViewer(user, room, status);
   }

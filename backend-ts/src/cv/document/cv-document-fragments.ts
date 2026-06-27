@@ -7,6 +7,7 @@ import {
   escapeHtml,
   formatBackendEducationPeriod,
   formatBackendExperiencePeriod,
+  formatEducationPeriod,
   formatExperiencePeriod,
   cvFieldLooksLikeHtml,
   formatMultiline,
@@ -26,6 +27,24 @@ function sectionOpen(wrapperClass?: string, extraClass?: string): string {
     return '<section>'
   }
   return `<section class="${classes}">`
+}
+
+export function renderSummarySection(
+  summary: string,
+  options?: { wrapperClass?: string; titleStyle?: string; contentClass?: string },
+): string {
+  if (!summary.trim()) {
+    return ''
+  }
+  const wrapperClass = options?.wrapperClass ?? 'atlas-intro'
+  const titleStyle = options?.titleStyle ? ` style="${options.titleStyle}"` : ''
+  const contentClass = options?.contentClass ?? 'rich-html-content'
+  const classAttr = wrapperClass ? ` class="${wrapperClass}"` : ''
+  return `
+    <section${classAttr} data-cv-unit="atomic">
+      <h2 class="section-title"${titleStyle}>Osobné zhrnutie</h2>
+      <div class="${contentClass}">${renderCvRichField(summary)}</div>
+    </section>`
 }
 
 export function renderEducationArticles(education: CvDocumentEducationItem[]): string {
@@ -59,6 +78,80 @@ export function renderExperienceArticle(
     </article>`
 }
 
+export function renderEditorialExperienceEducationPanel(
+  experiences: CvDocumentExperienceItem[],
+  education: CvDocumentEducationItem[],
+  options?: {
+    stackClass?: string
+    titleStyle?: string
+    hobbies?: string
+    extraInfo?: string
+    wrapperClass?: string
+  },
+): string {
+  const stackClass = options?.stackClass ?? 'editorial-stack'
+  const wrapperClass = options?.wrapperClass ?? 'editorial-panel'
+  const titleStyle = options?.titleStyle ? ` style="${options.titleStyle}"` : ''
+  const hobbies = options?.hobbies?.trim() ?? ''
+  const extraInfo = options?.extraInfo?.trim() ?? ''
+  if (!experiences.length && !education.length && !hobbies && !extraInfo) {
+    return ''
+  }
+  const experienceHtml = experiences.length
+    ? `<h2 class="section-title" data-cv-unit="section-head"${titleStyle}>Pracovné skúsenosti</h2>
+      ${experiences.map((item) => renderExperienceArticle(item, stackClass)).join('')}`
+    : ''
+  const educationHtml = education.length
+    ? `<h2 class="section-title" data-cv-unit="section-head"${titleStyle}>Vzdelanie</h2>
+      ${education.map((item) => renderEducationArticle(item)).join('')}`
+    : ''
+  const hobbiesHtml = hobbies ? renderEditorialHobbiesEntries(hobbies, options?.titleStyle) : ''
+  const extraHtml = extraInfo ? renderEditorialExtraInfoEntries(extraInfo, options?.titleStyle) : ''
+  return `
+    ${sectionOpen(wrapperClass, 'cv-breakable-section')}
+      ${experienceHtml}${educationHtml}${hobbiesHtml}${extraHtml}
+    </section>`
+}
+
+export function renderEditorialHobbiesEntries(hobbies: string, titleStyle?: string): string {
+  if (!hobbies.trim()) {
+    return ''
+  }
+  const style = titleStyle ? ` style="${titleStyle}"` : ''
+  if (cvFieldLooksLikeHtml(hobbies)) {
+    return `
+    <h2 class="section-title" data-cv-unit="section-head"${style}>Záujmy</h2>
+    <article class="entry" data-cv-unit="entry">
+      <div class="small-copy rich-html-content">${renderCvRichField(hobbies)}</div>
+    </article>`
+  }
+  const items = linesToBullets(hobbies, [])
+  if (items.length > 1) {
+    return `
+    <h2 class="section-title" data-cv-unit="section-head"${style}>Záujmy</h2>
+    <article class="entry" data-cv-unit="entry">
+      <ul class="two-column-list">${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>
+    </article>`
+  }
+  return `
+    <h2 class="section-title" data-cv-unit="section-head"${style}>Záujmy</h2>
+    <article class="entry" data-cv-unit="entry">
+      <div class="small-copy rich-html-content">${renderCvRichField(hobbies)}</div>
+    </article>`
+}
+
+export function renderEditorialExtraInfoEntries(extraInfo: string, titleStyle?: string): string {
+  if (!extraInfo.trim()) {
+    return ''
+  }
+  const style = titleStyle ? ` style="${titleStyle}"` : ''
+  return `
+    <h2 class="section-title" data-cv-unit="section-head"${style}>Doplňujúce informácie</h2>
+    <article class="entry" data-cv-unit="entry">
+      <div class="small-copy rich-html-content">${renderCvRichField(extraInfo)}</div>
+    </article>`
+}
+
 export function renderExperienceSection(
   experiences: CvDocumentExperienceItem[],
   title = 'Pracovné skúsenosti',
@@ -84,7 +177,7 @@ export function renderEducationArticle(item: CvDocumentEducationItem): string {
       : item.type === 'course'
         ? 'Kurz / certifikát'
         : 'Vysoká škola'
-  const period = [item.fromYear, item.toYear].filter(Boolean).join(' - ')
+  const period = formatEducationPeriod(item.fromYear, item.toYear)
   const detail = item.field || item.institution || (item.maturita ? 'Ukončená s maturitnou skúškou' : '')
   const bullets = cvFieldLooksLikeHtml(item.description)
     ? linesToBullets('', item.bullets)
@@ -190,7 +283,7 @@ export function renderExtraInfoSection(extraInfo: string, titleStyle?: string): 
   return `
     <section class="editorial-panel" data-cv-unit="atomic" style="margin-top:18px;">
       <h2 class="section-title"${style}>Doplňujúce informácie</h2>
-      <article class="entry" data-cv-unit="entry">
+      <article class="entry">
         <div class="small-copy rich-html-content">${renderCvRichField(extraInfo)}</div>
       </article>
     </section>`
@@ -198,6 +291,107 @@ export function renderExtraInfoSection(extraInfo: string, titleStyle?: string): 
 
 export function editorialTitleStyle(): string {
   return `color:${EDITORIAL_ACCENT}`
+}
+
+export function renderHeaderLead(summary: string, leadClass: string): string {
+  if (!summary.trim()) {
+    return ''
+  }
+  return `<p class="${leadClass} rich-html-content">${renderCvRichField(summary)}</p>`
+}
+
+export function renderEducationSidebarSection(
+  education: CvDocumentEducationItem[],
+  options?: { titleStyle?: string; wrapperClass?: string },
+): string {
+  const titleStyle = options?.titleStyle ? ` style="${options.titleStyle}"` : ''
+  const wrapperClass = options?.wrapperClass
+  if (!education.length) {
+    return ''
+  }
+  return renderEducationSection(education, 'Vzdelanie', {
+    titleStyle,
+    wrapperClass: wrapperClass ?? '',
+  })
+}
+
+export function renderSkillsSidebarSection(
+  skills: CvDocumentExportData['skills'],
+  options?: { titleStyle?: string; wrapperClass?: string; atomic?: boolean },
+): string {
+  if (!skills.length) {
+    return ''
+  }
+  const titleStyle = options?.titleStyle ? ` style="${options.titleStyle}"` : ''
+  const wrapperClass = options?.wrapperClass
+  const classAttr = wrapperClass ? ` class="${wrapperClass}"` : ''
+  const unitAttr = options?.atomic !== false ? ' data-cv-unit="atomic"' : ''
+  return `
+    <section${classAttr}${unitAttr}>
+      <h2 class="section-title"${titleStyle}>Znalosti</h2>
+      ${renderSkillGrid(skills)}
+    </section>`
+}
+
+export function renderLanguagesSidebarSection(
+  languages: CvDocumentExportData['languages'],
+  options?: { titleStyle?: string; wrapperClass?: string },
+): string {
+  if (!languages.length) {
+    return ''
+  }
+  const titleStyle = options?.titleStyle ? ` style="${options.titleStyle}"` : ''
+  const wrapperClass = options?.wrapperClass
+  const classAttr = wrapperClass ? ` class="${wrapperClass}"` : ''
+  return `
+    <section${classAttr} data-cv-unit="atomic">
+      <h2 class="section-title"${titleStyle}>Jazyky</h2>
+      ${renderLanguagesStack(languages)}
+    </section>`
+}
+
+export function renderDrivingSidebarSection(
+  licenses: string[],
+  options?: { titleStyle?: string; wrapperClass?: string },
+): string {
+  if (!licenses.length) {
+    return ''
+  }
+  const titleStyle = options?.titleStyle ? ` style="${options.titleStyle}"` : ''
+  const wrapperClass = options?.wrapperClass
+  const classAttr = wrapperClass ? ` class="${wrapperClass}"` : ''
+  return `
+    <section${classAttr} data-cv-unit="atomic">
+      <h2 class="section-title"${titleStyle}>Vodičský preukaz</h2>
+      ${renderDrivingStack(licenses)}
+    </section>`
+}
+
+export function renderMonochromeExtraInfoSection(extraInfo: string): string {
+  if (!extraInfo.trim()) {
+    return ''
+  }
+  return `
+    <section class="cv-breakable-section" data-cv-unit="atomic" data-cv-pack="with-previous">
+      <h2 class="section-title">Doplňujúce informácie</h2>
+      <article class="entry">
+        <div class="small-copy rich-html-content">${renderCvRichField(extraInfo)}</div>
+      </article>
+    </section>`
+}
+
+export function renderMinimalistOptionalMainSection(
+  title: string,
+  body: string,
+): string {
+  if (!body.trim()) {
+    return ''
+  }
+  return `
+    <section data-cv-unit="atomic">
+      <h2 class="section-title">${escapeHtml(title)}</h2>
+      <div class="small-copy rich-html-content">${renderCvRichField(body)}</div>
+    </section>`
 }
 
 export function mapAggregateExperience(row: ExperienceResponseDto): CvDocumentExperienceItem {

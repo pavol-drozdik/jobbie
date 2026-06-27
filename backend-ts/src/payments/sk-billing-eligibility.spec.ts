@@ -1,9 +1,13 @@
 import { BadRequestException } from '@nestjs/common';
 import {
+  SK_BILLING_COMPANY_ON_INDIVIDUAL_ACCOUNT_MESSAGE,
   SK_BILLING_ICO_MESSAGE,
   SK_BILLING_INDIVIDUAL_MESSAGE,
+  SK_BILLING_INDIVIDUAL_ON_COMPANY_ACCOUNT_MESSAGE,
   SK_BILLING_POLICY_MESSAGE,
+  assertPurchaserTypeMatchesAccountRole,
   assertSkBillingEligible,
+  validatePurchaserTypeForAccountRole,
   validateSkBillingEligibilitySync,
 } from './sk-billing-eligibility';
 
@@ -76,21 +80,61 @@ describe('validateSkBillingEligibilitySync', () => {
   });
 });
 
+describe('validatePurchaserTypeForAccountRole', () => {
+  it('allows individual checkout on individual account', () => {
+    expect(
+      validatePurchaserTypeForAccountRole('individual', skIndividualBilling),
+    ).toBeNull();
+  });
+
+  it('allows company checkout on company account', () => {
+    expect(
+      validatePurchaserTypeForAccountRole('company', skCompanyBilling),
+    ).toBeNull();
+  });
+
+  it('rejects company checkout on individual account', () => {
+    expect(
+      validatePurchaserTypeForAccountRole('individual', skCompanyBilling),
+    ).toBe('company_checkout_on_individual');
+  });
+
+  it('rejects individual checkout on company account', () => {
+    expect(
+      validatePurchaserTypeForAccountRole('company', skIndividualBilling),
+    ).toBe('individual_checkout_on_company');
+  });
+});
+
+describe('assertPurchaserTypeMatchesAccountRole', () => {
+  it('throws for company checkout on individual account', () => {
+    expect(() =>
+      assertPurchaserTypeMatchesAccountRole('individual', skCompanyBilling),
+    ).toThrow(SK_BILLING_COMPANY_ON_INDIVIDUAL_ACCOUNT_MESSAGE);
+  });
+
+  it('throws for individual checkout on company account', () => {
+    expect(() =>
+      assertPurchaserTypeMatchesAccountRole('company', skIndividualBilling),
+    ).toThrow(SK_BILLING_INDIVIDUAL_ON_COMPANY_ACCOUNT_MESSAGE);
+  });
+});
+
 describe('assertSkBillingEligible', () => {
   it('passes SK company when RPO confirms active IČO', async () => {
     const rpo = { isIcoActiveInRpo: jest.fn().mockResolvedValue(true) };
     await expect(
-      assertSkBillingEligible(skCompanyBilling, rpo),
+      assertSkBillingEligible(skCompanyBilling, rpo, 'company'),
     ).resolves.toBeUndefined();
     expect(rpo.isIcoActiveInRpo).toHaveBeenCalledWith('50881337');
   });
 
   it('rejects company when RPO returns no match', async () => {
     const rpo = { isIcoActiveInRpo: jest.fn().mockResolvedValue(false) };
-    await expect(assertSkBillingEligible(skCompanyBilling, rpo)).rejects.toThrow(
+    await expect(assertSkBillingEligible(skCompanyBilling, rpo, 'company')).rejects.toThrow(
       BadRequestException,
     );
-    await expect(assertSkBillingEligible(skCompanyBilling, rpo)).rejects.toThrow(
+    await expect(assertSkBillingEligible(skCompanyBilling, rpo, 'company')).rejects.toThrow(
       SK_BILLING_ICO_MESSAGE,
     );
   });
@@ -98,7 +142,7 @@ describe('assertSkBillingEligible', () => {
   it('does not call RPO for individuals', async () => {
     const rpo = { isIcoActiveInRpo: jest.fn().mockResolvedValue(false) };
     await expect(
-      assertSkBillingEligible(skIndividualBilling, rpo),
+      assertSkBillingEligible(skIndividualBilling, rpo, 'individual'),
     ).resolves.toBeUndefined();
     expect(rpo.isIcoActiveInRpo).not.toHaveBeenCalled();
   });
@@ -109,6 +153,7 @@ describe('assertSkBillingEligible', () => {
       assertSkBillingEligible(
         { ...skIndividualBilling, address_country: 'DE' },
         rpo,
+        'individual',
       ),
     ).rejects.toThrow(SK_BILLING_POLICY_MESSAGE);
   });
@@ -119,7 +164,16 @@ describe('assertSkBillingEligible', () => {
       assertSkBillingEligible(
         { ...skIndividualBilling, billing_attestation_sk_residence: undefined },
         rpo,
+        'individual',
       ),
     ).rejects.toThrow(SK_BILLING_INDIVIDUAL_MESSAGE);
+  });
+
+  it('rejects company checkout on individual account before RPO', async () => {
+    const rpo = { isIcoActiveInRpo: jest.fn() };
+    await expect(
+      assertSkBillingEligible(skCompanyBilling, rpo, 'individual'),
+    ).rejects.toThrow(SK_BILLING_COMPANY_ON_INDIVIDUAL_ACCOUNT_MESSAGE);
+    expect(rpo.isIcoActiveInRpo).not.toHaveBeenCalled();
   });
 });

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { buildCvDocument, buildCvDocumentPrint, CV_DOCUMENT_FONT_LINK } from './cv-document-html'
+import { buildCvDocument, CV_DOCUMENT_FONT_LINK } from './cv-document-html'
 import { buildCvPdfPrintDocument, buildCvPreviewResultDocument } from './cv-document-preview-html'
 import { buildCvDocumentStyles } from './cv-document-styles'
 import type { CvDocumentExportData } from './cv-document.types'
@@ -39,23 +39,15 @@ export class CvDocumentPaginateService {
     }
   }
 
-  /**
-   * Atlas uses the JS packer so each A4 sheet has a full-height sidebar panel
-   * (content on page 1, chrome stripe on continuations). Other templates use
-   * direct CSS print — natural page breaks without a DOM packer.
-   */
+  /** All templates: JS packer → fixed A4 sheets → Playwright print. */
   async renderPdfFromExportData(data: CvDocumentExportData): Promise<Buffer> {
-    if (data.template === 'atlas') {
-      const extracted = await this.paginateExportData(data)
-      const printHtml = buildCvPdfPrintDocument({
-        title: data.fullName,
-        fontLink: CV_DOCUMENT_FONT_LINK,
-        styles: buildCvDocumentStyles('pdf'),
-        outputHtml: extracted.outputHtml,
-      })
-      return this.htmlPdf.renderPdfFromPaginatedHtml(printHtml)
-    }
-    const html = buildCvDocumentPrint(data)
-    return this.htmlPdf.renderPdfDirect(html)
+    const extracted = await this.paginateExportData(data)
+    const printHtml = buildCvPdfPrintDocument({
+      title: data.fullName,
+      fontLink: CV_DOCUMENT_FONT_LINK,
+      styles: buildCvDocumentStyles('pdf'),
+      outputHtml: extracted.outputHtml,
+    })
+    return this.htmlPdf.renderPdfFromPaginatedHtml(printHtml)
   }
 }

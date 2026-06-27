@@ -28,6 +28,7 @@ type ProfileReplyRow = {
   display_name?: string | null;
   first_name?: string | null;
   last_name?: string | null;
+  company_name?: string | null;
 };
 
 /** Room membership checked by controller; bodies encrypted at rest when CHAT_CONTENT_ENCRYPTION_KEY set. */
@@ -112,7 +113,7 @@ export class ChatMessagesService {
       const { data: profiles } = await this.supabase
         .getClient()
         .from('profiles')
-        .select('id, is_deleted, display_name, first_name, last_name')
+        .select('id, is_deleted, display_name, first_name, last_name, company_name')
         .in('id', senderIds);
       for (const pr of profiles ?? []) {
         const p = pr as ProfileReplyRow;

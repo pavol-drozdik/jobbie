@@ -72,6 +72,7 @@ export class AuthSecurityController {
 
   @Post('captcha/verify')
   @Public()
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   async verifyCaptcha(@Body() body: VerifyCaptchaDto) {
     return this.security.verifyTurnstileToken(body.token);
   }

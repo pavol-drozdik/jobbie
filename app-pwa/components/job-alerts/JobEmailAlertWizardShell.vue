@@ -14,7 +14,7 @@
             v-for="s in stepNav"
             :key="s.step"
             type="button"
-            class="grid w-full cursor-pointer grid-cols-[42px_minmax(0,1fr)] items-center gap-3 rounded-2xl border-0 p-2.5 text-left transition-colors hover:bg-marketing-panel hover:text-marketing-green"
+            class="grid w-full is-clickable grid-cols-[42px_minmax(0,1fr)] items-center gap-3 rounded-2xl border-0 p-2.5 text-left transition-colors hover:bg-marketing-panel hover:text-marketing-green"
             :class="
               parentStep + 1 === s.step
                 ? 'bg-marketing-panel text-marketing-green'
@@ -77,8 +77,8 @@
               class="inline-flex h-12 items-center justify-center gap-2 rounded-full border-0 px-5 text-[17px] font-extrabold"
               :class="
                 parentStep === 0
-                  ? 'cursor-not-allowed bg-marketing-soft text-black/[0.62] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)]'
-                  : 'cursor-pointer bg-marketing-soft text-black/[0.62] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] hover:bg-marketing-panel'
+                  ? 'is-disabled-cursor bg-marketing-soft text-black/[0.62] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)]'
+                  : 'is-clickable bg-marketing-soft text-black/[0.62] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] hover:bg-marketing-panel'
               "
               :disabled="parentStep === 0"
               @click="parentStep > 0 && emit('goStep', parentStep - 1)"
@@ -91,7 +91,7 @@
               <button
                 v-if="parentStep < 2"
                 type="button"
-                class="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full border-0 bg-marketing-green px-5 text-[17px] font-extrabold text-white"
+                class="inline-flex h-12 is-clickable items-center justify-center gap-2 rounded-full border-0 bg-marketing-green px-5 text-[17px] font-extrabold text-white"
                 @click="emit('next')"
               >
                 {{ S.jobEmailAlertsWizardContinue }}
@@ -100,7 +100,7 @@
               <button
                 v-else
                 type="button"
-                class="inline-flex h-12 items-center justify-center gap-2 rounded-full border-0 bg-marketing-green px-5 text-[17px] font-extrabold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                class="inline-flex h-12 items-center justify-center gap-2 rounded-full border-0 bg-marketing-green px-5 text-[17px] font-extrabold text-white disabled:is-disabled-cursor disabled:opacity-60"
                 :disabled="finishDisabled"
                 @click="emit('finish')"
               >

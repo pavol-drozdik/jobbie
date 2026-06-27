@@ -5,9 +5,7 @@
     <div
       class="flex w-full max-w-[1020px] flex-col overflow-hidden rounded-[24px] shadow-[0_8px_40px_rgba(0,0,0,0.13)] min-[701px]:min-h-[620px] min-[701px]:flex-row"
     >
-      <div
-        class="relative hidden w-full flex-col justify-between overflow-hidden bg-[linear-gradient(155deg,#15803d_0%,#22c55e_100%)] px-11 py-10 text-white before:pointer-events-none before:absolute before:-right-[100px] before:-top-20 before:size-[320px] before:rounded-full before:bg-white/[0.07] after:pointer-events-none after:absolute after:-left-[60px] after:bottom-10 after:size-[200px] after:rounded-full after:bg-white/[0.07] min-[701px]:flex min-[701px]:w-[42%] min-[701px]:px-11 min-[701px]:py-10"
-      >
+      <div :class="authMarketingPanelClass">
         <AppBrandLogo
           variant="mark"
           root-class="relative z-[1]"
@@ -166,7 +164,7 @@
 
             <button
               type="submit"
-              class="mb-4 h-14 w-full cursor-pointer rounded-full border-none bg-marketing-green text-lg font-bold text-white transition-opacity duration-200 hover:opacity-[0.88] disabled:cursor-not-allowed disabled:opacity-50"
+              class="mb-4 h-14 w-full is-clickable rounded-full border-none bg-marketing-green text-lg font-bold text-white transition-opacity duration-200 hover:opacity-[0.88] disabled:is-disabled-cursor disabled:opacity-50"
               :disabled="saving"
             >
               {{ saving ? S.resetPasswordSaving : S.resetPasswordSubmit }}
@@ -190,6 +188,7 @@
               {{ S.signIn }}
             </NuxtLink>
           </p>
+          <AuthLegalFooter class="mt-6" />
         </template>
       </div>
     </div>
@@ -198,6 +197,7 @@
 
 <script setup lang="ts">
 import { setPasswordRecoverySkipProfile } from '~/utils/auth-recovery'
+import { authMarketingPanelClass } from '~/utils/marketing-ui'
 import {
   bootstrapPasswordRecoverySession,
   readRecoveryHandoffForBootstrap,

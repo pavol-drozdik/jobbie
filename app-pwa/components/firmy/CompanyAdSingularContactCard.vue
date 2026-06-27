@@ -15,12 +15,12 @@
     </div>
     <template v-if="showMessageCta">
       <div v-if="lastVisitorAction !== 'message'">
-        <CompanyAdOwnerOpenChatActions :owner-id="ad.owner_id" variant="primary" />
+        <CompanyAdOwnerOpenChatActions :company-ad-id="ad.id" variant="primary" />
       </div>
       <div v-else class="flex items-center gap-2">
         <CompanyAdOwnerOpenChatActions
           wrapper-class="min-w-0 flex-1"
-          :owner-id="ad.owner_id"
+          :company-ad-id="ad.id"
           variant="primary"
         />
         <ContentReportMenu

@@ -23,7 +23,6 @@ import { JwksAuthGuard } from '../auth/jwks-auth.guard';
 import { OptionalAuth } from '../auth/optional-auth.decorator';
 import { CurrentUserDecorator } from '../auth/current-user.decorator';
 import { CurrentUser } from '../auth/auth.types';
-import { RequireRecentLogin } from '../auth/require-recent-login.decorator';
 import { SupabaseService } from '../supabase/supabase.service';
 import { AuditService } from '../audit/audit.service';
 import type { MySubscriptionResponseDto } from '../plans/plans.dto';
@@ -57,6 +56,7 @@ import {
   DELETED_ACCOUNT_DISPLAY_NAME,
   displayNameFromProfileRow as displayNameFromProfileRowUtil,
 } from './profile-display.util';
+import { AccountClosureListingsService } from './account-closure-listings.service';
 
 const CLOSED_EMPLOYER_JOB_LABEL = 'Zverejňovateľ odstránil účet';
 
@@ -203,6 +203,7 @@ export class ProfilesController {
   constructor(
     private supabase: SupabaseService,
     private searchIndexing: SearchIndexingService,
+    private accountClosureListings: AccountClosureListingsService,
     private stripeService: StripeService,
     private audit: AuditService,
     private skRpoLookup: SkRpoLookupService,
@@ -244,9 +245,7 @@ export class ProfilesController {
 
   // GDPR Art. 15 — ZIP via DataExportService; extend payload when adding PII columns.
   // Auth: GlobalAuthGuard (BFF cookies + Bearer). Do not add JwksAuthGuard — export uses cookie fetch.
-  // Step-up: full personal-data export must re-confirm recent login (privacy-sensitive read).
   @Get('me/export')
-  @RequireRecentLogin()
   @Throttle({ default: { limit: 3, ttl: 3600000 } })
   async exportMe(
     @CurrentUserDecorator() user: CurrentUser,
@@ -273,9 +272,8 @@ export class ProfilesController {
     res.send(zip);
   }
 
-  // SECURITY: Step-up required — scrubs profile/CVs, deactivates jobs/alerts, bans auth user (service role).
+  // SECURITY: scrubs profile/CVs, deactivates jobs/alerts, bans auth user (service role).
   @Post('me/delete')
-  @RequireRecentLogin()
   async deleteMe(
     @CurrentUserDecorator() user: CurrentUser,
   ): Promise<{ deleted: boolean }> {
@@ -283,34 +281,11 @@ export class ProfilesController {
       user.id,
     );
     const client = this.supabase.getClient();
-    const { data: jobRows, error: jobErr } = await client
-      .from('job_offers')
-      .select('id')
-      .eq('company_id', user.id);
-    if (!jobErr && Array.isArray(jobRows)) {
-      for (const row of jobRows as { id: string }[]) {
-        await this.searchIndexing.removeJobById(String(row.id));
-      }
-    } else if (jobErr) {
-      this.logger.warn(
-        `job_offers select before account deletion: ${jobErr.message}`,
-      );
-    }
+    await this.accountClosureListings.deactivateForClosedAccount(
+      user.id,
+      CLOSED_EMPLOYER_JOB_LABEL,
+    );
     await this.searchIndexing.removeProfileById(user.id);
-    const { error: deactivateErr } = await client
-      .from('job_offers')
-      .update({
-        is_active: false,
-        employer_name: CLOSED_EMPLOYER_JOB_LABEL,
-        employer_email: null,
-      })
-      .eq('company_id', user.id)
-      .eq('is_deleted', false);
-    if (deactivateErr) {
-      this.logger.warn(
-        `job_offers deactivate on account closure: ${deactivateErr.message}`,
-      );
-    }
     const deletedAt = new Date().toISOString();
     await client
       .from('job_email_alerts')

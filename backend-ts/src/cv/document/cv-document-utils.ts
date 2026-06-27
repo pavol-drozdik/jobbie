@@ -96,6 +96,79 @@ export function renderBulletList(items: string[]): string {
 
 export { optionalSectionEnabled } from './cv-document-optional-sections'
 
+/** Education end year label when study is still in progress. */
+export const CV_EDUCATION_ONGOING_LABEL = 'Neukončené'
+
+const SK_MONTH_NAMES = [
+  'Január',
+  'Február',
+  'Marec',
+  'Apríl',
+  'Máj',
+  'Jún',
+  'Júl',
+  'August',
+  'September',
+  'Október',
+  'November',
+  'December',
+] as const
+
+function stripDiacritics(value: string): string {
+  return value.normalize('NFD').replace(/\p{M}/gu, '')
+}
+
+/** Slovak month label for CV templates — first three letters of the month name. */
+export function formatCvMonthAbbrev(raw: string | null | undefined): string {
+  const token = (raw ?? '').trim()
+  if (!token) {
+    return ''
+  }
+  const numeric = Number.parseInt(token, 10)
+  if (Number.isFinite(numeric) && numeric >= 1 && numeric <= 12) {
+    return SK_MONTH_NAMES[numeric - 1]!.slice(0, 3)
+  }
+  const folded = stripDiacritics(token).toLowerCase()
+  const match = SK_MONTH_NAMES.find((name) => {
+    const nameFolded = stripDiacritics(name).toLowerCase()
+    return (
+      nameFolded === folded ||
+      nameFolded.startsWith(folded) ||
+      folded.startsWith(nameFolded.slice(0, 3))
+    )
+  })
+  if (match) {
+    return match.slice(0, 3)
+  }
+  return token.slice(0, 3)
+}
+
+export function formatCvPeriodMonthYear(month: string, year: string): string {
+  const y = (year ?? '').trim()
+  const m = formatCvMonthAbbrev(month)
+  if (m && y) {
+    return `${m} ${y}`
+  }
+  return y || m
+}
+
+export function formatEducationEndYear(raw: string | null | undefined): string {
+  const token = (raw ?? '').trim()
+  if (!token) {
+    return ''
+  }
+  if (/^neukonč/i.test(token)) {
+    return CV_EDUCATION_ONGOING_LABEL
+  }
+  return token
+}
+
+export function formatEducationPeriod(fromYear: string, toYear: string): string {
+  const from = (fromYear ?? '').trim()
+  const end = formatEducationEndYear(toYear)
+  return [from, end].filter(Boolean).join(' - ')
+}
+
 export function formatExperiencePeriod(item: {
   fromMonth: string
   fromYear: string
@@ -103,8 +176,10 @@ export function formatExperiencePeriod(item: {
   toYear: string
   current: boolean
 }): string {
-  const periodStart = [item.fromMonth, item.fromYear].filter(Boolean).join(' ')
-  const periodEnd = item.current ? 'Súčasnosť' : [item.toMonth, item.toYear].filter(Boolean).join(' ')
+  const periodStart = formatCvPeriodMonthYear(item.fromMonth, item.fromYear)
+  const periodEnd = item.current
+    ? 'Súčasnosť'
+    : formatCvPeriodMonthYear(item.toMonth, item.toYear)
   return [periodStart, periodEnd].filter(Boolean).join(' - ')
 }
 
@@ -113,9 +188,15 @@ export function formatBackendExperiencePeriod(row: {
   end_date: string | null
   current: boolean
 }): string {
-  const start = (row.start_date ?? '').trim()
-  const end = row.current ? 'Súčasnosť' : (row.end_date ?? '').trim()
-  return [start, end].filter(Boolean).join(' - ')
+  const startParts = (row.start_date ?? '').trim().split(/[-/]/)
+  const endParts = (row.end_date ?? '').trim().split(/[-/]/)
+  return formatExperiencePeriod({
+    fromMonth: startParts[1] ?? '',
+    fromYear: startParts[0] ?? '',
+    toMonth: endParts[1] ?? '',
+    toYear: endParts[0] ?? '',
+    current: row.current,
+  })
 }
 
 export function formatBackendEducationPeriod(row: {
@@ -123,13 +204,21 @@ export function formatBackendEducationPeriod(row: {
   end_year: number | null
   start_date: string | null
   end_date: string | null
+  currently_studying?: boolean
 }): string {
-  const fromYear = row.start_year != null ? String(row.start_year) : ''
-  const toYear = row.end_year != null ? String(row.end_year) : ''
-  if (fromYear || toYear) {
-    return [fromYear, toYear].filter(Boolean).join(' - ')
+  const startParts = (row.start_date ?? '').trim().split(/[-/]/)
+  const endParts = (row.end_date ?? '').trim().split(/[-/]/)
+  const fromYear =
+    row.start_year != null ? String(row.start_year) : (startParts[0] ?? '').trim()
+  let toYear = ''
+  if (row.currently_studying) {
+    toYear = CV_EDUCATION_ONGOING_LABEL
+  } else if (row.end_year != null) {
+    toYear = String(row.end_year)
+  } else {
+    toYear = (endParts[0] ?? '').trim()
   }
-  return [row.start_date, row.end_date].filter(Boolean).join(' - ')
+  return formatEducationPeriod(fromYear, toYear)
 }
 
 /** ISO `YYYY-MM-DD` → Slovak CV display `DD. MM. YYYY` (zero-padded, spaced dots). */

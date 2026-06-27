@@ -38,7 +38,7 @@
       <div class="flex w-full items-center gap-2 sm:contents">
         <button
           type="button"
-          class="inline-flex h-10 min-w-0 flex-1 items-center justify-center rounded-full border border-black/12 bg-white px-4 text-[13px] font-semibold text-black/80 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 sm:min-w-[7.5rem] sm:flex-initial sm:px-4"
+          class="inline-flex h-10 min-w-0 flex-1 items-center justify-center rounded-full border border-black/12 bg-white px-4 text-[13px] font-semibold text-black/80 hover:bg-neutral-50 disabled:is-disabled-cursor disabled:opacity-50 sm:min-w-[7.5rem] sm:flex-initial sm:px-4"
           :disabled="previewBusy"
           @click="emit('preview')"
         >
@@ -46,7 +46,7 @@
         </button>
         <details ref="moreDetailsRef" class="relative shrink-0">
         <summary
-          class="inline-flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full border border-black/10 bg-white text-[13px] font-semibold text-black/55 hover:bg-neutral-50 hover:text-black/75 [&::-webkit-details-marker]:hidden"
+          class="inline-flex h-10 w-10 is-clickable list-none items-center justify-center rounded-full border border-black/10 bg-white text-[13px] font-semibold text-black/55 hover:bg-neutral-50 hover:text-black/75 [&::-webkit-details-marker]:hidden"
         >
           <span class="sr-only">{{ S.cvHubMoreOptions }}</span>
           <span aria-hidden="true" class="select-none text-[1.05rem] leading-none tracking-[-0.1em] text-black/40">⋮</span>
@@ -56,21 +56,21 @@
         >
           <button
             type="button"
-            class="flex w-full cursor-pointer px-4 py-2.5 text-left text-[14px] font-semibold text-black/80 hover:bg-black/[0.04]"
+            class="flex w-full is-clickable px-4 py-2.5 text-left text-[14px] font-semibold text-black/80 hover:bg-black/[0.04]"
             @click="onChangeTemplate"
           >
             {{ S.cvHubChangeTemplate }}
           </button>
           <button
             type="button"
-            class="flex w-full cursor-pointer px-4 py-2.5 text-left text-[14px] font-semibold text-black/80 hover:bg-black/[0.04]"
+            class="flex w-full is-clickable px-4 py-2.5 text-left text-[14px] font-semibold text-black/80 hover:bg-black/[0.04]"
             @click="onRename"
           >
             {{ S.cvHubRenameCv }}
           </button>
           <button
             type="button"
-            class="flex w-full cursor-pointer px-4 py-2.5 text-left text-[14px] font-semibold text-red-700 hover:bg-red-50"
+            class="flex w-full is-clickable px-4 py-2.5 text-left text-[14px] font-semibold text-red-700 hover:bg-red-50"
             @click="onDeleteClick"
           >
             {{ S.cvHubDeleteCvMenu }}

@@ -105,7 +105,7 @@ Names only — set values in host secret manager or `.env`.
 | `NUXT_PUBLIC_SUPABASE_URL` | Supabase project URL (`https://<ref>.supabase.co`; after Custom Domain add-on: e.g. `https://auth.jobbie.sk`) |
 | `NUXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
 | `NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe.js |
-| `NUXT_PUBLIC_TURNSTILE_SITE_KEY` | Turnstile widget |
+| `NUXT_PUBLIC_TURNSTILE_SITE_KEY` | Turnstile widget (pair with API `TURNSTILE_SECRET_KEY` + Supabase Auth CAPTCHA) |
 | `NUXT_PUBLIC_WEB_VITALS_SAMPLE_RATE` | RUM sample rate 0–1 |
 | `NUXT_PUBLIC_AUDIT_CLIENT_EVENTS` | Enable client audit batches |
 | `NUXT_PUBLIC_AUDIT_CLIENT_SAMPLE_RATE` | Audit sample rate |
@@ -140,7 +140,17 @@ Names only — set values in host secret manager or `.env`.
 | `PUBLIC_API_URL` | Stripe redirect base |
 | `PUBLIC_APP_URL` | Email links |
 | `PUBLIC_APP_ORIGIN` | Deep links / prefs |
-| `TURNSTILE_SECRET_KEY` | CAPTCHA verify |
+| `TURNSTILE_SECRET_KEY` | CAPTCHA verify (`POST /api/auth/captcha/verify`); also set in Supabase Dashboard → Authentication → Security → CAPTCHA (Turnstile) |
+
+### Turnstile / CAPTCHA checklist (production)
+
+1. Create a Cloudflare Turnstile site key pair (production hostname `www.jobbie.sk` / `jobbie.sk`).
+2. Set `NUXT_PUBLIC_TURNSTILE_SITE_KEY` in Cloudflare Pages build vars (see [`.github/workflows/pwa-cloudflare-deploy.yml`](../.github/workflows/pwa-cloudflare-deploy.yml)).
+3. Set `TURNSTILE_SECRET_KEY` on the Nest API host.
+4. In **Supabase Dashboard → Authentication → Settings → Security**, enable CAPTCHA, choose **Cloudflare Turnstile**, paste the **secret key** (same as step 3).
+5. Redeploy PWA + API; verify register (step 4), forgot-password, and login-after-failure flows complete without `captcha_failed` errors.
+
+Without steps 2–4, Turnstile widgets stay hidden and automated scanners may report missing CAPTCHA on first-visit login (progressive UX is intentional).
 | `SMTP_HOST`, `SMTP_FROM`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_SECURE` | Transactional email ([email-smtp.md](./email-smtp.md)) |
 | `MAILERLITE_API_KEY`, `MAILERLITE_GROUP_ID` | Newsletter |
 | `TYPESENSE_*` | Search (protocol, host, port, key, collections, tuning) |
@@ -169,9 +179,46 @@ Full list and comments: [`backend-ts/.env.example`](../backend-ts/.env.example).
 
 ### Security headers
 
-- PWA: CSP, HSTS, `X-Frame-Options` in `nuxt.config.ts` `nitro.routeRules`.
-- API: `helmet` in [`main.ts`](../backend-ts/src/main.ts).
-- **Also configure CDN/reverse proxy** for HTTPS redirect and same headers on static assets.
+- PWA: CSP, HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` in [`platform-csp.ts`](../app-pwa/utils/platform-csp.ts), applied **once** via Nitro [`security-headers.ts`](../app-pwa/server/middleware/security-headers.ts). `nitro.routeRules` only set per-route `cache-control`, `X-Robots-Tag`, or SSR — **do not** repeat security headers in route rules (overlapping patterns such as `/**` + `/` produce invalid `DENY, DENY` values).
+- **Cache-Control:** Private HTML (`/auth/**`, `/nastavenia/**`, `/zivotopisy/**`, `/chat/**`, …) → `private, no-store, must-revalidate` plus `CDN-Cache-Control: no-store` via [`cache-route-policy.ts`](../app-pwa/utils/cache-route-policy.ts) + [`cache-control.ts`](../app-pwa/server/middleware/cache-control.ts). Public SSR marketing shells → `public, max-age=300, must-revalidate`. Hashed `/_nuxt/**` → `public, max-age=31536000, immutable`. Do **not** set `no-store` on the homepage or job catalog — scanners flag missing `no-store` only on routes that serve account data.
+  - **Cloudflare:** If private routes still return only `Cache-Control: max-age=14400`, add a **Cache Rule**: when URI Path starts with `/auth`, `/nastavenia`, `/zivotopisy`, `/chat`, `/dashboard`, `/platba`, or `/profil` (exact) → **Bypass cache**. Purge cached HTML after deploy. Verify: `curl -sI https://www.jobbie.sk/auth/login | findstr /i cache-control` → must include `no-store`.
+- API: `helmet` (`noSniff: true`) in [`main.ts`](../backend-ts/src/main.ts).
+- **Cloudflare apex redirect** (`jobbie.sk` → `www.jobbie.sk`): Redirect Rules bypass Pages/Nitro. Add a **Transform Rule** on redirect responses only, or a rule scoped to `Hostname equals jobbie.sk` **without** duplicating headers Pages already sends on `www`:
+
+  | Header | Value | Notes |
+  |--------|-------|-------|
+  | `X-Content-Type-Options` | `nosniff` | Apex redirect only if not from origin |
+  | `X-Frame-Options` | `DENY` | **Do not** also enable *Managed Transforms → Add security headers* on `www` — duplicates origin headers |
+  | `Referrer-Policy` | `strict-origin-when-cross-origin` | Same |
+
+  Verify: `curl -sI https://www.jobbie.sk/ | findstr /i x-frame` must show **one** `X-Frame-Options: DENY` line, not two.
+
+  **If you still see `DENY` twice after deploying the PWA:**
+
+  1. **Rules → Settings → Managed Transforms** → disable **Add security headers** (or **Remove X-Frame-Options from incoming response** is not available — disable the whole managed transform for `www.jobbie.sk`).
+  2. **Rules → Transform Rules → Modify Response Header** — delete any rule that sets `X-Frame-Options` on `www.jobbie.sk` (keep apex-only rules for `jobbie.sk` redirects).
+  3. **Caching → Configuration** — purge cache for `https://www.jobbie.sk/` and re-test.
+  4. Confirm GitHub Actions production deploy completed (`pwa-pages` workflow on `main`).
+
+### Server / `Via` fingerprint headers
+
+Browsers see `Server: cloudflare` on `www.jobbie.sk` and `api.jobbie.sk` because **Cloudflare adds it at the edge** — application code cannot remove it without a Cloudflare rule.
+
+| Layer | What we hide | How |
+|-------|----------------|-----|
+| PWA (Nitro) | `Server`, `X-Powered-By` from origin | [`security-headers.ts`](../app-pwa/server/middleware/security-headers.ts) `removeResponseHeader` |
+| API (Nest) | `Server`, `X-Powered-By` | `helmet({ xPoweredBy: true })` + `res.removeHeader('Server')` in [`main.ts`](../backend-ts/src/main.ts) |
+| API VPS (Caddy) | `Server`, `Via`, `X-Powered-By` before CF | [`Caddyfile`](../websupport-vps-deployment/Caddyfile) `header { -Server -Via -X-Powered-By }` — redeploy/reload Caddy after pull |
+| Cloudflare (both hosts) | `Server: cloudflare` at edge | Dashboard → **Rules** → **Settings** → **Managed Transforms** → enable **Remove Server header** (all `jobbie.sk` / `api.jobbie.sk` traffic), **or** **Transform Rules** → Modify response header → **Remove** `Server` |
+
+Verify:
+
+```bash
+curl -sI https://www.jobbie.sk/ | grep -iE '^(server|via|x-powered-by):'
+curl -sI https://api.jobbie.sk/health | grep -iE '^(server|via|x-powered-by):'
+```
+
+After Cloudflare removal, the `Server` line may be absent entirely (ideal for scanners). Seeing only `cloudflare` does **not** expose Nest/Nuxt/Caddy — that is the real goal. Do not replace `Server` with a fake product name; removal or omission is preferred.
 
 ### Supabase Postgres
 
@@ -201,6 +248,8 @@ API images need **libvips** for `sharp` image re-encoding. See root DEPLOYMENT n
 ### Backend VPS (Docker + GHCR)
 
 Websupport bundle: [`websupport-vps-deployment/README-DEPLOYMENT.md`](../websupport-vps-deployment/README-DEPLOYMENT.md).
+
+Operator Discord alerting (production): [`websupport-vps-deployment/OPS-DISCORD-ALERTING.md`](../websupport-vps-deployment/OPS-DISCORD-ALERTING.md).
 
 | Branch / trigger | CI workflow | Deploy |
 |------------------|-------------|--------|
