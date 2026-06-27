@@ -1,9 +1,14 @@
 import type { Invoice, PaymentIntent, Subscription } from './stripe-types';
 
-type ExpandableRef<T extends { id: string }> = string | T | null | undefined;
+export type ExpandableStripeRef<T extends { id: string }> =
+  | string
+  | T
+  | null
+  | undefined;
 
-function refId<T extends { id: string }>(
-  ref: ExpandableRef<T>,
+/** Stripe expandable field: string id or partial expanded object. */
+export function expandableRefId<T extends { id: string }>(
+  ref: ExpandableStripeRef<T>,
 ): string | null {
   if (!ref) {
     return null;
@@ -13,6 +18,8 @@ function refId<T extends { id: string }>(
   }
   return ref.id?.trim() || null;
 }
+
+type SetupIntentRef = { id: string; client_secret?: string | null };
 
 /** Basil+ moved billing period to subscription items (multi-interval subscriptions). */
 export function getSubscriptionCurrentPeriodEnd(
@@ -55,7 +62,7 @@ export function getInvoiceSubscriptionRef(
 }
 
 export function getInvoiceSubscriptionId(invoice: Invoice): string | null {
-  return refId(getInvoiceSubscriptionRef(invoice));
+  return expandableRefId(getInvoiceSubscriptionRef(invoice));
 }
 
 /** Invoice.payment_intent moved to payments[] / confirmation_secret (Dahlia). */
@@ -78,7 +85,22 @@ export function getInvoicePaymentIntentRef(
 }
 
 export function getInvoicePaymentIntentId(invoice: Invoice): string | null {
-  return refId(getInvoicePaymentIntentRef(invoice));
+  return expandableRefId(getInvoicePaymentIntentRef(invoice));
+}
+
+export function getSetupIntentId(
+  setupRef: ExpandableStripeRef<SetupIntentRef>,
+): string | null {
+  return expandableRefId(setupRef);
+}
+
+export function getSetupIntentClientSecretFromRef(
+  setupRef: ExpandableStripeRef<SetupIntentRef>,
+): string | null {
+  if (!setupRef || typeof setupRef === 'string') {
+    return null;
+  }
+  return setupRef.client_secret?.trim() || null;
 }
 
 export function getInvoicePaymentIntentClientSecret(
