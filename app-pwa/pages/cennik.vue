@@ -55,13 +55,10 @@
           <div class="pricing-hero-tabs mt-6 w-full max-w-[720px]">
 
             <JaSegmentedToggle
-
               v-model="activeTab"
-
               class="!flex !w-full"
-
+              aria-label="Sekcia cenníka"
               :options="tabOptions"
-
             />
 
           </div>

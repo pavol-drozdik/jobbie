@@ -1,6 +1,6 @@
 <template>
   <div ref="firmyShellRef" class="mx-auto w-full max-w-[1400px] box-border px-5 pb-10 font-dmSans text-black/80">
-    <section class="mb-[50px] mt-[30px] w-full max-w-[1400px] rounded-[20px] bg-[linear-gradient(155deg,rgb(21,128,61)_0%,rgb(34,197,94)_100%)] p-6 marketing:p-[50px]">
+    <section :class="catalogFilterHeroClass">
       <h1 class="m-0 mb-5 font-dmSans text-[28px] font-extrabold leading-tight text-white marketing:mb-6 marketing:text-[34px]">
         {{ S.firmyTitle }}
       </h1>
@@ -90,7 +90,7 @@
           {{ fetchError }}
           <button
             type="button"
-            class="mt-3 block w-full cursor-pointer border-none bg-transparent font-semibold text-marketing-green underline"
+            class="mt-3 block w-full is-clickable border-none bg-transparent font-semibold text-marketing-green underline"
             @click="() => fetchAds(true)"
           >
             {{ S.listFetchRetry }}
@@ -109,7 +109,7 @@
       <div v-if="hasMore && !loading && !fetchError" class="mt-8 flex justify-center">
         <button
           type="button"
-          class="cursor-pointer rounded-full border border-black/15 bg-white px-6 py-3 font-dmSans text-sm font-semibold text-black/80 hover:bg-black/[0.03] disabled:opacity-50"
+          class="is-clickable rounded-full border border-black/15 bg-white px-6 py-3 font-dmSans text-sm font-semibold text-black/80 hover:bg-black/[0.03] disabled:opacity-50"
           :disabled="loadingMore"
           @click="() => fetchAds(false)"
         >
@@ -124,6 +124,7 @@
 // Company ads list — same filter/URL/debounce patterns as find.vue (firm-list-filters-context).
 import { ROUTES } from '~/utils/app-routes'
 import { S } from '~/utils/strings'
+import { catalogFilterHeroClass } from '~/utils/marketing-ui'
 import { CATEGORIES, getCategoryLabel } from '~/utils/job'
 import { parseCategorySelection, toggleCategorySlug } from '~/utils/list-filter-category'
 import ListMobileFiltersDropdown from '~/components/list/ListMobileFiltersDropdown.vue'

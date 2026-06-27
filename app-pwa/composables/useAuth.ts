@@ -11,7 +11,7 @@ import {
   ensureSupabaseAuthSession,
 } from '~/utils/ensure-supabase-auth-session'
 import { bootstrapAuthMe } from '~/utils/bootstrap-auth-me'
-import { hasActiveBffSession, shouldRestoreBffOnColdBoot } from '~/utils/bff-csrf-state'
+import { hasActiveBffSession, shouldPreferBffCookieAuth, shouldRestoreBffOnColdBoot } from '~/utils/bff-csrf-state'
 import { refreshBffSessionSingleFlight } from '~/utils/bff-refresh-single-flight'
 import { applyBffRefreshAccessToAuthState } from '~/utils/bff-session-refresh'
 import {
@@ -108,11 +108,15 @@ export function useAuth() {
     accessToken?: string,
     options?: { skipSessionExpiry?: boolean },
   ) {
-    const token = accessToken ?? resolveApiBearerToken(session.value)
+    const preferBffCookies =
+      import.meta.client && shouldPreferBffCookieAuth() && !accessToken?.trim()
+    const token =
+      accessToken?.trim() ||
+      (preferBffCookies ? undefined : resolveApiBearerToken(session.value))
     const { api } = useApi()
     try {
       const res = await api<CurrentProfile>('/api/profiles/me', {
-        token,
+        ...(token ? { token } : {}),
         skipSessionExpiry: options?.skipSessionExpiry ?? false,
       })
       if (!res.ok || !res.data) {
@@ -199,6 +203,8 @@ export function useAuth() {
       return Boolean(user.value)
     }
     const { api } = useApi()
+    const preferBffCookies = import.meta.client && shouldPreferBffCookieAuth()
+    const meAuthToken = preferBffCookies ? undefined : token
     try {
       const res = await api<{
         id: string
@@ -207,7 +213,7 @@ export function useAuth() {
         app_role?: string
         permission_scopes?: string[]
       }>('/api/auth/me', {
-        token,
+        ...(meAuthToken ? { token: meAuthToken } : {}),
         skipSessionExpiry: options?.skipSessionExpiry ?? false,
       })
       if (!res.ok || !res.data) {
@@ -233,7 +239,7 @@ export function useAuth() {
         permissionScopes: Array.isArray(data.permission_scopes) ? data.permission_scopes : [],
       }
       persistAuthSnapshot()
-      await fetchProfile(token, options)
+      await fetchProfile(preferBffCookies ? undefined : token, options)
       if (user.value) {
         try {
           identifyPosthogUser(

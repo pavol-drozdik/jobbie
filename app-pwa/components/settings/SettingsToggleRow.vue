@@ -6,8 +6,8 @@
     <div class="min-w-0 flex-1">
       <label
         :for="inputId"
-        class="block cursor-pointer font-dmSans text-[15px] font-semibold leading-snug text-black"
-        :class="disabled ? 'cursor-not-allowed' : ''"
+        class="block is-clickable font-dmSans text-[15px] font-semibold leading-snug text-black"
+        :class="disabled ? 'is-disabled-cursor' : ''"
       >
         {{ label }}
       </label>
@@ -17,7 +17,7 @@
     </div>
     <label
       class="relative mt-0.5 inline-block h-7 w-12 shrink-0"
-      :class="disabled ? 'pointer-events-none cursor-not-allowed' : 'cursor-pointer'"
+      :class="disabled ? 'pointer-events-none is-disabled-cursor' : 'is-clickable'"
     >
       <input
         :id="inputId"

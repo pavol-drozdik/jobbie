@@ -437,7 +437,7 @@
 
                 type="button"
 
-                class="inline-flex h-11 flex-1 cursor-pointer items-center justify-center rounded-full border border-black/15 bg-white px-5 text-[15px] font-semibold text-black/75 hover:bg-neutral-50 sm:flex-initial sm:min-w-[7.5rem]"
+                class="inline-flex h-11 flex-1 is-clickable items-center justify-center rounded-full border border-black/15 bg-white px-5 text-[15px] font-semibold text-black/75 hover:bg-neutral-50 sm:flex-initial sm:min-w-[7.5rem]"
 
                 @click="renameDialogOpen = false"
 
@@ -451,7 +451,7 @@
 
                 type="button"
 
-                class="inline-flex h-11 flex-1 cursor-pointer items-center justify-center rounded-full bg-marketing-green px-5 text-[15px] font-bold text-white hover:opacity-95 sm:flex-initial sm:min-w-[7.5rem]"
+                class="inline-flex h-11 flex-1 is-clickable items-center justify-center rounded-full bg-marketing-green px-5 text-[15px] font-bold text-white hover:opacity-95 sm:flex-initial sm:min-w-[7.5rem]"
 
                 :disabled="!renameTitle.trim() || renameSaving"
 

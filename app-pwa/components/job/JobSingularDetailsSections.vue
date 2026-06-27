@@ -29,7 +29,7 @@
         </h2>
         <span
           v-if="locationDetail.isForeign"
-          class="inline-flex rounded-full bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-800"
+          class="inline-flex rounded-full bg-marketing-panel px-3 py-1 text-sm font-semibold text-marketing-green"
         >
           {{ S.jobDetailForeignBadge }}
         </span>

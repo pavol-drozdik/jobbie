@@ -32,7 +32,7 @@
             </h3>
             <div class="mt-4 flex flex-wrap items-center gap-4">
               <div
-                class="flex size-[84px] shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-[#7c3aed] font-dmSans text-[28px] font-bold text-white shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)]"
+                class="flex size-[84px] shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-marketing-green font-dmSans text-[28px] font-bold text-white shadow-card"
               >
                 <img
                   v-if="avatarPreviewUrl"
@@ -180,7 +180,7 @@
             <div class="flex flex-wrap items-center gap-3">
               <div
                 v-if="avatarPreviewUrl"
-                class="size-16 shrink-0 overflow-hidden rounded-full border-2 border-black/10 bg-violet-600 shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
+                class="size-16 shrink-0 overflow-hidden rounded-full border-2 border-black/10 bg-marketing-green shadow-card"
               >
                 <img :src="avatarPreviewUrl" alt="" class="size-full object-cover">
               </div>

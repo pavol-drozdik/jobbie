@@ -10,7 +10,17 @@ export const SK_BILLING_ICO_MESSAGE = 'Zadajte platné slovenské IČO.';
 export const SK_BILLING_INDIVIDUAL_MESSAGE =
   'Vyplňte fakturačnú adresu na Slovensku a potvrďte súhlas.';
 
+export const SK_BILLING_COMPANY_ON_INDIVIDUAL_ACCOUNT_MESSAGE =
+  'Tento účet je registrovaný ako fyzická osoba. Firemné platby nie sú dostupné.';
+
+export const SK_BILLING_INDIVIDUAL_ON_COMPANY_ACCOUNT_MESSAGE =
+  'Tento účet je registrovaný ako firma. Platba ako fyzická osoba nie je dostupná.';
+
 export type SkBillingEligibilityFailure = 'policy' | 'ico' | 'individual';
+
+export type PurchaserAccountTypeMismatch =
+  | 'company_checkout_on_individual'
+  | 'individual_checkout_on_company';
 
 export type SkBillingEligibilityInput = CheckoutBillingDetailsInput & {
   billing_attestation_sk_residence?: boolean | null;
@@ -35,6 +45,44 @@ function hasRequiredSkAddressFields(billing: SkBillingEligibilityInput): boolean
       billing.address_city?.trim() &&
       billing.address_postal_code?.trim(),
   );
+}
+
+export function validatePurchaserTypeForAccountRole(
+  accountRole: string | null | undefined,
+  billing: { purchaser_type?: string } | null | undefined,
+): PurchaserAccountTypeMismatch | null {
+  const purchaserType = billing?.purchaser_type;
+  if (!purchaserType) {
+    return null;
+  }
+  if (accountRole === 'company' && purchaserType === 'individual') {
+    return 'individual_checkout_on_company';
+  }
+  if (accountRole !== 'company' && purchaserType === 'company') {
+    return 'company_checkout_on_individual';
+  }
+  return null;
+}
+
+export function messageForPurchaserAccountTypeMismatch(
+  mismatch: PurchaserAccountTypeMismatch,
+): string {
+  switch (mismatch) {
+    case 'company_checkout_on_individual':
+      return SK_BILLING_COMPANY_ON_INDIVIDUAL_ACCOUNT_MESSAGE;
+    case 'individual_checkout_on_company':
+      return SK_BILLING_INDIVIDUAL_ON_COMPANY_ACCOUNT_MESSAGE;
+  }
+}
+
+export function assertPurchaserTypeMatchesAccountRole(
+  accountRole: string | null | undefined,
+  billing: { purchaser_type?: string } | null | undefined,
+): void {
+  const mismatch = validatePurchaserTypeForAccountRole(accountRole, billing);
+  if (mismatch) {
+    throw new BadRequestException(messageForPurchaserAccountTypeMismatch(mismatch));
+  }
 }
 
 /**
@@ -79,7 +127,9 @@ export type SkRpoLookupForBilling = {
 export async function assertSkBillingEligible(
   billing: SkBillingEligibilityInput | null | undefined,
   rpoLookup: SkRpoLookupForBilling,
+  accountRole?: string | null,
 ): Promise<void> {
+  assertPurchaserTypeMatchesAccountRole(accountRole, billing);
   const syncFailure = validateSkBillingEligibilitySync(billing);
   if (syncFailure) {
     throw new BadRequestException(messageForSkBillingEligibilityFailure(syncFailure));

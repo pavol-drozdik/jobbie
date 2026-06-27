@@ -19,6 +19,21 @@ function readQueryParam(
   return trimmed || undefined
 }
 
+/** Param names present in a URL hash fragment (e.g. Supabase implicit OAuth handoff). */
+export function hashParamNames(hash: string): Set<string> {
+  const raw = hash.replace(/^#/, '').trim()
+  if (!raw) return new Set()
+  return new Set(new URLSearchParams(raw).keys())
+}
+
+/** True when the hash carries a Supabase session handoff that should be stripped. */
+export function hashHasSensitiveAuthHandoff(hash: string): boolean {
+  const names = hashParamNames(hash)
+  if (names.has('access_token')) return true
+  const type = new URLSearchParams(hash.replace(/^#/, '').trim()).get('type')
+  return type === 'recovery'
+}
+
 /** Parses Supabase recovery handoff params from route query (and hash on client). */
 export function readRecoveryHandoffFromRoute(route?: {
   query?: Record<string, unknown>
@@ -43,7 +58,7 @@ export function stripRecoveryParamsFromUrl(): void {
       changed = true
     }
   }
-  if (url.hash.includes('type=recovery') || url.hash.includes('access_token=')) {
+  if (hashHasSensitiveAuthHandoff(url.hash)) {
     url.hash = ''
     changed = true
   }
@@ -59,7 +74,10 @@ export function isAuthRecoveryInUrl(route?: {
   query?: Record<string, unknown>
 }): boolean {
   if (import.meta.client && typeof window !== 'undefined') {
-    if (window.location.hash.includes('type=recovery')) {
+    const type = new URLSearchParams(
+      window.location.hash.replace(/^#/, '').trim(),
+    ).get('type')
+    if (type === 'recovery') {
       return true
     }
   }

@@ -26,9 +26,9 @@ Admin compares sources in **Web & marketing**; treat PostHog vs GA user counts a
 - Env: `NUXT_PUBLIC_POSTHOG_KEY`, optional `NUXT_PUBLIC_POSTHOG_HOST` (default `https://eu.i.posthog.com`).
 - Env: `NUXT_PUBLIC_GTM_CONTAINER_ID` (`GTM-…`) — empty = off. Configure GA4 and Microsoft Clarity tags inside the GTM container (not in app env).
 - SDK: [`app-pwa/utils/posthog-client.ts`](../app-pwa/utils/posthog-client.ts) — autocapture off, manual `$pageview`, `advanced_disable_flags: true` until the first flag ships.
-- GTM: [`app-pwa/utils/gtm-client.ts`](../app-pwa/utils/gtm-client.ts) — lazy `gtm.js`, SPA `page_view` via `dataLayer`; gtag Consent Mode defaults set before load in [`utils/analytics-consent.ts`](../app-pwa/utils/analytics-consent.ts).
-- **GTM container:** Enable Consent Mode; tie GA4/Clarity tags to `analytics_storage` granted. Use a GA4 Configuration tag with **Send a page view event when this configuration loads** off — the app pushes `page_view` on route changes.
-- **Cookie consent:** [`plugins/0.consent.client.ts`](../app-pwa/plugins/0.consent.client.ts) + [`utils/analytics-consent.ts`](../app-pwa/utils/analytics-consent.ts) — PostHog and GTM load only when the user accepts **analytics**; `_ga*`, `ph_*`, `_clck` cleared on withdraw.
+- GTM: [`app-pwa/utils/gtm-client.ts`](../app-pwa/utils/gtm-client.ts) — bootstrap `gtm.js` on every page when `NUXT_PUBLIC_GTM_CONTAINER_ID` is set; SPA `page_view` via `dataLayer` only after analytics consent; gtag Consent Mode defaults in [`utils/analytics-consent.ts`](../app-pwa/utils/analytics-consent.ts).
+- **GTM container:** Enable Consent Mode; tie GA4/Clarity tags to `analytics_storage` granted. Use a GA4 Configuration tag with **Send a page view event when this configuration loads** off — the app pushes `page_view` on route changes after consent. Prefer **All Pages** / consent triggers over **Window Loaded** for Clarity (container loads before accept).
+- **Cookie consent:** [`plugins/0.consent.client.ts`](../app-pwa/plugins/0.consent.client.ts) + [`utils/analytics-consent.ts`](../app-pwa/utils/analytics-consent.ts) — PostHog loads only when the user accepts **analytics**; GTM shell loads earlier but tags stay gated; `_ga*`, `ph_*`, `_clck`, `_clsk` cleared and Clarity/GA scripts removed on withdraw.
 - Custom events: `checkout_started`, `credits_purchased`, `subscription_purchased`, `job_applied`, `registration_enter_app` via `useAnalytics()`.
 
 ### PostHog project settings (cloud)
@@ -61,10 +61,28 @@ Monthly free allowances (reset each cycle): **1M product analytics events**, **5
 - **Workflow**: new filter column in API → add btree/GIN index in the same migration ([docs/scalability.md](./scalability.md)).
 - Indexes for catalog lists: `idx_company_ads_active_list`, `idx_cvs_employer_visible_updated`, `idx_applications_job_created` (`20260621153000_scalability_indexes.sql`).
 
+## Operator Discord alerts (production VPS)
+
+Free-tier stack for bugs, moderation reports, server load, and API health. **Full replication guide:** [`websupport-vps-deployment/OPS-DISCORD-ALERTING.md`](../websupport-vps-deployment/OPS-DISCORD-ALERTING.md).
+
+| Source | Mechanism | Discord channel |
+|--------|-----------|-----------------|
+| Sentry (`backend-ts`, `app-pwa`) | Cloudflare Worker ← Sentry Internal Integration | `#bugs-prod` |
+| `content_reports` INSERT | Supabase Edge Function `discord-content-report` | `#moderation` |
+| CPU / RAM / disk ≥ 95% | Netdata `health.d/jobbie.conf` | `#ops-alerts` |
+| API `/health` | Netdata `go.d` httpcheck → local Caddy (`127.0.0.1` + `Host` header) | `#ops-alerts` |
+
+Notes:
+
+- Sentry **Developer** plan has no native Discord; use the Worker bridge (not legacy Webhooks plugin).
+- Do not probe `https://api…/health` from the same VPS through Cloudflare for Netdata — cached 200 hides backend outages. Templates: `websupport-vps-deployment/ops/netdata/`.
+- After `systemctl restart netdata`, wait ~90 s and run `netdatacli reload-health`.
+
 ## Uptime
 
-- Point an external checker (Better Stack, Checkly, etc.) at `GET /health`.
-- Optionally monitor `GET /metrics` if protected.
+- **On-VPS:** Netdata httpcheck (see operator Discord alerts above).
+- **External (optional):** UptimeRobot or similar on `GET /health` — add Cloudflare cache bypass for `/health` if proxied.
+- Optionally monitor `GET /metrics` if protected (`METRICS_BEARER_TOKEN`).
 
 ## Admin KPIs
 

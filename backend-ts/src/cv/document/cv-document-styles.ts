@@ -23,15 +23,25 @@ body.cv-export-preview .cv-page-export .monochrome-side {
   align-self: auto;
 }
 #cv-pagination-measure-host .cv-sheet.monochrome-page,
-#cv-pagination-measure-host .cv-sheet.minimalist-page {
+#cv-pagination-measure-host .cv-sheet.minimalist-page,
+#cv-pagination-measure-host .cv-sheet.editorial-page {
   height: auto;
   min-height: 0;
   max-height: none;
   overflow: visible;
 }
-#cv-pagination-measure-host .cv-sheet .monochrome-side {
+#cv-pagination-measure-host .cv-sheet .monochrome-grid,
+#cv-pagination-measure-host .cv-sheet .minimalist-grid,
+#cv-pagination-measure-host .cv-sheet .editorial-columns {
+  align-items: start;
+  flex: none;
+}
+#cv-pagination-measure-host .cv-sheet .monochrome-side,
+#cv-pagination-measure-host .cv-sheet .minimalist-side,
+#cv-pagination-measure-host .cv-sheet .editorial-side {
   min-height: 0;
   height: auto;
+  align-self: start;
 }
 body.cv-export-pdf .cv-pagination-loading,
 body.cv-export-pdf #cv-pagination-source {
@@ -101,37 +111,106 @@ body.cv-export-pdf .cv-sheet:last-child {
 }
 .cv-sheet.editorial-page .editorial-columns {
   display: grid;
-  grid-template-columns: 1fr 0.82fr;
-  gap: 18px;
-}
-.cv-sheet.minimalist-page .minimalist-grid {
-  display: grid;
-  grid-template-columns: 1fr 0.82fr;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.92fr);
   gap: 18px;
   flex: 1;
   min-height: 0;
+  align-items: start;
+}
+.cv-sheet.editorial-page .editorial-columns > div,
+.cv-sheet.editorial-page .editorial-side {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.cv-sheet.editorial-page .editorial-columns > div {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+  min-height: 0;
+}
+.cv-sheet.editorial-page .editorial-side .section-card {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+.cv-sheet.editorial-page .editorial-columns--continued {
+  padding-top: 14mm;
+}
+.cv-sheet.minimalist-page .minimalist-grid--continued {
+  padding-top: 14mm;
+}
+.cv-sheet.monochrome-page .monochrome-grid--continued {
+  padding-top: 14mm;
+}
+.cv-sheet.editorial-page {
+  display: flex;
+  flex-direction: column;
+  height: var(--paper-height);
+  min-height: var(--paper-height);
+  max-height: var(--paper-height);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.cv-sheet.minimalist-page .minimalist-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 0.7fr);
+  gap: 36px;
+  flex: 1;
+  min-height: 0;
+  align-items: start;
+}
+.cv-sheet.minimalist-page .minimalist-main,
+.cv-sheet.minimalist-page .minimalist-side {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .cv-sheet.minimalist-page {
   display: flex;
   flex-direction: column;
+  height: var(--paper-height);
+  min-height: var(--paper-height);
+  max-height: var(--paper-height);
+  overflow: hidden;
+  box-sizing: border-box;
 }
 .cv-sheet.monochrome-page {
   display: flex;
   flex-direction: column;
   height: var(--paper-height);
   min-height: var(--paper-height);
+  max-height: var(--paper-height);
+  overflow: hidden;
+  box-sizing: border-box;
 }
 .cv-sheet.monochrome-page .monochrome-grid {
   display: grid;
-  grid-template-columns: 1.34fr 0.86fr;
+  grid-template-columns: minmax(0, 1.34fr) minmax(0, 0.86fr);
   flex: 1;
   min-height: 0;
+  align-items: start;
 }
-.cv-sheet .monochrome-side {
-  min-height: 100%;
-  height: 100%;
-  align-self: stretch;
-  box-sizing: border-box;
+.cv-sheet.monochrome-page .monochrome-main,
+.cv-sheet.monochrome-page .monochrome-side {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.cv-sheet.monochrome-page .monochrome-side .monochrome-card {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+.cv-sheet .monochrome-side,
+.cv-sheet .minimalist-side,
+.cv-sheet .editorial-side {
+  min-height: 0;
+  height: auto;
+  align-self: start;
 }
 .cv-sheet .monochrome-side--chrome {
   min-height: var(--paper-height);
@@ -283,10 +362,12 @@ body.cv-export-preview .cv-sheet {
 .cv-page-export .cv-sheet section:not(.cv-breakable-section) {
     break-inside: avoid;
     page-break-inside: avoid;
-} .cv-page-export .resume-page p, .cv-page-export .resume-page li {
+} .cv-page-export .resume-page p, .cv-page-export .resume-page li,
+.cv-page-export .cv-sheet p, .cv-page-export .cv-sheet li {
     font-size: 11.2pt;
     line-height: 1.45;
-} .cv-page-export .resume-page ul {
+} .cv-page-export .resume-page ul,
+.cv-page-export .cv-sheet ul {
     margin: 0;
     padding-left: 18px;
 } .cv-page-export .resume-page li + li {
@@ -528,6 +609,19 @@ body.cv-export-preview .cv-sheet {
 } .cv-page-export .atlas-main .skill-chip {
     background: #edf3f6;
     color: #17324a;
+} .cv-page-export .editorial-topbar .template-profile-photo.editorial-profile-photo,
+.cv-page-export .editorial-topbar .editorial-profile-photo {
+    width: 40mm;
+    height: 40mm;
+    border-radius: 50%;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+} .cv-page-export .editorial-topbar .template-profile-photo.editorial-profile-photo.warm,
+.cv-page-export .editorial-topbar .editorial-profile-photo.warm {
+    border: none;
+    box-shadow: none;
+    background: transparent;
 } .cv-page-export .editorial-page {
     padding: 18mm 16mm 16mm;
     font-family: "Source Sans 3", sans-serif;
@@ -575,14 +669,30 @@ body.cv-export-preview .cv-sheet {
     width: 100%;
 } .cv-page-export .editorial-columns {
     display: grid;
-    grid-template-columns: 1.45fr 0.92fr;
+    grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.92fr);
     gap: 18px;
+} .cv-page-export .editorial-columns > div,
+.cv-page-export .editorial-side {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+} .cv-page-export .editorial-side .section-card {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
 } .cv-page-export .editorial-panel {
     padding-top: 12px;
+} .cv-page-export .editorial-panel .section-title + .section-title {
+    margin-top: 18px;
 } .cv-page-export .editorial-panel + .editorial-panel {
     border-top: 1px solid var(--line);
 } .cv-page-export .editorial-stack + .editorial-stack {
     margin-top: 16px;
+} .cv-page-export .editorial-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
 } .cv-page-export .editorial-side {
     display: grid;
     align-content: start;
@@ -725,11 +835,19 @@ body.cv-export-preview .cv-sheet {
     text-align: right;
 } .cv-page-export .minimalist-grid {
     display: grid;
-    grid-template-columns: 1.45fr 0.9fr;
-    gap: 22px;
+    grid-template-columns: minmax(0, 1.65fr) minmax(0, 0.7fr);
+    gap: 36px;
+} .cv-page-export .minimalist-main,
+.cv-page-export .minimalist-side {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 } .cv-page-export .minimalist-main {
     display: grid;
     gap: 18px;
+} .cv-page-export .minimalist-main .cv-breakable-section .section-title + .section-title {
+    margin-top: 18px;
 } .cv-page-export .minimalist-side {
     display: grid;
     gap: 16px;
@@ -791,9 +909,19 @@ body.cv-export-preview .cv-sheet {
     color: rgba(255, 255, 255, 0.72);
 } .cv-page-export .monochrome-grid {
     display: grid;
-    grid-template-columns: 1.34fr 0.86fr;
+    grid-template-columns: minmax(0, 1.34fr) minmax(0, 0.86fr);
     flex: 1;
     align-items: stretch;
+} .cv-page-export .monochrome-main,
+.cv-page-export .monochrome-side {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+} .cv-page-export .monochrome-side .monochrome-card {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
 } .cv-page-export .monochrome-main, .cv-page-export .monochrome-side {
     padding: 14mm 16mm 16mm;
 } .cv-page-export .monochrome-main {
@@ -836,6 +964,12 @@ ${pdfLayout}
   color: rgba(19, 33, 47, 0.85);
   font-size: 0.92rem;
   line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.cv-page-export .cv-sheet .rich-html-content,
+.cv-page-export .cv-sheet .rich-html-content p {
+  font-size: 11.2pt;
 }
 .cv-page-export .rich-html-content p {
   margin: 0.35rem 0;

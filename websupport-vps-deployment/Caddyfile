@@ -1,4 +1,9 @@
 {$APP_DOMAIN} {
     encode zstd gzip
+    header {
+        -Server
+        -Via
+        -X-Powered-By
+    }
     reverse_proxy backend:8000
 }

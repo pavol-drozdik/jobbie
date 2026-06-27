@@ -30,6 +30,8 @@
 import { ROUTES } from '~/utils/app-routes'
 import { S } from '~/utils/strings'
 import type { Job } from '~/utils/job'
+import { waitForAuthReady } from '~/utils/wait-for-auth'
+import { primeJobWizardBootstrap } from '~/utils/job-post-hub'
 import LoggedOutFeatureHero from '~/components/marketing/LoggedOutFeatureHero.vue'
 
 definePageMeta({ layout: 'app', middleware: ['customer-only'] })
@@ -39,6 +41,7 @@ const redirectPath = computed(() => route.fullPath || ROUTES.foreignJobNew)
 const { user, loading: authLoading } = useAuth()
 const { api } = useApi()
 const err = ref<string | null>(null)
+const started = ref(false)
 
 function apiErrorMessage(body: string | undefined, fallback: string): string {
   if (!body) return fallback
@@ -54,9 +57,12 @@ function apiErrorMessage(body: string | undefined, fallback: string): string {
 }
 
 onMounted(async () => {
+  if (started.value) return
+  await waitForAuthReady()
   if (!user.value) {
     return
   }
+  started.value = true
   try {
     const res = await api<Job>('/api/jobs', {
       method: 'POST',
@@ -68,11 +74,14 @@ onMounted(async () => {
     })
     if (!res.ok || !res.data?.id) {
       err.value = apiErrorMessage(res.body, 'Nepodarilo sa vytvoriť inzerát.')
+      started.value = false
       return
     }
+    primeJobWizardBootstrap(res.data as Job)
     await navigateTo(ROUTES.foreignJobWizard(res.data.id), { replace: true })
   } catch (e) {
     err.value = e instanceof Error ? e.message : 'Nepodarilo sa vytvoriť inzerát.'
+    started.value = false
   }
 })
 </script>

@@ -37,10 +37,10 @@ const attrs = useAttrs()
 
 const baseClass = computed(() => {
   const common =
-    'font-dmSans outline-none transition-colors focus-visible:ring-2 focus-visible:ring-marketing-green disabled:cursor-not-allowed disabled:opacity-70'
+    'font-dmSans outline-none transition-colors focus-visible:ring-2 focus-visible:ring-marketing-green disabled:is-disabled-cursor disabled:opacity-70'
   if (props.variant === 'field') {
     return [
-      'addjob-input cv-field w-full cursor-pointer appearance-none pr-10',
+      'addjob-input cv-field w-full is-clickable appearance-none pr-10',
       common,
     ].join(' ')
   }

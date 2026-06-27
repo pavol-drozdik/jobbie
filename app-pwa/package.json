@@ -59,7 +59,8 @@
     "unstorage": "^1.17.4",
     "vitest": "^4.1.8",
     "workbox-precaching": "^7.4.1",
-    "workbox-routing": "^7.4.1"
+    "workbox-routing": "^7.4.1",
+    "workbox-strategies": "^7.4.1"
   },
   "overrides": {
     "tar": "^7.5.16",

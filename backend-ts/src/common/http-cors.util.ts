@@ -15,6 +15,8 @@ const CORS_HEADERS = [
   'Authorization',
   'Accept',
   'X-CSRF-Token',
+  'sentry-trace',
+  'baggage',
 ];
 
 /**
@@ -34,8 +36,12 @@ const DEFAULT_DEV_ORIGINS = [
 /** Liveness/monitoring paths — no browser Origin; skip credentialed CORS middleware. */
 const CORS_BYPASS_PATHS = new Set(['/health']);
 
+/** Public SEO read-only routes — Nitro server-side $fetch (sitemap, feeds) sends no Origin. */
+const CORS_BYPASS_PREFIXES = ['/api/seo/'] as const;
+
 export function shouldBypassCors(path: string): boolean {
-  return CORS_BYPASS_PATHS.has(path);
+  if (CORS_BYPASS_PATHS.has(path)) return true;
+  return CORS_BYPASS_PREFIXES.some((prefix) => path.startsWith(prefix));
 }
 
 function resolveAllowedOrigins(): string[] {
@@ -55,7 +61,7 @@ function makeOriginValidator(allowed: string[]) {
   ): void => {
     // Non-browser requests have no Origin header. In production we reject on API
     // routes because credentialed PWA calls must carry Origin (see
-    // shouldBypassCors for /health). Dev tolerates missing Origin for curl.
+    // shouldBypassCors for /health and /api/seo/*). Dev tolerates missing Origin for curl.
     if (!origin) {
       if (isNodeProduction()) {
         callback(new Error('Not allowed by CORS'));

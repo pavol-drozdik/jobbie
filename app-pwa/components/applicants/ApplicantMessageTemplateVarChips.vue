@@ -8,7 +8,7 @@
         v-for="v in vars"
         :key="v.key"
         type="button"
-        class="rounded-full border border-black/10 bg-white px-3 py-1 font-dmSans text-xs font-semibold text-black/75 transition-colors hover:border-marketing-green/40 hover:bg-marketing-mint/40 hover:text-marketing-green disabled:cursor-not-allowed disabled:opacity-45"
+        class="rounded-full border border-black/10 bg-white px-3 py-1 font-dmSans text-xs font-semibold text-black/75 transition-colors hover:border-marketing-green/40 hover:bg-marketing-mint/40 hover:text-marketing-green disabled:is-disabled-cursor disabled:opacity-45"
         :disabled="disabled"
         :title="v.snippet"
         @click="emit('insert', v.snippet)"

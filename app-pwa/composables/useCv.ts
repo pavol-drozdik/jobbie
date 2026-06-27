@@ -1,14 +1,32 @@
 import type { CvAggregateResponseDto, CvHeaderResponseDto, CvListItemResponseDto } from '~/types/cv'
 import { fetchApiBinary } from '~/utils/api-binary-fetch'
-import { parseApiErrorMessage } from '~/utils/api-errors'
+import { ApiRequestError, parseApiErrorMessage } from '~/utils/api-errors'
 
 export type CvSaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
 function unwrap<T>(res: { ok: boolean; data?: T; status: number; body: string }): T {
-  if (!res.ok || res.data === undefined) {
-    throw new Error(parseApiErrorMessage(res, 'Operácia zlyhala.'))
+  if (!res.ok) {
+    throw new ApiRequestError(
+      parseApiErrorMessage(res, 'Operácia zlyhala.'),
+      res.status,
+      res.data,
+    )
   }
-  return res.data
+  if (res.data !== undefined) {
+    return res.data
+  }
+  if (res.body.trim()) {
+    try {
+      return JSON.parse(res.body) as T
+    } catch {
+      /* fall through */
+    }
+  }
+  throw new ApiRequestError(
+    parseApiErrorMessage(res, 'Operácia zlyhala.'),
+    res.status,
+    res.data,
+  )
 }
 
 /** CV section CRUD via Nest BFF cookies + CSRF (useApi). */
@@ -31,7 +49,11 @@ export function useCv() {
   }
 
   async function getCvAggregate(cvId: string): Promise<CvAggregateResponseDto> {
-    return unwrap(await api<CvAggregateResponseDto>(`/api/cv/${cvId}`))
+    return unwrap(
+      await api<CvAggregateResponseDto>(`/api/cv/${cvId}`, {
+        query: { _: String(Date.now()) },
+      }),
+    )
   }
 
   async function patchCv(

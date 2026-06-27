@@ -75,7 +75,7 @@ const filteredOptions = computed(() => {
 
 const triggerClass = computed(() => {
   const base =
-    'app-form-dropdown__trigger flex min-h-14 w-full cursor-pointer select-none items-center justify-between rounded-full px-5 py-3 text-left font-dmSans text-lg outline-none ring-marketing-green focus-visible:ring-2 disabled:cursor-not-allowed disabled:text-black/35'
+    'app-form-dropdown__trigger flex min-h-14 w-full is-clickable select-none items-center justify-between rounded-full px-5 py-3 text-left font-dmSans text-lg outline-none ring-marketing-green focus-visible:ring-2 disabled:is-disabled-cursor disabled:text-black/35'
   if (props.bordered) {
     return `${base} bg-marketing-soft app-form-dropdown__trigger--bordered cv-field`
   }
@@ -192,7 +192,7 @@ onBeforeUnmount(() => {
           class="app-form-dropdown__option flex items-start gap-2.5 text-left"
           :class="{
             'app-form-dropdown__option--selected': selectedSet.has(opt.id),
-            'cursor-not-allowed opacity-45': isRowDisabled(opt.id),
+            'is-disabled-cursor opacity-45': isRowDisabled(opt.id),
           }"
           :disabled="isRowDisabled(opt.id)"
           @click.stop="toggleId(opt.id)"
@@ -220,7 +220,7 @@ onBeforeUnmount(() => {
         <span class="min-w-0 truncate">{{ opt.label }}</span>
         <button
           type="button"
-          class="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-black/10 text-black/60 hover:bg-black/15 hover:text-black"
+          class="flex size-6 shrink-0 is-clickable items-center justify-center rounded-full border-0 bg-black/10 text-black/60 hover:bg-black/15 hover:text-black"
           :aria-label="S.remove"
           :disabled="disabled"
           @click.stop="removeId(opt.id)"

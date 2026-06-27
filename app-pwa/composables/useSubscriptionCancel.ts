@@ -1,16 +1,10 @@
 import type { SubscriptionCancelFeedback } from '~/utils/subscription-cancel-reasons'
+import { parseApiErrorMessage } from '~/utils/api-errors'
 import { S } from '~/utils/strings'
 
 export function useSubscriptionCancel() {
   const { api } = useApi()
-  const {
-    ensureRecentLoginForBilling,
-    ensureBillingStepUpBeforeMutation,
-    billingStepUpFailureMessage,
-    billingStepUpUserMessage,
-    isStepUpRequiredResponse,
-    tryRecoverFromStepUpRequired,
-  } = useBillingStepUp()
+  const { ensureRecentLoginForBilling } = useBillingStepUp()
 
   const cancelBusy = ref(false)
   const cancelError = ref('')
@@ -30,11 +24,6 @@ export function useSubscriptionCancel() {
       return false
     }
 
-    if (!(await ensureBillingStepUpBeforeMutation())) {
-      cancelError.value = billingStepUpFailureMessage()
-      return false
-    }
-
     cancelError.value = ''
     cancelOk.value = ''
     cancelBusy.value = true
@@ -43,22 +32,13 @@ export function useSubscriptionCancel() {
         reason_code: feedback.reason_code,
         reason_detail: feedback.reason_detail ?? null,
       }
-      let res = await api<{
+      const res = await api<{
         canceled: boolean
         cancel_at_period_end?: boolean
       }>('/api/payments/cancel-subscription', {
         method: 'POST',
         body,
       })
-      if (!res.ok && isStepUpRequiredResponse(res) && (await tryRecoverFromStepUpRequired())) {
-        res = await api<{
-          canceled: boolean
-          cancel_at_period_end?: boolean
-        }>('/api/payments/cancel-subscription', {
-          method: 'POST',
-          body,
-        })
-      }
       if (res.ok && res.data?.canceled === true) {
         cancelOk.value =
           res.data.cancel_at_period_end === false
@@ -69,7 +49,7 @@ export function useSubscriptionCancel() {
       cancelError.value =
         res.ok && res.data?.canceled === false
           ? S.settingsSubscriptionCancelNoStripe
-          : (await billingStepUpUserMessage(res)) || S.settingsSubscriptionCancelFailed
+          : parseApiErrorMessage(res, S.settingsSubscriptionCancelFailed)
       return false
     } finally {
       cancelBusy.value = false

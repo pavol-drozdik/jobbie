@@ -93,7 +93,6 @@ export class BillingController {
 
     return {
       credits: balance.credits,
-      expiringSoon: balance.expiringSoon,
       planNameSk: planLimits.planNameSk,
       planSlug: planLimits.planSlug,
       hasPlusOrProAccess: hasPlusOrProAccessFromRow(
@@ -135,7 +134,6 @@ export class BillingController {
     const balance = await this.credits.getBalance(user.id);
     return {
       credits: balance.credits,
-      expiringSoon: balance.expiringSoon,
       entries,
       next_cursor,
     };

@@ -24,12 +24,6 @@
         <p class="m-0 mt-1 font-dmSans text-sm text-black/45">
           {{ creditWordLabel(creditsBalance) }}
         </p>
-        <p
-          v-if="expiringSoon > 0"
-          class="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
-        >
-          {{ S.settingsCreditsExpiringSoon.replace('{count}', String(expiringSoon)) }}
-        </p>
       </div>
     </section>
 
@@ -198,7 +192,6 @@ const activeFilter = ref<LedgerFilter>('all')
 const loading = ref(true)
 const loadError = ref<string | null>(null)
 const creditsBalance = ref(0)
-const expiringSoon = ref(0)
 const entries = ref<LedgerEntry[]>([])
 const nextCursor = ref<string | null>(null)
 const loadingMore = ref(false)
@@ -236,19 +229,16 @@ async function loadLedger(append = false): Promise<void> {
     }
     const res = await api<{
       credits: number
-      expiringSoon?: number
       entries: LedgerEntry[]
       next_cursor?: string | null
     }>(`/api/billing/credit-ledger?${params.toString()}`)
     if (res.ok && res.data) {
       creditsBalance.value = res.data.credits
-      expiringSoon.value = res.data.expiringSoon ?? 0
       const batch = res.data.entries ?? []
       entries.value = append ? [...entries.value, ...batch] : batch
       nextCursor.value = res.data.next_cursor ?? null
     } else if (!append) {
       creditsBalance.value = 0
-      expiringSoon.value = 0
       entries.value = []
       nextCursor.value = null
       loadError.value = S.settingsCreditsLoadFailed

@@ -35,6 +35,7 @@ import {
   buildJobbiePaymentElementOptions,
   jobbieStripeElementsMountClass,
 } from '~/utils/stripe-payment-element-ui'
+import { parseApiErrorMessage } from '~/utils/api-errors'
 import { S } from '~/utils/strings'
 
 const props = defineProps<{
@@ -49,8 +50,6 @@ const emit = defineEmits<{
 const config = useRuntimeConfig().public
 const stripePublishableKey = config.stripePublishableKey as string
 const { api } = useApi()
-const { billingStepUpUserMessage, isStepUpRequiredResponse, tryRecoverFromStepUpRequired } =
-  useBillingStepUp()
 
 const elementRef = ref<HTMLDivElement | null>(null)
 const busy = ref(false)
@@ -130,22 +129,15 @@ async function handleSave(): Promise<void> {
       return
     }
 
-    let res = await api<{ payment_method: unknown }>('/api/payments/payment-method/confirm', {
+    const res = await api<{ payment_method: unknown }>('/api/payments/payment-method/confirm', {
       method: 'POST',
       body: { setup_intent_id: setupIntentId },
     })
-    if (!res.ok && isStepUpRequiredResponse(res) && (await tryRecoverFromStepUpRequired())) {
-      res = await api<{ payment_method: unknown }>('/api/payments/payment-method/confirm', {
-        method: 'POST',
-        body: { setup_intent_id: setupIntentId },
-      })
-    }
     if (res.ok) {
       emit('success')
       return
     }
-    formError.value =
-      (await billingStepUpUserMessage(res)) || S.settingsBillingPaymentMethodFailed
+    formError.value = parseApiErrorMessage(res, S.settingsBillingPaymentMethodFailed)
   } finally {
     busy.value = false
   }

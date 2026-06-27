@@ -30,7 +30,6 @@ import type {
 } from './stripe-types';
 import { CurrentUserDecorator } from '../auth/current-user.decorator';
 import { CurrentUser } from '../auth/auth.types';
-import { RequireRecentLogin } from '../auth/require-recent-login.decorator';
 import { SupabaseService } from '../supabase/supabase.service';
 import { AuditService } from '../audit/audit.service';
 import { StripeService } from './stripe.service';
@@ -95,7 +94,6 @@ export class PaymentsController {
   }
 
   @Post('payment-method/setup')
-  @RequireRecentLogin()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async createPaymentMethodSetup(
     @CurrentUserDecorator() user: CurrentUser,
@@ -113,7 +111,6 @@ export class PaymentsController {
   }
 
   @Post('payment-method/confirm')
-  @RequireRecentLogin()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async confirmPaymentMethod(
     @CurrentUserDecorator() user: CurrentUser,
@@ -145,7 +142,6 @@ export class PaymentsController {
   }
 
   @Post('cancel-subscription')
-  @RequireRecentLogin()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async cancelSubscription(
     @CurrentUserDecorator() user: CurrentUser,
@@ -185,7 +181,6 @@ export class PaymentsController {
   }
 
   @Post('resume-subscription')
-  @RequireRecentLogin()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async resumeSubscription(
     @CurrentUserDecorator() user: CurrentUser,
@@ -214,7 +209,6 @@ export class PaymentsController {
   }
 
   @Post('create-payment-intent-credits')
-  @RequireRecentLogin()
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async createPaymentIntentCredits(
     @CurrentUserDecorator() user: CurrentUser,
@@ -244,7 +238,6 @@ export class PaymentsController {
 
   // Fallback when webhook is delayed — still verifies PI via Stripe API + fulfillment table.
   @Post('confirm-credits')
-  @RequireRecentLogin()
   async confirmCreditsPurchase(
     @CurrentUserDecorator() user: CurrentUser,
     @Body() body: ConfirmCreditsPurchaseDto,
@@ -268,7 +261,6 @@ export class PaymentsController {
   }
 
   @Post('create-payment-intent-subscription')
-  @RequireRecentLogin()
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async createPaymentIntentSubscription(
     @CurrentUserDecorator() user: CurrentUser,
@@ -315,7 +307,6 @@ export class PaymentsController {
   }
 
   @Post('confirm-subscription')
-  @RequireRecentLogin()
   async confirmSubscriptionPurchase(
     @CurrentUserDecorator() user: CurrentUser,
     @Body() body: ConfirmSubscriptionPurchaseDto,
@@ -400,7 +391,6 @@ export class PaymentsController {
   }
 
   @Post('activate-free-plan')
-  @RequireRecentLogin()
   async activateFreePlan(
     @CurrentUserDecorator() user: CurrentUser,
     @Body() body: ActivateFreePlanDto,

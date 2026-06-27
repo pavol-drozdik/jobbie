@@ -16,12 +16,16 @@
   createAccount: 'Vytvoriť účet',
   register: 'Registrácia',
   email: 'Email',
-  password: 'Heslo',
+  fieldLabelPassword: 'Heslo',
   signIn: 'Prihlásiť sa',
   loginEmailNotConfirmed:
     'E-mail ešte nie je potvrdený. Skontrolujte doručenú poštu a kliknite na potvrdzovací odkaz, potom sa prihláste.',
   loginPostAuthFailed:
     'Prihlásenie prebehlo, ale aplikáciu sa nepodarilo načítať. Skúste obnoviť stránku alebo sa prihláste znova.',
+  authSignupDatabaseFailed:
+    'Účet sa nepodarilo vytvoriť. Ak ste nový používateľ, dokončite registráciu vrátane dátumu narodenia (pre jednotlivcov).',
+  authOAuthCancelled: 'Prihlásenie cez Google bolo zrušené.',
+  authOAuthFailed: 'Prihlásenie cez Google zlyhalo. Skúste to znova.',
   loginApiUnreachable:
     'Backend API nebeží alebo nie je dostupný. V termináli spustite backend-ts (port 8000), potom obnovte stránku a prihláste sa znova.',
   resetPasswordTitle: 'Nové',
@@ -120,7 +124,11 @@
   welcomeTitle: 'Účet vytvorený',
   welcomeGreeting: 'Vitajte',
   enterTheApp: 'Vstúpiť do aplikácie',
-  confirmEmailTitle: 'Vitajte v aplikácii',
+  confirmEmailPanelTitle: 'Skoro hotovo.',
+  confirmEmailPanelSubtitle:
+    'Otvor e-mail a klikni na potvrdzovací odkaz. Potom sa môžeš prihlásiť.',
+  confirmEmailHeading: 'Vitajte v',
+  confirmEmailHeadingAccent: 'aplikácii',
   confirmEmailMessage:
     'Účet bol vytvorený. Potvrďte registráciu cez odkaz v e-maili a potom sa prihláste. Po prihlásení vstúpite do aplikácie.',
   stepIntoApp: 'Vstúpiť do aplikácie',
@@ -136,7 +144,11 @@
   offeringWork: 'Ponúkam prácu',
   bothRoles: 'Oboje',
   termsAgree: 'Súhlasím s podmienkami používania',
-  termsRequired: 'Pre registráciu je potrebný súhlas s podmienkami.',
+  registerTermsAgreeIntro: 'Súhlasím s',
+  registerTermsAgreeTermsLabel: 'podmienkami používania',
+  registerTermsAgreeAnd: 'a',
+  registerTermsAgreePrivacyLabel: 'zásadami ochrany osobných údajov',
+  termsRequired: 'Pre registráciu je potrebný súhlas s podmienkami a zásadami ochrany osobných údajov.',
   experience: 'Skúsenosti',
   registrationNumber: 'IČO / registračné číslo',
   website: 'Web',
@@ -260,6 +272,7 @@
   errorPageCtaBack: 'Späť',
   errorPageTitle404: '404',
   errorPageTitleError: 'Chyba',
+  errorPageRecovering: 'Načítavam…',
   blogPostNotFound: 'Článok sa nenašiel.',
   jobListingInactiveNotice:
     'Lehota na prihlásenie na túto ponuku uplynula. Detail ponuky a konverzácie ostávajú dostupné pre zúčastnené strany.',
@@ -597,6 +610,8 @@
   checkoutRedirectingStripe: 'Presmerovanie na Stripe…',
   checkoutStripeSecureNote: 'Platbu dokončíte na zabezpečenej stránke Stripe.',
   checkoutBuyerTypeLabel: 'Typ platby',
+  checkoutBuyerTypeFixedIndividual: 'Typ platby: fyzická osoba',
+  checkoutBuyerTypeFixedCompany: 'Typ platby: firma',
   checkoutBuyerIndividual: 'Fyzická osoba',
   checkoutBuyerCompany: 'Firma',
   checkoutBillingAddressLine1: 'Fakturačná adresa (ulica a číslo)',
@@ -682,7 +697,6 @@
     'Mesačné kredity, limit aktívnych ponúk a prístup do databázy životopisov podľa plánu.',
   pricingPlanRecommended: 'Odporúčané',
   pricingCvDatabaseTitle: 'Databáza životopisov',
-  pricingCvBrowse: 'Prezeranie anonymizovaných kandidátov',
   pricingCvUnlock: 'Odomknutie kontaktných údajov',
   pricingCvContact: 'Kontaktovanie kandidáta',
   pricingCvPdf: 'Zobrazenie a stiahnutie CV',
@@ -709,7 +723,7 @@
     'Nákup kreditov a predplatné je určené pre zamestnávateľov a profesionálov. Ak hľadáte prácu, prezrite si dostupné ponuky.',
   pricingDowngradeTitle: 'Prejsť na bezplatný plán?',
   pricingDowngradeMessage:
-    'Aktuálne predplatné bude zrušené. Kredity z plateného plánu zostanú platné podľa pravidiel expirácie.',
+    'Aktuálne predplatné bude zrušené. Kredity zostanú na vašom účte.',
   pricingBuyCreditsCta: 'Kúpiť kredity',
   jobCreditsRequired: 'Na zverejnenie potrebujete',
   jobPublishCreditsSectionTitle: 'Publikovanie',
@@ -1134,8 +1148,6 @@
   settingsRevokeOthers: 'Odhlásiť ostatné relácie',
   settingsCreditsEmpty: 'Zatiaľ nemáte žiadne kreditné transakcie.',
   settingsCreditsBalanceLabel: 'Aktuálny zostatok',
-  settingsCreditsExpiringSoon:
-    '{count} kreditov čoskoro expiruje — využite ich skôr, než prepadnú.',
   settingsCreditsHistoryTitle: 'História transakcií',
   settingsCreditsFilterAll: 'Všetko',
   settingsCreditsFilterPurchases: 'Nákupy',
@@ -1203,7 +1215,9 @@
   settingsSubscriptionResumeCta: 'Obnoviť predplatné',
   settingsBillingSectionDetails: 'Fakturačné údaje',
   settingsBillingSectionDetailsHint:
-    'Údaje pre faktúry a firemné platby. Použijú sa pri checkout-e a vo fakturácii.',
+    'Údaje firmy pre faktúry a platby. Použijú sa pri checkout-e a vo fakturácii.',
+  settingsBillingSectionDetailsHintIndividual:
+    'Fakturačná adresa na Slovensku. Pri platbe ju predvyplníme.',
   settingsBillingAddressLabel: 'Fakturačná adresa',
   pricingCvUsageThisMonth: 'tento mesiac',
   settingsBillingSectionInvoices: 'Faktúry',

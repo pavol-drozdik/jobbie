@@ -20,6 +20,7 @@ type ProfileSummary = {
   display_name?: string | null;
   first_name?: string | null;
   last_name?: string | null;
+  company_name?: string | null;
 };
 
 @Injectable()
@@ -52,7 +53,7 @@ export class ChatNotificationsService {
     const { data: profile } = await this.supabase
       .getClient()
       .from('profiles')
-      .select('id, is_deleted, display_name, first_name, last_name')
+      .select('id, is_deleted, display_name, first_name, last_name, company_name')
       .eq('id', input.senderId)
       .maybeSingle();
     const p = profile as ProfileSummary | null;

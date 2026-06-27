@@ -14,7 +14,6 @@ import {
   CREDIT_COSTS,
   CreditCostKey,
   getCreditCost,
-  PAID_SUBSCRIPTION_CREDIT_ROLLOVER_DAYS,
 } from './billing.config';
 import { INSUFFICIENT_CREDITS_MESSAGE } from './billing-errors';
 import {
@@ -64,10 +63,7 @@ export class CreditsService {
     return getCreditCost(key);
   }
 
-  async getBalance(userId: string): Promise<{
-    credits: number;
-    expiringSoon: number;
-  }> {
+  async getBalance(userId: string): Promise<{ credits: number }> {
     const client = this.supabase.getClient();
     const { data: prof } = await client
       .from('profiles')
@@ -75,22 +71,7 @@ export class CreditsService {
       .eq('id', userId)
       .single();
     const credits = (prof as { credits?: number } | null)?.credits ?? 0;
-
-    const soon = new Date();
-    soon.setDate(soon.getDate() + 14);
-    const { data: lots } = await client
-      .from('credit_lots')
-      .select('amount_remaining, expires_at')
-      .eq('user_id', userId)
-      .gt('amount_remaining', 0);
-    let expiringSoon = 0;
-    for (const lot of lots ?? []) {
-      const row = lot as { amount_remaining: number; expires_at: string | null };
-      if (row.expires_at && new Date(row.expires_at) <= soon) {
-        expiringSoon += row.amount_remaining;
-      }
-    }
-    return { credits, expiringSoon };
+    return { credits };
   }
 
   async spendByKey(
@@ -213,22 +194,6 @@ export class CreditsService {
     return {
       balanceAfter: (data as { balance_after?: number })?.balance_after ?? 0,
     };
-  }
-
-  /** Paid subscription grant: expires in 60 days. */
-  paidGrantExpiresAt(): string {
-    const d = new Date();
-    d.setUTCDate(d.getUTCDate() + PAID_SUBSCRIPTION_CREDIT_ROLLOVER_DAYS);
-    return d.toISOString();
-  }
-
-  /** Free plan grant: end of current UTC calendar month. */
-  freeGrantExpiresAt(): string {
-    const now = new Date();
-    const end = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59, 999),
-    );
-    return end.toISOString();
   }
 
   async listLedger(params: {

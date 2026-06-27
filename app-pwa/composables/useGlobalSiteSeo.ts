@@ -1,6 +1,7 @@
 import { normalizeSiteUrl } from '~/utils/seo-config'
 import { buildOrganizationJsonLd, buildWebSiteJsonLd } from '~/utils/seo-json-ld'
 import { useBrandSeoConfig } from '~/utils/brand-seo'
+import { usePageSeo } from '~/composables/usePageSeo'
 
 /** Site-wide Organization + WebSite JSON-LD on marketing layout. */
 export function useGlobalSiteSeo(): void {

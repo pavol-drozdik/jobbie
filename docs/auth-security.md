@@ -128,13 +128,22 @@ Sensitive areas: billing changes, account delete, admin moderation, passkey mana
 | Control | Location |
 |---------|----------|
 | CSRF | [`CsrfGuard`](../backend-ts/src/auth/csrf.guard.ts) — `jb_csrf` vs `X-CSRF-Token` on unsafe methods |
-| CORS | `CORS_ORIGINS` — required in production ([`main.ts`](../backend-ts/src/main.ts)) |
+| CORS | `CORS_ORIGINS` — required in production ([`main.ts`](../backend-ts/src/main.ts)); allowlist only (never `*` or reflective `origin: true`). Regression tests in [`http-cors.util.spec.ts`](../backend-ts/src/common/http-cors.util.spec.ts). |
 | API headers | `helmet` in `main.ts` |
-| PWA CSP / HSTS | `nuxt.config.ts` `nitro.routeRules` |
+| PWA CSP / HSTS / XFO / XSS | `platform-csp.ts` + Nitro `csp-nonce` + `security-headers` middleware (nonce + `strict-dynamic` in production; CSP on HTML only) |
+
+### CORS verification (production / staging)
+
+If a scanner reports `Access-Control-Allow-Origin: *`, identify the response URL:
+
+1. **Nest API** — `OPTIONS` or `GET` with `Origin: https://evil.example` on `/api/*` must not return `*` or echo the evil origin. Confirm `CORS_ORIGINS` lists exact PWA origins (`https://jobbie.sk`, `https://www.jobbie.sk`). `GET /health` and `GET /api/seo/*` bypass CORS (no `Origin` required — probes and Nitro sitemap/feed fetches).
+2. **PWA (Nitro)** — HTML and feeds should not send credentialed CORS headers; cross-origin reads are not intended.
+3. **Supabase** — Dashboard → Project Settings → API: restrict **Additional Allowed Origins** to PWA origins (not `*`).
+4. **CDN / reverse proxy** — ensure no `add_header Access-Control-Allow-Origin *` on app or API routes.
 
 ## Password reset
 
-- Forgot-password on [`pages/auth/login.vue`](../app-pwa/pages/auth/login.vue): **Zabudol som heslo** opens an email-only step when the field is empty; after submit, a confirmation view with an optional **Open mailbox** button (known providers via `email-webmail-url.ts`). Calls `resetPasswordForEmail` with `redirectTo` → `{PWA_ORIGIN}/auth/reset-password`.
+- Forgot-password on [`pages/auth/login.vue`](../app-pwa/pages/auth/login.vue): **Zabudol som heslo** opens an email-only step when the field is empty; after submit, a confirmation view with an optional **Open mailbox** button (known providers via `email-webmail-url.ts`). Calls `resetPasswordForEmail` with `redirectTo` → `{PWA_ORIGIN}/auth/reset-password` and optional `captchaToken` when Turnstile is configured.
 - [`pages/auth/reset-password.vue`](../app-pwa/pages/auth/reset-password.vue) bootstraps recovery via [`bootstrap-password-recovery-session.ts`](../app-pwa/utils/bootstrap-password-recovery-session.ts): `verifyOtp({ type: 'recovery', token_hash })` (primary), auto-detect poll, then PKCE `code` exchange (same-browser fallback). Then `updateUser({ password })`, `POST /api/auth/sessions/revoke-all`, and local `signOut()`.
 - `POST /api/auth/sessions/revoke-all` — same global logout after password change in settings (JWT + audit `auth.sessions.revoked_all`).
 - OAuth and legacy links may still use [`pages/auth/callback.vue`](../app-pwa/pages/auth/callback.vue) with `?redirect=/auth/reset-password`.
@@ -169,7 +178,11 @@ If **Confirm email** is enabled in the Supabase project, users cannot `signInWit
 ## Failed login and abuse
 
 - `POST /api/auth/security/login-attempt` + `login_attempt_counters`
-- Turnstile when `TURNSTILE_SECRET_KEY` / `NUXT_PUBLIC_TURNSTILE_SITE_KEY` configured — required on `login-status` / failed `login-attempt` only after `failed_count > 0` for that email
+- Cloudflare Turnstile when `TURNSTILE_SECRET_KEY` / `NUXT_PUBLIC_TURNSTILE_SITE_KEY` configured — shared [`useTurnstileWidget`](../app-pwa/composables/useTurnstileWidget.ts) + [`AuthTurnstileWidget`](../app-pwa/components/auth/AuthTurnstileWidget.vue)
+- **Login:** progressive widget (after failed attempt or when `login-status` returns `captcha_required`); `captchaToken` passed to Nest `login-status` / `login-attempt` and Supabase `signInWithPassword` when present
+- **Register:** widget on wizard step 4; Nest `POST /api/auth/captcha/verify` then Supabase `signUp` with `captchaToken`
+- **Forgot password:** widget on email step when keys configured; `resetPasswordForEmail` with `captchaToken`
+- **Supabase Dashboard:** Authentication → Settings → Security → enable CAPTCHA (Turnstile) with the same secret as `TURNSTILE_SECRET_KEY` when enforcing server-side
 - Generic error messages — no email enumeration (except safe cases such as unconfirmed email)
 - `POST /api/reports` → `content_reports` + audit
 - Global `@nestjs/throttler` (webhook and health excluded)

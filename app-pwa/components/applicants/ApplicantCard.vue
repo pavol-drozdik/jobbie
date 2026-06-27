@@ -22,7 +22,7 @@
             @click="emit('open-profile')"
           >
             <div
-              class="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#7c3aed]/15 text-sm font-bold text-[#7c3aed]"
+              class="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-marketing-panel text-sm font-bold text-marketing-green"
             >
               <img
                 v-if="row.photo_url"

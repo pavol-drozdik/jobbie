@@ -28,26 +28,35 @@ export function useCvSectionSaveQueue(saveRow: (id: string) => Promise<void>) {
       clearTimeout(timer)
       timer = null
     }
-    if (inFlight) {
-      await inFlight
-      if (dirtyIds.size === 0) return
-    }
 
-    const ids = [...dirtyIds]
-    if (ids.length === 0) return
-
-    const task = (async () => {
-      for (const id of ids) {
-        await saveRow(id)
-        dirtyIds.delete(id)
+    while (true) {
+      if (inFlight) {
+        await inFlight
       }
-    })()
 
-    inFlight = task
-    try {
-      await task
-    } finally {
-      inFlight = null
+      const ids = [...dirtyIds]
+      if (ids.length === 0) return
+
+      const task = (async () => {
+        for (const id of ids) {
+          try {
+            await saveRow(id)
+            dirtyIds.delete(id)
+          } catch (err) {
+            // Keep id dirty so a later flush can retry.
+            throw err
+          }
+        }
+      })()
+
+      inFlight = task
+      try {
+        await task
+      } catch (err) {
+        throw err
+      } finally {
+        inFlight = null
+      }
     }
   }
 

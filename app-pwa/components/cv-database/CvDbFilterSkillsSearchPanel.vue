@@ -104,7 +104,7 @@ onBeforeUnmount(() => {
   <div class="flex flex-col gap-2">
     <button
       type="button"
-      class="w-full cursor-pointer rounded-[10px] border-0 border-b border-black/10 bg-transparent px-4 py-3 text-left font-dmSans text-lg font-semibold text-black/80 transition-colors hover:bg-marketing-mint"
+      class="w-full is-clickable rounded-[10px] border-0 border-b border-black/10 bg-transparent px-4 py-3 text-left font-dmSans text-lg font-semibold text-black/80 transition-colors hover:bg-marketing-mint"
       @click="emit('clear')"
     >
       {{ S.cvDbSkillsAny }}
@@ -114,7 +114,7 @@ onBeforeUnmount(() => {
         v-for="(skill, index) in modelValue"
         :key="`picked-${skill}-${index}`"
         type="button"
-        class="flex w-full cursor-pointer items-center gap-3 rounded-[10px] border-none bg-transparent px-4 py-2.5 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
+        class="flex w-full is-clickable items-center gap-3 rounded-[10px] border-none bg-transparent px-4 py-2.5 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
         @click="toggleSkill(skill)"
       >
         <span

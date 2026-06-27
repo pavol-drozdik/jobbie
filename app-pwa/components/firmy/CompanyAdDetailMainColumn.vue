@@ -44,7 +44,7 @@
       v-if="showPlatformMessageCta"
       class="rounded-[20px] bg-white p-5 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:p-7"
     >
-      <CompanyAdOwnerOpenChatActions :owner-id="ad.owner_id" variant="primary" />
+      <CompanyAdOwnerOpenChatActions :company-ad-id="ad.id" variant="primary" />
     </div>
     <FirmyCompanyAdSingularContactCard
       v-if="showContactCard"
@@ -54,7 +54,7 @@
     />
     <div class="flex flex-col gap-4 rounded-[20px] bg-white px-7 py-6 shadow-[0_0_12px_rgba(0,0,0,0.07)] sm:flex-row sm:items-center sm:gap-[18px]">
       <div
-        class="flex size-[58px] min-h-[58px] min-w-[58px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-violet-600 text-xl font-bold text-white"
+        class="flex size-[58px] min-h-[58px] min-w-[58px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-marketing-green text-xl font-bold text-white"
       >
         <img
           v-if="ownerAvatarSrc"
@@ -79,7 +79,7 @@
       >
         <NuxtLink
           :to="ROUTES.publicProfile(ad.owner_id)"
-          class="inline-flex w-full cursor-pointer items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-gray-200 bg-marketing-soft px-5 py-2.5 text-[15px] font-semibold text-black no-underline transition-colors hover:border-marketing-green hover:text-marketing-green sm:w-auto"
+          class="inline-flex w-full is-clickable items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-gray-200 bg-marketing-soft px-5 py-2.5 text-[15px] font-semibold text-black no-underline transition-colors hover:border-marketing-green hover:text-marketing-green sm:w-auto"
         >{{ S.firmyViewProfile }}</NuxtLink>
       </div>
     </div>
@@ -196,7 +196,7 @@
             v-for="(item, i) in galleryItems"
             :key="i"
             type="button"
-            class="relative aspect-[4/3] w-20 shrink-0 cursor-pointer overflow-hidden rounded-[10px] border-[2.5px] border-transparent transition-all hover:opacity-85"
+            class="relative aspect-[4/3] w-20 shrink-0 is-clickable overflow-hidden rounded-[10px] border-[2.5px] border-transparent transition-all hover:opacity-85"
             :class="i === gallerySelectedIndex ? 'border-marketing-green opacity-100' : 'opacity-60'"
             :aria-label="`${S.jobGalleryTitle} ${i + 1}`"
             @click="emit('selectGallery', i)"

@@ -280,10 +280,6 @@ export const CREDITS_PER_AD_MONTH = CREDIT_COSTS.publishServiceProfile30Days;
 
 
 
-export const PAID_SUBSCRIPTION_CREDIT_ROLLOVER_DAYS = 60;
-
-
-
 export function getCreditCost(key: CreditCostKey): number {
 
   return CREDIT_COSTS[key];

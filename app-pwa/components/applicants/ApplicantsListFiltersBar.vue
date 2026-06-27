@@ -1,7 +1,7 @@
 <template>
   <section
     ref="shellRef"
-    class="mb-[50px] mt-[30px] w-full max-w-[1400px] rounded-[20px] bg-[linear-gradient(155deg,rgb(21,128,61)_0%,rgb(34,197,94)_100%)] p-6 marketing:p-[50px]"
+    :class="catalogFilterHeroClass"
   >
     <h1
       v-if="pageTitle"
@@ -115,6 +115,7 @@
 <script setup lang="ts">
 import { ROUTES } from '~/utils/app-routes'
 import { S } from '~/utils/strings'
+import { catalogFilterHeroClass } from '~/utils/marketing-ui'
 import { APPLICANT_LIST_STATUS_TABS } from '~/utils/applicant-status'
 import type { ApplicantStatusCounts } from '~/types/employer-applicants'
 import ApplicantsFilterSearch from '~/components/applicants/ApplicantsFilterSearch.vue'

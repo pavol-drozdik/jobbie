@@ -1,4 +1,8 @@
-import { loadGtm, unloadGtm } from '~/utils/gtm-client'
+import {
+  captureGtmPageView,
+  loadGtm,
+  purgeInjectedAnalyticsScripts,
+} from '~/utils/gtm-client'
 import { initPosthogIfConsented, shutdownPosthog } from '~/utils/posthog-client'
 import { setAnalyticsConsentGranted } from '~/utils/cookie-consent-state'
 
@@ -17,7 +21,8 @@ export function initGtagConsentDefault(): (...args: unknown[]) => void {
     analytics_storage: 'denied',
     functionality_storage: 'denied',
     personalization_storage: 'denied',
-    security_storage: 'denied',
+    security_storage: 'granted',
+    wait_for_update: 500,
   })
   return gtag
 }
@@ -31,15 +36,29 @@ export function syncGtagConsent(analyticsGranted: boolean): void {
     ad_personalization: 'denied',
     functionality_storage: 'denied',
     personalization_storage: 'denied',
-    security_storage: 'denied',
+    security_storage: 'granted',
   })
 }
 
 function expireCookie(name: string, domain?: string): void {
-  const base = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT`
+  const secure = location.protocol === 'https:' ? '; Secure' : ''
+  const base = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax${secure}`
   document.cookie = base
   if (domain) {
     document.cookie = `${base}; domain=${domain}`
+  }
+}
+
+function clearStorageKeys(storage: Storage, predicate: (key: string) => boolean): void {
+  try {
+    for (let i = storage.length - 1; i >= 0; i -= 1) {
+      const key = storage.key(i)
+      if (key && predicate(key)) {
+        storage.removeItem(key)
+      }
+    }
+  } catch {
+    /* ignore */
   }
 }
 
@@ -61,23 +80,15 @@ function clearAnalyticsCookies(): void {
     if (!name) {
       continue
     }
-    if (name.startsWith('_ga_') || name.startsWith('ph_')) {
+    if (name.startsWith('_ga_') || name.startsWith('ph_') || name.startsWith('_cl')) {
       for (const domain of domainVariants) {
         expireCookie(name, domain)
       }
     }
   }
 
-  try {
-    for (let i = localStorage.length - 1; i >= 0; i -= 1) {
-      const key = localStorage.key(i)
-      if (key?.startsWith('ph_')) {
-        localStorage.removeItem(key)
-      }
-    }
-  } catch {
-    /* ignore */
-  }
+  clearStorageKeys(localStorage, (key) => key.startsWith('ph_') || key.toLowerCase().includes('clarity'))
+  clearStorageKeys(sessionStorage, (key) => key.toLowerCase().includes('clarity'))
 }
 
 /** Enable or disable third-party analytics based on cookie consent. */
@@ -89,12 +100,12 @@ export function applyAnalyticsConsent(granted: boolean): void {
   syncGtagConsent(granted)
   if (granted) {
     initPosthogIfConsented()
-    loadGtm()
+    captureGtmPageView()
     window.dispatchEvent(new Event('jobbie:analytics-consent-changed'))
     return
   }
   shutdownPosthog()
-  unloadGtm()
+  purgeInjectedAnalyticsScripts()
   clearAnalyticsCookies()
   window.dispatchEvent(new Event('jobbie:analytics-consent-changed'))
 }

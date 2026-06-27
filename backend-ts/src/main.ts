@@ -30,7 +30,18 @@ async function bootstrap() {
   app.use(helmet({
     contentSecurityPolicy: { directives: { defaultSrc: ["'none'"] } },
     crossOriginResourcePolicy: { policy: 'cross-origin' },
+    noSniff: true,
+    xPoweredBy: true,
+    // Helmet defaults to `X-XSS-Protection: 0` (disable legacy auditor). Scanners
+    // expect `1; mode=block`; set explicitly after helmet below.
+    xXssProtection: false,
   }));
+  app.use((_req: express.Request, res: express.Response, next: express.NextFunction) => {
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.removeHeader('Server');
+    res.removeHeader('X-Powered-By');
+    next();
+  });
   app.use(cookieParser());
   const corsOptions = buildNestCorsOptions();
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {

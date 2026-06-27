@@ -92,7 +92,7 @@ async function onSubmit(): Promise<void> {
             <label
               v-for="reasonId in CONTENT_REPORT_REASON_IDS"
               :key="reasonId"
-              class="flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 transition-colors"
+              class="flex is-clickable items-start gap-3 rounded-xl border px-3 py-2.5 transition-colors"
               :class="
                 selectedReasonId === reasonId
                   ? 'border-marketing-green bg-marketing-green/5'

@@ -29,7 +29,7 @@
             v-for="cat in BLOG_CATEGORIES"
             :key="cat.id"
             type="button"
-            class="cursor-pointer rounded-full border-[1.5px] px-[18px] py-2 font-dmSans text-[15px] font-semibold transition-colors duration-150"
+            class="is-clickable rounded-full border-[1.5px] px-[18px] py-2 font-dmSans text-[15px] font-semibold transition-colors duration-150"
             :class="
               activeCategory === cat.id
                 ? 'border-marketing-green bg-marketing-green text-white'
@@ -61,7 +61,7 @@
           <div v-if="nextCursor" class="mt-12 flex justify-center">
             <button
               type="button"
-              class="h-[54px] cursor-pointer rounded-full border-[1.5px] border-marketing-green bg-white px-11 font-dmSans text-[17px] font-bold text-marketing-green transition-colors hover:bg-marketing-green hover:text-white disabled:opacity-60"
+              class="h-[54px] is-clickable rounded-full border-[1.5px] border-marketing-green bg-white px-11 font-dmSans text-[17px] font-bold text-marketing-green transition-colors hover:bg-marketing-green hover:text-white disabled:opacity-60"
               :disabled="loadingMore"
               @click="loadMore"
             >

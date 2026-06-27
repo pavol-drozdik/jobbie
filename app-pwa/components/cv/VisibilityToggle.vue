@@ -2,7 +2,7 @@
   <!-- Kompaktný riadok (predvolené) -->
   <label
     v-if="!prominent"
-    class="inline-flex cursor-pointer items-center gap-3 rounded-2xl border border-black/[0.08] bg-white px-4 py-3 shadow-sm"
+    class="inline-flex is-clickable items-center gap-3 rounded-2xl border border-black/[0.08] bg-white px-4 py-3 shadow-sm"
   >
     <AppCheckbox v-model="inner" />
     <span class="font-dmSans text-[15px] font-semibold text-black/80">{{ inner ? S.cvVisibilityPublic : S.cvVisibilityPrivate }}</span>
@@ -20,7 +20,7 @@
       {{ S.cvWizardVisibilityCardLead }}
     </p>
     <label
-      class="mt-4 flex cursor-pointer items-start gap-3.5 rounded-2xl border border-black/[0.08] bg-white p-4 shadow-sm transition-colors hover:border-marketing-green/40"
+      class="mt-4 flex is-clickable items-start gap-3.5 rounded-2xl border border-black/[0.08] bg-white p-4 shadow-sm transition-colors hover:border-marketing-green/40"
     >
       <AppCheckbox v-model="inner" class="mt-1" />
       <span class="min-w-0 flex-1">

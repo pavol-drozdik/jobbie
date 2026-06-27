@@ -4,6 +4,7 @@ import {
   isPurchasableCreditPack,
   type CreditPackRow,
 } from '~/utils/credit-packs'
+import { parseApiErrorMessage } from '~/utils/api-errors'
 import { S } from '~/utils/strings'
 
 export type PricingCreditPack = CreditPackRow & {
@@ -25,12 +26,7 @@ export function usePricingCreditCheckout(options: {
   const { returnBasePath, publicMode = false, embedded = false, onCreditsPurchased } = options
 
   const { requireEmployerCheckout } = usePricingCheckout(returnBasePath)
-  const {
-    ensureRecentLoginForBilling,
-    billingStepUpUserMessage,
-    isStepUpRequiredResponse,
-    tryRecoverFromStepUpRequired,
-  } = useBillingStepUp()
+  const { ensureRecentLoginForBilling } = useBillingStepUp()
   const { api } = useApi()
   const { refreshUser, session } = useAuth()
   const { capture } = useAnalytics()
@@ -97,18 +93,12 @@ export function usePricingCreditCheckout(options: {
       error.value = gate.message
       return false
     }
-    let res = await api<{ message?: string }>('/api/payments/confirm-credits', {
+    const res = await api<{ message?: string }>('/api/payments/confirm-credits', {
       method: 'POST',
       body: { payment_intent_id: id },
     })
-    if (!res.ok && isStepUpRequiredResponse(res) && (await tryRecoverFromStepUpRequired())) {
-      res = await api<{ message?: string }>('/api/payments/confirm-credits', {
-        method: 'POST',
-        body: { payment_intent_id: id },
-      })
-    }
     if (!res.ok) {
-      error.value = await billingStepUpUserMessage(res)
+      error.value = parseApiErrorMessage(res, 'Platba sa nepodarila.')
       return false
     }
     error.value = null

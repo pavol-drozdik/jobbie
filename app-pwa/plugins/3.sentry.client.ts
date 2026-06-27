@@ -3,8 +3,26 @@
  * Loads only after analytics cookie consent.
  */
 import { isAnalyticsConsentGranted } from '~/utils/cookie-consent-state'
+import {
+  isPublicApiSameOriginAsPage,
+  resolvePublicApiBase,
+} from '~/utils/api-base-url'
 
 let sentryInitialized = false
+
+function buildTracePropagationTargets(apiBaseUrl: string | undefined): (string | RegExp)[] {
+  const targets: (string | RegExp)[] = [/^https?:\/\/localhost/]
+  if (import.meta.client && typeof window !== 'undefined') {
+    targets.unshift(window.location.origin)
+  }
+  const apiBase = resolvePublicApiBase(apiBaseUrl)
+  // Only attach sentry-trace/baggage to same-origin API (dev proxy). Cross-origin
+  // production calls need matching CORS allow-headers on Nest.
+  if (import.meta.client && isPublicApiSameOriginAsPage(apiBase)) {
+    targets.unshift(apiBase)
+  }
+  return targets
+}
 
 export default defineNuxtPlugin((nuxtApp) => {
   if (!import.meta.client) {
@@ -37,10 +55,9 @@ export default defineNuxtPlugin((nuxtApp) => {
             routeLabel: 'path',
           }),
         ],
-        tracePropagationTargets: [
-          typeof config.apiBaseUrl === 'string' ? config.apiBaseUrl : '',
-          /^https?:\/\/localhost/,
-        ],
+        tracePropagationTargets: buildTracePropagationTargets(
+          typeof config.apiBaseUrl === 'string' ? config.apiBaseUrl : undefined,
+        ),
         tracesSampleRate: Number.isFinite(tracesSampleRate) ? tracesSampleRate : 0,
         sendDefaultPii: false,
       })

@@ -23,7 +23,7 @@
       <button
         v-if="showRetry"
         type="button"
-        class="mt-3 cursor-pointer rounded-full border-none bg-red-700 px-5 py-2 text-sm font-semibold text-white hover:bg-red-800"
+        class="mt-3 is-clickable rounded-full border-none bg-red-700 px-5 py-2 text-sm font-semibold text-white hover:bg-red-800"
         @click="$emit('retry')"
       >
         {{ resolvedRetryLabel }}

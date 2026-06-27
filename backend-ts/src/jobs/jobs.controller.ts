@@ -341,12 +341,15 @@ export class JobsController {
       needsMemoryPipeline && qRaw
         ? JOB_LIST_MEMORY_FILTER_SELECT
         : JOB_CARD_LIST_SELECT;
+    const catalogSelect = isOwnerScopedList
+      ? listSelect
+      : `${listSelect}, profiles!inner(is_deleted)`;
     const dbClient = isOwnerScopedList
       ? this.supabase.getClient()
       : this.supabase.getReadClient();
     let query = dbClient
       .from('job_offers')
-      .select(listSelect)
+      .select(catalogSelect)
       .eq('is_deleted', false);
 
     if (effectiveCompanyId) {
@@ -364,7 +367,9 @@ export class JobsController {
       if (isActive === undefined || isActive === '') {
         query = query.eq('is_active', true);
       }
-      query = query.or('is_draft.is.null,is_draft.eq.false');
+      query = query
+        .or('is_draft.is.null,is_draft.eq.false')
+        .eq('profiles.is_deleted', false);
     }
     if (category) {
       query = query.eq('category', category);
@@ -984,6 +989,28 @@ export class JobsController {
       .eq('is_active', true);
     const list = mapRowsForViewer((rows ?? []) as JobRow[], user);
     return this.enrichJobsTopBadge(reorderJobsByIds(list, ids));
+  }
+
+  @Get(':job_id/for-edit')
+  async getForEdit(
+    @Param('job_id') jobId: string,
+    @CurrentUserDecorator() user: CurrentUser,
+  ): Promise<JobOfferResponseDto> {
+    const { data, error } = await this.supabase
+      .getClient()
+      .from('job_offers')
+      .select('*')
+      .eq('id', jobId)
+      .eq('company_id', user.id)
+      .maybeSingle();
+    if (error || !data) {
+      throw new NotFoundException('Job not found');
+    }
+    const row = data as JobRow & { is_deleted?: boolean };
+    if (row.is_deleted === true) {
+      throw new NotFoundException('Job not found');
+    }
+    return this.enrichJobTopBadge(mapRowForViewer(row, user));
   }
 
   @Get(':job_id')

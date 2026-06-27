@@ -26,7 +26,7 @@
         <div v-show="currentStep === 0" class="flex flex-col gap-7">
           <JobPostSectionCard :title="S.firmySectionBasic">
             <div
-              class="relative flex aspect-[4/3] w-full cursor-pointer flex-col items-center justify-center gap-2.5 overflow-hidden rounded-[20px] border-2 border-dashed border-marketing-green bg-marketing-soft transition-colors hover:bg-marketing-mint"
+              class="relative flex aspect-[4/3] w-full is-clickable flex-col items-center justify-center gap-2.5 overflow-hidden rounded-[20px] border-2 border-dashed border-marketing-green bg-marketing-soft transition-colors hover:bg-marketing-mint"
               role="button"
               tabindex="0"
               @keydown.enter.prevent="() => thumbInputRef?.click()"
@@ -38,7 +38,7 @@
                 ref="thumbInputRef"
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/gif"
-                class="absolute inset-0 cursor-pointer opacity-0"
+                class="absolute inset-0 is-clickable opacity-0"
                 :disabled="saving || uploadingCover"
                 @change="onCoverChange"
               >
@@ -65,7 +65,7 @@
               <div ref="categoryDropdownRef" class="relative">
                 <button
                   type="button"
-                  class="addjob-input cv-field flex w-full cursor-pointer select-none items-center justify-between text-left"
+                  class="addjob-input cv-field flex w-full is-clickable select-none items-center justify-between text-left"
                   @click.stop="categoryOpen = !categoryOpen"
                 >
                   <span :class="form.category ? 'text-black' : 'text-black/30'">{{ categoryTriggerLabel }}</span>
@@ -79,7 +79,7 @@
                     v-for="slug in CATEGORIES"
                     :key="slug"
                     type="button"
-                    class="flex w-full cursor-pointer items-center gap-3 rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
+                    class="flex w-full is-clickable items-center gap-3 rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
                     :class="{ 'bg-marketing-panel font-semibold text-black': form.category === slug }"
                     @click="form.category = slug; categoryOpen = false"
                   >
@@ -129,7 +129,7 @@
                 <label
                   v-for="opt in COMPANY_AD_SERVICE_AREAS"
                   :key="opt.value"
-                  class="flex cursor-pointer items-center gap-2 text-sm font-medium text-black/80"
+                  class="flex is-clickable items-center gap-2 text-sm font-medium text-black/80"
                 >
                   <AppCheckbox
                     :model-value="form.service_areas.includes(opt.value)"
@@ -187,7 +187,7 @@
                 </div>
               </div>
             </div>
-            <label class="flex cursor-pointer items-center gap-2 text-sm font-medium text-black/80">
+            <label class="flex is-clickable items-center gap-2 text-sm font-medium text-black/80">
               <AppCheckbox
                 :model-value="form.price_negotiable"
                 @update:model-value="(checked) => { form.price_negotiable = checked; onPriceNegotiableChange(); }"
@@ -208,15 +208,15 @@
               />
             </div>
             <div class="flex flex-wrap gap-4">
-              <label class="flex cursor-pointer items-center gap-2 text-sm font-medium text-black/80">
+              <label class="flex is-clickable items-center gap-2 text-sm font-medium text-black/80">
                 <AppCheckbox v-model="form.works_weekends" />
                 {{ S.firmyWorksWeekends }}
               </label>
-              <label class="flex cursor-pointer items-center gap-2 text-sm font-medium text-black/80">
+              <label class="flex is-clickable items-center gap-2 text-sm font-medium text-black/80">
                 <AppCheckbox v-model="form.evening_hours" />
                 {{ S.firmyEveningHours }}
               </label>
-              <label class="flex cursor-pointer items-center gap-2 text-sm font-medium text-black/80">
+              <label class="flex is-clickable items-center gap-2 text-sm font-medium text-black/80">
                 <AppCheckbox v-model="form.emergency_service" />
                 {{ S.firmyEmergency }}
               </label>
@@ -239,7 +239,7 @@
                 >
                 <label
                   v-if="form.contact_email?.trim()"
-                  class="flex cursor-pointer items-center gap-2 text-sm font-medium text-black/80"
+                  class="flex is-clickable items-center gap-2 text-sm font-medium text-black/80"
                 >
                   <AppCheckbox v-model="form.show_email_publicly" />
                   {{ S.firmyShowEmailPublic }}
@@ -255,7 +255,7 @@
                 >
                 <label
                   v-if="form.contact_phone?.trim()"
-                  class="flex cursor-pointer items-center gap-2 text-sm font-medium text-black/80"
+                  class="flex is-clickable items-center gap-2 text-sm font-medium text-black/80"
                 >
                   <AppCheckbox v-model="form.show_phone_publicly" />
                   {{ S.firmyShowPhonePublic }}
@@ -294,13 +294,13 @@
                   @input="updateGalleryCaption(gi, ($event.target as HTMLInputElement).value)"
                 >
               </div>
-              <div class="relative flex aspect-[4/3] w-[120px] shrink-0 cursor-pointer items-center justify-center rounded-[14px] border-2 border-dashed border-marketing-green bg-marketing-soft">
+              <div class="relative flex aspect-[4/3] w-[120px] shrink-0 is-clickable items-center justify-center rounded-[14px] border-2 border-dashed border-marketing-green bg-marketing-soft">
                 <input
                   ref="galleryInputRef"
                   type="file"
                   accept="image/jpeg,image/png,image/webp,image/gif"
                   multiple
-                  class="absolute inset-0 cursor-pointer opacity-0"
+                  class="absolute inset-0 is-clickable opacity-0"
                   :disabled="saving || uploadingGallery"
                   @change="onGalleryChange"
                 >
@@ -326,7 +326,7 @@
                 min="1"
                 max="12"
                 step="1"
-                class="duration-slider h-2 w-full cursor-pointer rounded-full outline-none"
+                class="duration-slider h-2 w-full is-clickable rounded-full outline-none"
                 :style="durationSliderTrackStyle"
               >
               <div class="flex justify-between text-[15px] font-medium text-black/30">
@@ -334,7 +334,7 @@
                 <span>{{ S.firmySliderMax }}</span>
               </div>
             </div>
-            <label class="mt-2 flex cursor-pointer items-start gap-3">
+            <label class="mt-2 flex is-clickable items-start gap-3">
               <AppCheckbox v-model="isTopListing" class="mt-1" />
               <span class="font-dmSans text-base font-semibold text-black">
                 {{ S.firmyTopListingLabel }}
@@ -367,7 +367,7 @@
           <button
             v-if="currentStep > 0"
             type="button"
-            class="h-12 cursor-pointer rounded-full border-2 border-marketing-green bg-transparent px-6 font-dmSans text-base font-bold text-marketing-green disabled:opacity-50"
+            class="h-12 is-clickable rounded-full border-2 border-marketing-green bg-transparent px-6 font-dmSans text-base font-bold text-marketing-green disabled:opacity-50"
             :disabled="saving"
             @click="goBack"
           >
@@ -377,7 +377,7 @@
             <button
               v-if="currentStep < lastStep"
               type="button"
-              class="h-12 cursor-pointer rounded-full border-none bg-marketing-green px-8 font-dmSans text-base font-bold text-white disabled:opacity-50"
+              class="h-12 is-clickable rounded-full border-none bg-marketing-green px-8 font-dmSans text-base font-bold text-white disabled:opacity-50"
               @click="goNext"
             >
               {{ S.firmyHubWizardNext }}
@@ -385,7 +385,7 @@
             <template v-else>
               <button
                 type="button"
-                class="h-12 cursor-pointer rounded-full border-2 border-marketing-green bg-transparent px-6 font-dmSans text-base font-bold text-marketing-green disabled:opacity-50"
+                class="h-12 is-clickable rounded-full border-2 border-marketing-green bg-transparent px-6 font-dmSans text-base font-bold text-marketing-green disabled:opacity-50"
                 :disabled="saving"
                 @click="handleDraft"
               >
@@ -393,7 +393,7 @@
               </button>
               <button
                 type="submit"
-                class="h-12 cursor-pointer rounded-full border-none bg-marketing-green px-8 font-dmSans text-base font-bold text-white disabled:opacity-50"
+                class="h-12 is-clickable rounded-full border-none bg-marketing-green px-8 font-dmSans text-base font-bold text-white disabled:opacity-50"
                 :disabled="saving"
               >
                 {{ saving ? S.loading : S.firmyPublish }}

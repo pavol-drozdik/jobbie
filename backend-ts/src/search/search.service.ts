@@ -464,7 +464,9 @@ export class SearchService {
             .from('job_offers')
             .select(JOB_SEARCH_HYDRATE_SELECT)
             .in('id', ts.ids)
-            .eq('is_deleted', false);
+            .eq('is_deleted', false)
+            .eq('is_active', true)
+            .or('is_draft.is.null,is_draft.eq.false');
           if (isForeignFilter === true) {
             hydrateQuery = hydrateQuery.eq('is_foreign', true);
           } else if (isForeignFilter === false) {

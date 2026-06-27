@@ -79,7 +79,8 @@ export type ChatOptimisticReplyPreview = Omit<ChatReplyComposerDraft, 'targetId'
 /** Room row from GET /api/chat/rooms or embedded in chat layout */
 export interface ChatRoomListItem {
   id: string
-  job_id: string
+  job_id: string | null
+  company_ad_id?: string | null
   company_id: string
   individual_id: string
   application_id: string | null

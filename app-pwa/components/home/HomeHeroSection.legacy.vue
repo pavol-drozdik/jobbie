@@ -23,7 +23,7 @@
             autocomplete="off"
             class="h-10 w-full border-none bg-transparent font-dmSans text-lg font-medium outline-none"
           >
-          <button type="submit" class="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-marketing-green text-white" :aria-label="S.navHladat">
+          <button type="submit" class="flex size-10 shrink-0 is-clickable items-center justify-center rounded-full border-none bg-marketing-green text-white" :aria-label="S.navHladat">
             <AppIcon name="search" :size="18" class="text-white" />
           </button>
         </form>

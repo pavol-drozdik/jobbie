@@ -140,6 +140,7 @@
           <div class="flex flex-col gap-2">
             <label class="field-label" for="pricing-inquiry-service">{{ S.pricingContactService }}</label>
             <AppFormDropdown
+              id="pricing-inquiry-service"
               :model-value="form.service_id"
               :options="serviceOptions"
               :placeholder="S.pricingContactServicePlaceholder"

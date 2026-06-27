@@ -2,7 +2,8 @@ import { IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-valida
 
 export interface ChatRoomResponseDto {
   id: string;
-  job_id: string;
+  job_id: string | null;
+  company_ad_id?: string | null;
   company_id: string;
   individual_id: string;
   application_id: string | null;

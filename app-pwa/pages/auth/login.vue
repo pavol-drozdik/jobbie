@@ -5,9 +5,7 @@
     <div
       class="flex w-full max-w-[1020px] flex-col overflow-hidden rounded-[24px] shadow-[0_8px_40px_rgba(0,0,0,0.13)] min-[701px]:min-h-[620px] min-[701px]:flex-row"
     >
-      <div
-        class="relative hidden w-full flex-col justify-between overflow-hidden bg-[linear-gradient(155deg,#15803d_0%,#22c55e_100%)] px-11 py-10 text-white before:pointer-events-none before:absolute before:-right-[100px] before:-top-20 before:size-[320px] before:rounded-full before:bg-white/[0.07] after:pointer-events-none after:absolute after:-left-[60px] after:bottom-10 after:size-[200px] after:rounded-full after:bg-white/[0.07] min-[701px]:flex min-[701px]:w-[42%] min-[701px]:px-11 min-[701px]:py-10"
-      >
+      <div :class="authMarketingPanelClass">
         <AppBrandLogo
           variant="mark"
           root-class="relative z-[1]"
@@ -44,7 +42,7 @@
           </a>
           <button
             type="button"
-            class="h-14 w-full cursor-pointer rounded-full border-[1.5px] border-black/12 bg-white text-lg font-semibold text-black transition-[background-color,border-color] duration-150 hover:border-black/20 hover:bg-marketing-soft"
+            class="h-14 w-full is-clickable rounded-full border-[1.5px] border-black/12 bg-white text-lg font-semibold text-black transition-[background-color,border-color] duration-150 hover:border-black/20 hover:bg-marketing-soft"
             @click="returnToLoginForm"
           >
             {{ S.forgotPasswordBackToLogin }}
@@ -61,6 +59,12 @@
           </p>
 
           <p v-if="error" class="mb-4 text-sm text-red-600" role="alert">{{ error }}</p>
+
+          <AuthTurnstileWidget
+            v-model="forgotCaptchaToken"
+            :active="forgotPasswordStep === 'email'"
+            class="mb-4"
+          />
 
           <form class="contents" @submit.prevent="submitForgotPasswordEmail">
             <div class="mb-7 flex flex-col gap-1.5">
@@ -89,7 +93,7 @@
 
             <button
               type="submit"
-              class="mb-4 h-14 w-full cursor-pointer rounded-full border-none bg-marketing-green text-lg font-bold text-white transition-opacity duration-200 hover:opacity-[0.88] disabled:cursor-not-allowed disabled:opacity-50"
+              class="mb-4 h-14 w-full is-clickable rounded-full border-none bg-marketing-green text-lg font-bold text-white transition-opacity duration-200 hover:opacity-[0.88] disabled:is-disabled-cursor disabled:opacity-50"
               :disabled="forgotLoading"
             >
               {{ forgotLoading ? S.forgotPasswordSubmitting : S.forgotPasswordSubmit }}
@@ -113,9 +117,11 @@
         <p v-if="error" class="mb-4 text-sm text-red-600" role="alert">{{ error }}</p>
         <p v-if="infoMessage" class="mb-4 text-sm text-black/60" role="status">{{ infoMessage }}</p>
 
-        <div v-if="showTurnstile" class="mb-4">
-          <div :key="turnstileKey" ref="turnstileContainer" class="min-h-[65px] w-full" />
-        </div>
+        <AuthTurnstileWidget
+          v-model="loginCaptchaToken"
+          :active="showTurnstile"
+          class="mb-4"
+        />
 
         <form class="contents" @submit.prevent="handleLoginSubmit">
           <div class="mb-5 flex flex-col gap-1.5">
@@ -143,7 +149,7 @@
           </div>
 
           <div class="mb-5 flex flex-col gap-1.5">
-            <label :class="fieldLabelClass" for="login-password">Heslo</label>
+            <label :class="fieldLabelClass" for="login-password">{{ S.fieldLabelPassword }}</label>
             <div class="relative flex items-center">
               <input
                 id="login-password"
@@ -195,31 +201,10 @@
           </div>
 
           <div class="mb-7 flex items-center justify-between">
-            <button
-              type="button"
-              class="flex cursor-pointer items-center gap-2.5 border-none bg-transparent p-0 text-left"
-              @click="rememberMe = !rememberMe"
-            >
-              <span
-                class="flex size-[22px] shrink-0 items-center justify-center rounded-md border-[1.5px] border-gray-300 bg-marketing-soft transition-[background-color,border-color] duration-200"
-                :class="rememberMe ? 'border-marketing-green bg-marketing-green' : ''"
-              >
-                <svg
-                  v-show="rememberMe"
-                  class="size-3 text-white"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  aria-hidden="true"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
-              </span>
+            <label class="flex is-clickable items-center gap-2.5">
+              <AppCheckbox v-model="rememberMe" />
               <span class="text-[15px] font-medium text-black/65">Zapamätať si ma</span>
-            </button>
+            </label>
             <button
               type="button"
               class="border-none bg-transparent p-0 text-[15px] font-semibold text-marketing-green transition-opacity duration-150 hover:opacity-75 disabled:opacity-50"
@@ -232,7 +217,7 @@
 
           <button
             type="submit"
-            class="mb-4 h-14 w-full cursor-pointer rounded-full border-none bg-marketing-green text-lg font-bold text-white transition-opacity duration-200 hover:opacity-[0.88] disabled:cursor-not-allowed disabled:opacity-50"
+            class="mb-4 h-14 w-full is-clickable rounded-full border-none bg-marketing-green text-lg font-bold text-white transition-opacity duration-200 hover:opacity-[0.88] disabled:is-disabled-cursor disabled:opacity-50"
             :disabled="loading || oauthLoading"
           >
             {{ loading ? 'Načítava sa…' : 'Prihlásiť sa' }}
@@ -247,7 +232,7 @@
 
         <button
           type="button"
-          class="mb-7 flex h-14 w-full cursor-pointer items-center justify-center gap-2.5 rounded-full border-[1.5px] border-black/12 bg-white text-[17px] font-semibold text-black transition-[background-color,border-color] duration-150 hover:border-black/20 hover:bg-marketing-soft disabled:cursor-not-allowed disabled:opacity-50"
+          class="mb-7 flex h-14 w-full is-clickable items-center justify-center gap-2.5 rounded-full border-[1.5px] border-black/12 bg-white text-[17px] font-semibold text-black transition-[background-color,border-color] duration-150 hover:border-black/20 hover:bg-marketing-soft disabled:is-disabled-cursor disabled:opacity-50"
           :disabled="oauthLoading || loading"
           @click="oauthGoogle"
         >
@@ -281,6 +266,7 @@
             Registruj sa
           </NuxtLink>
         </p>
+        <AuthLegalFooter class="mt-6" />
         </template>
       </div>
     </div>
@@ -300,6 +286,7 @@ import { mapSupabaseForgotPasswordError } from '~/utils/map-supabase-forgot-pass
 import { mapSupabaseLoginError } from '~/utils/map-supabase-login-error'
 import { resolveWebmailUrl } from '~/utils/email-webmail-url'
 import { S } from '~/utils/strings'
+import { authMarketingPanelClass } from '~/utils/marketing-ui'
 import { formFieldLabelClass, formTextInputTrailingIconClass } from '~/utils/form-field-ui'
 
 const fieldLabelClass = formFieldLabelClass
@@ -339,57 +326,24 @@ const error = ref<string | null>(null)
 const infoMessage = ref<string | null>(null)
 const rememberMe = ref(false)
 const passwordVisible = ref(false)
-const captchaToken = ref('')
-const turnstileSiteKey = computed(
-  () => String(config.turnstileSiteKey ?? '').trim(),
+const loginCaptchaToken = ref('')
+const forgotCaptchaToken = ref('')
+const turnstileEnabled = computed(
+  () => String(config.turnstileSiteKey ?? '').trim().length > 0,
 )
-const turnstileContainer = ref<HTMLElement | null>(null)
-const turnstileWidgetId = ref<string | undefined>(undefined)
-const turnstileKey = ref(0)
 const captchaRequired = ref(false)
 const loginFailedOnce = ref(false)
 const showTurnstile = computed(
   () =>
     forgotPasswordStep.value === 'login' &&
-    Boolean(turnstileSiteKey.value) &&
+    turnstileEnabled.value &&
     (captchaRequired.value || loginFailedOnce.value),
 )
 const forgotWebmailUrl = computed(() => resolveWebmailUrl(forgotEmailForWebmail.value))
 
-declare global {
-  interface Window {
-    turnstile?: {
-      render: (
-        el: HTMLElement,
-        opts: { sitekey: string; callback: (token: string) => void },
-      ) => string
-      remove: (id: string) => void
-    }
-  }
-}
-
-function mountTurnstile(): void {
-  if (!import.meta.client || !turnstileSiteKey.value || !turnstileContainer.value) return
-  const siteKey = turnstileSiteKey.value
-  const render = () => {
-    if (!window.turnstile?.render || !turnstileContainer.value) return
-    turnstileWidgetId.value = window.turnstile.render(turnstileContainer.value, {
-      sitekey: siteKey,
-      callback: (token: string) => {
-        captchaToken.value = token
-      },
-    })
-  }
-  if (window.turnstile?.render) {
-    render()
-    return
-  }
-  const s = document.createElement('script')
-  s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js'
-  s.crossOrigin = 'anonymous'
-  s.async = true
-  s.onload = () => render()
-  document.head.appendChild(s)
+function trimCaptchaToken(token: string): string | undefined {
+  const trimmed = token.trim()
+  return trimmed || undefined
 }
 
 function getPostLoginPath(): string {
@@ -407,7 +361,7 @@ async function recordLoginAttempt(success: boolean): Promise<boolean> {
     body: {
       email: email.value.trim(),
       success,
-      captcha_token: captchaToken.value || undefined,
+      captcha_token: trimCaptchaToken(loginCaptchaToken.value),
     },
     skipSessionExpiry: true,
   })
@@ -460,7 +414,7 @@ async function runPasswordLogin(): Promise<void> {
     return
   }
   try {
-    if (showTurnstile.value && !captchaToken.value.trim()) {
+    if (showTurnstile.value && !loginCaptchaToken.value.trim()) {
       error.value = 'Potvrďte, že nie ste robot (Turnstile).'
       return
     }
@@ -472,23 +426,19 @@ async function runPasswordLogin(): Promise<void> {
       method: 'POST',
       body: {
         email: email.value.trim(),
-        captcha_token: captchaToken.value || undefined,
+        captcha_token: trimCaptchaToken(loginCaptchaToken.value),
       },
       skipSessionExpiry: true,
     })
     if (statusRes.status === 400 && !statusRes.ok) {
       error.value = 'Overenie CAPTCHA zlyhalo. Skúste znova.'
       loginFailedOnce.value = true
-      await nextTick()
-      mountTurnstile()
       return
     }
     if (statusRes.ok && statusRes.data) {
       captchaRequired.value = Boolean(statusRes.data.captcha_required)
-      if (statusRes.data.captcha_required && !captchaToken.value.trim()) {
+      if (statusRes.data.captcha_required && !loginCaptchaToken.value.trim()) {
         error.value = 'Potvrďte, že nie ste robot (Turnstile).'
-        await nextTick()
-        mountTurnstile()
         return
       }
       if (statusRes.data.allowed === false) {
@@ -499,15 +449,16 @@ async function runPasswordLogin(): Promise<void> {
 
     setAuthRememberMePreference(rememberMe.value)
     setAuthLoginBootstrap(true)
+    const loginCaptcha = trimCaptchaToken(loginCaptchaToken.value)
     const { data: signInData, error: e } = await supabase.auth.signInWithPassword({
       email: email.value.trim(),
       password: password.value,
+      options: loginCaptcha ? { captchaToken: loginCaptcha } : undefined,
     })
     if (e) {
       loginFailedOnce.value = true
       captchaRequired.value = true
-      await nextTick()
-      mountTurnstile()
+      loginCaptchaToken.value = ''
       try {
         const lockedOut = await recordLoginAttempt(false)
         if (lockedOut) {
@@ -560,6 +511,10 @@ async function oauthGoogle(): Promise<void> {
 async function sendForgotPasswordEmail(em: string): Promise<void> {
   error.value = null
   infoMessage.value = null
+  if (turnstileEnabled.value && !forgotCaptchaToken.value.trim()) {
+    error.value = 'Potvrďte, že nie ste robot (Turnstile).'
+    return
+  }
   forgotLoading.value = true
   let supabaseError: { code?: string; message?: string } | null = null
   try {
@@ -568,7 +523,11 @@ async function sendForgotPasswordEmail(em: string): Promise<void> {
       supabaseError = { code: 'validation_failed', message: 'redirect origin missing' }
     } else {
       const redirectTo = `${origin}${AUTH_RESET_PASSWORD_PATH}`
-      const { error: e } = await supabase.auth.resetPasswordForEmail(em, { redirectTo })
+      const forgotCaptcha = trimCaptchaToken(forgotCaptchaToken.value)
+      const { error: e } = await supabase.auth.resetPasswordForEmail(em, {
+        redirectTo,
+        ...(forgotCaptcha ? { captchaToken: forgotCaptcha } : {}),
+      })
       supabaseError = e
     }
   } catch (err) {
@@ -599,6 +558,7 @@ async function sendForgotPasswordEmail(em: string): Promise<void> {
 
 function returnToLoginForm(): void {
   forgotPasswordStep.value = 'login'
+  forgotCaptchaToken.value = ''
   error.value = null
   infoMessage.value = null
   nextTick(() => beginConditionalPasskeyAutofill())
@@ -626,15 +586,12 @@ async function handleForgotPassword(): Promise<void> {
   await sendForgotPasswordEmail(em)
 }
 
-watch(showTurnstile, (visible) => {
-  if (visible) {
-    nextTick(() => mountTurnstile())
-  }
-})
-
 watch(forgotPasswordStep, (step) => {
   if (step !== 'login') {
     abortConditionalPasskeySignIn()
+  }
+  if (step !== 'email') {
+    forgotCaptchaToken.value = ''
   }
 })
 

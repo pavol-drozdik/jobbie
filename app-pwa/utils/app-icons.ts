@@ -111,6 +111,20 @@ export type AppIconName =
   | 'mail'
 
   | 'shield-check'
+  | 'check'
+  | 'eye'
+  | 'eye-off'
+  | 'store'
+  | 'at-sign'
+  | 'loader'
+  | 'copy'
+  | 'upload'
+  | 'graduation-cap'
+  | 'languages'
+  | 'code'
+  | 'download'
+  | 'palette'
+  | 'circle-check'
 
 
 

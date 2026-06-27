@@ -20,6 +20,7 @@ const props = withDefaults(
     emptyValue?: string
     /** default: full-width form field; toolbar: compact trigger for rich-text toolbar */
     variant?: 'default' | 'toolbar'
+    id?: string
   }>(),
   {
     placeholder: 'Vyberte možnosť',
@@ -27,13 +28,14 @@ const props = withDefaults(
     bordered: false,
     emptyValue: undefined,
     variant: 'default',
+    id: undefined,
   },
 )
 
 const triggerClass = computed(() => {
   const isToolbar = props.variant === 'toolbar'
   const base =
-    'app-form-dropdown__trigger flex cursor-pointer select-none items-center justify-between rounded-full text-left font-dmSans outline-none ring-marketing-green focus-visible:ring-2 disabled:cursor-not-allowed disabled:text-black/35'
+    'app-form-dropdown__trigger flex is-clickable select-none items-center justify-between rounded-full text-left font-dmSans outline-none ring-marketing-green focus-visible:ring-2 disabled:is-disabled-cursor disabled:text-black/35'
   if (isToolbar) {
     return `${base} app-form-dropdown__trigger--toolbar app-form-dropdown__trigger--bordered cv-field`
   }
@@ -105,9 +107,12 @@ onBeforeUnmount(() => {
 <template>
   <div ref="rootRef" class="relative" :class="disabled ? 'cv-field-is-disabled' : ''">
     <button
+      :id="id"
       type="button"
       :class="triggerClass"
       :disabled="disabled"
+      :aria-expanded="open"
+      aria-haspopup="listbox"
       @click.stop="toggleOpen"
     >
       <span :class="showPlaceholder ? 'text-black/30' : 'text-black'">
@@ -123,6 +128,7 @@ onBeforeUnmount(() => {
     <div
       v-show="open"
       :class="panelClass"
+      role="listbox"
     >
       <div class="app-form-dropdown__panel-list">
         <button

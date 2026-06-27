@@ -16,7 +16,7 @@
     </p>
     <img
       src="/img/jobbie-app.webp"
-      alt=""
+      alt="Jobbie mobilná aplikácia — ukážka rozhrania"
       width="300"
       height="600"
       loading="lazy"
@@ -51,9 +51,9 @@
         Často kladené <span class="text-marketing-green">otázky</span>
       </h2>
       <div
-        class="flex w-fit max-w-full flex-wrap items-center justify-center self-center rounded-[999px] bg-white p-1.5 shadow-[0_0_3px_0_rgba(0,0,0,0.2)] marketing:rounded-full"
+        class="mx-[10px] flex w-fit max-w-full flex-wrap items-center justify-center self-center rounded-[999px] bg-white p-1.5 shadow-[0_0_3px_0_rgba(0,0,0,0.2)] marketing:rounded-full"
         role="tablist"
-        aria-label="Rola pre otázky"
+        aria-label="Rola"
       >
         <button
           v-for="tab in carouselTabs"
@@ -61,8 +61,8 @@
           type="button"
           role="tab"
           :aria-selected="carouselRole === tab.role"
-          class="m-1 cursor-pointer whitespace-nowrap rounded-full border-none bg-transparent px-3 py-2 font-dmSans text-[15px] font-bold text-black transition-[background-color,color] duration-200 max-[600px]:px-3 max-[600px]:py-2 marketing:m-[5px] marketing:px-5 marketing:py-2.5 marketing:text-[22px] aria-selected:bg-marketing-green aria-selected:text-white"
-          :class="carouselRole === tab.role ? 'bg-marketing-green text-white' : ''"
+          class="m-1 is-clickable whitespace-nowrap rounded-full border-none px-3 py-2 font-dmSans text-[15px] font-bold transition-[background-color,color] duration-200 max-[600px]:px-3 max-[600px]:py-2 marketing:m-[5px] marketing:px-5 marketing:py-2.5 marketing:text-[22px] aria-selected:bg-marketing-green aria-selected:text-white"
+          :class="carouselRole === tab.role ? 'bg-marketing-green text-white' : 'bg-transparent text-black'"
           @click="emit('select-role', tab.role)"
         >
           {{ tab.label }}
@@ -76,7 +76,10 @@
         >
           <button
             type="button"
-            class="flex w-full cursor-pointer items-center justify-between gap-4 border-none bg-transparent px-5 py-4 text-left marketing:px-7 marketing:py-5"
+            class="flex w-full is-clickable items-center justify-between gap-4 border-none bg-transparent px-5 py-4 text-left marketing:px-7 marketing:py-5"
+            :aria-expanded="openFaqIndex === i"
+            :aria-controls="`home-faq-panel-${carouselRole}-${i}`"
+            :id="`home-faq-trigger-${carouselRole}-${i}`"
             @click="emit('toggle-faq', i)"
           >
             <span class="font-dmSans text-[17px] font-bold text-black marketing:text-[22px]">{{ item.question }}</span>
@@ -87,8 +90,11 @@
             >+</span>
           </button>
           <div
-            class="overflow-hidden px-5 transition-[max-height,padding] duration-[350ms] ease-in-out marketing:px-7"
-            :class="openFaqIndex === i ? 'max-h-[360px]' : 'max-h-0'"
+            v-show="openFaqIndex === i"
+            :id="`home-faq-panel-${carouselRole}-${i}`"
+            role="region"
+            class="overflow-hidden px-5 marketing:px-7"
+            :aria-labelledby="`home-faq-trigger-${carouselRole}-${i}`"
           >
             <p class="m-0 pb-4 text-base font-medium text-black/[0.78] marketing:pb-5 marketing:text-xl">{{ item.answer }}</p>
           </div>
@@ -102,7 +108,7 @@
         <NuxtImg
           class="mx-auto block w-full rounded-[20px] object-contain marketing:w-[90%]"
           src="/img/perspective.png"
-          alt=""
+          alt="Novinky zo sveta práce — ilustrácia"
           width="640"
           height="480"
           format="webp"
@@ -146,7 +152,7 @@
           <button
             type="submit"
             :disabled="phase === 'loading'"
-            class="cursor-pointer rounded-full border-none bg-marketing-green px-5 py-2.5 font-dmSans text-lg font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            class="is-clickable rounded-full border-none bg-marketing-green px-5 py-2.5 font-dmSans text-lg font-bold text-white disabled:is-disabled-cursor disabled:opacity-60"
           >
             {{ phase === 'loading' ? S.newsletterSubscribeSubmitting : S.homeNewsletterSubmit }}
           </button>

@@ -27,20 +27,27 @@ const emit = defineEmits<{
       class="rounded-[20px] bg-white p-6 shadow-[0_0_12px_rgba(0,0,0,0.07)]"
     >
       <h2 class="m-0 mb-4 font-dmSans text-[17px] font-extrabold text-black">Obsah článku</h2>
-      <nav class="flex flex-col gap-1" aria-label="Obsah článku">
+      <nav class="flex flex-col" aria-label="Obsah článku">
         <a
           v-for="(item, idx) in tocItems"
           :key="item.id"
           :href="`#${item.id}`"
-          class="flex cursor-pointer items-center gap-2 rounded-[10px] border-l-[3px] px-2.5 py-2 font-dmSans text-sm font-medium no-underline transition-colors"
+          class="flex is-clickable items-center gap-3 border-b border-black/[0.06] py-2.5 font-dmSans text-sm no-underline transition-colors last:border-b-0"
           :class="
             activeTocId === item.id
-              ? 'border-marketing-green bg-[#f0faf4] text-marketing-green'
-              : 'border-transparent text-black/55 hover:border-marketing-green hover:bg-[#f0faf4] hover:text-marketing-green'
+              ? 'font-bold text-black'
+              : 'font-medium text-black/50 hover:text-marketing-green'
           "
           @click.prevent="emit('tocClick', item.id)"
         >
-          <span class="min-w-[18px] text-xs font-bold text-marketing-green">{{ idx + 1 }}</span>
+          <span
+            class="flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold leading-none"
+            :class="
+              activeTocId === item.id
+                ? 'bg-marketing-green text-white'
+                : 'bg-black/[0.06] text-black/40'
+            "
+          >{{ idx + 1 }}</span>
           {{ item.label }}
         </a>
       </nav>
@@ -111,7 +118,7 @@ const emit = defineEmits<{
       >
       <button
         type="button"
-        class="h-11 w-full cursor-pointer rounded-full border-none bg-black font-dmSans text-[15px] font-bold text-white transition-opacity hover:opacity-80 disabled:opacity-60"
+        class="h-11 w-full is-clickable rounded-full border-none bg-black font-dmSans text-[15px] font-bold text-white transition-opacity hover:opacity-80 disabled:opacity-60"
         :disabled="newsletterPhase === 'loading'"
         @click="emit('newsletterSubmit')"
       >

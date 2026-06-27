@@ -8,7 +8,7 @@
       <button
         id="find-filter-experience"
         type="button"
-        class="flex h-[60px] w-full cursor-pointer select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
+        class="flex h-[60px] w-full is-clickable select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
         :class="ctx.experienceTriggerMuted ? 'text-black/30' : 'text-black/80'"
         @click.stop="ctx.toggleDropdown('experience')"
       >
@@ -29,7 +29,7 @@
           v-for="opt in ctx.experienceOptions"
           :key="opt.value || 'any'"
           type="button"
-          class="w-full cursor-pointer rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
+          class="w-full is-clickable rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
           :class="{
             'bg-marketing-panel font-semibold':
               cvFilters && cvFilters.experience === opt.value,
@@ -50,7 +50,7 @@
       <button
         id="find-filter-date"
         type="button"
-        class="flex h-[60px] w-full cursor-pointer select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
+        class="flex h-[60px] w-full is-clickable select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
         :class="ctx.dateTriggerMuted ? 'text-black/30' : 'text-black/80'"
         @click.stop="ctx.toggleDropdown('date')"
       >
@@ -71,7 +71,7 @@
           v-for="opt in ctx.dateOptions"
           :key="opt.value"
           type="button"
-          class="w-full cursor-pointer rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
+          class="w-full is-clickable rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
           :class="{ 'bg-marketing-panel font-semibold': ctx.filters.date_range === opt.value }"
           @click="ctx.selectDateRange(opt.value)"
         >
@@ -88,7 +88,7 @@
       <button
         id="find-filter-category"
         type="button"
-        class="flex h-[60px] w-full cursor-pointer select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
+        class="flex h-[60px] w-full is-clickable select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
         :class="ctx.categoryTriggerMuted ? 'text-black/30' : 'text-black/80'"
         @click.stop="ctx.toggleDropdown('category')"
       >
@@ -107,7 +107,7 @@
       >
         <button
           type="button"
-          class="mb-1 w-full cursor-pointer rounded-[10px] border-0 border-b border-black/10 bg-transparent px-4 py-3 text-left font-dmSans text-lg font-semibold text-black/80 transition-colors hover:bg-marketing-mint"
+          class="mb-1 w-full is-clickable rounded-[10px] border-0 border-b border-black/10 bg-transparent px-4 py-3 text-left font-dmSans text-lg font-semibold text-black/80 transition-colors hover:bg-marketing-mint"
           @click="ctx.clearCategories()"
         >
           {{ isCvDatabase ? S.cvDbJobTypeAny : S.allCategories }}
@@ -116,7 +116,7 @@
           v-for="opt in ctx.categoryMultiOptions"
           :key="opt.value"
           type="button"
-          class="flex w-full cursor-pointer items-center gap-3 rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
+          class="flex w-full is-clickable items-center gap-3 rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
           @click="ctx.toggleCategory(opt.value)"
         >
           <span
@@ -169,7 +169,7 @@
       <button
         id="find-filter-pay"
         type="button"
-        class="flex h-[60px] w-full cursor-pointer select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
+        class="flex h-[60px] w-full is-clickable select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
         :class="payTriggerMuted ? 'text-black/30' : 'text-black/80'"
         @click.stop="ctx.toggleDropdown('pay')"
       >
@@ -203,7 +203,7 @@
             v-for="opt in ctx.payTypeOptions"
             :key="opt.value"
             type="button"
-            class="w-full cursor-pointer rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
+            class="w-full is-clickable rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
             :class="{
               'bg-marketing-panel font-semibold':
                 (opt.value === 'all' && !ctx.filters.salary_type.trim()) ||
@@ -237,7 +237,7 @@
       <button
         id="find-filter-jobtype"
         type="button"
-        class="flex h-[60px] w-full cursor-pointer select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
+        class="flex h-[60px] w-full is-clickable select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
         :class="jobTypeTriggerMuted ? 'text-black/30' : 'text-black/80'"
         @click.stop="ctx.toggleDropdown('jobtype')"
       >
@@ -259,7 +259,7 @@
             v-for="opt in ctx.availabilityOptions"
             :key="opt.value || 'any'"
             type="button"
-            class="w-full cursor-pointer rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
+            class="w-full is-clickable rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
             :class="{
               'bg-marketing-panel font-semibold':
                 cvFilters && cvFilters.availability === opt.value,
@@ -274,7 +274,7 @@
             v-for="opt in ctx.jobTypeOptions"
             :key="opt.value"
             type="button"
-            class="w-full cursor-pointer rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
+            class="w-full is-clickable rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
             :class="{ 'bg-marketing-panel font-semibold': ctx.filters.job_type === opt.value }"
             @click="ctx.selectJobType(opt.value)"
           >
@@ -295,7 +295,7 @@
       <button
         id="find-filter-sort"
         type="button"
-        class="flex h-[60px] w-full cursor-pointer select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
+        class="flex h-[60px] w-full is-clickable select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
         :class="ctx.sortTriggerMuted ? 'text-black/30' : 'text-black/80'"
         @click.stop="ctx.toggleDropdown('sort')"
       >
@@ -316,7 +316,7 @@
           v-for="opt in ctx.sortOptions"
           :key="opt.value"
           type="button"
-          class="w-full cursor-pointer rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
+          class="w-full is-clickable rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
           :class="{
             'bg-marketing-panel font-semibold': isCvDatabase
               ? cvFilters && cvFilters.sort === opt.value
@@ -337,7 +337,7 @@
       <button
         id="find-filter-skills"
         type="button"
-        class="flex h-[60px] w-full cursor-pointer select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
+        class="flex h-[60px] w-full is-clickable select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
         :class="ctx.skillsTriggerMuted ? 'text-black/30' : 'text-black/80'"
         @click.stop="ctx.toggleDropdown('skills')"
       >
@@ -372,7 +372,7 @@
       <button
         id="find-filter-languages"
         type="button"
-        class="flex h-[60px] w-full cursor-pointer select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
+        class="flex h-[60px] w-full is-clickable select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
         :class="ctx.languagesTriggerMuted ? 'text-black/30' : 'text-black/80'"
         @click.stop="ctx.toggleDropdown('languages')"
       >
@@ -391,7 +391,7 @@
       >
         <button
           type="button"
-          class="mb-1 w-full cursor-pointer rounded-[10px] border-0 border-b border-black/10 bg-transparent px-4 py-3 text-left font-dmSans text-lg font-semibold text-black/80 transition-colors hover:bg-marketing-mint"
+          class="mb-1 w-full is-clickable rounded-[10px] border-0 border-b border-black/10 bg-transparent px-4 py-3 text-left font-dmSans text-lg font-semibold text-black/80 transition-colors hover:bg-marketing-mint"
           @click="ctx.clearCvLanguages?.()"
         >
           {{ S.cvDbLanguagesAny }}
@@ -400,7 +400,7 @@
           v-for="opt in ctx.languageMultiOptions"
           :key="opt.value"
           type="button"
-          class="flex w-full cursor-pointer items-center gap-3 rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
+          class="flex w-full is-clickable items-center gap-3 rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
           @click="ctx.toggleLanguage?.(opt.value)"
         >
           <span
@@ -421,7 +421,7 @@
             v-for="opt in ctx.languageLevelOptions"
             :key="opt.value || 'any-level'"
             type="button"
-            class="w-full cursor-pointer rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
+            class="w-full is-clickable rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
             :class="{
               'bg-marketing-panel font-semibold': ctx.sharedLanguageMinLevel === opt.value,
             }"
@@ -441,7 +441,7 @@
       <button
         id="find-filter-education"
         type="button"
-        class="flex h-[60px] w-full cursor-pointer select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
+        class="flex h-[60px] w-full is-clickable select-none items-center justify-between rounded-full border-none bg-marketing-soft px-5 font-dmSans text-lg font-normal outline-none"
         :class="ctx.educationTriggerMuted ? 'text-black/30' : 'text-black/80'"
         @click.stop="ctx.toggleDropdown('education')"
       >
@@ -462,7 +462,7 @@
           v-for="opt in ctx.educationOptions"
           :key="opt.value || 'any'"
           type="button"
-          class="w-full cursor-pointer rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
+          class="w-full is-clickable rounded-[10px] border-none bg-transparent px-4 py-3 text-left font-dmSans text-lg text-black/80 transition-colors hover:bg-marketing-mint"
           :class="{
             'bg-marketing-panel font-semibold':
               cvFilters && cvFilters.educationLevel === opt.value,

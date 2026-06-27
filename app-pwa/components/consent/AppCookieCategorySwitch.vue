@@ -1,5 +1,5 @@
 <template>
-  <label class="relative inline-block h-7 w-12 shrink-0 cursor-pointer">
+  <label class="relative inline-block h-7 w-12 shrink-0 is-clickable">
     <input
       :checked="modelValue"
       type="checkbox"

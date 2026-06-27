@@ -205,7 +205,7 @@ export default defineNuxtPlugin(async () => {
     data: { session: s },
   } = await supabase.auth.getSession()
   // HttpOnly jb_* may be valid when sessionStorage hint / auth cache are missing (hard refresh edge cases).
-  if (!s?.access_token) {
+  if (!s?.access_token && (shouldRestoreBffOnColdBoot() || hasActiveBffSession())) {
     const refreshed = await refreshBffSessionSingleFlight(apiBase)
     if (refreshed.ok) {
       const access = applyBffRefreshAccessToAuthState(refreshed.body)
@@ -221,6 +221,11 @@ export default defineNuxtPlugin(async () => {
           s = afterRefresh.session
         }
       }
+    } else {
+      user.value = null
+      profile.value = null
+      clearCachedAuthSnapshot()
+      clearBffSessionClientState()
     }
   }
   session.value = s ? { access_token: s.access_token } : null

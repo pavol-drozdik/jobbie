@@ -175,7 +175,11 @@ export function useWebPushRegistration(): {
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
       return
     }
-    await runSubscribe()
+    try {
+      await runSubscribe()
+    } catch {
+      // Background lifecycle sync must not surface as unhandled Vue errors.
+    }
   }
 
   async function requestPermissionAndSubscribe(): Promise<WebPushSubscribeResult> {

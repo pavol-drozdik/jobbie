@@ -1,16 +1,11 @@
 <template>
   <div>
     <template v-if="collectBusinessBilling">
-      <p class="mb-2 text-sm font-semibold text-black/70">
-        {{ S.checkoutBuyerTypeLabel }}
+      <p class="mb-4 text-sm font-medium text-black/70">
+        {{ accountPurchaserType === 'company' ? S.checkoutBuyerTypeFixedCompany : S.checkoutBuyerTypeFixedIndividual }}
       </p>
-      <JaSegmentedToggle
-        v-model="purchaserType"
-        class="mb-4"
-        :options="purchaserTypeOptions"
-      />
 
-      <div v-show="purchaserType === 'company'" class="mb-4 space-y-4">
+      <div v-show="accountPurchaserType === 'company'" class="mb-4 space-y-4">
         <div ref="taxIdRef" :class="[jobbieStripeElementsMountClass, 'min-h-[88px]']" />
         <div class="grid gap-3 sm:grid-cols-2">
           <div :class="fieldRowClass">
@@ -39,9 +34,9 @@
       </div>
 
       <div
-        v-show="purchaserType === 'individual' || purchaserType === 'company'"
+        v-show="accountPurchaserType === 'individual' || accountPurchaserType === 'company'"
         class="mb-4 space-y-4"
-        :class="purchaserType === 'company' ? 'border-t border-black/10 pt-4' : ''"
+        :class="accountPurchaserType === 'company' ? 'border-t border-black/10 pt-4' : ''"
       >
         <div :class="fieldRowClass">
           <label :class="fieldLabelClass">
@@ -81,8 +76,8 @@
       </div>
 
       <label
-        v-if="purchaserType === 'individual'"
-        class="mb-4 flex cursor-pointer items-start gap-3 text-sm leading-snug text-black/70"
+        v-if="accountPurchaserType === 'individual'"
+        class="mb-4 flex is-clickable items-start gap-3 text-sm leading-snug text-black/70"
       >
         <input
           v-model="skResidenceAttestation"
@@ -125,6 +120,7 @@ import {
   type CheckoutBillingPayload,
   type CheckoutPurchaserType,
   isValidSkIcoFormat,
+  resolveAccountPurchaserType,
 } from '~/utils/checkout-billing'
 import {
   formFieldLabelClass,
@@ -153,6 +149,7 @@ import { S } from '~/utils/strings'
 
 const config = useRuntimeConfig().public
 const stripePublishableKey = config.stripePublishableKey as string
+const { user } = useAuth()
 
 const props = withDefaults(
   defineProps<{
@@ -205,13 +202,13 @@ const fieldInputClass = formTextInputClass
 
 const primaryButtonClass = computed(() =>
   props.variant === 'auth'
-    ? 'h-14 w-full cursor-pointer rounded-full border-none bg-marketing-green text-lg font-bold text-white transition-opacity duration-200 hover:opacity-[0.88] disabled:cursor-not-allowed disabled:opacity-50 sm:flex-1'
+    ? 'h-14 w-full is-clickable rounded-full border-none bg-marketing-green text-lg font-bold text-white transition-opacity duration-200 hover:opacity-[0.88] disabled:is-disabled-cursor disabled:opacity-50 sm:flex-1'
     : 'btn-green disabled:opacity-50 sm:flex-1',
 )
 
 const secondaryButtonClass = computed(() =>
   props.variant === 'auth'
-    ? 'h-14 w-full cursor-pointer rounded-full border-[1.5px] border-black/15 bg-white text-lg font-semibold text-black/70 transition-opacity hover:opacity-80 disabled:opacity-50 sm:flex-1'
+    ? 'h-14 w-full is-clickable rounded-full border-[1.5px] border-black/15 bg-white text-lg font-semibold text-black/70 transition-opacity hover:opacity-80 disabled:opacity-50 sm:flex-1'
     : 'w-full rounded-lg border px-4 py-2 font-medium transition-colors disabled:opacity-50 sm:w-auto sm:flex-1',
 )
 
@@ -226,11 +223,9 @@ const paying = ref(false)
 const payError = ref<string | null>(null)
 const activeSecret = ref('')
 
-const purchaserType = ref<CheckoutPurchaserType>('company')
-const purchaserTypeOptions = [
-  { value: 'individual', label: S.checkoutBuyerIndividual },
-  { value: 'company', label: S.checkoutBuyerCompany },
-] as const
+const accountPurchaserType = computed((): CheckoutPurchaserType =>
+  resolveAccountPurchaserType(user.value?.role),
+)
 
 const registrationNumber = ref('')
 const taxIdDic = ref('')
@@ -282,7 +277,7 @@ function mountTaxIdOnElements(generation: number): boolean {
   taxIdElement = null
   applyBillingPrefill()
   taxIdElement = elements.create('taxId', {
-    visibility: purchaserType.value === 'company' ? 'always' : 'never',
+    visibility: accountPurchaserType.value === 'company' ? 'always' : 'never',
     fields: { businessName: 'always' },
     validation: {
       businessName: { required: 'auto' },
@@ -309,7 +304,7 @@ function mountPaymentOnElements(generation: number): boolean {
   paymentElement = null
   paymentElement = elements.create(
     'payment',
-    buildJobbiePaymentElementOptions(purchaserType.value, {
+    buildJobbiePaymentElementOptions(accountPurchaserType.value, {
       collectAddressExternally: props.collectBusinessBilling,
     }),
   )
@@ -456,7 +451,7 @@ async function buildBillingPayload(): Promise<CheckoutBillingPayload | undefined
   if (!address) {
     return undefined
   }
-  if (purchaserType.value === 'individual') {
+  if (accountPurchaserType.value === 'individual') {
     if (!skResidenceAttestation.value) {
       payError.value = S.checkoutSkResidenceAttestationRequired
       return undefined
@@ -504,13 +499,13 @@ function resolveEffectiveSecret(): string {
 function syncTaxIdVisibility(): void {
   if (!taxIdElement) return
   taxIdElement.update({
-    visibility: purchaserType.value === 'company' ? 'always' : 'never',
+    visibility: accountPurchaserType.value === 'company' ? 'always' : 'never',
   })
 }
 
 function syncPaymentBillingFields(): void {
   paymentElement?.update(
-    buildJobbiePaymentElementOptions(purchaserType.value, {
+    buildJobbiePaymentElementOptions(accountPurchaserType.value, {
       collectAddressExternally: props.collectBusinessBilling,
     }),
   )
@@ -544,16 +539,19 @@ watch(
   },
 )
 
-watch(purchaserType, () => {
-  skResidenceAttestation.value = false
-  if (usesCheckoutDeferred.value) {
-    activeSecret.value = ''
-    void mountDeferredCheckoutElements()
-    return
-  }
-  syncTaxIdVisibility()
-  syncPaymentBillingFields()
-})
+watch(
+  accountPurchaserType,
+  () => {
+    skResidenceAttestation.value = false
+    if (usesCheckoutDeferred.value) {
+      activeSecret.value = ''
+      void mountDeferredCheckoutElements()
+      return
+    }
+    syncTaxIdVisibility()
+    syncPaymentBillingFields()
+  },
+)
 
 onUnmounted(() => {
   teardownPaymentElement()

@@ -21,7 +21,7 @@ Plan: 30 phases (safe navigation → supply chain). Deploy **backend first**, th
 | 12 | Auth cache PII | Done | `auth-cache.ts` v2 (`id`, `appRole` only, 1h TTL) |
 | 13–14 | Rich text + safe errors | Done | `rich-text-plain-length.ts`, TipTap load sanitize, `safe-user-messages.ts`, `AppHttpErrorPage.vue` |
 | 15 | Pin dependencies | Done | `vue@^3.5.30`, `vue-router@^4.6.4`, `engines.node`, `audit:prod` |
-| 16–17 | Route cache + headers | Done | `nuxt.config.ts` private `Cache-Control`, CSP/HSTS/COOP/CORP |
+| 16–17 | Route cache + headers | Done | `nuxt.config.ts` private `Cache-Control`, CSP/HSTS/COOP/CORP, nonce enforcement |
 | 18 | CSP report-only | Done | Nitro report-only header + `POST /api/csp-report` |
 | 19 | Capacitor CSP | Done | `NUXT_PUBLIC_CAPACITOR_BUILD=1` meta CSP, `capacitor.config.ts` `cleartext: false` |
 | 20–22 | Analytics | Done | PostHog no email; GTM unload clears script/dataLayer; consent on audit + web-vitals |
@@ -66,9 +66,18 @@ cd app-pwa && npm run audit:prod
 
 ## Deferred (per plan)
 
-- **Enforcing CSP with nonces** — off by default; set `NUXT_CSP_NONCE_ENFORCE=1` only after report-only is clean (middleware skips dev and localhost API).
 - **`useIsAuthenticated()`** rollout — composable added; migrate remaining `session.value?.access_token` checks incrementally.
 - **Turnstile SRI** — Cloudflare `api.js` has no stable SRI hash; script uses pinned URL + `crossOrigin`.
+- **Capacitor CSP** — `NUXT_PUBLIC_CAPACITOR_BUILD=1` meta CSP still uses `unsafe-inline`; tighten with hashes/nonces if mobile builds are scanned.
+
+## CSP nonce enforcement (production)
+
+- **Default on** in production (not `import.meta.dev`, not localhost API origin).
+- Per-request nonce in `server/middleware/csp-nonce.ts`; `render:html` injects `nonce` on `<script>` tags.
+- `script-src` uses `'nonce-…'` + `'strict-dynamic'` (no `'unsafe-inline'` on HTML documents).
+- CSP headers skipped on `/_nuxt`, `/_ipx`, `/assets`.
+- Emergency rollback: `NUXT_CSP_NONCE_RELAXED=1`.
+- Report-only duplicate header + `POST /api/csp-report` remain for violation monitoring.
 
 ## Deployment order
 

@@ -112,6 +112,9 @@ export function hasValidConsentChoice(raw: CookieConsentPayload | null | undefin
   if (!normalized) {
     return false
   }
+  if (raw?.v === 1) {
+    return true
+  }
   return normalized.policy >= COOKIE_POLICY_VERSION
 }
 

@@ -1,5 +1,14 @@
 export type CheckoutPurchaserType = 'individual' | 'company'
 
+export type AccountRole = 'individual' | 'company'
+
+/** Checkout purchaser type is fixed by account registration type. */
+export function resolveAccountPurchaserType(
+  role: AccountRole | null | undefined,
+): CheckoutPurchaserType {
+  return role === 'company' ? 'company' : 'individual'
+}
+
 /** Slovak IČO: 8 digits after stripping non-digits. */
 export function normalizeSkIco(raw: string | null | undefined): string {
   if (raw == null) return ''

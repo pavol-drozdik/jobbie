@@ -13,14 +13,14 @@
           <div class="flex flex-wrap items-center justify-center gap-2">
             <button
               type="button"
-              class="cursor-pointer rounded-full border-none bg-marketing-green px-4 py-2 text-sm font-bold text-white outline-none ring-marketing-green transition-opacity hover:opacity-90 focus-visible:ring-2"
+              class="is-clickable rounded-full border-none bg-marketing-green px-4 py-2 text-sm font-bold text-white outline-none ring-marketing-green transition-opacity hover:opacity-90 focus-visible:ring-2"
               @click="onPwaRefresh"
             >
               {{ S.pwaUpdateRefresh }}
             </button>
             <button
               type="button"
-              class="cursor-pointer rounded-full border border-black/15 bg-white px-4 py-2 text-sm font-semibold text-black/80 outline-none ring-marketing-green transition-colors hover:bg-black/[0.04] focus-visible:ring-2"
+              class="is-clickable rounded-full border border-black/15 bg-white px-4 py-2 text-sm font-semibold text-black/80 outline-none ring-marketing-green transition-colors hover:bg-black/[0.04] focus-visible:ring-2"
               @click="onPwaDismiss"
             >
               {{ S.pwaUpdateLater }}
@@ -35,7 +35,9 @@
     <ClientOnly>
       <AppConfirmHost />
     </ClientOnly>
-    <AppCookieConsentHost />
+    <ClientOnly>
+      <AppCookieConsentHost />
+    </ClientOnly>
   </div>
 </template>
 

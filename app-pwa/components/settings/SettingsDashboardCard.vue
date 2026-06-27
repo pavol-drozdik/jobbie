@@ -4,7 +4,7 @@
     :class="[
       'group flex min-h-[120px] flex-col rounded-[18px] border-2 border-[#e5e7eb] bg-white p-5 shadow-[0px_2px_4px_rgba(0,0,0,0.06)] transition-colors',
       disabled
-        ? 'pointer-events-none cursor-not-allowed opacity-55'
+        ? 'pointer-events-none is-disabled-cursor opacity-55'
         : 'hover:border-marketing-green hover:bg-marketing-mint/40',
     ]"
     :aria-disabled="disabled || undefined"

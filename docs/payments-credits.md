@@ -76,7 +76,7 @@ The legacy `agentura` pack is deactivated in DB (`active = false`). Stripe Price
 
 
 
-Paid plans: credit rollover up to **60 days** (`PAID_SUBSCRIPTION_CREDIT_ROLLOVER_DAYS`). Purchased pack credits do not expire.
+Credits do not expire — subscription grants, free-plan monthly grants, and purchased packs all persist until spent.
 
 
 
@@ -162,15 +162,13 @@ flowchart LR
 
   spend --> lots
 
-  expire[expire_due_credit_lots] --> ledger
-
   reverse[reverse_spend_for_ref] --> grant
 
 ```
 
 
 
-- **FIFO** spend from lots (`expires_at` nulls last, then `created_at`).
+- **FIFO** spend from lots (`created_at` ascending; legacy lots may still carry `expires_at` but it is ignored).
 
 - **Idempotent** spend per `(user_id, ref_type, ref_id)`.
 
@@ -218,10 +216,10 @@ Credits and paid subscriptions on `/platba` are available only to buyers with a 
 
 | Buyer type | Requirements |
 |------------|----------------|
-| **Firma** (`purchaser_type: company`) | `address_country: SK`, street + city + postal code; valid 8-digit IČO verified via [`SkRpoLookupService`](../backend-ts/src/registry/sk-rpo-lookup.service.ts) (RPO active subject). Optional DIČ / IČ DPH per existing checkout. |
-| **Fyzická osoba** (`purchaser_type: individual`) | SK billing address fields + `billing_attestation_sk_residence: true` (checkbox on PWA). No IČO. |
+| **Firma** (`purchaser_type: company`) | `profiles.role === 'company'` only. `address_country: SK`, street + city + postal code; valid 8-digit IČO verified via [`SkRpoLookupService`](../backend-ts/src/registry/sk-rpo-lookup.service.ts) (RPO active subject). Optional DIČ / IČ DPH per existing checkout. |
+| **Fyzická osoba** (`purchaser_type: individual`) | `profiles.role === 'individual'` only. SK billing address fields + `billing_attestation_sk_residence: true` (checkbox on PWA). No IČO. |
 
-Server guard: [`assertSkBillingEligible`](../backend-ts/src/payments/sk-billing-eligibility.ts) runs in `createPaymentIntentCredits` and `createSubscriptionPaymentIntent` **before** any Stripe Customer update or PaymentIntent creation. Returns `400` with Slovak messages.
+PWA `/platba` does not offer a buyer-type toggle — `purchaser_type` is derived from account registration type. Server guard: [`validatePurchaserTypeForAccountRole`](../backend-ts/src/payments/sk-billing-eligibility.ts) + [`assertSkBillingEligible`](../backend-ts/src/payments/sk-billing-eligibility.ts).
 
 **Out of scope:** eFaktúra / Peppol, IP-based blocks (audit-only logging optional), blocking non-SK users from catalog features.
 

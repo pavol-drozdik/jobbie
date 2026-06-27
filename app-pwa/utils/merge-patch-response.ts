@@ -1,5 +1,11 @@
 export function fieldUnchangedSinceSend(current: unknown, baseline: unknown): boolean {
   if (Object.is(current, baseline)) return true
+  if (Array.isArray(current) && Array.isArray(baseline)) {
+    if (current.length !== baseline.length) return false
+    const left = [...current].map(String).sort()
+    const right = [...baseline].map(String).sort()
+    return left.every((v, i) => v === right[i])
+  }
   return JSON.stringify(current ?? null) === JSON.stringify(baseline ?? null)
 }
 

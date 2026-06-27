@@ -1,10 +1,6 @@
 <template>
-  <div
-    class="chat-page-root mt-[30px] flex min-h-0 flex-1 flex-col bg-marketing-mint px-0 pb-3 pt-0 max-[700px]:min-h-0 max-[700px]:flex-none max-[700px]:px-[10px] min-[701px]:-mx-3 min-[701px]:mt-0 min-[701px]:min-h-[calc(100dvh-5.5rem)] min-[701px]:flex-1"
-  >
-    <div
-      class="relative flex w-full min-h-0 flex-col overflow-hidden bg-white max-[700px]:mt-0 max-[700px]:h-[calc(100dvh-0.625rem-3.5rem-max(0.25rem,env(safe-area-inset-top,0px)))] max-[700px]:max-h-[calc(100dvh-0.625rem-3.5rem-max(0.25rem,env(safe-area-inset-top,0px)))] max-[700px]:max-w-none max-[700px]:shrink-0 max-[700px]:flex-none max-[700px]:rounded-[20px] min-[701px]:mx-auto min-[701px]:mt-[30px] min-[701px]:flex-1 min-[701px]:max-h-[calc(100dvh-6rem)] min-[701px]:max-w-[1400px] min-[701px]:min-h-[calc(100dvh-6rem)] min-[701px]:flex-row min-[701px]:rounded-[20px]"
-    >
+  <div :class="[chatPageRootClass, 'flex-1']">
+    <div :class="[chatShellCardClass, 'max-[700px]:max-w-none']">
       <div class="hidden min-h-0 min-[701px]:block min-[701px]:max-h-[calc(100dvh-6rem)]">
         <ChatRoomsSidebar
           class="max-h-[calc(100dvh-6rem)]"
@@ -308,6 +304,8 @@
 // Thin page shell — message send/receive/optimistic UI lives in useChatSocket.
 import { ROUTES } from '~/utils/app-routes'
 import { S } from '~/utils/strings'
+import { chatPageRootClass, chatShellCardClass } from '~/utils/marketing-ui'
+import { CHAT_AVATAR_PALETTE } from '~/utils/avatar-palette'
 import { validateImageUpload } from '~/utils/image-compression'
 import {
   CHAT_FILE_ACCEPT,
@@ -397,7 +395,7 @@ const showSearchNoHits = computed(
     threadSearchQ.value.trim().length >= 2,
 )
 
-const PALETTE = ['#7c3aed', '#0ea5e9', '#f59e0b', '#ef4444', '#10b981', '#6366f1']
+const PALETTE = CHAT_AVATAR_PALETTE
 
 function hashStr(s: string): number {
   let h = 0

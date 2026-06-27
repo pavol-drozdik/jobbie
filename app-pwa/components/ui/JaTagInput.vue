@@ -11,7 +11,7 @@
         <span class="max-w-[200px] truncate">{{ tag }}</span>
         <button
           type="button"
-          class="cursor-pointer border-0 bg-transparent p-0 text-marketing-green/70 hover:text-marketing-green"
+          class="is-clickable border-0 bg-transparent p-0 text-marketing-green/70 hover:text-marketing-green"
           :aria-label="`Odstrániť ${tag}`"
           @click="removeAt(idx)"
         >

@@ -28,6 +28,14 @@ export default {
           muted: '#8e8e8e',
         },
       },
+      borderRadius: {
+        card: '1.25rem',
+      },
+      boxShadow: {
+        card: '0px 3px 6px 1px rgba(0, 0, 0, 0.12)',
+        dropdown: '0 12px 28px rgba(0, 0, 0, 0.12)',
+        hero: '0 8px 40px rgba(0, 0, 0, 0.13)',
+      },
     },
   },
 } satisfies Config

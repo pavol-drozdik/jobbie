@@ -1,0 +1,33 @@
+# JOBBIE VPS — alert at >= 95% for 5 minutes; re-notify every 6h while critical
+# Install: /etc/netdata/health.d/jobbie.conf
+# Recipient role: sysadmin (map to discord in health_alarm_notify.conf)
+
+ alarm: jobbie_cpu_95
+    on: system.cpu
+lookup: average -5m of active
+ units: %
+ every: 1m
+  crit: $this >= 95
+ delay: up 5m down 5m
+  info: CPU usage >= 95%
+ repeat: critical 6h
+
+ alarm: jobbie_ram_95
+    on: system.ram
+lookup: average -5m percentage of used
+ units: %
+ every: 1m
+  crit: $this >= 95
+ delay: up 5m down 5m
+  info: RAM usage >= 95%
+ repeat: critical 6h
+
+ alarm: jobbie_disk_root_95
+    on: disk_space./
+lookup: average -5m of used
+ units: %
+ every: 1m
+  crit: $this >= 95
+ delay: up 5m down 5m
+  info: Root disk usage >= 95%
+ repeat: critical 6h

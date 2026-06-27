@@ -1,4 +1,304 @@
-﻿## 2026-06-21 — CodeQL CI: opt-in SARIF upload
+﻿## 2026-06-27 — Production Discord alerting runbook
+
+Docs:
+- **websupport-vps-deployment:** [`OPS-DISCORD-ALERTING.md`](../websupport-vps-deployment/OPS-DISCORD-ALERTING.md) — replicate free-tier operator alerts (Sentry→Worker→Discord, Supabase content reports, Netdata CPU/RAM/disk/API health); example configs under `ops/netdata/`, `ops/sentry-discord-bridge.worker.example.js`, `ops/supabase/discord-content-report.example.ts`.
+- **README-DEPLOYMENT.md** — summary section + links.
+- **observability-runbook.md** — operator Discord table and httpcheck / Cloudflare caveats.
+
+## 2026-06-27 — Nuxt error page null statusCode
+
+Fixed:
+- **app-pwa:** `AppHttpErrorPage` and `error.vue` handle `useError()` becoming `null` during `clearError()` / navigation recovery (fixes Sentry `TypeError: Cannot read properties of null (reading 'statusCode')` on `/`).
+- **app-pwa:** Web push `syncIfGranted` swallows background lifecycle failures so push re-sync does not surface as unhandled Vue errors.
+
+## 2026-06-27 — Registration captcha network errors
+
+Fixed:
+- **app-pwa:** Registration Turnstile verify uses `useApi()` / `fetchApi` instead of raw `fetch`, so transient network failures show an inline error instead of an unhandled `TypeError: Failed to fetch` in Sentry.
+- **backend-ts:** `POST /api/auth/captcha/verify` rate-limited (20/min) like sibling auth security endpoints.
+
+## 2026-06-27 — SEO sitemap CORS bypass
+
+Fixed:
+- **backend-ts:** `GET /api/seo/*` (sitemap, feeds) bypasses credentialed CORS middleware so Nitro server-side `$fetch` works without an `Origin` header in production.
+
+## 2026-06-27 — CV builder performance
+
+Changed:
+- **app-pwa:** `useCvHeaderAutosave` `flushSave` now uses delta diff instead of force-full; PATCH is skipped entirely when nothing changed since the last autosave, eliminating the redundant second header PATCH on wizard step navigation.
+- **app-pwa:** `CvPrototypeShell` add/remove/reorder for experience and education use optimistic local aggregate updates (via new `updateAggregate` prop callback) instead of triggering a full `GET /api/cv/:id` reload — reduces each operation from 3 sequential round-trips to 1.
+
+## 2026-06-27 — OAuth signup error handling (login Google / birth date)
+
+Fixed:
+- **app-pwa:** Global handler maps Supabase `Database error saving new user` (and birth-date trigger failures) to Slovak copy and redirects new users to `/auth/register`; login page hints that Google signup belongs on registration; `/auth/callback` uses the same mapper.
+
+## 2026-06-27 — CV editor work & education reorder
+
+Added:
+- **app-pwa:** CV builder — up/down controls on work experience and education rows persist order via `PATCH /api/cv/:id/{experience|education}/order` (`utils/cv-section-order.ts`).
+
+## 2026-06-27 — Individual registration minimum age (16+)
+
+Added:
+- **app-pwa:** Registration wizard and sign-up composable reject individual accounts when birth date proves age under 16; date picker caps at the latest allowed birth date.
+- **supabase:** `handle_new_user` requires a valid `birth_date` in auth metadata for `role = individual` and rejects signups younger than 16.
+
+## 2026-06-27 — Production CORS, Clarity CSP, cookie banner hydration
+
+Fixed:
+- **backend-ts:** CORS preflight allows Sentry `sentry-trace` and `baggage` headers so cross-origin API calls from the PWA work when browser tracing is enabled.
+- **app-pwa:** CSP `script-src` allows `https://*.clarity.ms` (GTM loads Clarity from `scripts.clarity.ms`); `connect-src` allows `wss://` on the API origin (Socket.IO feed); `font-src` allows `NUXT_PUBLIC_CDN_URL` for bundled `@fontsource` assets.
+- **app-pwa:** Cookie consent host wrapped in `ClientOnly` to avoid SSR hydration mismatches on public pages (`/cennik`, etc.).
+- **app-pwa:** App layout defers auth chrome until after mount; homepage CTA role picks after mount; stale BFF refresh failure clears auth cache (fewer repeat `401` refresh attempts).
+- **app-pwa:** Sentry trace propagation limited to same-origin API (dev proxy) so cross-origin production calls work before/with Nest CORS `sentry-trace`/`baggage` allowlist.
+
+## 2026-06-27 — CV section order (Záujmy before Doplňujúce informácie)
+
+Changed:
+- **backend-ts:** All CV templates render Záujmy before Doplňujúce informácie (`CV_PDF_RENDERER_REVISION` 26).
+
+## 2026-06-27 — CV Minimalist sidebar skills + column gap
+
+Changed:
+- **backend-ts:** Minimalist template — Znalosti moved to sidebar; wider gap between main and side columns (`CV_PDF_RENDERER_REVISION` 25).
+
+## 2026-06-27 — CV Minimalist layout
+
+Changed:
+- **backend-ts:** Minimalist template — wider main column, education under work experience in main, no profile photo (`CV_PDF_RENDERER_REVISION` 24).
+
+## 2026-06-26 — CV date label formatting
+
+Fixed:
+- **backend-ts:** CV PDF/templates — experience months use 3-letter Slovak abbreviations (Jan, Feb, …); education ongoing label renders as Neukončené (`CV_PDF_RENDERER_REVISION` 23).
+
+## 2026-06-26 — CV Editorial education before extra info in PDF
+
+Fixed:
+- **backend-ts:** Editorial PDF pagination — education stays before Doplňujúce informácie (extra info moved into main panel after education; orphan extra merge blocked when education is on a later page; `CV_PDF_RENDERER_REVISION` 22).
+
+## 2026-06-26 — CV Editorial education under experience
+
+Changed:
+- **backend-ts:** Editorial template — education sits directly under work experience in one main-column panel; pagination no longer pulls extra info above pending education units (`CV_PDF_RENDERER_REVISION` 21).
+
+## 2026-06-26 — CV Editorial education + profile photo
+
+Changed:
+- **backend-ts:** Editorial template — education moved to main column; header photo is 40mm circle without border (`CV_PDF_RENDERER_REVISION` 20).
+
+## 2026-06-26 — CV Editorial PDF column layout fix
+
+Fixed:
+- **backend-ts:** Editorial/Minimalist/Monochrome PDF grids use `minmax(0, …fr)` plus `min-width: 0` and word-break on column children so long sidebar text cannot blow out column widths.
+- **backend-ts:** Removed `10.5pt` base font shrink on paginated Editorial sheets; body copy stays at design `11.2pt` on `.cv-sheet`.
+- **backend-ts:** Coupled-column packer prioritizes main-column units before sidebar when filling pages (`CV_PDF_RENDERER_REVISION` 19).
+
+## 2026-06-26 — CV templates realign (Editorial, Minimalist, Monochrome)
+
+Fixed:
+- **backend-ts:** Editorial, Minimalist, and Monochrome CV templates realigned to `jobbiecvdesign/` reference layouts — summary as header lead, correct main/side column placement (education/skills/hobbies per design).
+- **backend-ts:** Multi-page PDF packer — continuation grid padding for Minimalist/Monochrome; `data-cv-pack="with-previous"` for trailing extra-info sections; orphan rebalance for coupled columns (`CV_PDF_RENDERER_REVISION` 18).
+
+## 2026-06-26 — Homepage SSR usePageSeo fix
+
+Fixed:
+- **app-pwa:** Explicit `usePageSeo` import on homepage and in `useGlobalSiteSeo`; moved `fetchPublicJobsHome` to `utils/` (not a composable) to avoid SSR auto-import gaps.
+
+## 2026-06-26 — Homepage PageSpeed & accessibility
+
+Changed:
+- **app-pwa:** Homepage marketing images optimized (`phone-image.webp`, `spotlight.webp`, `jobbie-mobile-hero-760.webp`); hero uses `<picture>` + correct aspect ratio; feature sections use `NuxtImg` with `sizes`.
+- **app-pwa:** Global CSS slimmed — Font Awesome and CV mini-sheet styles load only on CV/register routes; DM Sans italic deferred via idle plugin; latin WOFF2 preloaded from `/fonts/`.
+- **app-pwa:** `preconnect` hints for API, Supabase, and CDN origins in `nuxt.config.ts`.
+- **app-pwa:** Homepage SSR includes job category counts; deterministic multi-role CTA pick; hero chips hydrate after mount to avoid mismatch.
+- **app-pwa:** Guest auth plugin skips BFF `session/refresh` when no session hint (removes anonymous 401 noise).
+- **app-pwa:** Accessibility — removed invalid chip `listitem` ARIA; 44px carousel dots; logo width/height; duplicate footer login removed. Homepage accent color stays bright `marketing-green` (`#22c55e`).
+
+## 2026-06-26 — CV PDF pagination (all templates)
+
+Fixed:
+- **backend-ts:** All CV templates (Atlas, Editorial, Minimalist, Monochrome) now use the JS measurement packer for PDF export — splits experience/education entries across A4 sheets instead of dumping most content on page 2 via CSS grid print.
+- **backend-ts:** Packer rebuilds `.cv-breakable-section` wrappers when mounting split columns; Atlas page 1 fills the main column by measured height; coupled-column templates prefer the taller column when both sides can grow.
+- **backend-ts:** `CV_PDF_RENDERER_REVISION` 14 — stored CV PDFs regenerate.
+
+Fixed:
+- **backend-ts:** Editorial / Minimalist / Monochrome — column-based height measurement (`max(main, side)` without `min-height: 100%` stretch) fixes one-section-per-page over-splitting; paginated `.cv-sheet` pages use fixed A4 box with `align-items: start` on grids (`CV_PDF_RENDERER_REVISION` 15).
+
+Changed:
+- **backend-ts:** Editorial, Minimalist, and Monochrome CV PDF templates now use the same main/side section order as Atlas (summary → experience → education → extra → hobbies in main; skills → languages → driving in side) (`CV_PDF_RENDERER_REVISION` 16).
+
+Fixed:
+- **backend-ts:** Editorial PDF — coupled-column packer fills main-column slack when sidebar drives row height; single-sheet fast path for moderate CVs; orphan guard prevents extra-info-only continuation pages; paginated sheet CSS aligned with design (`CV_PDF_RENDERER_REVISION` 17).
+
+## 2026-06-26 — Hide listings from closed accounts
+
+Fixed:
+- **backend-ts:** Account closure (self-delete and admin) now archives active company ads and removes jobs from Typesense; job search hydration re-checks `is_active` / draft so stale index rows are dropped.
+- **backend-ts:** Public job and company-ad catalog queries exclude listings whose owner `profiles.is_deleted = true`.
+- **jobbie-admin:** Admin account close archives active company ads for the user.
+
+Database:
+- Migration `20260726130000_hide_listings_closed_accounts.sql` — backfill inactive jobs / archived ads for closed accounts; `job_offers_public` and `company_ads_public` views join non-deleted owners.
+
+## 2026-06-26 — Checkout purchaser type locked to account type
+
+Changed:
+- **app-pwa:** `/platba` — removed buyer-type toggle; `individual` accounts pay as fyzická osoba, `company` accounts as firma.
+- **backend-ts:** `assertSkBillingEligible` rejects mismatched `purchaser_type` vs `profiles.role` (also on `applyCheckoutBillingDetails`).
+
+## 2026-06-26 — Fakturácia: billing form by account type
+
+Changed:
+- **app-pwa:** `/nastavenia/fakturacia` — fyzické osoby see only SK fakturačná adresa; firemné účty keep Názov firmy / IČO / DIČ / IČ DPH (aligned with `/platba` purchaser types).
+
+## 2026-06-26 — Credits do not expire
+
+Fixed:
+- Removed expiring-soon warning from `/nastavenia/kredity` and stopped setting `expires_at` on subscription/free credit grants.
+- Disabled `CreditExpirationCron`; migration `20260726120000_credit_lots_no_expiration.sql` clears `expires_at` on remaining lots.
+
+## 2026-06-25 — Profesionáli: open chat from ad detail
+
+Fixed:
+- **backend-ts:** `POST /api/company-ads/:id/open-chat` creates or reuses a chat room tied to the ad (`chat_rooms.company_ad_id`); respects owner `public_allow_platform_contact` and active listing visibility.
+- **app-pwa:** `CompanyAdOwnerOpenChatActions` uses the company-ad open-chat endpoint (no longer requires a job application via profile open-chat). Chat sidebar/header show the ad title in `job_title` like job-application threads.
+
+Database:
+- Migration `20260715130000_company_ad_chat_rooms.sql` — nullable `job_id`, `company_ad_id` FK, inquiry unique index.
+
+## 2026-06-25 — Chat: show other party profile name in list and header
+
+Fixed:
+- **backend-ts:** Chat room enrichment and notifications load `company_name` when resolving `other_user_name` / sender labels (company profiles no longer fall back to generic “Konverzácia” / “Profil” in the PWA).
+
+## 2026-06-25 — Job post edit: align BFF cookie auth identity
+
+Fixed:
+- **app-pwa:** `fetchUser` / `fetchProfile` use BFF cookies (not stale Bearer) when `shouldPreferBffCookieAuth()` — fixes job wizard 403 when in-memory JWT and `jb_*` session disagreed on localhost.
+- **app-pwa:** Hub `JobHubRow` primes `useJobWizardBootstrap` before navigate (skip fragile for-edit GET on first paint).
+- **backend-ts:** `GET /api/jobs/:id/for-edit` scopes by `company_id` in SQL (Postgres UUID match).
+
+## 2026-06-25 — Job post wizard: for-edit API + bootstrap hydrate
+
+Fixed:
+- **backend-ts:** `GET /api/jobs/:job_id/for-edit` — authenticated owner endpoint for draft/edit wizard (no anonymous 404 on drafts).
+- **app-pwa:** Job wizard bootstrap from `/novy` POST (same pattern as company ads); wizard loads via `/for-edit` using default `useApi()` auth (BFF cookies — do not force in-memory Bearer, which caused 403 owner mismatch on localhost).
+- **app-pwa:** `[jobId]` pages skip mounting wizard for reserved segment `novy`.
+
+## 2026-06-25 — Job post wizard: auth-ready hydrate + editor CSS
+
+Fixed:
+- **app-pwa:** `JobPostWizard` waits for auth and retries draft load after BFF session refresh (draft jobs no longer 404 when cookies were not ready).
+- **app-pwa:** `AppRichTextEditor` — use `disabled:cursor-not-allowed` in `@apply` (custom `is-disabled-cursor` is invalid inside `@apply`).
+- **app-pwa:** Job create pages (`/vytvorit-ponuku/novy`, foreign variant) call `waitForAuthReady()` before POST; `[jobId]` routes redirect reserved `novy` segment.
+
+## 2026-06-25 — Security scanner remediation (CSP, Permissions-Policy, CORS, privacy links)
+
+Security:
+- **app-pwa:** Production CSP enforces per-request `script-src` nonces + `strict-dynamic` (no `unsafe-inline` on HTML); opt-out via `NUXT_CSP_NONCE_RELAXED=1`. CSP omitted on `/_nuxt`, `/_ipx`, `/assets` paths.
+- **app-pwa:** `Permissions-Policy` `payment` allowlist uses explicit Stripe origins (no `https://*.stripe.com` wildcard).
+- **backend-ts:** CORS regression tests — allowed origin echoed exactly; evil origin rejected (never `Access-Control-Allow-Origin: *`).
+- **app-pwa:** Discoverable privacy/terms links on auth pages (`AuthLegalFooter`), registration consent checkboxes, cookie banner, `default` layout; `<link rel="privacy-policy">` in app head.
+
+Changed:
+- **docs/auth-security.md** — CORS verification checklist (API, PWA, Supabase, CDN).
+- **docs/security/frontend-implementation-summary.md** — CSP nonce enforcement now default in production.
+
+## 2026-06-25 — Security: scan false positives + CAPTCHA wiring
+
+Security:
+- **app-pwa:** Remove `password:"Heslo"` bundle false positive (`S.fieldLabelPassword`); parse Supabase hash handoffs via `URLSearchParams` instead of literal `access_token=` string.
+- **app-pwa:** Shared `useTurnstileWidget` + `AuthTurnstileWidget`; pass `captchaToken` to Supabase `signUp`, `signInWithPassword`, `resetPasswordForEmail`; Turnstile on forgot-password when keys configured; `/auth/signin` → `/auth/login`, `/auth/signup` → `/auth/register` redirects.
+
+Changed:
+- **docs/auth-security.md**, **docs/deployment.md** — Turnstile + Supabase Auth CAPTCHA checklist.
+
+## 2026-06-25 — Security: strip origin Server / Via fingerprint headers
+
+Security:
+- **app-pwa:** Remove `Server` and `X-Powered-By` on Nitro responses.
+- **backend-ts:** `helmet({ xPoweredBy: true })` + `removeHeader('Server')`.
+- **websupport-vps-deployment/Caddyfile:** `-Server`, `-Via`, `-X-Powered-By` on API ingress.
+- **docs/deployment.md:** Cloudflare Managed Transform / Transform Rule to remove edge `Server: cloudflare`.
+
+## 2026-06-25 — Security: CDN-Cache-Control no-store on private HTML
+
+Security:
+- **app-pwa:** Private document responses send `CDN-Cache-Control: no-store` (Cloudflare edge) alongside `Cache-Control: private, no-store, must-revalidate`.
+
+## 2026-06-25 — Security: X-Frame-Options static route rules (no duplicate from assets)
+
+Security:
+- **app-pwa:** `/_nuxt/**` route rules set only `cache-control`; `X-Frame-Options` solely from `security-headers` middleware (avoids middleware + route-rule double-set on asset paths).
+
+## 2026-06-25 — Security: X-XSS-Protection legacy header
+
+Security:
+- **app-pwa:** `X-XSS-Protection: 1; mode=block` in `buildPlatformSecurityHeaders()` (via `security-headers` middleware).
+- **backend-ts:** Disable Helmet `X-XSS-Protection: 0` default; set `1; mode=block` explicitly.
+
+## 2026-06-25 — Security: Cache-Control no-store on private HTML routes
+
+Security:
+- **app-pwa:** `utils/cache-route-policy.ts` + Nitro `cache-control` middleware; `private, no-store, must-revalidate` on auth, CV editor, chat, settings, etc.; explicit `public, max-age=300` on public SSR shells. Fixes `/auth/login` and `/zivotopisy` serving only Cloudflare `max-age=14400`.
+
+## 2026-06-25 — Security: fix duplicate X-Frame-Options (DENY, DENY)
+
+Security:
+- **app-pwa:** Move platform security headers to Nitro `security-headers` middleware only; remove `...security` spreads from `nitro.routeRules` (overlapping `/**` + per-route rules duplicated `X-Frame-Options` and CSP on HTML pages).
+- **docs/deployment.md:** Cloudflare must not add `X-Frame-Options` on `www` when origin already sets it.
+
+## 2026-06-25 — Security: X-Content-Type-Options coverage
+
+Security:
+- **app-pwa:** Spread platform security headers onto `/_nuxt/**`, `/_ipx/**`, `/assets/**` route rules; Nitro `security-headers` middleware sets `nosniff` when absent.
+- **backend-ts:** Explicit `helmet({ noSniff: true })`.
+- **docs/deployment.md:** Cloudflare Transform Rule for apex→www redirects (edge redirects skip Nitro headers).
+
+## 2026-06-25 — PWA: vibecode / UX authenticity improvements
+
+Changed:
+- **app-pwa:** Desktop nav mega-menus keyboard-clickable; register step 4 `<form @submit>`; FAQ accordion ARIA; homepage carousel `radiogroup`; form labels (`AppFormDropdown` `id` + `aria-expanded`, search `aria-label`, login `AppCheckbox` remember-me).
+- **app-pwa:** `utils/marketing-ui.ts` + `utils/avatar-palette.ts`; green avatar fallbacks (replaced `#7c3aed`); `rounded-card` / shadow tokens; `.is-clickable` utility (replaces `cursor-pointer` in HTML).
+- **app-pwa:** Build guard: `NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` must start with `pk_`; `<meta name="referrer">` belt-and-suspenders.
+
+Docs:
+- `docs/frontend.md` — marketing layout tokens section.
+
+## 2026-06-21 — CV builder: fix PATCH body stripped by ValidationPipe (root cause)
+
+Fixed:
+- **backend-ts:** `CvHeaderPatchDto` and all CV section upsert DTOs lacked `class-validator` decorators. Global `ValidationPipe({ whitelist: true })` stripped every field from `PATCH /api/cv/:id` bodies before they reached `CvService`, so nothing was written to `cv_personal_info` (only `cvs.updated_at` changed). Added decorators to all CV write DTOs + regression tests.
+
+## 2026-06-21 — CV builder: fix personal data not persisting
+
+Fixed:
+- **backend-ts:** `PATCH /api/cv/:id` upserts `cv_personal_info` / `cv_job_preferences` when the child row is missing (was silent no-op on `UPDATE`); merged CV header reads personal fields after shell so they are not overwritten; ensures child rows exist, verifies DB write, and surfaces errors instead of silent failure.
+- **app-pwa:** Header autosave sends a **full** header snapshot on flush (Pokračovať / Dokončiť / blur), no longer replaces local edits with empty server values, blocks navigation when save fails, and shows an in-form error when flush fails.
+
+## 2026-06-21 — PWA: fix auth/register 500 (service worker navigation)
+
+Fixed:
+- **app-pwa:** Service worker no longer serves prerendered homepage HTML for all SPA navigations (`NavigationRoute` → `createHandlerBoundToURL('/')`). Hybrid SSR + CSR routes (`/auth/register`, `/auth/login`, …) now fetch the correct document from the network; fixes production registration/login hitting generic 500 after SW install.
+
+## 2026-06-21 — GDPR: ÚOOÚ SR new registered office address
+
+Changed:
+- `/ochrana-osobnych-udajov`: supervisory authority contact updated to Galvaniho Business Centrum II, Galvaniho 7/B, 821 04 Bratislava (ÚOOÚ SR sídlo od 1. 6. 2026).
+
+## 2026-06-21 — Cookie consent: GTM Consent Mode + Clarity teardown
+
+Fixed:
+- **app-pwa:** GTM container bootstraps on every page (Consent Mode default-denied); GA4/Clarity tags fire on `analytics_storage` grant instead of lazy-loading `gtm.js` after accept (missed `Window Loaded` triggers).
+- **app-pwa:** Withdrawing analytics consent purges GTM-injected Clarity/GA scripts, clears `_clck`/`_clsk`/`_ga*` with `Secure`/`SameSite`, and Clarity storage keys — cookies no longer persist after deny.
+- **app-pwa:** Legacy `jb_consent` v1 choices replay on boot (v2 `policy` gate no longer blocks prior accepts).
+
+Docs:
+- `docs/observability-runbook.md` — GTM Consent Mode bootstrap note.
+
+## 2026-06-21 — CodeQL CI: opt-in SARIF upload
 
 Fixed:
 - `.github/workflows/codeql.yml` — SARIF upload only when repo variable `CODEQL_UPLOAD=true` (avoids CI failure when GitHub Code scanning is disabled). Analysis still runs; fork PRs never upload.

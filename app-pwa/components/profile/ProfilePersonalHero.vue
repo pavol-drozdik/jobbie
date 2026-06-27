@@ -17,7 +17,7 @@
       <!-- profile-card-avatar-row -->
       <div class="-mt-[36px] mb-[14px] flex flex-wrap items-end justify-between gap-3">
         <div
-          class="flex h-[84px] w-[84px] shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-[#7c3aed] font-dmSans text-[28px] font-bold text-white shadow-[0px_3px_6px_1px_rgba(0,0,0,0.15)]"
+          class="flex h-[84px] w-[84px] shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-marketing-green font-dmSans text-[28px] font-bold text-white shadow-card"
         >
           <img
             v-if="avatarSrc"

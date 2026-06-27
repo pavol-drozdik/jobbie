@@ -19,7 +19,7 @@
     <div class="flex flex-col gap-1">
       <label
         for="settings-role-customer"
-        class="flex cursor-pointer items-start gap-2.5 font-dmSans font-medium text-black/80"
+        class="flex is-clickable items-start gap-2.5 font-dmSans font-medium text-black/80"
         :class="compact ? 'py-2 text-[17px]' : 'py-1.5 text-sm'"
       >
         <AppCheckbox
@@ -32,7 +32,7 @@
       </label>
       <label
         for="settings-role-worker"
-        class="flex cursor-pointer items-start gap-2.5 font-dmSans font-medium text-black/80"
+        class="flex is-clickable items-start gap-2.5 font-dmSans font-medium text-black/80"
         :class="compact ? 'py-2 text-[17px]' : 'py-1.5 text-sm'"
       >
         <AppCheckbox
@@ -45,7 +45,7 @@
       </label>
       <label
         for="settings-role-provider"
-        class="flex cursor-pointer items-start gap-2.5 font-dmSans font-medium text-black/80"
+        class="flex is-clickable items-start gap-2.5 font-dmSans font-medium text-black/80"
         :class="compact ? 'py-2 text-[17px]' : 'py-1.5 text-sm'"
       >
         <AppCheckbox

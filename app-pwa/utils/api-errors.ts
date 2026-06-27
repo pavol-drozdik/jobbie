@@ -11,6 +11,19 @@ export type ApiResultLike = {
   body?: string
 }
 
+/** Thrown by useApi unwrap so callers can read Nest validation payloads. */
+export class ApiRequestError extends Error {
+  readonly status: number
+  readonly data: unknown
+
+  constructor(message: string, status: number, data?: unknown) {
+    super(message)
+    this.name = 'ApiRequestError'
+    this.status = status
+    this.data = data
+  }
+}
+
 function messageFromPayload(payload: unknown): string | null {
   if (!payload || typeof payload !== 'object') return null
   const msg = (payload as { message?: string | string[] }).message

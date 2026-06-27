@@ -1,15 +1,9 @@
+import { parseApiErrorMessage } from '~/utils/api-errors'
 import { S } from '~/utils/strings'
 
 export function useSubscriptionResume() {
   const { api } = useApi()
-  const {
-    ensureRecentLoginForBilling,
-    ensureBillingStepUpBeforeMutation,
-    billingStepUpFailureMessage,
-    billingStepUpUserMessage,
-    isStepUpRequiredResponse,
-    tryRecoverFromStepUpRequired,
-  } = useBillingStepUp()
+  const { ensureRecentLoginForBilling } = useBillingStepUp()
   const { confirm } = useConfirm()
 
   const resumeBusy = ref(false)
@@ -23,35 +17,21 @@ export function useSubscriptionResume() {
       return false
     }
 
-    if (!(await ensureBillingStepUpBeforeMutation())) {
-      resumeError.value = billingStepUpFailureMessage()
-      return false
-    }
-
     resumeError.value = ''
     resumeOk.value = ''
     resumeBusy.value = true
     try {
-      let res = await api<{
+      const res = await api<{
         resumed: boolean
         cancel_at_period_end?: boolean
       }>('/api/payments/resume-subscription', {
         method: 'POST',
       })
-      if (!res.ok && isStepUpRequiredResponse(res) && (await tryRecoverFromStepUpRequired())) {
-        res = await api<{
-          resumed: boolean
-          cancel_at_period_end?: boolean
-        }>('/api/payments/resume-subscription', {
-          method: 'POST',
-        })
-      }
       if (res.ok && res.data?.resumed === true) {
         resumeOk.value = S.settingsSubscriptionResumed
         return true
       }
-      resumeError.value =
-        (await billingStepUpUserMessage(res)) || S.settingsSubscriptionResumeFailed
+      resumeError.value = parseApiErrorMessage(res, S.settingsSubscriptionResumeFailed)
       return false
     } finally {
       resumeBusy.value = false
