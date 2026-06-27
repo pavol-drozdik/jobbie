@@ -193,10 +193,8 @@ export function renderMinimalistPage(data: CvDocumentExportData): string {
     <main class="resume-page minimalist-page">
       <section class="minimalist-header">
         <div class="minimalist-identity">
-          <div>
-            <h1 class="minimalist-name">${escapeHtml(data.fullName)}</h1>
-            ${headerLead}
-          </div>
+          <h1 class="minimalist-name">${escapeHtml(data.fullName)}</h1>
+          ${headerLead}
         </div>
         <aside class="minimalist-contact">
           ${contactLines.map((line) => `<span class="small-copy">${escapeHtml(line)}</span>`).join('')}

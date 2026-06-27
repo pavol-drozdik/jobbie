@@ -971,6 +971,59 @@ describe('buildCvDocument', () => {
     }, 90_000)
   })
 
+  describe('minimalist PDF layout', () => {
+    it('aligns header summary and last contact line on the same baseline', async () => {
+      const data = sampleData('minimalist')
+      data.fullName = 'Pa Dr'
+      data.email = 'palko.drozdik@gmail.com'
+      data.phone = '+421111111'
+      data.street = '150'
+      data.postalCode = '010 02'
+      data.city = 'Žilina'
+      data.gender = 'Muž'
+      data.birthDate = '2007-01-24'
+      data.summary =
+        'Som zodpovedný a motivovaný frontend developer so systematickým prístupom. ' +
+        'Preferujem štrukturálne riešenia, rád vytváram poriadok v procesoch a píšem prehľadný kód.'
+      const html = buildCvDocument(data, { mode: 'pdf' })
+      const { CvHtmlPdfRenderer } = await import('../cv-html-pdf.renderer')
+      const renderer = new CvHtmlPdfRenderer()
+      try {
+        const extracted = await renderer.extractPaginatedOutput(html)
+        const browser = await (await import('playwright')).chromium.launch({
+          headless: true,
+          args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        })
+        const page = await browser.newPage({ viewport: { width: 794, height: 1123 } })
+        try {
+          await page.setContent(
+            buildCvPdfPrintDocument({
+              title: data.fullName,
+              fontLink: CV_DOCUMENT_FONT_LINK,
+              styles: buildCvDocumentStyles('pdf'),
+              outputHtml: extracted.outputHtml,
+            }),
+            { waitUntil: 'networkidle', timeout: 60_000 },
+          )
+          const bottomOffset = await page.evaluate(() => {
+            const lead = document.querySelector('.minimalist-lead')
+            const lastContact = document.querySelector('.minimalist-contact > .small-copy:last-child')
+            if (!lead || !lastContact) {
+              return null
+            }
+            return lastContact.getBoundingClientRect().bottom - lead.getBoundingClientRect().bottom
+          })
+          expect(bottomOffset).not.toBeNull()
+          expect(Math.abs(bottomOffset!)).toBeLessThan(4)
+        } finally {
+          await browser.close()
+        }
+      } finally {
+        await renderer.onModuleDestroy()
+      }
+    }, 90_000)
+  })
+
   it('paginates Atlas fixture with education and driving to matching sheet and PDF pages', async () => {
     const data = atlasPaginationFixture()
     const html = buildCvDocument(data, { mode: 'pdf' })
