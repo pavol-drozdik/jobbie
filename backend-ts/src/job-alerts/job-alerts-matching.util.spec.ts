@@ -170,8 +170,11 @@ describe('shouldDispatchJobAlert', () => {
   });
 
   it('daily: does not dispatch twice same calendar day', () => {
-    const now = Date.now();
-    const last = new Date(now - 60 * 60 * 1000).toISOString();
+    const last = '2026-06-05T12:00:00.000Z';
+    const now = new Date('2026-06-05T20:00:00.000Z').getTime();
+    expect(dateKeyEuropeBratislava(new Date(last).getTime())).toBe(
+      dateKeyEuropeBratislava(now),
+    );
     expect(shouldDispatchJobAlert('daily', last, now)).toBe(false);
   });
 
