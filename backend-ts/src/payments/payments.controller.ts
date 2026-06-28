@@ -5,6 +5,7 @@ import {
   Body,
   Req,
   Param,
+  Query,
   Logger,
   ServiceUnavailableException,
   NotFoundException,
@@ -42,6 +43,7 @@ import {
   CreatePaymentIntentSubscriptionDto,
   ConfirmSubscriptionPurchaseDto,
   PaymentIntentResponseDto,
+  SubscriptionCheckoutPreviewDto,
   CreditPackDto,
   ConfirmCreditsPurchaseDto,
   CancelSubscriptionDto,
@@ -206,6 +208,19 @@ export class PaymentsController {
       return { resumed: true, cancel_at_period_end: false };
     }
     return this.stripe.resumeUserSubscription(user.id);
+  }
+
+  @Get('subscription-checkout-preview')
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  async getSubscriptionCheckoutPreview(
+    @CurrentUserDecorator() user: CurrentUser,
+    @Query('plan_id') planId: string,
+  ): Promise<SubscriptionCheckoutPreviewDto> {
+    const id = planId?.trim();
+    if (!id) {
+      throw new BadRequestException('Chýba identifikátor plánu.');
+    }
+    return this.stripe.getSubscriptionCheckoutPreview(user.id, id);
   }
 
   @Post('create-payment-intent-credits')

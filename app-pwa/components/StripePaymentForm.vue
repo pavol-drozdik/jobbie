@@ -137,6 +137,8 @@ import {
   type JobbieStripeAppearanceVariant,
 } from '~/utils/stripe-payment-element-ui'
 import {
+  isPaymentIntentClientSecret,
+  isSetupIntentClientSecret,
   paymentIntentIdFromClientSecret,
   setupIntentIdFromClientSecret,
   shouldConfirmSetupIntent,
@@ -717,6 +719,14 @@ async function handlePay() {
       preparedIntentType,
       props.deferredMode,
     )
+    if (useSetup && isPaymentIntentClientSecret(secret)) {
+      payError.value = S.checkoutConfirmAfterRemount
+      return
+    }
+    if (!useSetup && isSetupIntentClientSecret(secret)) {
+      payError.value = S.checkoutConfirmAfterRemount
+      return
+    }
     if (useSetup) {
       const setupResult = await raceConfirmTimeout(
         stripe.confirmSetup(confirmOptions),
