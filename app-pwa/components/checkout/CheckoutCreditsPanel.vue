@@ -11,13 +11,7 @@
       {{ S.checkoutSkBillingPolicyNotice }}
     </p>
 
-    <p
-      v-if="successMessage"
-      class="mb-4 rounded-lg border border-marketing-green/25 bg-marketing-mint px-3 py-2 text-sm font-medium text-marketing-green"
-    >
-      {{ successMessage }}
-    </p>
-    <p v-else-if="error" class="mb-4 text-sm text-red-600" role="alert">{{ error }}</p>
+    <p v-if="error" class="mb-4 text-sm text-red-600" role="alert">{{ error }}</p>
 
     <div
       v-if="pack"
@@ -36,7 +30,7 @@
     </div>
 
     <p v-if="loading" class="text-sm text-black/55">{{ S.checkoutLoadingPayment }}</p>
-    <ClientOnly v-else-if="pack && !successMessage">
+    <ClientOnly v-else-if="pack">
       <StripePaymentForm
         variant="auth"
         locale="sk"
@@ -72,7 +66,6 @@ const {
   pack,
   loading,
   error,
-  successMessage,
   billingPrefill,
   stripeReturnUrl,
   formatPrice,

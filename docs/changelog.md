@@ -1,4 +1,19 @@
-﻿## 2026-06-28 — Stripe § 74 invoice compliance (identifikovaná osoba)
+﻿## 2026-06-28 — Payment result pages (`/platba/vysledok`)
+
+Added:
+- **app-pwa/pages/platba/vysledok.vue:** Login-style success/failure/processing page (`AuthMarketingSplitShell`) for credits and subscription checkout.
+- **app-pwa/composables/useCheckoutResult.ts:** Stripe return handling, confirm API calls, URL secret stripping; supports `setup_intent` for trial subscriptions.
+
+Changed:
+- **app-pwa/useCheckoutCredits, useCheckoutSubscription:** Stripe `return_url` and inline success redirect to `/platba/vysledok`; removed return-url confirm from checkout `init()`.
+- **app-pwa/CheckoutCreditsPanel, CheckoutSubscriptionPanel:** Removed inline success banners (success UX on result page).
+- **app-pwa/app-routes.ts:** `ROUTES.checkoutResult`, `ROUTES.checkoutResultUrl()`.
+- **app-pwa/stripe-return-query.ts:** `readStripeReturnQuery` returns `setupIntent`.
+
+Docs:
+- **docs/frontend.md**, **docs/payments-credits.md:** checkout result flow.
+
+## 2026-06-28 — Stripe § 74 invoice compliance (identifikovaná osoba)
 
 Changed:
 - **backend-ts/stripe-invoice-sk:** `buildSkInvoiceFooter` appends supplier IČO/DIČ/IČ DPH/OR (`BILLING_SUPPLIER_*` / defaults) and § 74(h) exemption text (`STRIPE_INVOICE_VAT_EXEMPTION_TEXT`, optional `STRIPE_INVOICE_VAT_EXEMPTION_REFERENCE`); `buildSkInvoiceRendering` sets `amount_tax_display: exclude_tax`.

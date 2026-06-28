@@ -5,7 +5,6 @@ import { filterPublicSubscriptionPlans } from '~/utils/pricing-catalog'
 import { ROUTES } from '~/utils/app-routes'
 import { parseApiErrorMessage } from '~/utils/api-errors'
 import { parseSafeApiErrorMessage } from '~/utils/safe-user-messages'
-import { stripStripeReturnQueryFromBrowserUrl } from '~/utils/stripe-return-query'
 import { S } from '~/utils/strings'
 
 type ProfileBillingPrefill = {
@@ -25,21 +24,24 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
   const { capture } = useAnalytics()
   const { load: loadPlansCatalog } = usePlans()
   const { load: loadBillingAccount } = useBillingAccount()
-  const route = useRoute()
   const requestURL = useRequestURL()
 
   const plan = ref<PlanRow | null>(null)
   const loading = ref(true)
   const error = ref<string | null>(null)
   const clientSecret = ref<string | null>(null)
-  const successMessage = ref<string | null>(null)
   const billingPrefill = ref<ProfileBillingPrefill | null>(null)
   /** Frozen on init from GET /api/payments/subscription-checkout-preview — not updated during pay. */
   const checkoutTrialDays = ref(0)
   const checkoutIntentType = ref<'payment' | 'setup'>('payment')
 
   const stripeReturnUrl = computed(() => {
-    const path = ROUTES.checkoutPlan(planId, returnPath)
+    const path = ROUTES.checkoutResultUrl({
+      type: 'subscription',
+      planId,
+      returnPath,
+      trial: checkoutTrialDays.value > 0,
+    })
     if (import.meta.client && typeof window !== 'undefined') {
       return `${window.location.origin}${path}`
     }
@@ -89,61 +91,46 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
         return false
       }
       const gate = await ensureRecentLoginForBilling()
-    if (!gate.ok) {
-      error.value = gate.message
-      return false
-    }
-    const body: {
-      payment_intent_id?: string
-      setup_intent_id?: string
-      billing?: CheckoutBillingPayload
-    } = isSetup ? { setup_intent_id: id } : { payment_intent_id: id }
-    if (billing) body.billing = billing
-    const res = await api<{ ok: boolean }>('/api/payments/confirm-subscription', {
-      method: 'POST',
-      body,
-    })
-    if (!res.ok) {
-      error.value = parseSafeApiErrorMessage(res, S.checkoutPaymentFailed)
-      return false
-    }
-    error.value = null
-    await refreshUser()
-    successMessage.value =
-      checkoutTrialDays.value > 0
-        ? S.checkoutSubscriptionTrialSuccess
-        : S.checkoutSubscriptionSuccess
-    clientSecret.value = null
-    capture('subscription_purchased', {
-      plan_id: planId,
-      purchaser_type: billing?.purchaser_type,
-    })
-    await navigateTo(returnPath, { replace: true })
-    return true
+      if (!gate.ok) {
+        error.value = gate.message
+        return false
+      }
+      const body: {
+        payment_intent_id?: string
+        setup_intent_id?: string
+        billing?: CheckoutBillingPayload
+      } = isSetup ? { setup_intent_id: id } : { payment_intent_id: id }
+      if (billing) body.billing = billing
+      const res = await api<{ ok: boolean }>('/api/payments/confirm-subscription', {
+        method: 'POST',
+        body,
+      })
+      if (!res.ok) {
+        error.value = parseSafeApiErrorMessage(res, S.checkoutPaymentFailed)
+        return false
+      }
+      error.value = null
+      await refreshUser()
+      clientSecret.value = null
+      capture('subscription_purchased', {
+        plan_id: planId,
+        purchaser_type: billing?.purchaser_type,
+      })
+      await navigateTo(
+        ROUTES.checkoutResultUrl({
+          status: 'success',
+          type: 'subscription',
+          planId,
+          returnPath,
+          trial: checkoutTrialDays.value > 0,
+        }),
+        { replace: true },
+      )
+      return true
     } catch {
       error.value = S.checkoutPaymentFailed
       return false
     }
-  }
-
-  async function clearPaymentQuery(): Promise<void> {
-    const q = { ...route.query }
-    delete (q as Record<string, unknown>).payment_intent
-    delete (q as Record<string, unknown>).payment_intent_client_secret
-    delete (q as Record<string, unknown>).redirect_status
-    await navigateTo({ path: ROUTES.checkout, query: q }, { replace: true })
-  }
-
-  async function tryConfirmFromReturnUrl(): Promise<void> {
-    const pi = typeof route.query.payment_intent === 'string' ? route.query.payment_intent.trim() : ''
-    if (!pi.startsWith('pi_')) return
-    const status = route.query.redirect_status
-    if (status === 'failed') {
-      error.value = S.checkoutPaymentFailed
-      await clearPaymentQuery()
-      return
-    }
-    await confirmSubscriptionFromPaymentIntent(pi)
   }
 
   async function loadBillingPrefill(): Promise<void> {
@@ -219,9 +206,6 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
   }
 
   async function init(): Promise<void> {
-    if (import.meta.client) {
-      stripStripeReturnQueryFromBrowserUrl()
-    }
     loading.value = true
     error.value = null
     try {
@@ -236,7 +220,6 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
       }
       plan.value = found
       await loadCheckoutPreview()
-      await tryConfirmFromReturnUrl()
     } finally {
       loading.value = false
     }
@@ -247,7 +230,6 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
     loading,
     error,
     clientSecret,
-    successMessage,
     billingPrefill,
     stripeReturnUrl,
     checkoutTrialDays,

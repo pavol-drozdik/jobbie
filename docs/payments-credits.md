@@ -381,7 +381,7 @@ After DB updates, flush Redis keys if `REDIS_URL` is set: `catalog:credit-packs`
 
 1. `GET /api/payments/credit-packs` — each pack has `price_id` starting with `price_`.
 2. On `/platba`, user selects **Fyzická osoba / Firma**, fills billing + sees Payment Element (card, Google Pay, Apple Pay when available) on one screen; single **Zaplatiť** → `POST /api/payments/create-payment-intent-credits` or `create-payment-intent-subscription` with `{ price_id | plan_id, billing }` — billing is applied to the Stripe Customer **before** the invoice is finalized (IČO/DIČ on invoice PDF via `custom_fields` for companies), then Payment Element confirms in the same action.
-3. `confirm-credits` / `confirm-subscription` still accept `billing` for idempotent profile sync (return URL).
+3. `confirm-credits` / `confirm-subscription` on `/platba/vysledok` after Stripe return (or inline success redirect with `status=success`); `setup_intent` returns supported for trial subscriptions.
 4. Free plan: `POST /api/payments/activate-free-plan` with `{ plan_id, confirm_downgrade? }`.
 5. Company invoice PDF: Stripe Dashboard invoice email toggles — [stripe-invoice-emails.md](./stripe-invoice-emails.md).
 
@@ -396,7 +396,7 @@ After adding payment routes, **rebuild and restart** the Nest API (`npm run buil
 ## PWA integration
 
 - Pricing UI: `/cennik` — credit packs and subscription plans only (no per-action cost table). Packs from `GET /api/payments/credit-packs`; plans from `GET /api/plans`.
-- Checkout UI: `/platba` — auth card uses `rounded-[24px]` + `overflow-hidden` (same as login). **Deferred** Payment Element mounts on load (catalog amount); PaymentIntent is created on **Zaplatiť** after billing validation so company data still reaches Stripe before payment. Shared appearance + Apple/Google Pay via `utils/stripe-payment-element-ui.ts` on checkout and saved payment method forms.
+- Checkout UI: `/platba` — auth card uses `rounded-[24px]` + `overflow-hidden` (same as login). **Deferred** Payment Element mounts on load (catalog amount); PaymentIntent is created on **Zaplatiť** after billing validation so company data still reaches Stripe before payment. Shared appearance + Apple/Google Pay via `utils/stripe-payment-element-ui.ts` on checkout and saved payment method forms. **Result page:** `/platba/vysledok` — `AuthMarketingSplitShell` success/failure/processing states; Stripe `return_url` from `ROUTES.checkoutResultUrl()`; retry rebuilds `/platba` with preserved `type`, `pack`/`plan_id`, and `return`.
 - **Apple Pay / Google Pay:** Payment Element `wallets: auto`; server uses `payment_method_types: ['card']` (aligned with Elements — no `automatic_payment_methods` on PIs). Register production (and staging) hostnames under Stripe Dashboard → **Settings → Payment method domains** (HTTPS required). Wallets may not appear on `http://localhost`.
 - Credits: `POST /api/payments/create-payment-intent-credits` with `billing` creates a standalone **PaymentIntent**; after success, backend issues a paid SK **Invoice** (`paid_out_of_band`). Fulfillment via `payment_intent.succeeded` / `confirm-credits`. Abandoned open credit invoices are voided; in-app faktúry list shows **paid** only.
 - Subscriptions: `POST /api/payments/create-payment-intent-subscription` with `billing` → `confirm-subscription`; recurring invoices via Stripe Billing (`invoice.paid`, `invoice.payment_failed`, `invoice.payment_action_required`).

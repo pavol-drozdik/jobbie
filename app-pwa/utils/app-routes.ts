@@ -49,10 +49,28 @@ export const ROUTES = {
   privacy: '/ochrana-osobnych-udajov',
   authRegister: '/auth/register',
   checkout: '/platba',
+  checkoutResult: '/platba/vysledok',
   checkoutCredits: (pack: string, returnPath = '/cennik') =>
     `/platba?type=credits&pack=${encodeURIComponent(pack)}&return=${encodeURIComponent(returnPath)}`,
   checkoutPlan: (planId: string, returnPath = '/cennik') =>
     `/platba?type=subscription&plan_id=${encodeURIComponent(planId)}&return=${encodeURIComponent(returnPath)}`,
+  checkoutResultUrl: (opts: {
+    status?: 'success' | 'failed'
+    type: 'credits' | 'subscription'
+    pack?: string
+    planId?: string
+    returnPath?: string
+    trial?: boolean
+  }) => {
+    const params = new URLSearchParams()
+    params.set('type', opts.type)
+    if (opts.pack) params.set('pack', opts.pack)
+    if (opts.planId) params.set('plan_id', opts.planId)
+    if (opts.returnPath) params.set('return', opts.returnPath)
+    if (opts.status) params.set('status', opts.status)
+    if (opts.trial) params.set('trial', '1')
+    return `/platba/vysledok?${params.toString()}`
+  },
 } as const
 
 /** Longest prefix first — order matters for `/app/firmy/*` disambiguation. */
