@@ -14,7 +14,7 @@
 
       >
 
-        <div class="mb-1 flex min-w-0 max-lg:flex-1 items-center gap-3.5 px-2.5 pb-[18px] pt-2.5 max-lg:basis-[220px]">
+        <div class="mb-1 flex min-w-0 max-lg:flex-1 items-center gap-3.5 px-2.5 pb-[18px] pt-2.5">
 
           <div
 

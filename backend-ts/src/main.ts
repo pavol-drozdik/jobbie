@@ -112,4 +112,10 @@ async function bootstrap() {
   console.log(`JOBBIE API listening on http://localhost:${port} (Socket.IO on same port)`);
 }
 
-bootstrap();
+bootstrap().catch((err: unknown) => {
+  console.error(
+    '[JOBBIE API] Fatal bootstrap error',
+    err instanceof Error ? err.stack ?? err.message : err,
+  );
+  process.exit(1);
+});

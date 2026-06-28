@@ -90,7 +90,12 @@ fi
 cd "${DEPLOY_ROOT}"
 export BACKEND_IMAGE="${NEW_IMAGE}"
 compose_cmd pull backend
-compose_cmd up -d --wait --wait-timeout 180 backend
+if ! compose_cmd up -d --wait --wait-timeout 180 backend; then
+  echo "docker compose --wait failed (backend container unhealthy or timed out)." >&2
+  compose_cmd ps backend || true
+  compose_cmd logs backend --tail 120 || true
+  exit 1
+fi
 
 # GET /health bypasses CORS (no Origin required) — safe for curl and load balancers.
 # Retry through Caddy in case the reverse proxy flaps briefly after container recreate.

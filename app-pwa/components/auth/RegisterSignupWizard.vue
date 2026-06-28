@@ -41,7 +41,7 @@
                 <span v-else>{{ idx + 1 }}</span>
               </div>
               <span
-                class="mt-0.5 whitespace-nowrap text-xs font-medium transition-colors duration-300"
+                class="mt-0.5 max-w-[4rem] text-center text-xs font-medium transition-colors duration-300"
                 :class="progressLabelClass(idx + 1)"
               >
                 {{ label }}

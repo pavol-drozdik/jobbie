@@ -145,6 +145,15 @@ export class StripeService {
 
   private stripe: StripeClient | null = null;
 
+  /** Cached name + address fetched from Stripe own account (`GET /v1/account`). */
+  private stripeOwnAccountCache: {
+    name: string | null;
+    address: string | null;
+    fetchedAt: number;
+  } | null = null;
+
+  private static readonly OWN_ACCOUNT_CACHE_TTL_MS = 60 * 60 * 1_000; // 1 h
+
   constructor(
     private config: ConfigService,
     private supabaseService: SupabaseService,
@@ -178,6 +187,45 @@ export class StripeService {
   /** For billing account trial eligibility (Stripe customer subscription history). */
   getStripeClientForTrialChecks(): StripeClient {
     return this.getStripe();
+  }
+
+  /**
+   * Fetch name and formatted address from the Stripe own account (`GET /v1/account`),
+   * used to auto-populate the supplier block on in-app invoice detail.
+   * Result is cached for 1 hour; falls back to null fields on error.
+   */
+  private async resolveStripeAccountSupplier(): Promise<{
+    name: string | null;
+    address: string | null;
+  }> {
+    const now = Date.now();
+    if (
+      this.stripeOwnAccountCache !== null &&
+      now - this.stripeOwnAccountCache.fetchedAt <
+        StripeService.OWN_ACCOUNT_CACHE_TTL_MS
+    ) {
+      return this.stripeOwnAccountCache;
+    }
+    try {
+      // stripe.account (singular) → GET /v1/account — returns the own platform account.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const acct: any = await (this.getStripe() as any).account.retrieve();
+      const name: string | null = acct?.company?.name?.trim() || null;
+      const addr = acct?.company?.address ?? null;
+      const address = addr
+        ? this.formatStripeAddress(addr as Address)
+        : null;
+      const result = { name, address, fetchedAt: now };
+      this.stripeOwnAccountCache = result;
+      return result;
+    } catch (err) {
+      this.logger.warn(
+        `Could not fetch Stripe own account for supplier block: ${String(err)}`,
+      );
+      const result = { name: null, address: null, fetchedAt: now };
+      this.stripeOwnAccountCache = result;
+      return result;
+    }
   }
 
   async retrieveSubscription(
@@ -377,12 +425,9 @@ export class StripeService {
     return Boolean(getInvoiceSubscriptionId(invoice));
   }
 
-  /** Paid invoices + open subscription renewal invoices (past_due); not abandoned credit checkouts. */
+  /** Only paid invoices are visible to customers. */
   private isVisibleCustomerInvoice(invoice: Invoice): boolean {
-    if (invoice.status === 'paid') {
-      return true;
-    }
-    return invoice.status === 'open' && this.isSubscriptionInvoice(invoice);
+    return invoice.status === 'paid';
   }
 
   private isPayableSubscriptionInvoice(invoice: Invoice): boolean {
@@ -2306,11 +2351,16 @@ export class StripeService {
     if (!addr) {
       return null;
     }
+    const rawCountry = addr.country?.trim() ?? '';
+    const country =
+      rawCountry === 'SK' || rawCountry.toLowerCase() === 'slovakia'
+        ? 'Slovenská republika'
+        : rawCountry;
     const parts = [
       addr.line1,
       addr.line2,
       [addr.postal_code, addr.city].filter(Boolean).join(' '),
-      addr.country,
+      country,
     ].filter((p) => typeof p === 'string' && p.trim());
     const joined = parts.map((p) => String(p).trim()).filter(Boolean);
     return joined.length > 0 ? joined.join(', ') : null;
@@ -2362,17 +2412,24 @@ export class StripeService {
     }
 
     const envSupplier = getBillingInvoiceSupplier(this.config);
-    const supplier: BillingInvoiceSupplierDto = envSupplier.configured
-      ? envSupplier
-      : {
-          name: invoice.account_name?.trim() || envSupplier.name,
-          address: envSupplier.address,
-          ico: envSupplier.ico,
-          dic: envSupplier.dic,
-          vat: envSupplier.vat,
-          or: envSupplier.or,
-          configured: false,
-        };
+    // Stripe account (business settings) is the primary source for name + address.
+    // Env vars BILLING_SUPPLIER_NAME / BILLING_SUPPLIER_ADDRESS override if set.
+    // IČO/DIČ/IČ DPH come from env vars + hardcoded defaults (Stripe does not
+    // expose actual tax ID values via the API, only confirms they were provided).
+    const stripeAcct = await this.resolveStripeAccountSupplier();
+    const rawEnvName = this.config.get<string>('BILLING_SUPPLIER_NAME')?.trim() ?? '';
+    const rawEnvAddress = this.config.get<string>('BILLING_SUPPLIER_ADDRESS')?.trim() ?? '';
+    const supplier: BillingInvoiceSupplierDto = {
+      name: rawEnvName || stripeAcct.name || envSupplier.name,
+      address: rawEnvAddress
+        ? rawEnvAddress.replace(/\bSlovakia\b/gi, 'Slovenská republika')
+        : stripeAcct.address || envSupplier.address,
+      ico: envSupplier.ico,
+      dic: envSupplier.dic,
+      vat: envSupplier.vat,
+      or: envSupplier.or,
+      configured: true,
+    };
 
     const productType = this.resolveInvoiceProductType(invoice);
 
@@ -2502,12 +2559,12 @@ export class StripeService {
   > {
     const stripe = this.getStripe();
     const cap = Math.min(limit, 100);
-    const [paidList, openList] = await Promise.all([
-      stripe.invoices.list({ customer: customerId, status: 'paid', limit: cap }),
-      stripe.invoices.list({ customer: customerId, status: 'open', limit: 20 }),
-    ]);
-    const merged = [...openList.data, ...paidList.data]
-      .filter((inv) => this.isVisibleCustomerInvoice(inv))
+    const paidList = await stripe.invoices.list({
+      customer: customerId,
+      status: 'paid',
+      limit: cap,
+    });
+    const merged = paidList.data
       .sort((a, b) => (b.created ?? 0) - (a.created ?? 0))
       .slice(0, Math.min(limit, 24));
     return merged.map((inv) => ({

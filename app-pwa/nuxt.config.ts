@@ -193,15 +193,6 @@ export default defineNuxtConfig({
         )
       }
     },
-    'render:html': (html, { event }) => {
-      const nonce = (event as { context?: { cspNonce?: string } })?.context
-        ?.cspNonce
-      if (!nonce) return
-      return html.replace(
-        /<script(?![^>]*\snonce=)/gi,
-        `<script nonce="${nonce}"`,
-      )
-    },
   },
   components: [
     '~/components',

@@ -24,7 +24,7 @@
         type="text"
         :placeholder="modelValue.length === 0 ? placeholder : ''"
         :maxlength="maxLength"
-        class="min-w-[180px] flex-1 border-0 bg-transparent px-1.5 py-1 text-base text-black outline-none placeholder:text-black/40"
+        class="min-w-[120px] flex-1 border-0 bg-transparent px-1.5 py-1 text-base text-black outline-none placeholder:text-black/40"
         @keydown="onKeyDown"
         @blur="commitDraft"
       >

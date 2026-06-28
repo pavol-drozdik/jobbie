@@ -11,7 +11,7 @@
       >
         <div class="min-w-0">
           <h1
-            class="mb-5 mt-0 max-w-[720px] font-dmSans text-[46px] font-extrabold leading-[1.08] tracking-[-0.03em] text-[#1a1a1a] marketing:mb-6 marketing:text-[68px] marketing:leading-[1.05] marketingXl:text-[72px] marketingXl:tracking-[-0.04em]"
+            class="mb-5 mt-0 max-w-[720px] font-dmSans text-[34px] min-[380px]:text-[42px] min-[520px]:text-[46px] font-extrabold leading-[1.08] tracking-[-0.03em] text-[#1a1a1a] marketing:mb-6 marketing:text-[68px] marketing:leading-[1.05] marketingXl:text-[72px] marketingXl:tracking-[-0.04em]"
           >
             Nájdi prácu,<br>
             ktorá ti
