@@ -1,4 +1,10 @@
-﻿## 2026-06-28 — Production CSP connect-src (login blocked)
+﻿## 2026-06-28 — Deploy script logs on unhealthy backend
+
+Changed:
+- **websupport-vps-deployment:** `deploy_backend.sh` prints `docker compose ps` + backend logs when `compose up --wait` fails (CI no longer exits before logs).
+- **backend-ts:** `bootstrap().catch()` logs fatal startup errors before exit (visible in `docker compose logs backend`).
+
+## 2026-06-28 — Production CSP connect-src (login blocked)
 
 Fixed:
 - **app-pwa:** CSP `connect-src` now reads API/Supabase/CDN/PostHog origins from `useRuntimeConfig(event).public` (build-time config) instead of empty `process.env` on Cloudflare Workers — fixes login and API calls blocked with `localhost:8000` in CSP while the client targeted `https://api.jobbie.sk`.
