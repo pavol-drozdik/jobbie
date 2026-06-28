@@ -5,7 +5,7 @@
       <span class="text-marketing-green">{{ S.checkoutPageTitleSubscriptionAccent }}</span>
     </h1>
     <p class="mb-8 mt-2 text-[17px] font-normal leading-normal text-black/55">
-      {{ planTrialDays > 0 ? S.checkoutPageSubtitleSubscriptionTrial : S.checkoutPageSubtitleSubscription }}
+      {{ checkoutTrialDays > 0 ? S.checkoutPageSubtitleSubscriptionTrial : S.checkoutPageSubtitleSubscription }}
     </p>
     <p class="mb-6 text-sm leading-relaxed text-black/55">
       {{ S.checkoutSkBillingPolicyNotice }}
@@ -31,17 +31,17 @@
         <span class="font-medium text-black/50">· {{ S.checkoutPlanLabel }}</span>
       </p>
       <p
-        v-if="planTrialDays > 0"
+        v-if="checkoutTrialDays > 0"
         class="m-0 mt-2 inline-block rounded-full bg-amber-100 px-3 py-1 font-dmSans text-[13px] font-bold text-amber-950"
       >
-        {{ subscriptionTrialBadgeLabel(planTrialDays) }}
+        {{ subscriptionTrialBadgeLabel(checkoutTrialDays) }}
       </p>
       <p class="m-0 mt-2 font-dmSans text-2xl font-extrabold text-marketing-green">
-        <template v-if="planTrialDays > 0">{{ S.checkoutTrialPriceNow }}</template>
+        <template v-if="checkoutTrialDays > 0">{{ S.checkoutTrialPriceNow }}</template>
         <template v-else>{{ formatPlanPrice(plan.price_monthly_cents) }}</template>
       </p>
       <p
-        v-if="planTrialDays > 0"
+        v-if="checkoutTrialDays > 0"
         class="m-0 mt-1 font-dmSans text-base font-semibold text-black/55"
       >
         {{ S.checkoutTrialPriceAfter.replace('{price}', formatPlanPrice(plan.price_monthly_cents)) }}
@@ -59,8 +59,8 @@
         collect-business-billing
         :return-url="stripeReturnUrl"
         :billing-prefill="billingPrefill"
-        :deferred-mode="planTrialDays > 0 ? 'setup' : 'payment'"
-        :deferred-amount="planTrialDays > 0 ? undefined : plan.price_monthly_cents"
+        :deferred-mode="checkoutUsesSetupDeferred ? 'setup' : 'payment'"
+        :deferred-amount="checkoutUsesSetupDeferred ? undefined : plan.price_monthly_cents"
         deferred-currency="eur"
         :prepare-payment="prepareCheckoutPayment"
         :on-payment-success="confirmSubscriptionFromPaymentIntent"
@@ -92,7 +92,7 @@ const {
   error,
   successMessage,
   checkoutTrialDays,
-  planTrialDays,
+  checkoutUsesSetupDeferred,
   billingPrefill,
   stripeReturnUrl,
   formatPlanPrice,

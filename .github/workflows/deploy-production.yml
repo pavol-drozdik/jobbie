@@ -39,13 +39,13 @@ jobs:
           fi
           echo "user=${USER}" >> "${GITHUB_OUTPUT}"
 
-      - name: Upload deploy script
+      - name: Upload deploy artifacts
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.PROD_SSH_HOST }}
           username: ${{ secrets.PROD_SSH_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
-          source: websupport-vps-deployment/scripts/deploy_backend.sh
+          source: "websupport-vps-deployment/scripts/deploy_backend.sh,websupport-vps-deployment/docker-compose.yml"
           target: /tmp/jobbie-deploy/
 
       - name: Deploy over SSH
@@ -65,6 +65,8 @@ jobs:
             set -euo pipefail
             sudo install -m 755 /tmp/jobbie-deploy/websupport-vps-deployment/scripts/deploy_backend.sh \
               /srv/nestjs-typesense/scripts/deploy_backend.sh
+            sudo install -m 644 /tmp/jobbie-deploy/websupport-vps-deployment/docker-compose.yml \
+              /srv/nestjs-typesense/docker-compose.yml
             export HEALTH_URL="${HEALTH_URL:-https://api.jobbie.sk/health}"
             HEALTH_URL="${HEALTH_URL//$'\r'/}"
             HEALTH_URL="${HEALTH_URL//$'\n'/}"

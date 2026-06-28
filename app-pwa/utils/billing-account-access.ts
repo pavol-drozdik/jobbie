@@ -6,6 +6,8 @@ export type BillingAccountSnapshot = {
   cancelAtPeriodEnd?: boolean
   /** From GET /api/billing/account when present. */
   hasPlusOrProAccess?: boolean
+  /** User may start a subscription trial (one per account; no prior paid Stripe subs). */
+  subscriptionTrialEligible?: boolean
 }
 
 /**

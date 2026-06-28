@@ -26,6 +26,7 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
   const { capture } = useAnalytics()
   const { load: loadPlansCatalog } = usePlans()
   const { config: billingCatalogConfig, load: loadBillingCatalog } = useCatalogBilling()
+  const { account: billingAccount, load: loadBillingAccount } = useBillingAccount()
   const route = useRoute()
   const requestURL = useRequestURL()
 
@@ -49,12 +50,20 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
     return `${(priceCents / 100).toFixed(2)} €${S.planPerMonth}`
   }
 
-  const checkoutTrialDays = ref<number | null>(null)
-
   const planTrialDays = computed((): number => {
     if (!plan.value) return 0
     return resolvePlanTrialDays(plan.value, billingCatalogConfig.value)
   })
+
+  /** Trial UI + deferred Setup mode only when this user can actually get a trial. */
+  const checkoutTrialDays = computed((): number => {
+    if (!billingAccount.value?.subscriptionTrialEligible) return 0
+    return planTrialDays.value
+  })
+
+  const checkoutUsesSetupDeferred = computed(
+    () => checkoutTrialDays.value > 0,
+  )
 
   async function confirmSubscriptionFromPaymentIntent(
     intentId: string | null | undefined,
@@ -90,7 +99,7 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
     error.value = null
     await refreshUser()
     successMessage.value =
-      checkoutTrialDays.value && checkoutTrialDays.value > 0
+      checkoutTrialDays.value > 0
         ? S.checkoutSubscriptionTrialSuccess
         : S.checkoutSubscriptionSuccess
     clientSecret.value = null
@@ -179,7 +188,6 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
       typeof res.data?.trial_period_days === 'number' && res.data.trial_period_days > 0
         ? res.data.trial_period_days
         : null
-    checkoutTrialDays.value = trialDays
     capture('checkout_started', {
       plan_id: planId,
       flow: 'subscription',
@@ -206,7 +214,7 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
     error.value = null
     try {
       await loadBillingPrefill()
-      await loadBillingCatalog()
+      await Promise.all([loadBillingCatalog(), loadBillingAccount()])
       const rows = await loadPlansCatalog()
       const visible = filterPublicSubscriptionPlans(rows)
       const found = visible.find((p) => p.id === planId)
@@ -215,7 +223,6 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
         return
       }
       plan.value = found
-      checkoutTrialDays.value = resolvePlanTrialDays(found, billingCatalogConfig.value) || null
       await tryConfirmFromReturnUrl()
     } finally {
       loading.value = false
@@ -231,6 +238,7 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
     billingPrefill,
     stripeReturnUrl,
     checkoutTrialDays,
+    checkoutUsesSetupDeferred,
     planTrialDays,
     formatPlanPrice,
     confirmSubscriptionFromPaymentIntent,

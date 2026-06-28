@@ -25,3 +25,24 @@ export function setupIntentIdFromClientSecret(clientSecret: string): string | nu
 export function isSetupIntentClientSecret(clientSecret: string): boolean {
   return clientSecret.trim().startsWith('seti_')
 }
+
+export function isPaymentIntentClientSecret(clientSecret: string): boolean {
+  return clientSecret.trim().startsWith('pi_')
+}
+
+/**
+ * Pick `confirmSetup` vs `confirmPayment` after checkout `preparePayment`.
+ * Secret prefix wins when present; otherwise use server `intent_type`, then
+ * deferred Elements mode (plan trial UI may show setup while user is ineligible).
+ */
+export function shouldConfirmSetupIntent(
+  clientSecret: string,
+  intentType?: 'payment' | 'setup',
+  deferredMode?: 'payment' | 'setup',
+): boolean {
+  if (isSetupIntentClientSecret(clientSecret)) return true
+  if (isPaymentIntentClientSecret(clientSecret)) return false
+  if (intentType === 'setup') return true
+  if (intentType === 'payment') return false
+  return deferredMode === 'setup'
+}
