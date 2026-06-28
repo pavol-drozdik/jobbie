@@ -1,4 +1,15 @@
-﻿## 2026-06-27 — Subscription checkout Stripe expand depth
+﻿## 2026-06-28 — Footer CoCreate credit
+
+Changed:
+- **app-pwa:** Site footer shows „Vytvorilo“ with linked CoCreate logo next to the copyright line.
+
+## 2026-06-28 — Health check browser CORS
+
+Fixed:
+- **backend-ts:** `GET /health` applies normal CORS when the browser sends `Origin` (PWA reachability probe); still bypasses CORS for probe traffic without `Origin` (Docker, Netdata, curl).
+- **app-pwa:** Realtime health probe caches a failed result until the 15s retry (stops CORS error spam when API is unreachable).
+
+## 2026-06-27 — Subscription checkout Stripe expand depth
 
 Fixed:
 - **backend-ts:** `subscriptions.create` on `/platba` — shallow expand (`latest_invoice`, `pending_setup_intent` only). Deep expand `latest_invoice.payments.data.payment.payment_intent` exceeded Stripe’s 4-level limit and broke subscription checkout; PaymentIntent client secret is resolved via existing follow-up retrieve in `resolveSubscriptionPaymentClientSecret`.

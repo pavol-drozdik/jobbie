@@ -136,7 +136,7 @@ Sensitive areas: billing changes, account delete, admin moderation, passkey mana
 
 If a scanner reports `Access-Control-Allow-Origin: *`, identify the response URL:
 
-1. **Nest API** — `OPTIONS` or `GET` with `Origin: https://evil.example` on `/api/*` must not return `*` or echo the evil origin. Confirm `CORS_ORIGINS` lists exact PWA origins (`https://jobbie.sk`, `https://www.jobbie.sk`). `GET /health` and `GET /api/seo/*` bypass CORS (no `Origin` required — probes and Nitro sitemap/feed fetches).
+1. **Nest API** — `OPTIONS` or `GET` with `Origin: https://evil.example` on `/api/*` must not return `*` or echo the evil origin. Confirm `CORS_ORIGINS` lists exact PWA origins (`https://jobbie.sk`, `https://www.jobbie.sk`). `GET /health` and `GET /api/seo/*` bypass CORS only when there is no `Origin` header (probes, Nitro sitemap/feed fetches); browser health probes from the PWA use the normal allowlist.
 2. **PWA (Nitro)** — HTML and feeds should not send credentialed CORS headers; cross-origin reads are not intended.
 3. **Supabase** — Dashboard → Project Settings → API: restrict **Additional Allowed Origins** to PWA origins (not `*`).
 4. **CDN / reverse proxy** — ensure no `add_header Access-Control-Allow-Origin *` on app or API routes.

@@ -45,7 +45,9 @@ async function bootstrap() {
   app.use(cookieParser());
   const corsOptions = buildNestCorsOptions();
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (shouldBypassCors(req.path)) {
+    // Probes (Docker, curl, Netdata) hit /health without Origin; browser health
+    // checks from the PWA send Origin and need the normal allowlist CORS path.
+    if (shouldBypassCors(req.path) && !req.headers.origin) {
       return next();
     }
     return createExpressCorsMiddleware(corsOptions)(req, res, next);
