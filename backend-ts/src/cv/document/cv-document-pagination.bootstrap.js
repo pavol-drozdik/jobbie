@@ -502,7 +502,9 @@
     sheet.className = 'cv-sheet resume-page monochrome-page'
     if (headerNode) sheet.appendChild(headerNode.cloneNode(true))
     const grid = document.createElement('section')
-    grid.className = 'monochrome-grid'
+    grid.className = headerNode
+      ? 'monochrome-grid'
+      : 'monochrome-grid monochrome-grid--continued'
     const main = document.createElement('div')
     main.className = 'monochrome-main'
     mountMonochromeMainUnits(main, mainNodes)
@@ -689,7 +691,7 @@
         header: includeHeader ? headerClone : null,
         sideNodes: sideNodes.slice(),
         mainNodes: mainNodes.slice(),
-        chromeSide: pageIndex > 0 && sideNodes.length === 0,
+        chromeSide: pageIndex > 0,
         mainUnitStart: pageMainStart,
         mainUnitEnd: mi,
       }

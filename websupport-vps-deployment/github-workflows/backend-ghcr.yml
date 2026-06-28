@@ -133,6 +133,20 @@ jobs:
             set -euo pipefail
             sudo install -m 755 /tmp/jobbie-deploy/websupport-vps-deployment/scripts/deploy_backend.sh \
               /srv/nestjs-typesense/scripts/deploy_backend.sh
+            HEALTH_URL="${HEALTH_URL//$'\r'/}"
+            HEALTH_URL="${HEALTH_URL//$'\n'/}"
+            if [[ -z "${HEALTH_URL}" ]]; then
+              APP_DOMAIN="$(grep -E '^APP_DOMAIN=' /srv/nestjs-typesense/.env | head -n1 | cut -d= -f2- | tr -d '"' | tr -d "'" | xargs || true)"
+              APP_DOMAIN="${APP_DOMAIN//$'\r'/}"
+              APP_DOMAIN="${APP_DOMAIN//$'\n'/}"
+              if [[ -z "${APP_DOMAIN}" ]]; then
+                echo "STAGING_HEALTH_URL unset and APP_DOMAIN missing in /srv/nestjs-typesense/.env" >&2
+                exit 1
+              fi
+              export HEALTH_URL="https://${APP_DOMAIN}/health"
+            else
+              export HEALTH_URL="${HEALTH_URL}"
+            fi
             sudo \
               BACKEND_VERSION="${BACKEND_VERSION}" \
               GHCR_IMAGE="${GHCR_IMAGE}" \

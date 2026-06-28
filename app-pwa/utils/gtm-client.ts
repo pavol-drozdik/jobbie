@@ -72,8 +72,8 @@ function registerConsentListener(): void {
 }
 
 /**
- * Bootstrap Google Tag Manager on every page (Consent Mode gates tags until analytics consent).
- * Configure GA4, Clarity, and other tags inside the GTM container with analytics_storage checks.
+ * Load Google Tag Manager after analytics cookie consent (GA4/Clarity tags live in the container).
+ * Call only from applyAnalyticsConsent(true) — not on first paint without consent.
  */
 export function loadGtm(): void {
   if (!import.meta.client || gtmLoaded || !isGtmConfigured()) {
@@ -94,7 +94,9 @@ export function loadGtm(): void {
   gtmLoaded = true
 }
 
-/** Stop Clarity / GA tags injected by GTM; keep the container bootstrap for consent updates. */
+const GTM_BOOTSTRAP_SCRIPT_RE = /googletagmanager\.com\/gtm\.js/i
+
+/** Stop Clarity / GA tags injected by GTM (not the container bootstrap). */
 export function purgeInjectedAnalyticsScripts(): void {
   if (!import.meta.client) {
     return
@@ -110,7 +112,22 @@ export function purgeInjectedAnalyticsScripts(): void {
   }
 }
 
-/** @deprecated Prefer purgeInjectedAnalyticsScripts + syncGtagConsent(false). */
-export function unloadGtm(): void {
+/** Remove GTM bootstrap + injected tags on consent withdraw so GA4/Clarity cannot keep sending. */
+export function teardownGtmAnalytics(): void {
+  if (!import.meta.client) {
+    return
+  }
   purgeInjectedAnalyticsScripts()
+  document.querySelectorAll('script[src]').forEach((el) => {
+    const src = el.getAttribute('src') ?? ''
+    if (GTM_BOOTSTRAP_SCRIPT_RE.test(src)) {
+      el.remove()
+    }
+  })
+  gtmLoaded = false
+}
+
+/** @deprecated Prefer teardownGtmAnalytics + syncGtagConsent(false). */
+export function unloadGtm(): void {
+  teardownGtmAnalytics()
 }

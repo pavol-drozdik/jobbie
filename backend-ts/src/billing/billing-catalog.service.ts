@@ -11,7 +11,6 @@ import { SubscriptionTrialService } from './subscription-trial.service';
 import {
   CREDIT_PACKAGES,
   SUBSCRIPTION_PLAN_SPECS,
-  formatPricePerCredit,
 } from './billing.config';
 import { getPublicPlanTierCreditCosts } from './plan-tier-credit-costs';
 import {
@@ -34,8 +33,6 @@ export type MarketingCreditPackage = {
   currency: string;
 
   badge: string | null;
-
-  pricePerCredit: string;
 
   stripePriceId?: string | null;
 
@@ -180,8 +177,6 @@ export class BillingCatalogService {
       currency: row.currency ?? 'eur',
 
       badge: row.badge,
-
-      pricePerCredit: formatPricePerCredit(row.unit_amount, row.credits),
 
       stripePriceId: row.stripe_price_id,
 
@@ -361,8 +356,6 @@ export class BillingCatalogService {
       currency: p.currency,
 
       badge: p.badge,
-
-      pricePerCredit: formatPricePerCredit(p.priceCents, p.credits),
 
     }));
 

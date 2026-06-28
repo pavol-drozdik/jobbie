@@ -1,6 +1,7 @@
 import {
   captureGtmPageView,
-  purgeInjectedAnalyticsScripts,
+  loadGtm,
+  teardownGtmAnalytics,
   signalAnalyticsConsentToGtm,
 } from '~/utils/gtm-client'
 import { initPosthogIfConsented, shutdownPosthog } from '~/utils/posthog-client'
@@ -109,13 +110,14 @@ export function applyAnalyticsConsentEffect(granted: boolean): void {
   syncGtagConsent(granted)
   signalAnalyticsConsentToGtm(granted)
   if (granted) {
+    loadGtm()
     initPosthogIfConsented()
     captureGtmPageView()
     window.dispatchEvent(new Event('jobbie:analytics-consent-changed'))
     return
   }
   shutdownPosthog()
-  purgeInjectedAnalyticsScripts()
+  teardownGtmAnalytics()
   clearAnalyticsCookies()
   window.dispatchEvent(new Event('jobbie:analytics-consent-changed'))
 }

@@ -2433,7 +2433,7 @@ export class StripeService {
 
     const productType = this.resolveInvoiceProductType(invoice);
 
-    const customFields = filterStripeInvoiceCustomFields(
+    let customFields = filterStripeInvoiceCustomFields(
       (invoice.custom_fields ?? [])
         .filter(
           (f): f is { name: string; value: string } =>
@@ -2441,6 +2441,46 @@ export class StripeService {
         )
         .map((f) => ({ name: f.name.trim(), value: f.value.trim() })),
     );
+
+    // Guarantee buyer tax IDs (IČO/DIČ/IČ DPH) appear on company invoices.
+    // The invoice custom_fields are the authoritative source; the profile is the
+    // fallback for old invoices that were created before custom_fields were stamped.
+    const hasBuyerIco = customFields.some((f) => f.name === 'IČO');
+    const hasBuyerDic = customFields.some((f) => f.name === 'DIČ');
+    const hasBuyerVat = customFields.some((f) => f.name === 'IČ DPH');
+    if (!hasBuyerIco || !hasBuyerDic || !hasBuyerVat) {
+      try {
+        const { data: profile } = await this.supabaseService
+          .getClient()
+          .from('profiles')
+          .select('registration_number, tax_id, vat_id')
+          .eq('id', userId)
+          .maybeSingle();
+        if (profile) {
+          const p = profile as {
+            registration_number?: string | null;
+            tax_id?: string | null;
+            vat_id?: string | null;
+          };
+          const extra: Array<{ name: string; value: string }> = [];
+          if (!hasBuyerIco && p.registration_number?.trim()) {
+            extra.push({ name: 'IČO', value: p.registration_number.trim() });
+          }
+          if (!hasBuyerDic && p.tax_id?.trim()) {
+            extra.push({ name: 'DIČ', value: p.tax_id.trim() });
+          }
+          if (!hasBuyerVat) {
+            const vat = normalizeSkEuVatId(p.vat_id);
+            if (vat) extra.push({ name: 'IČ DPH', value: vat });
+          }
+          if (extra.length > 0) {
+            customFields = [...extra, ...customFields];
+          }
+        }
+      } catch (err) {
+        this.logger.warn(`Could not fetch profile for buyer tax IDs on invoice ${trimmedId}: ${String(err)}`);
+      }
+    }
 
     let lineRows: InvoiceLineItem[] = [];
     try {

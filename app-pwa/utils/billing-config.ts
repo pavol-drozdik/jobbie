@@ -19,9 +19,3 @@ export function publishServiceProfileCredits(months: number): number {
   const m = Math.max(1, Math.min(12, Math.floor(months)))
   return CREDIT_COSTS.publishServiceProfile30Days * m
 }
-
-export function formatPricePerCredit(priceCents: number, credits: number): string {
-  if (credits < 1) return '—'
-  const per = priceCents / 100 / credits
-  return `${per.toFixed(2).replace('.', ',')} € / kredit`
-}

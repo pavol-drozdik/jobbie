@@ -7,10 +7,11 @@ import { isoDateToMonthYear } from '~/utils/cv-month-year'
 import { CV_PROTOTYPE_MONTH_OPTIONS } from '~/utils/cv-prototype-months'
 import { formatCvStartAvailabilityLabel } from '~/utils/cv-start-availability'
 import { JOB_POST_EMPLOYMENT_OPTIONS } from '~/utils/job-post-options'
+import { resolveCvPhotoDisplayUrl } from '~/utils/cv-photo-display-url'
 
 type ExportCtx = Parameters<typeof buildExportDataFromState>[0]
 
-function buildExportCtx(aggregate: CvAggregateResponseDto): ExportCtx {
+function buildExportCtx(aggregate: CvAggregateResponseDto, photoUrl: string | null): ExportCtx {
   const header = aggregate.cv
   const monthOptions = [...CV_PROTOTYPE_MONTH_OPTIONS]
   const expDraft: ExportCtx['expDraft'] = {}
@@ -71,7 +72,7 @@ function buildExportCtx(aggregate: CvAggregateResponseDto): ExportCtx {
     eduDraftForPreview,
     skillDraft,
     langDraft,
-    photoUrl: header.photo_url,
+    photoUrl,
     employmentLabels,
     startTerm,
     salaryUnitLabel,
@@ -83,10 +84,12 @@ export type CvHubPreviewResult = 'opened' | 'blocked' | 'error'
 
 export function useCvHubPreview() {
   const { getCvAggregate } = useCv()
+  const { api } = useApi()
   async function openPreview(cvId: string): Promise<CvHubPreviewResult> {
     try {
       const aggregate = await getCvAggregate(cvId)
-      const ctx = buildExportCtx(aggregate)
+      const photoUrl = await resolveCvPhotoDisplayUrl(cvId, aggregate.cv, api)
+      const ctx = buildExportCtx(aggregate, photoUrl)
       const data = buildExportDataFromState(ctx)
       return (await openCvPreviewFromData(data, { cvId })) ? 'opened' : 'blocked'
     } catch {

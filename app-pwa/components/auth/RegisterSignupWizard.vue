@@ -66,10 +66,10 @@
         <!-- Step 1 -->
         <div v-show="currentStep === 1" class="flex flex-1 flex-col">
           <h2 class="m-0 mb-1.5 text-[30px] font-extrabold leading-[1.15] text-black">
-            Aký typ účtu <span class="text-marketing-green">chceš</span>
+            Vyber si <span class="text-marketing-green">typ účtu</span>
           </h2>
           <p class="mb-7 text-base font-normal leading-normal text-black/50">
-            Vyber si, ako budeš Jobbie používať.
+            Ako budeš Jobbie využívať ?
           </p>
           <div class="grid flex-1 grid-cols-1 content-start gap-3.5 sm:grid-cols-2">
             <button
@@ -132,7 +132,7 @@
         <!-- Step 2 -->
         <div v-show="currentStep === 2" class="flex flex-1 flex-col">
           <h2 class="m-0 mb-1.5 text-[30px] font-extrabold leading-[1.15] text-black">
-            Aktívne <span class="text-marketing-green">roly</span>
+            Čo <span class="text-marketing-green">potrebuješ</span>
           </h2>
           <p class="mb-7 text-base font-normal leading-normal text-black/50">
             Čo chceš robiť? Môžeš vybrať aj viac možností.

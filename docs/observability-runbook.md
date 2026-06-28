@@ -26,7 +26,7 @@ Admin compares sources in **Web & marketing**; treat PostHog vs GA user counts a
 - Env: `NUXT_PUBLIC_POSTHOG_KEY`, optional `NUXT_PUBLIC_POSTHOG_HOST` (default `https://eu.i.posthog.com`).
 - Env: `NUXT_PUBLIC_GTM_CONTAINER_ID` (`GTM-…`) — empty = off. Configure GA4 and Microsoft Clarity tags inside the GTM container (not in app env).
 - SDK: [`app-pwa/utils/posthog-client.ts`](../app-pwa/utils/posthog-client.ts) — autocapture off, manual `$pageview`, `advanced_disable_flags: true` until the first flag ships.
-- GTM: [`app-pwa/utils/gtm-client.ts`](../app-pwa/utils/gtm-client.ts) — bootstrap `gtm.js` on every page when `NUXT_PUBLIC_GTM_CONTAINER_ID` is set; SPA `page_view` via `dataLayer` only after analytics consent; gtag Consent Mode defaults in [`utils/analytics-consent.ts`](../app-pwa/utils/analytics-consent.ts) (`wait_for_update: 2000` ms).
+- GTM: [`app-pwa/utils/gtm-client.ts`](../app-pwa/utils/gtm-client.ts) — loads `gtm.js` **only after** analytics cookie consent (`loadGtm` from `applyAnalyticsConsent`); SPA `page_view` via `dataLayer`; gtag Consent Mode defaults in [`utils/analytics-consent.ts`](../app-pwa/utils/analytics-consent.ts) (`wait_for_update: 2000` ms). On withdraw, `teardownGtmAnalytics` removes the GTM bootstrap and injected GA4/Clarity scripts.
 - **GTM container (required):** Enable built-in Consent Mode. Set GA4 and Clarity tags to require `analytics_storage`. Add triggers:
   - **Consent Initialization** — `analytics_storage` granted (returning visitors with `jb_consent`).
   - **Custom Event** — `analytics_consent_granted` (mid-session Accept in cookie banner / preferences).

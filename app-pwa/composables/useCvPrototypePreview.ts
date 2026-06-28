@@ -156,52 +156,6 @@ async function buildPreviewExportPayload(
   return { ...data, profilePhoto }
 }
 
-/** Temporary HTML preview for template/CSS tweaks (`POST …/document/preview-html`). */
-export async function openCvHtmlPreviewFromData(
-  data: CvDocumentExportData,
-  options?: OpenCvPreviewOptions,
-): Promise<boolean> {
-  if (!import.meta.client) {
-    return false
-  }
-  const cvId = options?.cvId?.trim()
-  const failedMessage =
-    options?.failedMessage?.trim() || 'Náhľad sa nepodarilo pripraviť.'
-  if (!cvId) {
-    throw new Error(failedMessage)
-  }
-  const payload = await buildPreviewExportPayload(data)
-  const { session } = useAuth()
-  const config = useRuntimeConfig()
-  const base = String(config.public.apiBaseUrl || '').replace(/\/$/, '')
-  const res = await fetchApiBinary(
-    `${base}/api/cv/${encodeURIComponent(cvId)}/document/preview-html`,
-    session.value,
-    {
-      method: 'POST',
-      accept: 'text/html',
-      apiBaseUrl: base,
-      body: payload,
-    },
-  )
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(parseApiErrorBody(text, failedMessage))
-  }
-  const previewHtml = await res.text()
-  if (!previewHtml.trim()) {
-    throw new Error(failedMessage)
-  }
-  const previewWindow = window.open('', '_blank')
-  if (!previewWindow) {
-    return false
-  }
-  previewWindow.document.open()
-  previewWindow.document.write(previewHtml)
-  previewWindow.document.close()
-  return true
-}
-
 /** Server PDF preview — same Playwright pipeline as stored CV PDF (`POST …/document/preview`). */
 export async function openCvPreviewFromData(
   data: CvDocumentExportData,

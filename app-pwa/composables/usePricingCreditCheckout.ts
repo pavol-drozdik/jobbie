@@ -60,11 +60,6 @@ export function usePricingCreditCheckout(options: {
     return null
   }
 
-  function pricePerCredit(pack: PricingCreditPack): string {
-    const per = pack.unit_amount / 100 / pack.credits
-    return `${per.toFixed(2).replace('.', ',')} € / kredit`
-  }
-
   function formatPrice(unitAmount: number, currency: string): string {
     const value = (unitAmount / 100).toFixed(2)
     if (currency.toUpperCase() === 'EUR') return `${value} €`
@@ -226,7 +221,6 @@ export function usePricingCreditCheckout(options: {
     clientSecret,
     returnUrl,
     packBadgeLabel,
-    pricePerCredit,
     formatPrice,
     selectAndBuy,
     handleBuy,

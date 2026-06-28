@@ -52,7 +52,7 @@ Tailwind extends `rounded-card`, `shadow-card`, `shadow-dropdown`, `shadow-hero`
 - Store: `useCookieConsentStore()` — persists `jb_consent` v2 (`necessary`, `analytics`, `marketing`, `personalization`, `policy`, `ts`); visitor id `jb_consent_vid` for audit correlation.
 - Re-open: footer / `layouts/default.vue` via `openCookiePreferences('footer')`.
 - Logging: each choice → `POST /api/consent/cookie` (public, throttled) → `cookie_consent_log` (admin: jobbie-admin **Cookie súhlas**).
-- Orchestration: [`utils/analytics-consent.ts`](../app-pwa/utils/analytics-consent.ts) — gtag Consent Mode + PostHog + Sentry (when DSN set) after **analytics** consent; GTM container bootstraps earlier with tags consent-gated inside the container.
+- Orchestration: [`utils/analytics-consent.ts`](../app-pwa/utils/analytics-consent.ts) — gtag Consent Mode + PostHog + Sentry (when DSN set) after **analytics** consent; GTM loads only after analytics consent (`loadGtm`); withdraw tears down GTM bootstrap + injected tags.
 
 ## Auth flow
 
