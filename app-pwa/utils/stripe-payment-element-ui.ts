@@ -111,11 +111,27 @@ function buildJobbieStripeAppearanceRules(): NonNullable<Appearance['rules']> {
       borderColor: JOBBIE_STRIPE_GREEN,
       color: '#ffffff',
     },
-    '.TabIcon--selected': {
-      fill: '#ffffff',
-    },
     '.TabLabel--selected': {
       color: '#ffffff',
+    },
+    '.AccordionItem': {
+      backgroundColor: JOBBIE_STRIPE_INPUT_BACKGROUND,
+      border: `1px solid ${JOBBIE_STRIPE_BORDER}`,
+      borderRadius: JOBBIE_STRIPE_FIELD_RADIUS,
+      boxShadow: 'none',
+      color: JOBBIE_STRIPE_TEXT_MUTED,
+      fontSize: '16px',
+      fontWeight: '600',
+      padding: '12px 18px',
+    },
+    '.AccordionItem:hover': {
+      backgroundColor: JOBBIE_STRIPE_MINT,
+      color: JOBBIE_STRIPE_TEXT,
+    },
+    '.AccordionItem--selected': {
+      backgroundColor: JOBBIE_STRIPE_MINT,
+      borderColor: JOBBIE_STRIPE_GREEN,
+      color: JOBBIE_STRIPE_TEXT,
     },
     '.PickerItem': {
       ...jobbieStripeFieldSurface,
@@ -164,6 +180,9 @@ export function getJobbieStripeAppearance(
       colorBackground: JOBBIE_STRIPE_INPUT_BACKGROUND,
       colorText: JOBBIE_STRIPE_TEXT,
       colorDanger: '#dc2626',
+      iconColor: JOBBIE_STRIPE_GREEN,
+      accordionItemLabelColorText: JOBBIE_STRIPE_TEXT,
+      accordionItemLabelSelectedColorText: JOBBIE_STRIPE_TEXT,
       fontFamily: JOBBIE_STRIPE_FONT_FAMILY,
       borderRadius: JOBBIE_STRIPE_FIELD_RADIUS,
       spacingUnit: '4px',
