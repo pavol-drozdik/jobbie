@@ -1,4 +1,9 @@
-﻿## 2026-06-28 — Payment result pages (`/platba/vysledok`)
+﻿## 2026-06-28 — Redirect Cloudflare `pages.dev` to canonical site
+
+- **app-pwa:** Nitro middleware `0.preview-host-redirect` 301-redirects `jobbie-pwa.pages.dev` (and `*.jobbie-pwa.pages.dev` previews) to `NUXT_PUBLIC_SITE_URL` (e.g. `https://www.jobbie.sk`). Cloudflare `_redirects` does not support domain-level redirects.
+- **docs/deployment.md:** note on preview hostname redirect.
+
+## 2026-06-28 — Payment result pages (`/platba/vysledok`)
 
 Added:
 - **app-pwa/pages/platba/vysledok.vue:** Login-style success/failure/processing page (`AuthMarketingSplitShell`) for credits and subscription checkout.
