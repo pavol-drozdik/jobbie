@@ -375,6 +375,12 @@ export function renderMonochromeExtraInfoSection(extraInfo: string): string {
     <section class="cv-breakable-section" data-cv-unit="atomic" data-cv-pack="with-previous">
       <h2 class="section-title">Doplňujúce informácie</h2>
       <article class="entry">
+        <div class="entry-head">
+          <div>
+            <h3 class="entry-role">Doplnenie k profilu</h3>
+            <div class="entry-meta">Dôležité informácie navyše</div>
+          </div>
+        </div>
         <div class="small-copy rich-html-content">${renderCvRichField(extraInfo)}</div>
       </article>
     </section>`

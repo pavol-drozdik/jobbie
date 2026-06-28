@@ -1,4 +1,28 @@
-﻿## 2026-06-28 — Fix subscription checkout Setup vs PaymentIntent confirm
+﻿## 2026-06-28 — Homepage marketing images + Twitter card
+
+Changed:
+- **app-pwa:** Default OG/Twitter image (`summary_large_image`) is now `/img/twittercard.png` from design assets.
+- **app-pwa:** Homepage employer section uses updated `Firma-Spotlight.webp` as `/img/spotlight.webp`.
+- **app-pwa:** Homepage hero uses refreshed `jobbie-mobile-hero.webp` (single asset for all breakpoints).
+
+## 2026-06-28 — Google Search favicon (PNG/ICO)
+
+Fixed:
+- **app-pwa:** Production `/favicon.ico` was a 1×1 placeholder; added real `favicon.ico` and `favicon-48.png` (generated from `favicon.svg` via `npm run icons:generate`). Homepage `<head>` now links ICO + 48×48 PNG before SVG so Googlebot-Image can pick a raster icon.
+- **app-pwa:** Removed static `public/robots.txt` fallback that appended `Disallow: /` after Cloudflare managed rules — Nitro `server/routes/robots.txt.get.ts` serves indexing policy when `NUXT_PUBLIC_ALLOW_INDEXING=1`.
+
+## 2026-06-28 — Cookie consent: PostHog init + GTM consent signals
+
+Fixed:
+- **app-pwa:** PostHog init captures `runtimeConfig` and `router` synchronously before dynamic `import('posthog-js')` — fixes silent init failure after Accept on production; init failures log `[jobbie] PostHog init failed` in DevTools.
+- **app-pwa:** `applyAnalyticsConsent` pushes `analytics_consent_granted` / `analytics_consent_withdrawn` to `dataLayer` for GTM triggers; Consent Mode `wait_for_update` increased to 2000 ms.
+- **app-pwa:** Stronger analytics withdraw — expanded Clarity/Bing script purge regex, registrable-root cookie expiry (e.g. `.jobbie.sk`), PostHog `stopSessionRecording` + shutdown guard.
+- **app-pwa:** CSP `connect-src` allows PostHog assets host derived from `NUXT_PUBLIC_POSTHOG_HOST` (e.g. `eu-assets.i.posthog.com`).
+
+Docs:
+- `docs/observability-runbook.md` — GTM trigger setup for `analytics_consent_granted` / withdraw verification checklist.
+
+## 2026-06-28 — Fix subscription checkout Setup vs PaymentIntent confirm
 
 Fixed:
 - **app-pwa/StripePaymentForm:** Subscription trials mount Stripe Elements in deferred `setup` mode, but users who already used their trial get a PaymentIntent from the API. The form called `confirmPayment` on setup-mode Elements → Stripe error “cannot be confirmed with a Payment Intent”. Now uses `shouldConfirmSetupIntent()` (secret prefix + server `intent_type`) to pick `confirmSetup` vs `confirmPayment`.
@@ -9,7 +33,7 @@ Fixed:
 Fixed:
 - **backend-ts/main.ts:** CORS bypass for `/health` and `/api/seo/*` now also matches `Origin: null` (the literal string Undici/Node 22 built-in `fetch` sends for non-browser contexts per the WHATWG spec). The old check `!req.headers.origin` was falsy-safe but `"null"` is a truthy string, so Docker health check probes using Node `fetch` were rejected with a 500, marking the container unhealthy on every deploy.
 - **backend-ts/Dockerfile, websupport-vps-deployment/docker-compose.yml:** Switched both health check commands from `fetch()` to `require('http').get()` (Node's `http` module, which never sends an `Origin` header).
-- **.github/workflows/deploy-staging.yml, deploy-production.yml:** Deploy workflows now upload and install `docker-compose.yml` alongside `deploy_backend.sh` so the VPS Compose config stays in sync with the repo on every deploy.
+- **.github/workflows/deploy-staging.yml, deploy-production.yml, backend-ghcr.yml:** Deploy workflows now upload and install `docker-compose.yml` alongside `deploy_backend.sh` so the VPS Compose config stays in sync with the repo on every deploy.
 
 ## 2026-06-28 — Invoice supplier auto-populated from Stripe account
 
@@ -70,6 +94,27 @@ Fixed:
 
 Fixed:
 - **backend-ts:** `subscriptions.create` on `/platba` — shallow expand (`latest_invoice`, `pending_setup_intent` only). Deep expand `latest_invoice.payments.data.payment.payment_intent` exceeded Stripe’s 4-level limit and broke subscription checkout; PaymentIntent client secret is resolved via existing follow-up retrieve in `resolveSubscriptionPaymentClientSecret`.
+
+## 2026-06-27 — CV Monochrome no profile photo
+
+Changed:
+- **backend-ts:** Monochrome template omits profile photo (text-only black masthead; `CV_PDF_RENDERER_REVISION` 32).
+- **app-pwa:** Template picker marks Monochrómny as “Bez fotografie”.
+
+## 2026-06-27 — CV Monochrome education in main column
+
+Changed:
+- **backend-ts:** Monochrome template — Vzdelanie moved to main column under work experience (order: experience → education → Záujmy → Doplňujúce informácie; sidebar: skills, driving, languages; `CV_PDF_RENDERER_REVISION` 31).
+
+## 2026-06-27 — CV Monochrome template realign
+
+Fixed:
+- **backend-ts:** Monochrome template matches `jobbiecvdesign` reference — simplified header grid (name, contact line, summary + square photo), extra-info entry with “Doplnenie k profilu” subheading (`CV_PDF_RENDERER_REVISION` 30).
+
+## 2026-06-27 — CV Minimalist template picker photo label
+
+Changed:
+- **app-pwa:** CV template selector shows photo support per layout — Minimalistický marked “Bez fotografie”; other templates show “S fotografiou” and thumbnail photo placeholders where applicable.
 
 ## 2026-06-27 — CV Minimalist header alignment
 
@@ -178,6 +223,11 @@ Fixed:
 Fixed:
 - **backend-ts:** Editorial, Minimalist, and Monochrome CV templates realigned to `jobbiecvdesign/` reference layouts — summary as header lead, correct main/side column placement (education/skills/hobbies per design).
 - **backend-ts:** Multi-page PDF packer — continuation grid padding for Minimalist/Monochrome; `data-cv-pack="with-previous"` for trailing extra-info sections; orphan rebalance for coupled columns (`CV_PDF_RENDERER_REVISION` 18).
+
+## 2026-06-27 — CV editor photo removal
+
+Changed:
+- **app-pwa:** CV editor — “Odstrániť fotografiu” removes the uploaded CV photo via existing `DELETE /api/cv/:id/photo` (storage + header fields cleared).
 
 ## 2026-06-26 — Homepage SSR usePageSeo fix
 

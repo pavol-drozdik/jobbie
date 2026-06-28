@@ -22,6 +22,7 @@ const sharp = require(sharpPath)
 const svg = readFileSync(faviconPath)
 
 const outputs = [
+  { file: 'favicon-48.png', size: 48 },
   { file: 'icon-192.png', size: 192 },
   { file: 'icon-512.png', size: 512 },
   { file: 'apple-touch-icon.png', size: 180 },
@@ -32,3 +33,8 @@ for (const { file, size } of outputs) {
   await sharp(svg).resize(size, size).png().toFile(outPath)
   console.info(`Wrote ${outPath}`)
 }
+
+// Google Search and legacy browsers probe /favicon.ico — serve 48×48 PNG bytes (valid ICO substitute).
+const faviconIcoPath = join(publicDir, 'favicon.ico')
+await sharp(svg).resize(48, 48).png().toFile(faviconIcoPath)
+console.info(`Wrote ${faviconIcoPath}`)

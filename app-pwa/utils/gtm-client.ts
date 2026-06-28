@@ -7,8 +7,8 @@ let consentListenerRegistered = false
 const GTM_CONTAINER_ID_PATTERN = /^GTM-[A-Z0-9]+$/i
 
 /** Third-party tags injected by GTM (not the container bootstrap). */
-const INJECTED_ANALYTICS_SCRIPT_RE =
-  /googletagmanager\.com\/gtag\/|google-analytics\.com|clarity\.ms|doubleclick\.net/i
+export const INJECTED_ANALYTICS_SCRIPT_RE =
+  /googletagmanager\.com\/gtag\/|google-analytics\.com|clarity\.ms|scripts\.clarity\.ms|c\.bing\.com|doubleclick\.net/i
 
 export function isGtmConfigured(): boolean {
   const config = useRuntimeConfig().public
@@ -34,6 +34,18 @@ export function captureGtmPageView(): void {
     return
   }
   pushPageView(useRouter().currentRoute.value.fullPath)
+}
+
+/** Custom dataLayer events for GTM triggers on mid-session grant / withdraw. */
+export function signalAnalyticsConsentToGtm(granted: boolean): void {
+  if (!import.meta.client) {
+    return
+  }
+  window.dataLayer = window.dataLayer ?? []
+  window.dataLayer.push({
+    event: granted ? 'analytics_consent_granted' : 'analytics_consent_withdrawn',
+    analytics_consent: granted,
+  })
 }
 
 function registerRouterPageviews(): void {

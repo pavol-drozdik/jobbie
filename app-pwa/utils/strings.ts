@@ -1817,6 +1817,8 @@
   cvTemplateCreative: 'Atlas',
   cvTemplateElegant: 'Redakčný',
   cvTemplateClassic: 'Monochrómny',
+  cvTemplatePickerNoPhoto: 'Bez fotografie',
+  cvTemplatePickerWithPhoto: 'S fotografiou',
   cvPreviewOpen: 'Náhľad',
   /** Temporary — remove when HTML dev preview is dropped. */
   cvPreviewHtmlOpen: 'HTML náhľad',

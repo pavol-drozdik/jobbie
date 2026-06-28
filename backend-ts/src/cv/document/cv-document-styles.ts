@@ -873,15 +873,9 @@ body.cv-export-preview .cv-sheet {
     color: #ffffff;
     background: #111111;
 } .cv-page-export .monochrome-header-grid {
-    display: grid;
-    grid-template-columns: 1.34fr 0.86fr;
-    gap: 18px;
-    align-items: end;
+    display: block;
 } .cv-page-export .monochrome-identity {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 18px;
-    align-items: start;
+    min-width: 0;
 } .cv-page-export .monochrome-name {
     margin: 0;
     font-family: "Space Grotesk", sans-serif;
@@ -899,12 +893,23 @@ body.cv-export-preview .cv-sheet {
     margin: 14px 0 0;
     max-width: 92%;
     color: rgba(255, 255, 255, 0.82);
+} .cv-page-export .monochrome-contact-line {
+    margin: 8px 0 0;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 10.3pt;
+    line-height: 1.35;
 } .cv-page-export .monochrome-contact {
     display: grid;
     gap: 8px;
-    align-content: start;
+    align-content: end;
+    align-self: end;
     justify-items: end;
     text-align: right;
+} .cv-page-export .monochrome-contact .template-profile-photo.monochrome-profile-photo {
+    width: 32mm;
+    height: 32mm;
+    border-radius: 16px;
+    box-shadow: none;
 } .cv-page-export .monochrome-contact .small-copy, .cv-page-export .monochrome-header .eyebrow {
     color: rgba(255, 255, 255, 0.72);
 } .cv-page-export .monochrome-grid {

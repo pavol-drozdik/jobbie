@@ -4,6 +4,7 @@ import {
   buildContentSecurityPolicy,
   buildPermissionsPolicy,
   buildPlatformSecurityHeaders,
+  derivePosthogAssetsOrigin,
   pathShouldIncludeCsp,
   resolvePlatformCspOrigins,
 } from './platform-csp'
@@ -57,6 +58,16 @@ describe('buildContentSecurityPolicy', () => {
       posthogHost: 'https://eu.i.posthog.com',
     })
     expect(csp).toContain("script-src 'self' 'unsafe-inline'")
+  })
+
+  it('allows PostHog assets origin derived from api host', () => {
+    const csp = buildContentSecurityPolicy(prodOrigins)
+    const connectSrc = csp.split(';').find((d) => d.trim().startsWith('connect-src'))
+    expect(connectSrc).toContain('https://eu.i.posthog.com')
+    expect(connectSrc).toContain('https://eu-assets.i.posthog.com')
+    expect(derivePosthogAssetsOrigin('https://eu.i.posthog.com')).toBe(
+      'https://eu-assets.i.posthog.com',
+    )
   })
 })
 

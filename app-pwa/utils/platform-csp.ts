@@ -97,6 +97,27 @@ function originFromUrl(raw: string): string {
   }
 }
 
+/** PostHog session replay / asset host (e.g. eu.i → eu-assets.i.posthog.com). */
+export function derivePosthogAssetsOrigin(posthogHost: string): string {
+  const trimmed = posthogHost.trim()
+  if (!trimmed) {
+    return ''
+  }
+  try {
+    const u = new URL(trimmed)
+    const assetsHost = u.hostname.replace(
+      /^([a-z0-9-]+)\.i\.posthog\.com$/i,
+      '$1-assets.i.posthog.com',
+    )
+    if (assetsHost === u.hostname) {
+      return ''
+    }
+    return `${u.protocol}//${assetsHost}`
+  } catch {
+    return ''
+  }
+}
+
 /**
  * CSP allowlist origins. Prefer {@link PlatformCspPublicConfig} from
  * `useRuntimeConfig(event).public` on Cloudflare Workers — `process.env` is empty
@@ -154,6 +175,7 @@ export function buildContentSecurityPolicy(options: PlatformCspOptions): string 
   } = options
 
   const apiWs = apiWsOption ?? apiWebSocketOrigin(apiOrigin)
+  const posthogAssetsOrigin = derivePosthogAssetsOrigin(posthogHost)
 
   const connectSrc = [
 
@@ -180,6 +202,8 @@ export function buildContentSecurityPolicy(options: PlatformCspOptions): string 
     'https://*.sentry.io',
 
     posthogHost,
+
+    posthogAssetsOrigin,
 
     'https://www.google-analytics.com',
 

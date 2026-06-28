@@ -10,6 +10,7 @@ import { AppModule } from './app.module';
 import {
   buildNestCorsOptions,
   createExpressCorsMiddleware,
+  isCorsProbeOrigin,
   shouldBypassCors,
 } from './common/http-cors.util';
 import {
@@ -51,8 +52,7 @@ async function bootstrap() {
     // contexts per the WHATWG spec — treat it the same as no-origin for
     // bypass paths only (safe: /health is a liveness probe, /api/seo/* is
     // public read-only).
-    const origin = req.headers.origin;
-    if (shouldBypassCors(req.path) && (!origin || origin === 'null')) {
+    if (shouldBypassCors(req.path) && isCorsProbeOrigin(req.headers.origin)) {
       return next();
     }
     return createExpressCorsMiddleware(corsOptions)(req, res, next);

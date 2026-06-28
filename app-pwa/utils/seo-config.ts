@@ -31,8 +31,8 @@ export function normalizeSiteUrl(raw: string | undefined): string {
 export const SEO_DEFAULT_TITLE = 'Brigády a pracovné ponuky'
 export const SEO_DEFAULT_DESCRIPTION =
   'Jobbie — slovenská platforma pre brigády, sezónne práce, pracovné ponuky a služby profesionálov na Slovensku aj v zahraničí. Registrácia zadarmo.'
-/** Matches `BRAND_ICON_512_PATH` in `brand-assets.ts` (no alias — safe for `nuxt.config` jiti). */
-export const SEO_DEFAULT_OG_IMAGE_PATH = '/icon-512.png'
+/** Default OG/Twitter card (`summary_large_image`). Source: `jobbiecvdesign/Photos/twittercard.png`. */
+export const SEO_DEFAULT_OG_IMAGE_PATH = '/img/twittercard.png'
 export const SEO_BRAND_SUFFIX = 'JOBBIE'
 
 /** Full title for OG/Twitter; document `<title>` suffix comes from `nuxt.config` `titleTemplate`. */

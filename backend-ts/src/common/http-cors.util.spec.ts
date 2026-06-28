@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import {
   createExpressCorsMiddleware,
+  isCorsProbeOrigin,
   shouldBypassCors,
   buildNestCorsOptions,
 } from './http-cors.util';
@@ -81,14 +82,32 @@ describe('shouldBypassCors', () => {
   });
 });
 
-/** Mirrors `main.ts`: skip CORS only when bypass path and no `Origin`. */
+/** Mirrors `main.ts`: skip CORS only when bypass path and probe origin. */
 function shouldApplyCorsMiddleware(path: string, origin: string | undefined): boolean {
-  return !(shouldBypassCors(path) && !origin);
+  return !(shouldBypassCors(path) && isCorsProbeOrigin(origin));
 }
+
+describe('isCorsProbeOrigin', () => {
+  it('treats missing Origin as a probe', () => {
+    expect(isCorsProbeOrigin(undefined)).toBe(true);
+  });
+
+  it('treats Undici opaque Origin null as a probe', () => {
+    expect(isCorsProbeOrigin('null')).toBe(true);
+  });
+
+  it('does not treat browser origins as probes', () => {
+    expect(isCorsProbeOrigin('https://www.jobbie.sk')).toBe(false);
+  });
+});
 
 describe('health browser probe CORS (main.ts)', () => {
   it('skips CORS for /health without Origin (Docker, curl)', () => {
     expect(shouldApplyCorsMiddleware('/health', undefined)).toBe(false);
+  });
+
+  it('skips CORS for /health with Undici Origin null (image HEALTHCHECK fetch)', () => {
+    expect(shouldApplyCorsMiddleware('/health', 'null')).toBe(false);
   });
 
   it('applies CORS for /health when the PWA sends Origin', () => {

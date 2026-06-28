@@ -112,12 +112,25 @@
               :class="uiTemplate === tpl.key ? 'border-marketing-green shadow-[0_0_0_5px_rgba(34,197,94,0.14)]' : ''"
               @click="selectUiTemplate(tpl.key)"
             >
-              <div
-                v-if="tpl.badge"
-                class="mb-2.5 inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-black"
-                :style="tpl.badgeStyle"
-              >
-                {{ tpl.badge }}
+              <div class="mb-2.5 flex flex-wrap items-center gap-2">
+                <div
+                  v-if="tpl.badge"
+                  class="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-black"
+                  :style="tpl.badgeStyle"
+                >
+                  {{ tpl.badge }}
+                </div>
+                <div
+                  v-if="tpl.photoLabel"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] bg-white/90 px-3 py-2 text-xs font-bold text-black/[0.58]"
+                >
+                  <i
+                    class="text-[11px]"
+                    :class="tpl.supportsPhoto ? 'fa-solid fa-camera' : 'fa-solid fa-camera-slash'"
+                    aria-hidden="true"
+                  />
+                  {{ tpl.photoLabel }}
+                </div>
               </div>
               <div class="min-h-[290px] rounded-[14px] bg-white p-3.5 shadow-[0px_2px_5px_rgba(0,0,0,0.08)]">
                 <div class="min-h-[262px] overflow-hidden rounded-xl bg-white shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)]" v-html="tpl.mini" />
@@ -208,6 +221,15 @@
                       @click="copyProfilePhoto"
                     >
                       <i class="fa-solid fa-copy" /> Skopírovať z profilového obrázku
+                    </button>
+                    <button
+                      v-if="photoPreviewUrl"
+                      type="button"
+                      class="inline-flex h-12 is-clickable items-center gap-2 rounded-full border-2 border-red-200 bg-white px-4 text-[17px] font-extrabold text-red-600 disabled:opacity-50"
+                      :disabled="photoDeleting"
+                      @click="removeProfilePhoto"
+                    >
+                      <i class="fa-solid fa-trash" /> {{ S.cvRemovePhoto }}
                     </button>
                   </div>
                 </div>
@@ -1154,7 +1176,7 @@ const sectionMenu = [
 
 const activeSection = ref<string>('personal')
 
-const { postSection, patchSection, deleteSectionRow, reorderSection } = useCv()
+const { postSection, patchSection, deleteSectionRow, reorderSection, deletePhoto } = useCv()
 const { uploadCvPhoto } = useStorageUpload()
 const { ensureSkill: ensureCatalogSkill } = useSkCvSkillSearch()
 const cvIdRef = toRef(props, 'cvId')
@@ -1167,7 +1189,10 @@ const {
   photoDisplayUrl: photoPreviewUrl,
   refreshPhotoDisplayUrl,
   setLocalPhotoPreview,
+  revokeLocalBlob,
 } = useCvPhotoDisplayUrl(cvIdRef, headerForPhoto)
+
+const photoDeleting = ref(false)
 
 const uiTemplate = ref<CvPrototypeUiTemplate>('atlas')
 watch(
@@ -1189,6 +1214,8 @@ const templateCards: {
   copy: string
   badge?: string
   badgeStyle?: Record<string, string>
+  supportsPhoto: boolean
+  photoLabel: string
   mini: string
 }[] = [
   {
@@ -1197,6 +1224,8 @@ const templateCards: {
     badgeStyle: { color: '#17324a' },
     name: 'Atlas',
     copy: 'Bočný panel, výrazné kontakty a čisté členenie pre univerzálne použitie.',
+    supportsPhoto: true,
+    photoLabel: S.cvTemplatePickerWithPhoto,
     mini: '<div class="mini-sheet atlas" aria-hidden="true"></div>',
   },
   {
@@ -1205,6 +1234,8 @@ const templateCards: {
     badgeStyle: { color: '#6f4b22' },
     name: 'Redakčný',
     copy: 'Serifová hlavička a dvojstĺpcové telo pre komunikáciu a stratégie.',
+    supportsPhoto: true,
+    photoLabel: S.cvTemplatePickerWithPhoto,
     mini: '<div class="mini-sheet editorial" aria-hidden="true"></div>',
   },
   {
@@ -1213,7 +1244,9 @@ const templateCards: {
     badgeStyle: { color: '#13212f' },
     name: 'Minimalistický',
     copy: 'Nízky vizuálny šum, silné zarovnanie a rýchla čitateľnosť.',
-    mini: '<div class="mini-sheet minimalist" aria-hidden="true"></div>',
+    supportsPhoto: false,
+    photoLabel: S.cvTemplatePickerNoPhoto,
+    mini: '<div class="mini-sheet minimalist mini-sheet--no-photo" aria-hidden="true"></div>',
   },
   {
     key: 'monochrome',
@@ -1221,7 +1254,9 @@ const templateCards: {
     badgeStyle: { color: '#111111' },
     name: 'Monochrómny',
     copy: 'Čierna hlavička a hustý, ale prehľadný dvojstĺpec.',
-    mini: '<div class="mini-sheet monochrome" aria-hidden="true"></div>',
+    supportsPhoto: false,
+    photoLabel: S.cvTemplatePickerNoPhoto,
+    mini: '<div class="mini-sheet monochrome mini-sheet--no-photo" aria-hidden="true"></div>',
   },
 ]
 
@@ -1864,6 +1899,30 @@ async function onPhotoFile(ev: Event): Promise<void> {
     })
   } catch (err) {
     showNotice(err instanceof Error ? err.message : S.saveFailed)
+  }
+}
+
+async function removeProfilePhoto(): Promise<void> {
+  if (!photoPreviewUrl.value || photoDeleting.value) return
+  photoDeleting.value = true
+  try {
+    const row = await deletePhoto(props.cvId)
+    revokeLocalBlob()
+    patch({
+      photo_url: row.photo_url,
+      photo_storage_path: row.photo_storage_path,
+      photo_original_mime: row.photo_original_mime,
+      photo_view_url: row.photo_view_url ?? null,
+    })
+    await refreshPhotoDisplayUrl({
+      photo_url: row.photo_url,
+      photo_storage_path: row.photo_storage_path,
+      photo_view_url: row.photo_view_url ?? null,
+    })
+  } catch (err) {
+    showNotice(err instanceof Error ? err.message : S.saveFailed)
+  } finally {
+    photoDeleting.value = false
   }
 }
 

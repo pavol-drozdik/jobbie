@@ -26,9 +26,14 @@ Admin compares sources in **Web & marketing**; treat PostHog vs GA user counts a
 - Env: `NUXT_PUBLIC_POSTHOG_KEY`, optional `NUXT_PUBLIC_POSTHOG_HOST` (default `https://eu.i.posthog.com`).
 - Env: `NUXT_PUBLIC_GTM_CONTAINER_ID` (`GTM-…`) — empty = off. Configure GA4 and Microsoft Clarity tags inside the GTM container (not in app env).
 - SDK: [`app-pwa/utils/posthog-client.ts`](../app-pwa/utils/posthog-client.ts) — autocapture off, manual `$pageview`, `advanced_disable_flags: true` until the first flag ships.
-- GTM: [`app-pwa/utils/gtm-client.ts`](../app-pwa/utils/gtm-client.ts) — bootstrap `gtm.js` on every page when `NUXT_PUBLIC_GTM_CONTAINER_ID` is set; SPA `page_view` via `dataLayer` only after analytics consent; gtag Consent Mode defaults in [`utils/analytics-consent.ts`](../app-pwa/utils/analytics-consent.ts).
-- **GTM container:** Enable Consent Mode; tie GA4/Clarity tags to `analytics_storage` granted. Use a GA4 Configuration tag with **Send a page view event when this configuration loads** off — the app pushes `page_view` on route changes after consent. Prefer **All Pages** / consent triggers over **Window Loaded** for Clarity (container loads before accept).
-- **Cookie consent:** [`plugins/0.consent.client.ts`](../app-pwa/plugins/0.consent.client.ts) + [`utils/analytics-consent.ts`](../app-pwa/utils/analytics-consent.ts) — PostHog loads only when the user accepts **analytics**; GTM shell loads earlier but tags stay gated; `_ga*`, `ph_*`, `_clck`, `_clsk` cleared and Clarity/GA scripts removed on withdraw.
+- GTM: [`app-pwa/utils/gtm-client.ts`](../app-pwa/utils/gtm-client.ts) — bootstrap `gtm.js` on every page when `NUXT_PUBLIC_GTM_CONTAINER_ID` is set; SPA `page_view` via `dataLayer` only after analytics consent; gtag Consent Mode defaults in [`utils/analytics-consent.ts`](../app-pwa/utils/analytics-consent.ts) (`wait_for_update: 2000` ms).
+- **GTM container (required):** Enable built-in Consent Mode. Set GA4 and Clarity tags to require `analytics_storage`. Add triggers:
+  - **Consent Initialization** — `analytics_storage` granted (returning visitors with `jb_consent`).
+  - **Custom Event** — `analytics_consent_granted` (mid-session Accept in cookie banner / preferences).
+  - Optional: **Custom Event** — `analytics_consent_withdrawn` to block tags on withdraw (belt-and-suspenders).
+- Use a GA4 Configuration tag with **Send a page view event when this configuration loads** off — the app pushes `page_view` on route changes after consent. Prefer consent-aware **All Pages** triggers over **Window Loaded** for Clarity.
+- **Cookie consent:** [`plugins/0.consent.client.ts`](../app-pwa/plugins/0.consent.client.ts) + [`utils/analytics-consent.ts`](../app-pwa/utils/analytics-consent.ts) — PostHog loads only when the user accepts **analytics** (config captured synchronously before SDK import); GTM shell loads earlier but tags stay gated; on withdraw: `analytics_consent_withdrawn` dataLayer event, PostHog shutdown, Clarity/GA scripts purged, `_ga*` / `ph_*` / `_clck` / `_clsk` cleared (including registrable root domain).
+- **Production verify:** After deploy, Accept → Network tab shows `eu.i.posthog.com` and `clarity.ms` / `scripts.clarity.ms`. Withdraw analytics in preferences → requests stop; cookies cleared.
 - Custom events: `checkout_started`, `credits_purchased`, `subscription_purchased`, `job_applied`, `registration_enter_app` via `useAnalytics()`.
 
 ### PostHog project settings (cloud)
