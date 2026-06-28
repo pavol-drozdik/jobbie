@@ -22,7 +22,7 @@
       </div>
 
       <div
-        class="flex flex-1 flex-col justify-center bg-white px-7 py-10 min-[701px]:px-14 min-[701px]:py-[52px]"
+        class="flex flex-1 flex-col justify-center bg-white px-5 py-8 min-[390px]:px-7 min-[390px]:py-10 min-[701px]:px-14 min-[701px]:py-[52px]"
       >
         <template v-if="forgotPasswordStep === 'sent'">
           <h1 class="m-0 text-4xl font-extrabold leading-[1.1] text-black">

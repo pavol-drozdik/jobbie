@@ -1,4 +1,37 @@
-﻿## 2026-06-28 — Deploy script logs on unhealthy backend
+﻿## 2026-06-28 — Fix staging health check CORS failure
+
+Fixed:
+- **backend-ts/Dockerfile, websupport-vps-deployment/docker-compose.yml:** Docker health check used `fetch()` (Node 22 built-in, Undici-based). Per the WHATWG Fetch spec, Undici sets `Origin: null` on requests made outside a browser context. The CORS bypass in `main.ts` only skips CORS when `!req.headers.origin`; the string `"null"` is truthy, so the bypass did not fire, and the CORS middleware rejected the probe with a 500 — marking the container unhealthy on every deploy. Changed both health check commands to use `require('http').get()` (Node's legacy `http` module), which sends no `Origin` header.
+
+## 2026-06-28 — Invoice supplier auto-populated from Stripe account
+
+Changed:
+- **backend-ts/payments:** Supplier name and address on the in-app invoice detail (`/nastavenia/fakturacia/:id`) are now auto-fetched from Stripe's own account (`GET /v1/account` → `company.name` / `company.address`). Result is cached in memory for 1 hour. `BILLING_SUPPLIER_NAME` / `BILLING_SUPPLIER_ADDRESS` env vars still act as overrides.
+- **backend-ts/payments:** `formatStripeAddress` maps Stripe country "SK" or "Slovakia" → "Slovenská republika" (covers both customer and Stripe-sourced supplier address).
+- **backend-ts/payments:** `getBillingInvoiceSupplier` normalizes "Slovakia" → "Slovenská republika" in `BILLING_SUPPLIER_ADDRESS` env var at runtime.
+- **backend-ts/payments:** IČO, DIČ, IČ DPH always fall back to `DEFAULT_BILLING_SUPPLIER` values when the corresponding `BILLING_SUPPLIER_*` env vars are not set. Note: Stripe does not expose actual tax ID values via the API (`tax_id_provided: true` only confirms they were submitted).
+
+## 2026-06-28 — Hide unpaid invoices from billing list
+
+Fixed:
+- **backend-ts/payments:** Invoice list (`GET /api/payments/invoices`) and detail now only expose **paid** invoices. Open (unpaid) subscription invoices no longer appear in the billing UI. Removed the redundant Stripe `open` invoice fetch from `listCustomerInvoices`; `isVisibleCustomerInvoice` now returns true only for `status === 'paid'`.
+
+## 2026-06-28 — Sub-390px responsive fixes
+
+Fixed:
+- **app-pwa/pages/index.vue:** Carousel role tabs ("Zamestnávateľ" / "Uchádzač" / "Profesionál") now use smaller padding and font (`px-2 py-1.5 text-[13px]`) below 390px so the pill does not wrap on iPhone SE (375px) and below.
+- **app-pwa/components/home/HomeHeroSection.vue:** Hero h1 scales down to `text-[34px]` below 380px and `text-[42px]` below 520px instead of staying at 46px on all mobile widths.
+- **app-pwa/pages/auth/login.vue, reset-password.vue, mfa.vue:** Auth form panel horizontal padding reduced from `px-7` (56px total) to `px-5` (40px total) below 390px, giving more content width on 320–375px screens.
+- **app-pwa/components/auth/RegisterSignupWizard.vue:** Progress step labels changed from `whitespace-nowrap` to `max-w-[4rem] text-center` to prevent label overflow in very narrow containers.
+- **app-pwa/components/ui/JaTagInput.vue:** Tag input `min-w` reduced from `180px` to `120px` so the text field coexists with tags in narrower flex containers.
+- **app-pwa/pages/profil/index.vue:** Removed `max-lg:basis-[220px]` from the profile sidebar header div; `max-lg:flex-1` alone handles sizing on mobile.
+
+## 2026-06-28 — CSP script nonce on Nuxt HTML chunks
+
+Fixed:
+- **app-pwa:** Nitro `render:html` receives `{ head, body, bodyPrepend, bodyAppend }` arrays — the old `html.replace()` hook never stamped nonces, so production `strict-dynamic` CSP blocked Nuxt bootstrap on `/platba` and other CSR routes (`baseURL` undefined). New `server/plugins/csp-script-nonce.ts` patches all chunk arrays (+ `render:html:close` bodyAppend).
+
+## 2026-06-28 — Deploy script logs on unhealthy backend
 
 Changed:
 - **websupport-vps-deployment:** `deploy_backend.sh` prints `docker compose ps` + backend logs when `compose up --wait` fails (CI no longer exits before logs).

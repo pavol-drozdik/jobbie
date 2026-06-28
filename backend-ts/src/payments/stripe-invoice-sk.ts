@@ -293,7 +293,11 @@ export function getBillingInvoiceSupplier(
   config: ConfigService,
 ): BillingInvoiceSupplierDto {
   const name = config.get<string>('BILLING_SUPPLIER_NAME')?.trim() ?? '';
-  const address = config.get<string>('BILLING_SUPPLIER_ADDRESS')?.trim() ?? '';
+  const rawAddress = config.get<string>('BILLING_SUPPLIER_ADDRESS')?.trim() ?? '';
+  // Normalize English country name to Slovak in the supplier address env var.
+  const address = rawAddress
+    ? rawAddress.replace(/\bSlovakia\b/gi, 'Slovenská republika')
+    : '';
   const ico = config.get<string>('BILLING_SUPPLIER_ICO')?.trim() ?? '';
   const dic = config.get<string>('BILLING_SUPPLIER_DIC')?.trim() ?? '';
   const vat = config.get<string>('BILLING_SUPPLIER_VAT')?.trim() ?? '';

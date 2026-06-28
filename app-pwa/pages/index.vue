@@ -17,7 +17,7 @@
             type="button"
             role="tab"
             :aria-selected="homeCarouselRole === tab.role"
-            class="m-1 is-clickable whitespace-nowrap rounded-full border-none px-3 py-2 font-dmSans text-[15px] font-bold transition-[background-color,color] duration-200 max-[600px]:px-3 max-[600px]:py-2 marketing:m-[5px] marketing:px-5 marketing:py-2.5 marketing:text-[22px] aria-selected:bg-marketing-green aria-selected:text-white"
+            class="m-0.5 is-clickable whitespace-nowrap rounded-full border-none px-2 py-1.5 text-[13px] font-dmSans font-bold transition-[background-color,color] duration-200 min-[390px]:m-1 min-[390px]:px-3 min-[390px]:py-2 min-[390px]:text-[15px] marketing:m-[5px] marketing:px-5 marketing:py-2.5 marketing:text-[22px] aria-selected:bg-marketing-green aria-selected:text-white"
             :class="homeCarouselRole === tab.role ? 'bg-marketing-green text-white' : 'bg-transparent text-black'"
             @click="selectHomeCarouselRole(tab.role)"
           >
