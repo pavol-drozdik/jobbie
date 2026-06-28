@@ -52,12 +52,25 @@ export const DEFAULT_BILLING_SUPPLIER = {
   ico: '56273975',
   dic: '2122295694',
   vat: 'SK2122259634',
-  or: 'Zapísaná v OR OS Žilina, oddiel Sro, vložka č. 85095/L',
+  or: 'Spoločnosť je zapísaná v Obchodnom registri Okresného súdu Žilina v oddiele Sro vložka č. 85095/L',
 } as const;
+
+/** Stripe invoice custom field — supplier tax IDs (PDF header, left column). */
+export const SK_INVOICE_CF_SUPPLIER = 'Dodávateľ';
+
+/** Stripe invoice custom field — buyer tax IDs (PDF header, right column). */
+export const SK_INVOICE_CF_BUYER = 'Odberateľ';
+
+/** Stripe invoice custom field — delivery date (= issue date on SK SaaS invoices). */
+export const SK_INVOICE_CF_DELIVERY_DATE = 'Dátum dodania';
+
+export const DEFAULT_SK_INVOICE_OR_FOOTER = DEFAULT_BILLING_SUPPLIER.or;
 
 const MAX_INVOICE_CUSTOM_FIELDS = 4;
 
 const STRIPE_LEGACY_CONSTANT_SYMBOL_FIELD = 'Konštantný symbol';
+
+const STRIPE_LEGACY_BUYER_FIELD_NAMES = new Set(['IČO', 'DIČ', 'IČ DPH']);
 
 export type SkInvoiceProductType = 'credits' | 'subscription';
 
@@ -76,6 +89,20 @@ export function buildSkCreditInvoiceLineDescription(creditsAmount: number): stri
   }
   const label = count === 1 ? '1 kredit' : `${count} kreditov`;
   return `${SK_INVOICE_CREDIT_LINE_DESCRIPTION} (${label})`;
+}
+
+/** Charge amount on a succeeded PI — `amount_received` can lag briefly after redirect. */
+export function paymentIntentAmountCents(pi: {
+  amount_received?: number | null;
+  amount?: number | null;
+  status?: string | null;
+}): number {
+  const received = pi.amount_received ?? 0;
+  const intended = pi.amount ?? 0;
+  if (received > 0) {
+    return received;
+  }
+  return intended;
 }
 
 /** Credit packs are sold as one bundle (qty 1 = pack price), not per-credit unit price. */
@@ -154,39 +181,209 @@ export function filterStripeInvoiceCustomFields(
   );
 }
 
-/** Up to 4 Stripe invoice custom fields (SK buyer IČO / DIČ / IČ DPH). */
-export function buildInvoiceCustomFieldsSk(
-  billing?: CheckoutBillingDetailsInput | null,
-): InvoiceCreateParams['custom_fields'] {
-  if (!billing || billing.purchaser_type === 'individual') {
-    return undefined;
+/** Single-line party tax IDs for Stripe custom field values (max 140 chars). */
+export function formatPartyTaxIdsValue(
+  ico?: string | null,
+  dic?: string | null,
+  vat?: string | null,
+): string | null {
+  const parts: string[] = [];
+  const i = ico?.trim();
+  if (i) {
+    parts.push(`IČO: ${i}`);
   }
-
-  const buyerFields: InvoiceCustomField[] = [];
-  const ico = billing.registration_number?.trim();
-  if (ico) {
-    buyerFields.push({ name: 'IČO', value: ico });
+  const d = dic?.trim();
+  if (d) {
+    parts.push(`DIČ: ${d}`);
   }
-  const dic = billing.tax_id?.trim();
-  if (dic) {
-    buyerFields.push({ name: 'DIČ', value: dic });
+  const v = vat?.trim();
+  if (v) {
+    parts.push(`IČ DPH: ${v}`);
   }
-  const vat = normalizeSkEuVatId(billing.vat_id);
-  if (vat) {
-    buyerFields.push({ name: 'IČ DPH', value: vat });
-  }
-
-  if (buyerFields.length === 0) {
-    return undefined;
-  }
-  return buyerFields.slice(0, MAX_INVOICE_CUSTOM_FIELDS);
+  return parts.length > 0 ? parts.join(' · ') : null;
 }
 
-/** Explicit [] clears Stripe Customer invoice_settings defaults (e.g. legacy konštantný symbol). */
+function supplierTaxIdsFromConfig(
+  config?: ConfigService,
+): { ico: string | null; dic: string | null; vat: string | null } {
+  if (config) {
+    const supplier = getBillingInvoiceSupplier(config);
+    return {
+      ico: supplier.ico,
+      dic: supplier.dic,
+      vat: supplier.vat,
+    };
+  }
+  return {
+    ico: DEFAULT_BILLING_SUPPLIER.ico,
+    dic: DEFAULT_BILLING_SUPPLIER.dic,
+    vat: DEFAULT_BILLING_SUPPLIER.vat,
+  };
+}
+
+/** Dodávateľ + Odberateľ + Dátum dodania custom fields (delivery date = issue date). */
+export function buildInvoiceCustomFieldsSk(
+  billing?: CheckoutBillingDetailsInput | null,
+  config?: ConfigService,
+  issueDateUnix?: number | null,
+): InvoiceCreateParams['custom_fields'] {
+  const fields: InvoiceCustomField[] = [];
+  const supplierIds = supplierTaxIdsFromConfig(config);
+  const supplierValue = formatPartyTaxIdsValue(
+    supplierIds.ico,
+    supplierIds.dic,
+    supplierIds.vat,
+  );
+  if (supplierValue) {
+    fields.push({ name: SK_INVOICE_CF_SUPPLIER, value: supplierValue });
+  }
+
+  if (billing?.purchaser_type === 'company') {
+    const buyerValue = formatPartyTaxIdsValue(
+      billing.registration_number,
+      billing.tax_id,
+      normalizeSkEuVatId(billing.vat_id),
+    );
+    if (buyerValue) {
+      fields.push({ name: SK_INVOICE_CF_BUYER, value: buyerValue });
+    }
+  }
+
+  return appendDeliveryDateCustomField(
+    fields,
+    resolveSkInvoiceIssueDateUnix(issueDateUnix),
+  );
+}
+
+/** Always includes Dátum dodania (+ Dodávateľ when supplier IDs configured). */
 export function resolveInvoiceCustomFieldsSk(
   billing?: CheckoutBillingDetailsInput | null,
+  config?: ConfigService,
+  issueDateUnix?: number | null,
 ): NonNullable<InvoiceCreateParams['custom_fields']> {
-  return buildInvoiceCustomFieldsSk(billing) ?? [];
+  return (
+    buildInvoiceCustomFieldsSk(billing, config, issueDateUnix) ??
+    appendDeliveryDateCustomField([], resolveSkInvoiceIssueDateUnix(issueDateUnix))
+  );
+}
+
+export function resolveSkInvoiceIssueDateUnix(
+  unixSeconds?: number | null,
+): number {
+  if (typeof unixSeconds === 'number' && unixSeconds > 0) {
+    return unixSeconds;
+  }
+  return Math.floor(Date.now() / 1000);
+}
+
+function appendDeliveryDateCustomField(
+  fields: InvoiceCustomField[],
+  issueDateUnix: number,
+): InvoiceCustomField[] {
+  const deliveryField: InvoiceCustomField = {
+    name: SK_INVOICE_CF_DELIVERY_DATE,
+    value: formatSkInvoiceDateLong(issueDateUnix),
+  };
+  const withoutDelivery = fields.filter(
+    (f) => f.name !== SK_INVOICE_CF_DELIVERY_DATE,
+  );
+  return [deliveryField, ...withoutDelivery].slice(0, MAX_INVOICE_CUSTOM_FIELDS);
+}
+
+function parseTaxIdFromPartyValue(
+  value: string,
+  label: 'IČO' | 'DIČ' | 'IČ DPH',
+): string | null {
+  const pattern =
+    label === 'IČ DPH'
+      ? /IČ\s*DPH:\s*([^\s·]+)/i
+      : label === 'IČO'
+        ? /IČO:\s*([^\s·]+)/i
+        : /DIČ:\s*([^\s·]+)/i;
+  const match = value.match(pattern);
+  return match?.[1]?.trim() || null;
+}
+
+/** True when buyer tax IDs are present (new Odberateľ field or legacy IČO/DIČ/IČ DPH). */
+export function buyerTaxIdsPresentInCustomFields(
+  customFields: InvoiceCustomField[],
+): boolean {
+  const odberatel = customFields.find((f) => f.name === SK_INVOICE_CF_BUYER);
+  if (odberatel?.value?.trim()) {
+    return true;
+  }
+  return (
+    customFields.some((f) => f.name === 'IČO') &&
+    customFields.some((f) => f.name === 'DIČ') &&
+    customFields.some((f) => f.name === 'IČ DPH')
+  );
+}
+
+/** Merge profile buyer IDs into custom_fields (Odberateľ); keeps legacy fields if already complete. */
+export function mergeBuyerTaxIdsIntoCustomFields(
+  customFields: InvoiceCustomField[],
+  profile: {
+    registration_number?: string | null;
+    tax_id?: string | null;
+    vat_id?: string | null;
+  },
+): InvoiceCustomField[] {
+  if (buyerTaxIdsPresentInCustomFields(customFields)) {
+    return customFields;
+  }
+
+  const legacyIco = customFields.find((f) => f.name === 'IČO')?.value?.trim();
+  const legacyDic = customFields.find((f) => f.name === 'DIČ')?.value?.trim();
+  const legacyVat = customFields.find((f) => f.name === 'IČ DPH')?.value?.trim();
+  const existingOdberatel = customFields.find(
+    (f) => f.name === SK_INVOICE_CF_BUYER,
+  )?.value;
+  const ico =
+    legacyIco ??
+    (existingOdberatel
+      ? parseTaxIdFromPartyValue(existingOdberatel, 'IČO')
+      : null) ??
+    profile.registration_number?.trim() ??
+    null;
+  const dic =
+    legacyDic ??
+    (existingOdberatel
+      ? parseTaxIdFromPartyValue(existingOdberatel, 'DIČ')
+      : null) ??
+    profile.tax_id?.trim() ??
+    null;
+  const vat =
+    legacyVat ??
+    (existingOdberatel
+      ? parseTaxIdFromPartyValue(existingOdberatel, 'IČ DPH')
+      : null) ??
+    normalizeSkEuVatId(profile.vat_id);
+
+  const buyerValue = formatPartyTaxIdsValue(ico, dic, vat);
+  if (!buyerValue) {
+    return customFields;
+  }
+
+  const withoutBuyer = customFields.filter(
+    (f) =>
+      f.name !== SK_INVOICE_CF_BUYER &&
+      !STRIPE_LEGACY_BUYER_FIELD_NAMES.has(f.name),
+  );
+  const supplierIdx = withoutBuyer.findIndex(
+    (f) => f.name === SK_INVOICE_CF_SUPPLIER,
+  );
+  const buyerField: InvoiceCustomField = {
+    name: SK_INVOICE_CF_BUYER,
+    value: buyerValue,
+  };
+  if (supplierIdx >= 0) {
+    return [
+      ...withoutBuyer.slice(0, supplierIdx + 1),
+      buyerField,
+      ...withoutBuyer.slice(supplierIdx + 1),
+    ];
+  }
+  return [...withoutBuyer, buyerField];
 }
 
 /** Card-only checkout — matches Payment Element `paymentMethodTypes: ['card']` (no bank transfer). */
@@ -208,87 +405,35 @@ export function buildSkInvoiceRendering(): NonNullable<InvoiceCreateParams['rend
   };
 }
 
-const DEFAULT_VAT_EXEMPTION_TEXT =
-  'Dodanie je oslobodené od dane. DPH: 0,00 €.';
-
-/** Supplier IČO/DIČ/IČ DPH/OR lines for Stripe PDF footer (§ 74a supplement). */
-export function buildSkInvoiceSupplierFooterLines(
-  config?: ConfigService,
-): string[] {
-  const supplier = config
-    ? getBillingInvoiceSupplier(config)
-    : {
-        name: DEFAULT_BILLING_SUPPLIER.name,
-        address: null,
-        ico: DEFAULT_BILLING_SUPPLIER.ico,
-        dic: DEFAULT_BILLING_SUPPLIER.dic,
-        vat: DEFAULT_BILLING_SUPPLIER.vat,
-        or: DEFAULT_BILLING_SUPPLIER.or,
-        configured: true,
-      };
-  const lines: string[] = [];
-  if (supplier.ico?.trim()) {
-    lines.push(`IČO: ${supplier.ico.trim()}`);
-  }
-  if (supplier.dic?.trim()) {
-    lines.push(`DIČ: ${supplier.dic.trim()}`);
-  }
-  if (supplier.vat?.trim()) {
-    lines.push(`IČ DPH: ${supplier.vat.trim()}`);
-  }
-  if (supplier.or?.trim()) {
-    lines.push(supplier.or.trim());
-  }
-  return lines;
+/** OR (obchodný register) line for Stripe PDF footer. */
+export function getSkInvoiceOrFooterText(config?: ConfigService): string {
+  const or = config
+    ? getBillingInvoiceSupplier(config).or?.trim()
+    : DEFAULT_SK_INVOICE_OR_FOOTER;
+  return or || DEFAULT_SK_INVOICE_OR_FOOTER;
 }
 
-export function getSkInvoiceVatExemptionText(config?: ConfigService): string {
-  const custom = config?.get<string>('STRIPE_INVOICE_VAT_EXEMPTION_TEXT')?.trim();
-  if (custom) {
-    return custom;
-  }
-  return DEFAULT_VAT_EXEMPTION_TEXT;
-}
-
-export function getSkInvoiceVatExemptionReference(
-  config?: ConfigService,
-): string | null {
-  const ref = config?.get<string>('STRIPE_INVOICE_VAT_EXEMPTION_REFERENCE')?.trim();
-  return ref || null;
-}
-
-/** § 74 legal block: supplier IDs + oslobodenie od dane (identifikovaná osoba). */
-export function buildSkInvoiceLegalFooterBlock(config?: ConfigService): string {
-  const parts: string[] = [];
-  const supplierLines = buildSkInvoiceSupplierFooterLines(config);
-  if (supplierLines.length > 0) {
-    parts.push(supplierLines.join('\n'));
-  }
-  const exemption = getSkInvoiceVatExemptionText(config);
-  if (exemption) {
-    parts.push(exemption);
-  }
-  const reference = getSkInvoiceVatExemptionReference(config);
-  if (reference) {
-    parts.push(reference);
-  }
-  return parts.join('\n\n');
-}
-
-/** Rebuild buyer custom_fields from Stripe Customer metadata (subscription invoices). */
+/** Rebuild Dodávateľ/Odberateľ/Dátum dodania custom_fields from Stripe Customer metadata. */
 export function buildInvoiceCustomFieldsFromCustomerMetadata(
   metadata: Record<string, string> | null | undefined,
+  config?: ConfigService,
+  issueDateUnix?: number | null,
 ): InvoiceCreateParams['custom_fields'] {
   const meta = metadata ?? {};
-  if (meta.buyer_type !== 'company' && meta.purchaser_type !== 'company') {
-    return undefined;
-  }
-  return buildInvoiceCustomFieldsSk({
-    purchaser_type: 'company',
-    registration_number: meta.registration_number?.trim() || null,
-    tax_id: meta.tax_id?.trim() || null,
-    vat_id: meta.vat_id?.trim() || null,
-  });
+  const isCompany =
+    meta.buyer_type === 'company' || meta.purchaser_type === 'company';
+  return buildInvoiceCustomFieldsSk(
+    isCompany
+      ? {
+          purchaser_type: 'company',
+          registration_number: meta.registration_number?.trim() || null,
+          tax_id: meta.tax_id?.trim() || null,
+          vat_id: meta.vat_id?.trim() || null,
+        }
+      : { purchaser_type: 'individual' },
+    config,
+    issueDateUnix,
+  );
 }
 
 /** Off by default — enable only when explicitly configured (platiteľ DPH). */
@@ -306,6 +451,19 @@ export function formatSkInvoiceDate(unixSeconds: number): string {
     }).format(new Date(unixSeconds * 1000));
   } catch {
     return String(unixSeconds);
+  }
+}
+
+/** Long Slovak date for Stripe PDF custom field (matches native „Dátum vystavenia“ style). */
+export function formatSkInvoiceDateLong(unixSeconds: number): string {
+  try {
+    return new Intl.DateTimeFormat('sk-SK', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(new Date(unixSeconds * 1000));
+  } catch {
+    return formatSkInvoiceDate(unixSeconds);
   }
 }
 
@@ -328,30 +486,9 @@ export function getSkInvoiceLineUnit(type: SkInvoiceProductType): string {
     : SK_INVOICE_SUBSCRIPTION_UNIT;
 }
 
-/** Footer for Stripe PDF: poznámka, obdobie, supplier IDs, § 74 exemption, optional extra. */
-export function buildSkInvoiceFooter(
-  type: SkInvoiceProductType,
-  config?: ConfigService,
-  subscriptionPeriod?: { start: number; end: number } | null,
-): string {
-  const parts: string[] = [`Poznámka: ${getSkInvoiceNote(type)}`];
-  if (type === 'subscription' && subscriptionPeriod) {
-    parts.push(
-      `Obdobie predplatného: ${formatSkSubscriptionPeriod(
-        subscriptionPeriod.start,
-        subscriptionPeriod.end,
-      )}`,
-    );
-  }
-  const legal = buildSkInvoiceLegalFooterBlock(config);
-  if (legal) {
-    parts.push(legal);
-  }
-  const custom = config?.get<string>('STRIPE_INVOICE_FOOTER')?.trim();
-  if (custom) {
-    parts.push(custom);
-  }
-  return parts.join('\n\n');
+/** Footer for Stripe PDF — obchodný register dodávateľa only. */
+export function buildSkInvoiceFooter(config?: ConfigService): string {
+  return getSkInvoiceOrFooterText(config);
 }
 
 export function getStripeAccountTaxIds(
@@ -399,7 +536,7 @@ export function getBillingInvoiceSupplier(
     ico: ico || DEFAULT_BILLING_SUPPLIER.ico,
     dic: dic || DEFAULT_BILLING_SUPPLIER.dic,
     vat: vat || DEFAULT_BILLING_SUPPLIER.vat,
-    or: or || DEFAULT_BILLING_SUPPLIER.or,
+    or: or || DEFAULT_SK_INVOICE_OR_FOOTER,
     configured,
   };
 }

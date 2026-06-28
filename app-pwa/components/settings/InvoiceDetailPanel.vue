@@ -247,7 +247,11 @@ const paySecret = computed(
 
 const displayFooter = computed(() => props.invoice.footer?.trim() || '')
 
-const buyerCustomFields = computed(() => props.invoice.customer.custom_fields)
+const buyerCustomFields = computed(() =>
+  props.invoice.customer.custom_fields.filter(
+    (field) => field.name !== 'Dodávateľ' && field.name !== 'Dátum dodania',
+  ),
+)
 
 const INVOICE_STATUS_LABELS: Record<string, string> = {
   paid: S.settingsInvoiceStatusPaid,

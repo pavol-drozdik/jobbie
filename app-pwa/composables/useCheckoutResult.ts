@@ -2,10 +2,21 @@ import { ROUTES } from '~/utils/app-routes'
 import { parseApiErrorMessage } from '~/utils/api-errors'
 import { parseSafeApiErrorMessage } from '~/utils/safe-user-messages'
 import { resolveSafeInternalPath } from '~/utils/safe-navigation'
-import { stripStripeReturnQueryFromBrowserUrl } from '~/utils/stripe-return-query'
+import { stripStripeSecretQueryFromBrowserUrl } from '~/utils/stripe-return-query'
 import { S } from '~/utils/strings'
 
 export type CheckoutResultPhase = 'processing' | 'success' | 'failed'
+
+const CREDITS_PENDING_FULFILLMENT_SNIPPET =
+  'Kredity z tejto platby ešte nie je možné pripísať'
+
+function delayMs(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function isRetryableFulfillmentError(message: string): boolean {
+  return message.includes(CREDITS_PENDING_FULFILLMENT_SNIPPET)
+}
 
 export function useCheckoutResult() {
   const route = useRoute()
@@ -16,6 +27,9 @@ export function useCheckoutResult() {
 
   const phase = ref<CheckoutResultPhase>('processing')
   const message = ref<string>(S.checkoutResultProcessing)
+  const pendingIntentId = ref<string | null>(null)
+  const pendingIntentKind = ref<'payment' | 'setup' | null>(null)
+  const processingStarted = ref(false)
 
   const checkoutType = computed(() => {
     const t = route.query.type
@@ -56,6 +70,10 @@ export function useCheckoutResult() {
     returnPath.value === ROUTES.pricing ? S.checkoutResultBackToPricing : S.checkoutResultContinueCta,
   )
 
+  const canRetryFulfillment = computed(
+    () => phase.value === 'failed' && !!pendingIntentId.value,
+  )
+
   function resolveSuccessMessage(): string {
     if (checkoutType.value === 'credits') return S.checkoutCreditsSuccess
     if (isTrial.value) return S.checkoutSubscriptionTrialSuccess
@@ -70,9 +88,14 @@ export function useCheckoutResult() {
   function succeed(msg?: string): void {
     phase.value = 'success'
     message.value = msg ?? resolveSuccessMessage()
+    pendingIntentId.value = null
+    pendingIntentKind.value = null
+    if (import.meta.client) {
+      stripStripeSecretQueryFromBrowserUrl()
+    }
   }
 
-  async function confirmCredits(paymentIntentId: string): Promise<boolean> {
+  async function confirmCreditsOnce(paymentIntentId: string): Promise<boolean> {
     const gate = await ensureRecentLoginForBilling()
     if (!gate.ok) {
       fail(gate.message)
@@ -83,7 +106,11 @@ export function useCheckoutResult() {
       body: { payment_intent_id: paymentIntentId },
     })
     if (!res.ok) {
-      fail(parseApiErrorMessage(res, S.checkoutPaymentFailed))
+      const errMsg = parseApiErrorMessage(res, S.checkoutPaymentFailed)
+      if (isRetryableFulfillmentError(errMsg)) {
+        return false
+      }
+      fail(errMsg)
       return false
     }
     await refreshUser()
@@ -92,7 +119,27 @@ export function useCheckoutResult() {
     return true
   }
 
-  async function confirmSubscription(intentId: string): Promise<boolean> {
+  async function confirmCredits(paymentIntentId: string): Promise<boolean> {
+    pendingIntentId.value = paymentIntentId
+    pendingIntentKind.value = 'payment'
+    phase.value = 'processing'
+    message.value = S.checkoutResultProcessing
+
+    const attempts = 6
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      const ok = await confirmCreditsOnce(paymentIntentId)
+      if (ok) return true
+      if (phase.value === 'failed') return false
+      if (attempt < attempts - 1) {
+        await delayMs(900)
+      }
+    }
+
+    fail(S.checkoutResultChargedPending)
+    return false
+  }
+
+  async function confirmSubscriptionOnce(intentId: string): Promise<boolean> {
     const isSetup = intentId.startsWith('seti_')
     const gate = await ensureRecentLoginForBilling()
     if (!gate.ok) {
@@ -107,7 +154,11 @@ export function useCheckoutResult() {
       body,
     })
     if (!res.ok) {
-      fail(parseSafeApiErrorMessage(res, S.checkoutPaymentFailed))
+      const errMsg = parseSafeApiErrorMessage(res, S.checkoutPaymentFailed)
+      if (isRetryableFulfillmentError(errMsg)) {
+        return false
+      }
+      fail(errMsg)
       return false
     }
     await refreshUser()
@@ -116,20 +167,55 @@ export function useCheckoutResult() {
     return true
   }
 
+  async function confirmSubscription(intentId: string): Promise<boolean> {
+    pendingIntentId.value = intentId
+    pendingIntentKind.value = intentId.startsWith('seti_') ? 'setup' : 'payment'
+    phase.value = 'processing'
+    message.value = S.checkoutResultProcessing
+
+    const attempts = 6
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      const ok = await confirmSubscriptionOnce(intentId)
+      if (ok) return true
+      if (phase.value === 'failed') return false
+      if (attempt < attempts - 1) {
+        await delayMs(900)
+      }
+    }
+
+    fail(S.checkoutResultChargedPending)
+    return false
+  }
+
+  async function retryFulfillment(): Promise<void> {
+    const id = pendingIntentId.value
+    if (!id) return
+    if (checkoutType.value === 'credits' && pendingIntentKind.value === 'payment') {
+      await confirmCredits(id)
+      return
+    }
+    if (checkoutType.value === 'subscription') {
+      await confirmSubscription(id)
+    }
+  }
+
   async function processReturn(): Promise<void> {
+    if (processingStarted.value) return
+    processingStarted.value = true
+
     const type = checkoutType.value
     if (!type) {
-      if (import.meta.client) stripStripeReturnQueryFromBrowserUrl()
+      if (import.meta.client) stripStripeSecretQueryFromBrowserUrl()
       fail(S.checkoutInvalidParams)
       return
     }
     if (type === 'credits' && !packSlug.value) {
-      if (import.meta.client) stripStripeReturnQueryFromBrowserUrl()
+      if (import.meta.client) stripStripeSecretQueryFromBrowserUrl()
       fail(S.checkoutInvalidParams)
       return
     }
     if (type === 'subscription' && !planId.value) {
-      if (import.meta.client) stripStripeReturnQueryFromBrowserUrl()
+      if (import.meta.client) stripStripeSecretQueryFromBrowserUrl()
       fail(S.checkoutInvalidParams)
       return
     }
@@ -149,7 +235,7 @@ export function useCheckoutResult() {
         ? route.query.setup_intent.trim()
         : null
 
-    if (import.meta.client) stripStripeReturnQueryFromBrowserUrl()
+    if (import.meta.client) stripStripeSecretQueryFromBrowserUrl()
 
     if (redirectStatus === 'failed') {
       fail(S.checkoutPaymentFailed)
@@ -157,8 +243,6 @@ export function useCheckoutResult() {
     }
 
     if (paymentIntent) {
-      phase.value = 'processing'
-      message.value = S.checkoutResultProcessing
       if (type === 'credits') {
         await confirmCredits(paymentIntent)
       } else {
@@ -168,8 +252,6 @@ export function useCheckoutResult() {
     }
 
     if (setupIntent) {
-      phase.value = 'processing'
-      message.value = S.checkoutResultProcessing
       await confirmSubscription(setupIntent)
       return
     }
@@ -199,6 +281,8 @@ export function useCheckoutResult() {
     returnPath,
     retryCheckoutPath,
     returnLabel,
+    canRetryFulfillment,
+    retryFulfillment,
     processReturn,
   }
 }

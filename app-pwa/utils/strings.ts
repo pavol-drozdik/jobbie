@@ -661,6 +661,10 @@
   checkoutResultProcessing: 'Overujeme platbu…',
   checkoutResultContinueCta: 'Pokračovať',
   checkoutResultRetryCta: 'Skúsiť znova',
+  checkoutResultRetryFulfillment: 'Overiť platbu znova',
+  checkoutResultNewCheckout: 'Späť k platbe',
+  checkoutResultChargedPending:
+    'Platba prebehla, ale kredity sa ešte nepodarilo pripísať. Platbu sme prijali — skúste overenie znova o chvíľu. Ak sa kredity neobjavia, kontaktujte podporu.',
   checkoutResultBackToPricing: 'Späť na cenník',
   pricingPageTitle: 'Cenník pre firmy',
   pricingPageSubtitle:

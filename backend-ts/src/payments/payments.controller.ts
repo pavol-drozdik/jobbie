@@ -256,7 +256,7 @@ export class PaymentsController {
   async confirmCreditsPurchase(
     @CurrentUserDecorator() user: CurrentUser,
     @Body() body: ConfirmCreditsPurchaseDto,
-  ): Promise<{ ok: boolean }> {
+  ): Promise<{ ok: boolean; invoice_id?: string }> {
     const id = body.payment_intent_id?.trim();
     if (!id || !id.startsWith('pi_')) {
       throw new BadRequestException('Neplatný identifikátor platby.');
@@ -268,11 +268,24 @@ export class PaymentsController {
       assertUserId: user.id,
     });
     if (!result.applied) {
+      if (result.reason === 'not_succeeded') {
+        throw new ServiceUnavailableException(
+          'Kredity z tejto platby ešte nie je možné pripísať. Skúste znova o chvíľu alebo kontaktujte podporu.',
+        );
+      }
       throw new BadRequestException(
         'Kredity z tejto platby ešte nie je možné pripísať. Skúste znova o chvíľu alebo kontaktujte podporu.',
       );
     }
-    return { ok: true };
+    const invoiceId = await this.stripe.ensureCreditPaymentInvoice(id, {
+      assertUserId: user.id,
+    });
+    if (!invoiceId) {
+      this.logger.error(
+        `confirm-credits: credits granted for PI ${id} but SK faktúra was not created`,
+      );
+    }
+    return { ok: true, invoice_id: invoiceId ?? undefined };
   }
 
   @Post('create-payment-intent-subscription')
@@ -537,7 +550,7 @@ export class PaymentsController {
       if (event.type === 'invoice.created') {
         const inv = event.data.object as Invoice;
         try {
-          await this.stripe.applySkSubscriptionInvoiceTemplate(inv);
+          await this.stripe.applySkSubscriptionInvoiceTemplateFromEvent(inv);
         } catch (err) {
           this.logger.warn(
             `applySkSubscriptionInvoiceTemplate failed for ${inv.id}: ${String(err)}`,

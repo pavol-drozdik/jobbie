@@ -1,7 +1,45 @@
-﻿## 2026-06-28 — Redirect Cloudflare `pages.dev` to canonical site
+﻿## 2026-06-28 — Stripe invoice: Dátum dodania on PDF
+
+Changed:
+- **backend-ts/stripe-invoice-sk:** Adds `Dátum dodania` Stripe custom field (= dátum vystavenia, long `sk-SK` format). In-app `delivery_at` now matches `issued_at`.
+- **app-pwa/InvoiceDetailPanel:** Hides duplicate `Dátum dodania` custom field under customer block.
+
+## 2026-06-28 — Stripe invoice: Dodávateľ/Odberateľ custom fields + OR-only footer
+
+Changed:
+- **backend-ts/stripe-invoice-sk:** Supplier and buyer IČO/DIČ/IČ DPH move to two Stripe `custom_fields` (`Dodávateľ` | `Odberateľ`, single-line ` · ` values). Footer is only the OR line (`BILLING_SUPPLIER_OR` / default CoCreate register text). Removed poznámka, subscription period, and § 74 exemption text from Stripe PDF footer.
+- **backend-ts/stripe.service:** Subscription invoice template always rebuilds custom fields from customer metadata; invoice detail merges missing `Odberateľ` from profile for legacy PDFs.
+- **app-pwa/InvoiceDetailPanel:** Hides `Dodávateľ` custom field under customer block (shown in supplier section).
+
+Docs:
+- **docs/stripe-invoice-sk-vat.md:** custom field layout and footer behaviour.
+
+## 2026-06-28 — Subscription invoice PDF: supplier IČO/DIČ/IČ DPH on trial invoices
+
+Fixed:
+- **backend-ts/payments:** Trial €0 subscription invoices often finalized before `invoice.created` webhook ran, so the SK footer (supplier IČO/DIČ/IČ DPH/OR + § 74 exemption) was never applied and only the Stripe Dashboard default footer appeared on the PDF.
+- **backend-ts/payments:** Stamp SK template synchronously after `subscriptions.create`; set `invoice_settings.footer` on the Stripe Customer at checkout (overrides Dashboard default); webhook reloads full invoice before applying template on draft renewals.
+
+Docs:
+- **docs/stripe-invoice-sk-vat.md:** synchronous stamp + customer default footer fallback.
+
+## 2026-06-28 — Redirect Cloudflare `pages.dev` to canonical site
 
 - **app-pwa:** Nitro middleware `0.preview-host-redirect` 301-redirects `jobbie-pwa.pages.dev` (and `*.jobbie-pwa.pages.dev` previews) to `NUXT_PUBLIC_SITE_URL` (e.g. `https://www.jobbie.sk`). Cloudflare `_redirects` does not support domain-level redirects.
 - **docs/deployment.md:** note on preview hostname redirect.
+
+## 2026-06-28 — Reliable SK faktúra for credit pack purchases
+
+Fixed:
+- **backend-ts/stripe.service:** Credit purchases always get a post-payment Stripe Invoice (`ensureCreditPaymentInvoice`) with retry polling; fixes silent skip when `amount_received` was still 0 after redirect; attempts `invoices.sendInvoice` after pay.
+- **backend-ts/payments.controller:** `confirm-credits` always runs invoice ensure after grant (repair path for missing faktúry).
+
+## 2026-06-28 — Fix credit fulfillment race on `/platba/vysledok`
+
+Fixed:
+- **backend-ts/stripe.service:** `fulfillCreditsIfNeeded` polls Stripe until PaymentIntent is `succeeded` (up to ~6s); treats already-fulfilled PIs as success; pack validation uses `amount` when `amount_received` is still zero.
+- **backend-ts/payments.controller:** `confirm-credits` returns 503 (retryable) when PI is not yet succeeded.
+- **app-pwa/useCheckoutResult:** Auto-retries confirm up to 6×; keeps intent id for safe retry; strips only client secrets from URL; failure CTA retries fulfillment instead of starting a new checkout when card was charged.
 
 ## 2026-06-28 — Payment result pages (`/platba/vysledok`)
 

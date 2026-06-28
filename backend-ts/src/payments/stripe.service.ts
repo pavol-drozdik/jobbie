@@ -56,9 +56,10 @@ import {
   resolveSubscriptionStripePriceId,
 } from './stripe-catalog-prices';
 import {
-  buildInvoiceCustomFieldsSk,
-  buildInvoiceCustomFieldsFromCustomerMetadata,
   buildSkInvoiceFooter,
+  SK_INVOICE_CF_SUPPLIER,
+  mergeBuyerTaxIdsIntoCustomFields,
+  buyerTaxIdsPresentInCustomFields,
   buildSkInvoicePaymentSettings,
   buildSkInvoiceRendering,
   buildSkCardPaymentIntentTypes,
@@ -72,6 +73,7 @@ import {
   getBillingInvoiceSupplier,
   isStripeAutomaticTaxEnabled,
   normalizeSkEuVatId,
+  paymentIntentAmountCents,
   resolveCustomerAddress,
   SK_INVOICE_CREDIT_LINE_DESCRIPTION,
   SK_INVOICE_PAYMENT_METHOD_LABEL,
@@ -355,8 +357,12 @@ export class StripeService {
       auto_advance: false,
       description,
       metadata,
-      custom_fields: resolveInvoiceCustomFieldsSk(billing),
-      footer: buildSkInvoiceFooter(productType, this.config, subscriptionPeriod),
+      custom_fields: resolveInvoiceCustomFieldsSk(
+        billing,
+        this.config,
+        Math.floor(Date.now() / 1000),
+      ),
+      footer: buildSkInvoiceFooter(this.config),
       rendering: buildSkInvoiceRendering(),
     };
     if (!options?.omitPaymentSettings) {
@@ -410,6 +416,21 @@ export class StripeService {
     return {
       purchaser_type:
         metadata.purchaser_type === 'company' ? 'company' : 'individual',
+      company_name: metadata.company_name?.trim() || null,
+      registration_number: metadata.registration_number?.trim() || null,
+      tax_id: metadata.tax_id?.trim() || null,
+      vat_id: metadata.vat_id?.trim() || null,
+    };
+  }
+
+  private billingFromCustomerMetadata(
+    metadata: Record<string, string>,
+  ): CheckoutBillingDetailsInput {
+    const isCompany =
+      metadata.buyer_type === 'company' ||
+      metadata.purchaser_type === 'company';
+    return {
+      purchaser_type: isCompany ? 'company' : 'individual',
       company_name: metadata.company_name?.trim() || null,
       registration_number: metadata.registration_number?.trim() || null,
       tax_id: metadata.tax_id?.trim() || null,
@@ -523,8 +544,64 @@ export class StripeService {
 
   /**
    * SK faktúra for credit packs is created only after PaymentIntent succeeds
-   * (paid_out_of_band). Legacy invoice-backed PIs keep their Stripe invoice.
+   * (attachPayment or paid_out_of_band). Legacy invoice-backed PIs keep their Stripe invoice.
    */
+  private async sendCreditInvoiceCustomerEmail(invoiceId: string): Promise<void> {
+    try {
+      await this.getStripe().invoices.sendInvoice(invoiceId);
+    } catch (err) {
+      this.logger.warn(
+        `sendInvoice for credit faktúra ${invoiceId} skipped or failed (Dashboard email toggles may still apply): ${String(err)}`,
+      );
+    }
+  }
+
+  /**
+   * Idempotent: creates the paid SK faktúra for a succeeded credit PaymentIntent if missing.
+   * Safe to call from confirm-credits retries and webhooks.
+   */
+  async ensureCreditPaymentInvoice(
+    paymentIntentId: string,
+    options?: { assertUserId?: string },
+  ): Promise<string | null> {
+    const stripe = this.getStripe();
+    const maxAttempts = 5;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const pi = await stripe.paymentIntents.retrieve(paymentIntentId, {
+        expand: ['invoice'],
+      });
+      const merged: Record<string, string> = { ...(pi.metadata ?? {}) };
+      if (merged.type !== 'credits') {
+        return null;
+      }
+      if (
+        options?.assertUserId &&
+        merged.user_id &&
+        merged.user_id !== options.assertUserId
+      ) {
+        throw new ForbiddenException('Platba nepatrí tomuto účtu.');
+      }
+      if (pi.status !== 'succeeded') {
+        if (attempt < maxAttempts - 1) {
+          await this.delayMs(750);
+          continue;
+        }
+        return null;
+      }
+      const invoiceId = await this.createPaidSkInvoiceForCreditPayment(pi, merged);
+      if (invoiceId) {
+        return invoiceId;
+      }
+      if (attempt < maxAttempts - 1) {
+        await this.delayMs(750);
+      }
+    }
+    this.logger.error(
+      `ensureCreditPaymentInvoice: could not create faktúra for PI ${paymentIntentId}`,
+    );
+    return null;
+  }
+
   private async createPaidSkInvoiceForCreditPayment(
     pi: PaymentIntent,
     metadata: Record<string, string>,
@@ -576,11 +653,11 @@ export class StripeService {
       }
     }
 
-    const totalCents = pi.amount_received ?? pi.amount ?? 0;
+    const totalCents = paymentIntentAmountCents(pi);
     const lineItem = buildSkCreditInvoiceLineItem(totalCents, creditsAmount);
     if (!lineItem) {
       this.logger.warn(
-        `createPaidSkInvoiceForCreditPayment: invalid amount for PI ${pi.id}`,
+        `createPaidSkInvoiceForCreditPayment: invalid amount for PI ${pi.id} (totalCents=${totalCents}, status=${pi.status})`,
       );
       return null;
     }
@@ -635,6 +712,7 @@ export class StripeService {
         `Could not persist invoice_id on PI ${pi.id}: ${String(err)}`,
       );
     }
+    await this.sendCreditInvoiceCustomerEmail(paid.id);
     return paid.id;
   }
 
@@ -677,28 +755,91 @@ export class StripeService {
     }
   }
 
+  private skSubscriptionInvoiceFooterBase(): string {
+    return buildSkInvoiceFooter(this.config);
+  }
+
   /**
-   * Align subscription invoice PDF with SK template (line text, poznámka, obdobie).
-   * Called from invoice.created while invoice is still draft.
+   * Load a subscription invoice with line items + subscription ref, then stamp SK template.
+   * Used by webhooks when the event payload is shallow.
    */
-  async applySkSubscriptionInvoiceTemplate(invoice: Invoice): Promise<void> {
-    if (!getInvoiceSubscriptionId(invoice)) {
-      return;
+  async applySkSubscriptionInvoiceTemplateFromEvent(
+    invoice: Invoice,
+  ): Promise<void> {
+    const stripe = this.getStripe();
+    let full = invoice;
+    const needsReload =
+      !getInvoiceSubscriptionId(invoice) ||
+      !(invoice.lines?.data?.length ?? 0);
+    if (needsReload) {
+      try {
+        full = await stripe.invoices.retrieve(invoice.id, {
+          expand: ['lines', 'parent.subscription_details.subscription'],
+        });
+      } catch (err) {
+        this.logger.warn(
+          `Could not reload invoice ${invoice.id} for SK template: ${String(err)}`,
+        );
+      }
     }
-    if (invoice.status !== 'draft') {
+    await this.applySkSubscriptionInvoiceTemplate(full);
+  }
+
+  /**
+   * Stamp SK footer on the subscription's latest invoice immediately after create
+   * (trial €0 invoices finalize before invoice.created webhook is processed).
+   */
+  private async stampSkSubscriptionInvoiceFromSubscription(
+    subscription: Subscription,
+  ): Promise<void> {
+    const invoiceId = expandableRefId(subscription.latest_invoice);
+    if (!invoiceId) {
       return;
     }
     const stripe = this.getStripe();
-    const firstLine = invoice.lines?.data?.[0];
-    const periodStart = firstLine?.period?.start;
-    const periodEnd = firstLine?.period?.end;
-    const subscriptionPeriod =
-      typeof periodStart === 'number' &&
-      typeof periodEnd === 'number' &&
-      periodStart > 0 &&
-      periodEnd > 0
-        ? { start: periodStart, end: periodEnd }
-        : null;
+    let invoice: Invoice;
+    try {
+      invoice = await stripe.invoices.retrieve(invoiceId, {
+        expand: ['lines', 'parent.subscription_details.subscription'],
+      });
+    } catch (err) {
+      this.logger.warn(
+        `Could not load subscription invoice ${invoiceId} for SK template: ${String(err)}`,
+      );
+      return;
+    }
+    await this.applySkSubscriptionInvoiceTemplate(invoice, subscription.id);
+  }
+
+  /**
+   * Align subscription invoice PDF with SK template (line text, poznámka, obdobie).
+   * Called synchronously after subscriptions.create and from invoice.created webhook.
+   */
+  async applySkSubscriptionInvoiceTemplate(
+    invoice: Invoice,
+    fallbackSubscriptionId?: string,
+  ): Promise<void> {
+    const subscriptionId =
+      getInvoiceSubscriptionId(invoice) ??
+      fallbackSubscriptionId?.trim() ??
+      null;
+    if (!subscriptionId) {
+      return;
+    }
+    if (invoice.status !== 'draft') {
+      const footer = invoice.footer?.trim() ?? '';
+      const hasSupplierField = (invoice.custom_fields ?? []).some(
+        (f) => f.name === SK_INVOICE_CF_SUPPLIER,
+      );
+      if (hasSupplierField || footer.includes('Obchodnom registri')) {
+        return;
+      }
+      this.logger.warn(
+        `Subscription invoice ${invoice.id} is ${invoice.status}; SK template not applied (missed draft window). Customer/subscription default footer should still include OR line.`,
+      );
+      return;
+    }
+    const stripe = this.getStripe();
 
     const customerId =
       typeof invoice.customer === 'string'
@@ -712,29 +853,15 @@ export class StripeService {
       try {
         const customer = await stripe.customers.retrieve(customerId);
         if (customer && !('deleted' in customer && customer.deleted)) {
-          const fromSettings = filterStripeInvoiceCustomFields(
-            customer.invoice_settings?.custom_fields?.map((f) => ({
-              name: f.name ?? '',
-              value: f.value ?? '',
-            })),
-          );
-          if (fromSettings.length > 0) {
-            customFields = fromSettings;
-          } else {
-            const fromMeta = buildInvoiceCustomFieldsFromCustomerMetadata(
+          customFields = resolveInvoiceCustomFieldsSk(
+            this.billingFromCustomerMetadata(
               customer.metadata as Record<string, string>,
-            );
-            if (fromMeta && fromMeta.length > 0) {
-              customFields = fromMeta;
-            } else {
-              const buyerType = (
-                customer.metadata as Record<string, string>
-              )?.buyer_type?.trim();
-              if (buyerType === 'individual') {
-                customFields = [];
-              }
-            }
-          }
+            ),
+            this.config,
+            invoice.status_transitions?.finalized_at ??
+              invoice.created ??
+              Math.floor(Date.now() / 1000),
+          );
         }
       } catch (err) {
         this.logger.warn(
@@ -743,11 +870,7 @@ export class StripeService {
       }
     }
 
-    const footer = buildSkInvoiceFooter(
-      'subscription',
-      this.config,
-      subscriptionPeriod,
-    );
+    const footer = buildSkInvoiceFooter(this.config);
     const rendering = buildSkInvoiceRendering();
 
     try {
@@ -1350,7 +1473,9 @@ export class StripeService {
       : {};
     const invoiceSettingsFields = {
       invoice_settings: {
-        custom_fields: resolveInvoiceCustomFieldsSk(details),
+        custom_fields: resolveInvoiceCustomFieldsSk(details, this.config),
+        // Default footer on Billing invoices (trial €0 may finalize before draft update).
+        footer: this.skSubscriptionInvoiceFooterBase(),
       },
     };
 
@@ -1779,6 +1904,14 @@ export class StripeService {
       subscription = await stripe.subscriptions.create(retryParams);
     }
 
+    try {
+      await this.stampSkSubscriptionInvoiceFromSubscription(subscription);
+    } catch (err) {
+      this.logger.warn(
+        `stampSkSubscriptionInvoiceFromSubscription failed for ${subscription.id}: ${String(err)}`,
+      );
+    }
+
     const { clientSecret, intentType, pi } =
       await this.resolveSubscriptionPaymentClientSecret(subscription);
     const setupRef = subscription.pending_setup_intent;
@@ -1930,7 +2063,7 @@ export class StripeService {
     pi: PaymentIntent,
     expectedCredits: number,
   ): Promise<boolean> {
-    const amount = pi.amount_received ?? pi.amount ?? 0;
+    const amount = paymentIntentAmountCents(pi);
     if (amount < 1) return false;
     const packs = await this.listCreditPacks();
     const priceId =
@@ -1986,6 +2119,48 @@ export class StripeService {
    * Loads credits from a succeeded PaymentIntent once (idempotent). Used by webhooks
    * and by the client after return_url redirect when webhooks are unavailable or delayed.
    */
+  private delayMs(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private async retrieveSucceededPaymentIntent(
+    paymentIntentId: string,
+    options?: { maxAttempts?: number; delayMs?: number },
+  ): Promise<PaymentIntent | null> {
+    const maxAttempts = options?.maxAttempts ?? 8;
+    const delayMs = options?.delayMs ?? 750;
+    const stripe = this.getStripe();
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+      if (pi.status === 'succeeded') {
+        return pi;
+      }
+      if (pi.status === 'canceled') {
+        return null;
+      }
+      if (attempt < maxAttempts - 1) {
+        await this.delayMs(delayMs);
+      }
+    }
+    return null;
+  }
+
+  private async isCreditFulfillmentAppliedForIntent(
+    paymentIntentId: string,
+    metadata: Record<string, string>,
+  ): Promise<boolean> {
+    const userId = metadata.user_id?.trim();
+    const addCredits = parseInt(String(metadata.credits), 10) || 0;
+    if (!userId || addCredits < 1) {
+      return false;
+    }
+    return this.isCreditFulfillmentComplete(
+      paymentIntentId,
+      userId,
+      addCredits,
+    );
+  }
+
   async fulfillCreditsIfNeeded(
     paymentIntentId: string,
     options?: {
@@ -1994,8 +2169,23 @@ export class StripeService {
     },
   ): Promise<{ applied: boolean; reason: 'ok' | 'not_succeeded' | 'not_credits' | 'forbidden' }> {
     const stripe = this.getStripe();
-    const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
-    if (pi.status !== 'succeeded') {
+    let pi = await this.retrieveSucceededPaymentIntent(paymentIntentId);
+    if (!pi) {
+      const latest = await stripe.paymentIntents.retrieve(paymentIntentId);
+      const mergedEarly: Record<string, string> = {
+        ...(options?.fallbackMetadata ?? {}),
+        ...(latest.metadata ?? {}),
+      };
+      if (
+        options?.assertUserId &&
+        mergedEarly.user_id &&
+        mergedEarly.user_id !== options.assertUserId
+      ) {
+        throw new ForbiddenException('Platba nepatrí tomuto účtu.');
+      }
+      if (await this.isCreditFulfillmentAppliedForIntent(paymentIntentId, mergedEarly)) {
+        return { applied: true, reason: 'ok' };
+      }
       return { applied: false, reason: 'not_succeeded' };
     }
     const merged: Record<string, string> = {
@@ -2065,13 +2255,9 @@ export class StripeService {
           addCredits,
         );
         if (alreadyFulfilled) {
-          try {
-            await this.createPaidSkInvoiceForCreditPayment(pi, merged);
-          } catch (err) {
-            this.logger.error(
-              `createPaidSkInvoiceForCreditPayment retry failed for PI ${pi.id}: ${String(err)}`,
-            );
-          }
+          await this.ensureCreditPaymentInvoice(pi.id, {
+            assertUserId: merged.user_id,
+          });
           return { applied: true, reason: 'ok' };
         }
         this.logger.warn(
@@ -2110,13 +2296,9 @@ export class StripeService {
       refType: 'payment_intent',
       refId: pi.id,
     });
-    try {
-      await this.createPaidSkInvoiceForCreditPayment(pi, merged);
-    } catch (err) {
-      this.logger.error(
-        `createPaidSkInvoiceForCreditPayment failed for PI ${pi.id}: ${String(err)}`,
-      );
-    }
+    await this.ensureCreditPaymentInvoice(pi.id, {
+      assertUserId: merged.user_id,
+    });
     return { applied: true, reason: 'ok' };
   }
 
@@ -2543,13 +2725,8 @@ export class StripeService {
         .map((f) => ({ name: f.name.trim(), value: f.value.trim() })),
     );
 
-    // Guarantee buyer tax IDs (IČO/DIČ/IČ DPH) appear on company invoices.
-    // The invoice custom_fields are the authoritative source; the profile is the
-    // fallback for old invoices that were created before custom_fields were stamped.
-    const hasBuyerIco = customFields.some((f) => f.name === 'IČO');
-    const hasBuyerDic = customFields.some((f) => f.name === 'DIČ');
-    const hasBuyerVat = customFields.some((f) => f.name === 'IČ DPH');
-    if (!hasBuyerIco || !hasBuyerDic || !hasBuyerVat) {
+    // Guarantee buyer tax IDs on company invoices (Odberateľ or legacy IČO/DIČ/IČ DPH).
+    if (!buyerTaxIdsPresentInCustomFields(customFields)) {
       try {
         const { data: profile } = await this.supabaseService
           .getClient()
@@ -2563,19 +2740,8 @@ export class StripeService {
             tax_id?: string | null;
             vat_id?: string | null;
           };
-          const extra: Array<{ name: string; value: string }> = [];
-          if (!hasBuyerIco && p.registration_number?.trim()) {
-            extra.push({ name: 'IČO', value: p.registration_number.trim() });
-          }
-          if (!hasBuyerDic && p.tax_id?.trim()) {
-            extra.push({ name: 'DIČ', value: p.tax_id.trim() });
-          }
-          if (!hasBuyerVat) {
-            const vat = normalizeSkEuVatId(p.vat_id);
-            if (vat) extra.push({ name: 'IČ DPH', value: vat });
-          }
-          if (extra.length > 0) {
-            customFields = [...extra, ...customFields];
+          if (p.registration_number?.trim()) {
+            customFields = mergeBuyerTaxIdsIntoCustomFields(customFields, p);
           }
         }
       } catch (err) {
@@ -2638,10 +2804,7 @@ export class StripeService {
       0;
     const issuedAt =
       invoice.status_transitions?.finalized_at ?? createdTs;
-    const deliveryAt =
-      invoice.status_transitions?.paid_at ??
-      invoice.status_transitions?.finalized_at ??
-      createdTs;
+    const deliveryAt = issuedAt;
 
     return {
       id: invoice.id,
@@ -2668,11 +2831,7 @@ export class StripeService {
         custom_fields: customFields,
       },
       supplier,
-      footer: invoice.footer?.trim() || buildSkInvoiceFooter(
-        productType,
-        this.config,
-        subscriptionPeriod,
-      ),
+      footer: invoice.footer?.trim() || buildSkInvoiceFooter(this.config),
       product_type: productType,
       note: getSkInvoiceNote(productType),
       subscription_period: subscriptionPeriod,
