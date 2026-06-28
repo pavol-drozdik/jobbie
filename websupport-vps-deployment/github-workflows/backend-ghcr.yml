@@ -136,7 +136,7 @@ jobs:
             HEALTH_URL="${HEALTH_URL//$'\r'/}"
             HEALTH_URL="${HEALTH_URL//$'\n'/}"
             if [[ -z "${HEALTH_URL}" ]]; then
-              APP_DOMAIN="$(grep -E '^APP_DOMAIN=' /srv/nestjs-typesense/.env | head -n1 | cut -d= -f2- | tr -d '"' | tr -d "'" | xargs || true)"
+              APP_DOMAIN="$(sudo grep -E '^APP_DOMAIN=' /srv/nestjs-typesense/.env | head -n1 | cut -d= -f2- | tr -d '"' | tr -d "'" | xargs || true)"
               APP_DOMAIN="${APP_DOMAIN//$'\r'/}"
               APP_DOMAIN="${APP_DOMAIN//$'\n'/}"
               if [[ -z "${APP_DOMAIN}" ]]; then

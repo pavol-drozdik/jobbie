@@ -17,7 +17,8 @@ const JOBBIE_STRIPE_GREEN = '#22c55e'
 const JOBBIE_STRIPE_BORDER = 'rgba(0, 0, 0, 0.06)'
 const JOBBIE_STRIPE_TEXT = '#000000'
 const JOBBIE_STRIPE_TEXT_MUTED = 'rgba(0, 0, 0, 0.8)'
-const JOBBIE_STRIPE_PILL_RADIUS = '9999px'
+/** Normal rounded field corners — a pill/9999px radius made Stripe's accordion render as a giant circle. */
+const JOBBIE_STRIPE_FIELD_RADIUS = '14px'
 const JOBBIE_STRIPE_OPTION_RADIUS = '10px'
 
 const JOBBIE_STRIPE_FONT_FAMILY =
@@ -27,12 +28,12 @@ const JOBBIE_STRIPE_FONT_FAMILY =
 const jobbieStripeFieldSurface = {
   backgroundColor: JOBBIE_STRIPE_INPUT_BACKGROUND,
   border: `1px solid ${JOBBIE_STRIPE_BORDER}`,
-  borderRadius: JOBBIE_STRIPE_PILL_RADIUS,
+  borderRadius: JOBBIE_STRIPE_FIELD_RADIUS,
   boxShadow: 'none',
   color: JOBBIE_STRIPE_TEXT,
-  fontSize: '18px',
-  lineHeight: '24px',
-  padding: '15px 20px',
+  fontSize: '16px',
+  lineHeight: '22px',
+  padding: '12px 14px',
 } as const
 
 const jobbieStripeFieldFocus = {
@@ -43,10 +44,10 @@ const jobbieStripeFieldFocus = {
 
 const jobbieStripeLabel = {
   color: JOBBIE_STRIPE_TEXT,
-  fontSize: '18px',
+  fontSize: '15px',
   fontWeight: '600',
   lineHeight: '1.25',
-  marginBottom: '8px',
+  marginBottom: '6px',
 } as const
 
 function buildJobbieStripeAppearanceRules(): NonNullable<Appearance['rules']> {
@@ -94,7 +95,7 @@ function buildJobbieStripeAppearanceRules(): NonNullable<Appearance['rules']> {
     '.Tab': {
       backgroundColor: JOBBIE_STRIPE_INPUT_BACKGROUND,
       border: `1px solid ${JOBBIE_STRIPE_BORDER}`,
-      borderRadius: JOBBIE_STRIPE_PILL_RADIUS,
+      borderRadius: JOBBIE_STRIPE_FIELD_RADIUS,
       boxShadow: 'none',
       color: JOBBIE_STRIPE_TEXT_MUTED,
       fontSize: '16px',
@@ -164,9 +165,9 @@ export function getJobbieStripeAppearance(
       colorText: JOBBIE_STRIPE_TEXT,
       colorDanger: '#dc2626',
       fontFamily: JOBBIE_STRIPE_FONT_FAMILY,
-      borderRadius: JOBBIE_STRIPE_PILL_RADIUS,
+      borderRadius: JOBBIE_STRIPE_FIELD_RADIUS,
       spacingUnit: '4px',
-      fontSizeBase: '18px',
+      fontSizeBase: '16px',
       fontWeightNormal: '400',
       fontWeightMedium: '600',
       fontWeightBold: '700',

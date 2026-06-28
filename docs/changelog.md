@@ -1,7 +1,17 @@
-﻿## 2026-06-28 — Staging deploy HEALTH_URL fallback
+﻿## 2026-06-28 — Fix subscription checkout hang + Payment Element styling
+
+Fixed:
+- **app-pwa/StripePaymentForm:** Production subscription checkout could hang on "Spracovávam…" with no error. When deferred `setup` Elements received a PaymentIntent (no trial), the form remounted Elements with the server `clientSecret` and then called `elements.submit()` on the now-empty card field, which never resolved. Now on an intent-type remount the form stops gracefully with `S.checkoutConfirmAfterRemount` ("Skontrolujte údaje karty a potvrďte platbu znova.") so the next click confirms normally. Added a ~30s watchdog (`raceConfirmTimeout`) around `confirmPayment`/`confirmSetup` so the button can never stay stuck.
+- **app-pwa/useCheckoutSubscription:** Root cause of the intent mismatch — the client decided trial/`setup` mode from DB/global catalog config while the backend grants trials only from the live Stripe Price. `planTrialDays` now trusts `GET /api/plans` `trial_period_days` (already derived from the live Stripe Price, the same source `createSubscriptionPaymentIntent` uses), so the form mounts the correct mode the first time. Removed the global/catalog fallback for the checkout decision.
+
+Changed:
+- **app-pwa/stripe-payment-element-ui:** Replaced the `9999px` pill `borderRadius` (which made Stripe's accordion render as a giant circular outline) with a normal `14px` field radius on inputs/dropdowns/tabs and the global appearance. Reduced field font/padding and `fontSizeBase` to 16px so card expiry and CVC stay on one row; kept the `accordion` layout so card and Google Pay stack vertically.
+
+## 2026-06-28 — Staging deploy HEALTH_URL fallback
 
 Fixed:
 - **`.github/workflows/deploy-staging.yml`, `backend-ghcr.yml` (staging job):** When `STAGING_HEALTH_URL` is unset, resolve `HEALTH_URL` from `APP_DOMAIN` in the VPS `.env` before `deploy_backend.sh` (same as production’s `HEALTH_URL` default pattern). Fail the job with a clear error if both are missing — no empty health URL passed to deploy.
+- **Same workflows:** Read `APP_DOMAIN` with `sudo grep` — `.env` is `chmod 600` root-owned on the VPS; unprivileged SSH user got `Permission denied` and an empty `APP_DOMAIN`.
 
 ## 2026-06-28 — Subscription trial checkout: remount Elements on intent mismatch
 
