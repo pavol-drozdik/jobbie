@@ -1142,6 +1142,67 @@ describe('buildCvDocument', () => {
     }
   }, 90_000)
 
+  it('monochrome continuation sheets keep full-height sidebar chrome', async () => {
+    const data = balancedPaginationFixture('monochrome')
+    const html = buildCvDocument(data, { mode: 'pdf' })
+    const { CvHtmlPdfRenderer } = await import('../cv-html-pdf.renderer')
+    const renderer = new CvHtmlPdfRenderer()
+    try {
+      const extracted = await renderer.extractPaginatedOutput(html)
+      expect(extracted.sheetCount).toBeGreaterThanOrEqual(2)
+
+      const browser = await (await import('playwright')).chromium.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      })
+      const page = await browser.newPage({ viewport: { width: 794, height: 1123 } })
+      try {
+        await page.setContent(
+          buildCvPdfPrintDocument({
+            title: data.fullName,
+            fontLink: CV_DOCUMENT_FONT_LINK,
+            styles: buildCvDocumentStyles('pdf'),
+            outputHtml: extracted.outputHtml,
+          }),
+          { waitUntil: 'networkidle', timeout: 60_000 },
+        )
+        const layout = await page.evaluate(() => {
+          const sheets = Array.from(
+            document.querySelectorAll('#cv-pagination-output .cv-sheet.monochrome-page'),
+          )
+          return sheets.map((sheet, index) => {
+            const grid = sheet.querySelector('.monochrome-grid')
+            const side = sheet.querySelector('.monochrome-side')
+            if (!(grid instanceof HTMLElement) || !(side instanceof HTMLElement)) {
+              return null
+            }
+            const gridRect = grid.getBoundingClientRect()
+            const sideRect = side.getBoundingClientRect()
+            const style = window.getComputedStyle(side)
+            return {
+              index,
+              gridHeight: gridRect.height,
+              sideHeight: sideRect.height,
+              sideTopOffset: sideRect.top - gridRect.top,
+              position: style.position,
+            }
+          })
+        })
+        expect(layout.every((row) => row != null)).toBe(true)
+        for (const row of layout) {
+          expect(row!.position).toBe('absolute')
+          expect(row!.sideHeight).toBeGreaterThanOrEqual(row!.gridHeight - 2)
+          expect(row!.sideTopOffset).toBeLessThanOrEqual(2)
+        }
+        expect(layout.some((row) => row!.index > 0)).toBe(true)
+      } finally {
+        await browser.close()
+      }
+    } finally {
+      await renderer.onModuleDestroy()
+    }
+  }, 90_000)
+
   it.each(templates)(
     'balances %s pagination across entries (summary + 2 experiences + education)',
     async (template) => {

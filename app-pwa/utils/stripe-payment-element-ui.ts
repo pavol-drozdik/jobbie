@@ -271,7 +271,7 @@ export function buildJobbiePaymentElementOptions(
   return {
     wallets: jobbieStripeWalletOptions,
     layout: {
-      type: 'tabs',
+      type: 'accordion',
       defaultCollapsed: false,
     },
     fields: {

@@ -43,7 +43,6 @@
             <span class="font-dmSans text-lg font-bold text-black">
               {{ formatPrice(pack.unit_amount, pack.currency) }}
             </span>
-            <span class="font-dmSans text-[13px] text-black/45">{{ pricePerCredit(pack) }}</span>
             <button
               type="button"
               class="mt-2 inline-flex h-[38px] w-full items-center justify-center rounded-full border-[1.5px] font-dmSans text-[15px] font-bold transition-colors disabled:opacity-50"
@@ -132,7 +131,6 @@ const {
   error,
   successMessage,
   packBadgeLabel,
-  pricePerCredit,
   formatPrice,
   selectAndBuy,
   handleBuy,

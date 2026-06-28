@@ -33,7 +33,6 @@
       <p class="m-0 mt-1 font-dmSans text-2xl font-extrabold text-marketing-green">
         {{ formatPrice(pack.unit_amount, pack.currency) }}
       </p>
-      <p class="m-0 mt-1 text-sm text-black/50">{{ pricePerCredit(pack) }}</p>
     </div>
 
     <p v-if="loading" class="text-sm text-black/55">{{ S.checkoutLoadingPayment }}</p>
@@ -77,7 +76,6 @@ const {
   billingPrefill,
   stripeReturnUrl,
   formatPrice,
-  pricePerCredit,
   confirmCreditsFromPaymentIntent,
   createPaymentIntent,
   init,

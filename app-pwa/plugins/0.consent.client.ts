@@ -6,11 +6,11 @@ import {
   setAnalyticsConsentGranted,
   useConsentCookieRef,
 } from '~/utils/cookie-consent-state'
-import { loadGtm, isGtmConfigured } from '~/utils/gtm-client'
 import { openCookiePreferences } from '~/utils/cookie-consent-ui'
 
 /**
- * Cookie consent boot: gtag Consent Mode default-denied, GTM bootstrap, replay stored jb_consent.
+ * Cookie consent boot: gtag Consent Mode default-denied, replay stored jb_consent.
+ * GTM (GA4/Clarity) loads only after analytics consent — see applyAnalyticsConsent.
  */
 export default defineNuxtPlugin((nuxtApp) => {
   if (!import.meta.client) {
@@ -21,10 +21,6 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   ensureConsentVisitorId()
   const consentCookie = useConsentCookieRef()
-
-  if (isGtmConfigured()) {
-    loadGtm()
-  }
 
   if (hasValidConsentChoice(consentCookie.value)) {
     const categories = categoriesFromPayload(consentCookie.value)

@@ -1,4 +1,9 @@
-﻿## 2026-06-28 — Subscription trial checkout: remount Elements on intent mismatch
+﻿## 2026-06-28 — Staging deploy HEALTH_URL fallback
+
+Fixed:
+- **`.github/workflows/deploy-staging.yml`, `backend-ghcr.yml` (staging job):** When `STAGING_HEALTH_URL` is unset, resolve `HEALTH_URL` from `APP_DOMAIN` in the VPS `.env` before `deploy_backend.sh` (same as production’s `HEALTH_URL` default pattern). Fail the job with a clear error if both are missing — no empty health URL passed to deploy.
+
+## 2026-06-28 — Subscription trial checkout: remount Elements on intent mismatch
 
 Fixed:
 - **app-pwa/StripePaymentForm:** When deferred `setup` Elements receive a PaymentIntent from the API (or deferred `payment` receives a SetupIntent), remount Elements with `clientSecret` instead of `elements.update` — Stripe cannot confirm across modes. Re-submit card after remount.
@@ -49,6 +54,17 @@ Fixed:
 - **backend-ts/main.ts:** CORS bypass for `/health` and `/api/seo/*` now also matches `Origin: null` (the literal string Undici/Node 22 built-in `fetch` sends for non-browser contexts per the WHATWG spec). The old check `!req.headers.origin` was falsy-safe but `"null"` is a truthy string, so Docker health check probes using Node `fetch` were rejected with a 500, marking the container unhealthy on every deploy.
 - **backend-ts/Dockerfile, websupport-vps-deployment/docker-compose.yml:** Switched both health check commands from `fetch()` to `require('http').get()` (Node's `http` module, which never sends an `Origin` header).
 - **.github/workflows/deploy-staging.yml, deploy-production.yml, backend-ghcr.yml:** Deploy workflows now upload and install `docker-compose.yml` alongside `deploy_backend.sh` so the VPS Compose config stays in sync with the repo on every deploy.
+
+## 2026-06-28 — Remove per-credit price display from credit packs
+
+Changed:
+- **app-pwa:** Removed `0,60 € / kredit` (per-credit) price from checkout and buy-credits panels; deleted `pricePerCredit` helpers from composables and `formatPricePerCredit` from billing utils.
+- **backend-ts/billing:** Dropped `pricePerCredit` from public credit-pack catalog DTO (`GET /api/billing/config`).
+
+## 2026-06-28 — Buyer IČO/DIČ/IČ DPH guaranteed on company invoices
+
+Changed:
+- **backend-ts/payments:** `getCustomerInvoiceDetail` now guarantees IČO, DIČ, and IČ DPH appear in the buyer block for company accounts. The invoice `custom_fields` remain the authoritative source; if any identifier is missing (e.g. on old invoices created before custom_fields were stamped), the handler falls back to the authenticated user's Supabase profile (`registration_number`, `tax_id`, `vat_id`). Individual buyers (no `registration_number` on profile) are unaffected.
 
 ## 2026-06-28 — Invoice supplier auto-populated from Stripe account
 
@@ -109,6 +125,17 @@ Fixed:
 
 Fixed:
 - **backend-ts:** `subscriptions.create` on `/platba` — shallow expand (`latest_invoice`, `pending_setup_intent` only). Deep expand `latest_invoice.payments.data.payment.payment_intent` exceeded Stripe’s 4-level limit and broke subscription checkout; PaymentIntent client secret is resolved via existing follow-up retrieve in `resolveSubscriptionPaymentClientSecret`.
+
+## 2026-06-27 — CV list preview photo + drop HTML náhľad
+
+Fixed:
+- **app-pwa:** CV hub **Náhľad** from `/zivotopisy` resolves the signed profile photo URL (same as the editor) before PDF preview.
+- **app-pwa:** Removed temporary **HTML náhľad** button from the CV wizard finish step.
+
+## 2026-06-27 — CV Monochrome continuous sidebar (paginated PDF)
+
+Fixed:
+- **backend-ts:** Monochrome paginated sheets use a full-height absolute sidebar chrome on every page (Atlas-style), including continuation pages (`CV_PDF_RENDERER_REVISION` 33).
 
 ## 2026-06-27 — CV Monochrome no profile photo
 
@@ -238,6 +265,11 @@ Fixed:
 Fixed:
 - **backend-ts:** Editorial, Minimalist, and Monochrome CV templates realigned to `jobbiecvdesign/` reference layouts — summary as header lead, correct main/side column placement (education/skills/hobbies per design).
 - **backend-ts:** Multi-page PDF packer — continuation grid padding for Minimalist/Monochrome; `data-cv-pack="with-previous"` for trailing extra-info sections; orphan rebalance for coupled columns (`CV_PDF_RENDERER_REVISION` 18).
+
+## 2026-06-27 — Square photo crop (CV + profile)
+
+Changed:
+- **app-pwa:** CV editor and profile settings show a square crop modal (pan, zoom slider, pinch) before photo upload; cropped image flows through existing compression and storage APIs.
 
 ## 2026-06-27 — CV editor photo removal
 

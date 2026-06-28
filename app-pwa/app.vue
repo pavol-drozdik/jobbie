@@ -34,6 +34,7 @@
     </NuxtLayout>
     <ClientOnly>
       <AppConfirmHost />
+      <AppSquareImageCropHost />
     </ClientOnly>
     <ClientOnly>
       <AppCookieConsentHost />

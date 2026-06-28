@@ -11,14 +11,16 @@ import {
 import { setAnalyticsConsentGranted } from './cookie-consent-state'
 
 const captureGtmPageView = vi.fn()
-const purgeInjectedAnalyticsScripts = vi.fn()
+const loadGtm = vi.fn()
+const teardownGtmAnalytics = vi.fn()
 const signalAnalyticsConsentToGtm = vi.fn()
 const initPosthogIfConsented = vi.fn()
 const shutdownPosthog = vi.fn()
 
 vi.mock('~/utils/gtm-client', () => ({
   captureGtmPageView: (...args: unknown[]) => captureGtmPageView(...args),
-  purgeInjectedAnalyticsScripts: (...args: unknown[]) => purgeInjectedAnalyticsScripts(...args),
+  loadGtm: (...args: unknown[]) => loadGtm(...args),
+  teardownGtmAnalytics: (...args: unknown[]) => teardownGtmAnalytics(...args),
   signalAnalyticsConsentToGtm: (...args: unknown[]) => signalAnalyticsConsentToGtm(...args),
 }))
 
@@ -30,7 +32,8 @@ vi.mock('~/utils/posthog-client', () => ({
 describe('analytics-consent', () => {
   beforeEach(() => {
     captureGtmPageView.mockClear()
-    purgeInjectedAnalyticsScripts.mockClear()
+    loadGtm.mockClear()
+    teardownGtmAnalytics.mockClear()
     signalAnalyticsConsentToGtm.mockClear()
     initPosthogIfConsented.mockClear()
     shutdownPosthog.mockClear()
@@ -57,6 +60,7 @@ describe('analytics-consent', () => {
     applyAnalyticsConsentEffect(true)
 
     expect(signalAnalyticsConsentToGtm).toHaveBeenCalledWith(true)
+    expect(loadGtm).toHaveBeenCalled()
     expect(initPosthogIfConsented).toHaveBeenCalled()
     expect(captureGtmPageView).toHaveBeenCalled()
     expect(shutdownPosthog).not.toHaveBeenCalled()
@@ -75,7 +79,7 @@ describe('analytics-consent', () => {
 
     expect(signalAnalyticsConsentToGtm).toHaveBeenLastCalledWith(false)
     expect(shutdownPosthog).toHaveBeenCalled()
-    expect(purgeInjectedAnalyticsScripts).toHaveBeenCalled()
+    expect(teardownGtmAnalytics).toHaveBeenCalled()
     expect(initPosthogIfConsented).toHaveBeenCalledTimes(1)
   })
 

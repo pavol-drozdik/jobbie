@@ -127,18 +127,19 @@
   confirmEmailPanelTitle: 'Skoro hotovo.',
   confirmEmailPanelSubtitle:
     'Otvor e-mail a klikni na potvrdzovací odkaz. Potom sa môžeš prihlásiť.',
-  confirmEmailHeading: 'Vitajte v',
-  confirmEmailHeadingAccent: 'aplikácii',
+  confirmEmailHeading: 'Skontroluj',
+  confirmEmailHeadingAccent: 'e-mail',
   confirmEmailMessage:
-    'Účet bol vytvorený. Potvrďte registráciu cez odkaz v e-maili a potom sa prihláste. Po prihlásení vstúpite do aplikácie.',
+    'Poslali sme ti odkaz na potvrdenie e-mailu. Klikni naň a potom sa prihlás.',
+  confirmEmailOpenMailbox: 'Otvoriť e-mail',
   stepIntoApp: 'Vstúpiť do aplikácie',
-  alreadyConfirmedSignIn: 'Už potvrdene? Prihlásiť sa',
+  alreadyConfirmedSignIn: 'Prihlásiť sa',
   preferencesLookingTitle: 'Preferencie – hľadám prácu',
   preferencesOfferingTitle: 'Preferencie – ponúkam prácu',
   rolesQuestion: 'Čo chcete robiť?',
   roleCustomerCard: 'Potrebujem pomoc s prácou',
-  roleWorkerCard: 'Hľadám malé práce',
-  roleProviderCard: 'Chcem aby ma klienti našli',
+  roleWorkerCard: 'Hľadám prácu, brigádu alebo fušku',
+  roleProviderCard: 'Ponúkam svoje služby',
   rolesValidationAtLeastOne: 'Vyberte aspoň jednu možnosť.',
   lookingForWork: 'Hľadám prácu',
   offeringWork: 'Ponúkam prácu',
@@ -773,7 +774,7 @@
   firmyCreditsHint:
     'Pri zverejnení sa odpočítajú kredity podľa zvolenej dĺžky (3 kredity za každý kalendárny mesiac). Obnovenie predĺži platnosť o jeden mesiac.',
   firmyProviderRequired:
-    'Na pridanie reklamy potrebujete v profile zapnúť možnosť „Chcem aby ma klienti našli“.',
+    'Na pridanie reklamy potrebujete v profile zapnúť možnosť „Ponúkam svoje služby“.',
   firmyGoToProfile: 'Otvoriť profil',
   firmyThumbnailUrl: 'Obrázok (URL)',
   firmyAdTitle: 'Názov',
@@ -1306,9 +1307,9 @@
   dashboardRoleDeniedCustomer:
     'Tieto štatistiky sú pre rolu „Potrebujem pomoc s prácou“. Zapnite ju v sekcii nižšie.',
   dashboardRoleDeniedProvider:
-    'Reklamy medzi profesionálmi a súvisiace štatistiky vyžadujú rolu „Chcem aby ma klienti našli“. Zapnite ju v sekcii nižšie.',
+    'Reklamy medzi profesionálmi a súvisiace štatistiky vyžadujú rolu „Ponúkam svoje služby“. Zapnite ju v sekcii nižšie.',
   dashboardRoleDeniedWorker:
-    'Životopisy a e-mailové ponuky vyžadujú rolu „Hľadám malé práce“. Zapnite ju v sekcii nižšie.',
+    'Životopisy a e-mailové ponuky vyžadujú rolu „Hľadám prácu, brigádu alebo fušku“. Zapnite ju v sekcii nižšie.',
   dashboardRoleDeniedCompany:
     'Pracovné ponuky, správa uchádzačov a databáza životopisov vyžadujú rolu „Potrebujem pomoc s prácou“. Zapnite ju v sekcii nižšie.',
   dashboardCustomerAvgApplicants: 'Priemerne prihlásení na ponuku',
@@ -1820,8 +1821,6 @@
   cvTemplatePickerNoPhoto: 'Bez fotografie',
   cvTemplatePickerWithPhoto: 'S fotografiou',
   cvPreviewOpen: 'Náhľad',
-  /** Temporary — remove when HTML dev preview is dropped. */
-  cvPreviewHtmlOpen: 'HTML náhľad',
   cvPreviewModalTitle: 'Náhľad životopisu',
   profileSidebarGroupSettings: 'Nastavenia',
   profileHeroBioEmpty: 'Žiadne bio zatiaľ.',
@@ -1888,6 +1887,11 @@
   cvPhoto: 'Fotografia',
   cvUploadPhoto: 'Nahrať fotografiu',
   cvRemovePhoto: 'Odstrániť fotografiu',
+  imageCropTitle: 'Upraviť fotografiu',
+  imageCropHint: 'Posuňte obrázok a upravte priblíženie. Výrez je štvorcový.',
+  imageCropZoom: 'Priblíženie',
+  imageCropUse: 'Použiť fotografiu',
+  imageCropExportFailed: 'Nepodarilo sa pripraviť obrázok.',
   cvCompany: 'Spoločnosť',
   cvPosition: 'Pozícia',
   cvFrom: 'Od',

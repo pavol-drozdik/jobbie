@@ -1019,16 +1019,6 @@
               </button>
               <button
                 type="button"
-                class="inline-flex h-12 items-center gap-2 rounded-full border-2 border-dashed border-black/25 bg-white px-5 text-[17px] font-extrabold text-black/55 disabled:is-disabled-cursor disabled:opacity-50"
-                :disabled="htmlPreviewBusy"
-                title="Dočasný náhľad HTML pre úpravy šablón (nie PDF)"
-                @click="openHtmlPreview"
-              >
-                <i class="fa-solid" :class="htmlPreviewBusy ? 'fa-spinner fa-spin' : 'fa-code'" />
-                {{ htmlPreviewBusy ? 'Pripravujem…' : S.cvPreviewHtmlOpen }}
-              </button>
-              <button
-                type="button"
                 class="inline-flex h-12 items-center gap-2 rounded-full border-2 border-marketing-green bg-white px-5 text-[17px] font-extrabold text-marketing-green disabled:is-disabled-cursor disabled:opacity-50"
                 :disabled="pdfExportBusy"
                 @click="downloadPdf"
@@ -1091,7 +1081,6 @@ import type { CvMonthYear } from '~/utils/cv-month-year'
 import { buildExportDataFromState } from '~/composables/useCvPrototypeShellState'
 import {
   downloadCvPdfFromData,
-  openCvHtmlPreviewFromData,
   openCvPreviewFromData,
   useCvPrototypeStickySidebar,
 } from '~/composables/useCvPrototypePreview'
@@ -1178,6 +1167,7 @@ const activeSection = ref<string>('personal')
 
 const { postSection, patchSection, deleteSectionRow, reorderSection, deletePhoto } = useCv()
 const { uploadCvPhoto } = useStorageUpload()
+const { open: openPhotoCrop } = useSquareImageCropDialog()
 const { ensureSkill: ensureCatalogSkill } = useSkCvSkillSearch()
 const cvIdRef = toRef(props, 'cvId')
 const headerForPhoto = computed(() => ({
@@ -1872,6 +1862,29 @@ function onEduDescriptionHtml(id: string, html: string): void {
   scheduleEducationSave(id)
 }
 
+async function uploadPreparedCvPhoto(file: File): Promise<void> {
+  const prepared = await prepareCvProfilePhotoForUpload(file)
+  setLocalPhotoPreview(prepared)
+  const row = await uploadCvPhoto(props.cvId, prepared)
+  patch({
+    photo_url: row.photo_url,
+    photo_storage_path: row.photo_storage_path,
+    photo_original_mime: row.photo_original_mime,
+    photo_view_url: row.photo_view_url ?? null,
+  })
+  await refreshPhotoDisplayUrl({
+    photo_url: row.photo_url,
+    photo_storage_path: row.photo_storage_path,
+    photo_view_url: row.photo_view_url ?? null,
+  })
+}
+
+async function cropAndUploadCvPhoto(file: File): Promise<void> {
+  const cropped = await openPhotoCrop(file)
+  if (!cropped) return
+  await uploadPreparedCvPhoto(cropped)
+}
+
 async function onPhotoFile(ev: Event): Promise<void> {
   const input = ev.target as HTMLInputElement
   const file = input.files?.[0]
@@ -1883,20 +1896,7 @@ async function onPhotoFile(ev: Event): Promise<void> {
     return
   }
   try {
-    const prepared = await prepareCvProfilePhotoForUpload(file)
-    setLocalPhotoPreview(prepared)
-    const row = await uploadCvPhoto(props.cvId, prepared)
-    patch({
-      photo_url: row.photo_url,
-      photo_storage_path: row.photo_storage_path,
-      photo_original_mime: row.photo_original_mime,
-      photo_view_url: row.photo_view_url ?? null,
-    })
-    await refreshPhotoDisplayUrl({
-      photo_url: row.photo_url,
-      photo_storage_path: row.photo_storage_path,
-      photo_view_url: row.photo_view_url ?? null,
-    })
+    await cropAndUploadCvPhoto(file)
   } catch (err) {
     showNotice(err instanceof Error ? err.message : S.saveFailed)
   }
@@ -1956,20 +1956,7 @@ async function copyProfilePhoto(): Promise<void> {
       showNotice(validationError)
       return
     }
-    const prepared = await prepareCvProfilePhotoForUpload(file)
-    setLocalPhotoPreview(prepared)
-    const row = await uploadCvPhoto(props.cvId, prepared)
-    patch({
-      photo_url: row.photo_url,
-      photo_storage_path: row.photo_storage_path,
-      photo_original_mime: row.photo_original_mime,
-      photo_view_url: row.photo_view_url ?? null,
-    })
-    await refreshPhotoDisplayUrl({
-      photo_url: row.photo_url,
-      photo_storage_path: row.photo_storage_path,
-      photo_view_url: row.photo_view_url ?? null,
-    })
+    await cropAndUploadCvPhoto(file)
   } catch {
     showNotice(S.cvCopyPhotoLoadFailed)
   }
@@ -2104,7 +2091,6 @@ function buildLocalPreviewExportData() {
 }
 
 const previewBusy = ref(false)
-const htmlPreviewBusy = ref(false)
 
 async function openPreview(): Promise<void> {
   if (previewBusy.value) return
@@ -2122,25 +2108,6 @@ async function openPreview(): Promise<void> {
     showNotice(msg)
   } finally {
     previewBusy.value = false
-  }
-}
-
-async function openHtmlPreview(): Promise<void> {
-  if (htmlPreviewBusy.value) return
-  htmlPreviewBusy.value = true
-  try {
-    const opened = await openCvHtmlPreviewFromData(buildLocalPreviewExportData(), {
-      cvId: props.cvId,
-      failedMessage: S.cvPreviewFailed,
-    })
-    if (!opened) {
-      showNotice(S.cvPreviewPopupBlocked)
-    }
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : S.cvPreviewFailed
-    showNotice(msg)
-  } finally {
-    htmlPreviewBusy.value = false
   }
 }
 

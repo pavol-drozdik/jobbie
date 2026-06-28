@@ -298,18 +298,6 @@ export function publishServiceProfileCredits(months: number): number {
 
 
 
-export function formatPricePerCredit(priceCents: number, credits: number): string {
-
-  if (credits < 1) return '—';
-
-  const per = priceCents / 100 / credits;
-
-  return per.toFixed(2).replace('.', ',');
-
-}
-
-
-
 export function creditPackageBySlug(slug: string): CreditPackageSpec | undefined {
 
   return CREDIT_PACKAGES.find((p) => p.slug === slug);

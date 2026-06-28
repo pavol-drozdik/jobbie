@@ -59,11 +59,6 @@ export function useCheckoutCredits(options: { packSlug: string; returnPath: stri
     return `${value} ${currency}`
   }
 
-  function pricePerCredit(p: CheckoutCreditPack): string {
-    const per = p.unit_amount / 100 / p.credits
-    return `${per.toFixed(2).replace('.', ',')} € / kredit`
-  }
-
   async function confirmCreditsFromPaymentIntent(
     paymentIntentId: string | null | undefined,
     billing?: CheckoutBillingPayload,
@@ -226,7 +221,6 @@ export function useCheckoutCredits(options: { packSlug: string; returnPath: stri
     billingPrefill,
     stripeReturnUrl,
     formatPrice,
-    pricePerCredit,
     confirmCreditsFromPaymentIntent,
     createPaymentIntent,
     init,

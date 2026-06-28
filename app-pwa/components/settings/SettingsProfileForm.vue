@@ -245,6 +245,7 @@ const emit = defineEmits<{
 }>()
 
 const { user, session } = useAuth()
+const { open: openPhotoCrop } = useSquareImageCropDialog()
 const { loading, loadError, profile, load, patch, isValidUrl } = useSettingsProfile()
 const { api } = useApi()
 
@@ -333,9 +334,14 @@ async function onAvatarFileChange(event: Event): Promise<void> {
     return
   }
   avatarUploadError.value = null
+  const cropped = await openPhotoCrop(file)
+  if (!cropped) {
+    input.value = ''
+    return
+  }
   avatarUploading.value = true
   try {
-    const jpegFile = await compressImageFileToJpeg(file, {
+    const jpegFile = await compressImageFileToJpeg(cropped, {
       maxEdgePx: PROFILE_AVATAR_MAX_EDGE_PX,
       maxOutputBytes: JOB_PHOTO_STORAGE_MAX_BYTES,
     })
