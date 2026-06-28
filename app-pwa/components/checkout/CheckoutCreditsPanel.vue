@@ -40,7 +40,7 @@
         :deferred-amount="pack.unit_amount"
         :deferred-currency="pack.currency"
         :prepare-payment="prepareCheckoutPayment"
-        @success="(id, billing) => confirmCreditsFromPaymentIntent(id, billing)"
+        @success="(id, billing) => navigateToCheckoutResult(id, billing)"
         @cancel="emit('cancel')"
       />
     </ClientOnly>
@@ -69,7 +69,7 @@ const {
   billingPrefill,
   stripeReturnUrl,
   formatPrice,
-  confirmCreditsFromPaymentIntent,
+  navigateToCheckoutResult,
   createPaymentIntent,
   init,
 } = useCheckoutCredits({

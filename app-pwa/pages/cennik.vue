@@ -405,8 +405,14 @@ watch(
 
 
 onMounted(() => {
-  void loadCatalogPlans()
-  void loadBillingCatalog()
+  void loadCatalogPlans(true)
+  void loadBillingCatalog(true)
+})
+
+watch(activeTab, (tab) => {
+  if (tab === 'plans') {
+    void loadCatalogPlans(true)
+  }
 })
 
 </script>

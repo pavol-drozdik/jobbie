@@ -268,6 +268,9 @@ export class PaymentsController {
       assertUserId: user.id,
     });
     if (!result.applied) {
+      this.logger.warn(
+        `confirm-credits: fulfillment not applied for PI ${id} (user=${user.id}): reason=${result.reason}`,
+      );
       if (result.reason === 'not_succeeded') {
         throw new ServiceUnavailableException(
           'Kredity z tejto platby ešte nie je možné pripísať. Skúste znova o chvíľu alebo kontaktujte podporu.',
@@ -370,6 +373,26 @@ export class PaymentsController {
         'Predplatné z tejto platby ešte nie je možné aktivovať. Skúste znova alebo kontaktujte podporu.',
       );
     }
+    const { data: subRow } = await this.supabase
+      .getClient()
+      .from('user_subscriptions')
+      .select('stripe_subscription_id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    const stripeSubId = (
+      subRow as { stripe_subscription_id?: string | null } | null
+    )?.stripe_subscription_id?.trim();
+    if (stripeSubId) {
+      const grantResult =
+        await this.subscriptionCredits.ensureCreditsFromStripeSubscription(
+          stripeSubId,
+        );
+      if (!grantResult.applied) {
+        this.logger.warn(
+          `confirm-subscription: subscription synced for user ${user.id} but monthly credits not granted yet (sub=${stripeSubId})`,
+        );
+      }
+    }
     return { ok: true };
   }
 
@@ -428,6 +451,7 @@ export class PaymentsController {
       body.plan_id,
       body.confirm_downgrade === true,
     );
+    await this.subscriptionCredits.ensureFreePlanCreditsForCurrentMonth(user.id);
     return { ok: true };
   }
 

@@ -78,12 +78,15 @@
 
         <div class="sm:col-span-2">
 
-          <dt class="mb-1 text-black/45">{{ S.pricingCvDatabaseTitle }} (tento mesiac)</dt>
+          <dt class="mb-1 text-black/45">
+            {{ S.pricingCvDatabaseTitle }} ({{ S.pricingCvUsageThisMonth }})
+          </dt>
 
-          <dd class="m-0 grid gap-1 text-black sm:grid-cols-3">
+          <dd class="m-0 flex flex-wrap gap-x-6 gap-y-2 text-black">
 
-            <span v-for="row in cvUsageRows" :key="row.label">
-              <span class="mr-1">{{ row.label }}:</span>{{ row.value }}
+            <span v-for="row in cvUsageRows" :key="row.label" class="whitespace-nowrap">
+              <span class="text-black/55">{{ row.label }}:</span>
+              <span class="ml-1 font-semibold">{{ row.value }}</span>
             </span>
 
           </dd>

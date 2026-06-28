@@ -3,7 +3,10 @@ import { ConfigService } from '@nestjs/config';
 
 import { SupabaseService } from '../supabase/supabase.service';
 
-import { CatalogCacheService } from '../redis/catalog-cache.service';
+import {
+  CatalogCacheService,
+  CATALOG_CACHE_KEYS,
+} from '../redis/catalog-cache.service';
 import { StripeService } from '../payments/stripe.service';
 import { resolveSubscriptionStripePriceId } from '../payments/stripe-catalog-prices';
 import { SubscriptionTrialService } from './subscription-trial.service';
@@ -92,7 +95,7 @@ export class BillingCatalogService {
 
     return this.catalogCache.getOrSet(
 
-      'catalog:credit-packs',
+      CATALOG_CACHE_KEYS.creditPacks,
 
       () => this.loadCreditPackages(),
 
@@ -190,7 +193,7 @@ export class BillingCatalogService {
 
     return this.catalogCache.getOrSet(
 
-      'catalog:subscription-plans',
+      CATALOG_CACHE_KEYS.subscriptionPlans,
 
       () => this.loadSubscriptionPlans(),
 
@@ -394,7 +397,7 @@ export class BillingCatalogService {
 
 
   async getPublicBillingConfig(): Promise<Record<string, unknown>> {
-    return this.catalogCache.getOrSet('catalog:billing-config:v8', async () => {
+    return this.catalogCache.getOrSet(CATALOG_CACHE_KEYS.billingConfig, async () => {
       const [creditPackages, subscriptionPlans] = await Promise.all([
         this.getCreditPackages(),
         this.getSubscriptionPlans(),

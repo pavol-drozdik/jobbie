@@ -86,11 +86,11 @@
 
           </p>
 
-          <ul class="m-0 grid list-none gap-2 p-0 text-sm text-black sm:grid-cols-3">
+          <ul class="m-0 flex list-none flex-wrap gap-x-6 gap-y-2 p-0 text-sm text-black">
 
-            <li v-for="row in cvUsageRows" :key="row.label">
-              <span class="mr-1 text-black/55">{{ row.label }}:</span>
-              <span class="font-semibold">{{ row.value }}</span>
+            <li v-for="row in cvUsageRows" :key="row.label" class="whitespace-nowrap">
+              <span class="text-black/55">{{ row.label }}:</span>
+              <span class="ml-1 font-semibold">{{ row.value }}</span>
             </li>
 
           </ul>

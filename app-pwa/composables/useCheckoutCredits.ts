@@ -1,5 +1,5 @@
 import type { CheckoutBillingPayload } from '~/utils/checkout-billing'
-import type { PreparePaymentResult } from '~/utils/stripe-prepare-payment'
+import { stashCheckoutBillingForIntent } from '~/utils/checkout-billing'
 import { ROUTES } from '~/utils/app-routes'
 import {
   filterPurchasableCreditPacks,
@@ -32,7 +32,6 @@ export function useCheckoutCredits(options: { packSlug: string; returnPath: stri
   const { packSlug, returnPath } = options
   const { ensureRecentLoginForBilling } = useBillingStepUp()
   const { api } = useApi()
-  const { refreshUser } = useAuth()
   const { capture } = useAnalytics()
   const requestURL = useRequestURL()
 
@@ -60,54 +59,29 @@ export function useCheckoutCredits(options: { packSlug: string; returnPath: stri
     return `${value} ${currency}`
   }
 
-  async function confirmCreditsFromPaymentIntent(
+  async function navigateToCheckoutResult(
     paymentIntentId: string | null | undefined,
     billing?: CheckoutBillingPayload,
   ): Promise<boolean> {
-    try {
-      const id = typeof paymentIntentId === 'string' ? paymentIntentId.trim() : ''
-      if (!id.startsWith('pi_')) {
-        error.value = S.checkoutPaymentNoIntentId
-        return false
-      }
-      const gate = await ensureRecentLoginForBilling()
-      if (!gate.ok) {
-        error.value = gate.message
-        return false
-      }
-      const body: { payment_intent_id: string; billing?: CheckoutBillingPayload } = {
-        payment_intent_id: id,
-      }
-      if (billing) body.billing = billing
-      const res = await api<{ message?: string }>('/api/payments/confirm-credits', {
-        method: 'POST',
-        body,
-      })
-      if (!res.ok) {
-        error.value = parseApiErrorMessage(res, S.checkoutPaymentFailed)
-        return false
-      }
-      error.value = null
-      await refreshUser()
-      clientSecret.value = null
-      capture('credits_purchased', {
-        purchaser_type: billing?.purchaser_type,
-      })
-      await navigateTo(
-        ROUTES.checkoutResultUrl({
-          status: 'success',
-          type: 'credits',
-          pack: packSlug,
-          returnPath,
-        }),
-        { replace: true },
-      )
-      return true
-    } catch (e) {
-      error.value =
-        e instanceof Error ? e.message : 'Platbu sa nepodarilo dokončiť na serveri.'
+    const id = typeof paymentIntentId === 'string' ? paymentIntentId.trim() : ''
+    if (!id.startsWith('pi_')) {
+      error.value = S.checkoutPaymentNoIntentId
       return false
     }
+    if (billing) {
+      stashCheckoutBillingForIntent(id, billing)
+    }
+    clientSecret.value = null
+    await navigateTo(
+      ROUTES.checkoutResultUrl({
+        type: 'credits',
+        pack: packSlug,
+        returnPath,
+        paymentIntentId: id,
+      }),
+      { replace: true },
+    )
+    return true
   }
 
   async function loadBillingPrefill(): Promise<void> {
@@ -126,7 +100,7 @@ export function useCheckoutCredits(options: { packSlug: string; returnPath: stri
 
   async function createPaymentIntent(
     billing?: CheckoutBillingPayload,
-  ): Promise<PreparePaymentResult | null> {
+  ): Promise<import('~/utils/stripe-prepare-payment').PreparePaymentResult | null> {
     const p = pack.value
     if (!p || !isPurchasableCreditPack(p)) {
       error.value = S.buyCreditsCatalogNotConfigured
@@ -206,7 +180,7 @@ export function useCheckoutCredits(options: { packSlug: string; returnPath: stri
     billingPrefill,
     stripeReturnUrl,
     formatPrice,
-    confirmCreditsFromPaymentIntent,
+    navigateToCheckoutResult,
     createPaymentIntent,
     init,
   }

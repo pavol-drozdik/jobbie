@@ -248,6 +248,24 @@ export class StripeService {
     }
   }
 
+  async retrieveSubscriptionWithLatestInvoice(
+    subscriptionId: string,
+  ): Promise<Subscription | null> {
+    try {
+      return await this.getStripe().subscriptions.retrieve(subscriptionId, {
+        expand: ['latest_invoice'],
+      });
+    } catch (err) {
+      if (this.isStripeSubscriptionMissing(err)) {
+        this.logger.warn(
+          `Stripe subscription ${subscriptionId} not found (stale id)`,
+        );
+        return null;
+      }
+      throw err;
+    }
+  }
+
   /**
    * Hosted Checkout branding aligned with JOBBIE web (see app-pwa/assets/css/main.css).
    * Passed with a cast: Stripe Node types (v14) predate `branding_settings` on SessionCreateParams.
@@ -2057,7 +2075,7 @@ export class StripeService {
   }
 
   /**
-   * Verifies PI amount matches an active credit pack (DB or env default).
+   * Verifies PI amount matches an active credit pack (live Stripe Price when price_id present).
    */
   async validateCreditPackForPaymentIntent(
     pi: PaymentIntent,
@@ -2067,14 +2085,20 @@ export class StripeService {
     if (amount < 1) return false;
     const packs = await this.listCreditPacks();
     const priceId =
-      typeof pi.metadata?.price_id === 'string' ? pi.metadata.price_id : null;
+      typeof pi.metadata?.price_id === 'string'
+        ? pi.metadata.price_id.trim()
+        : null;
     if (priceId) {
       const pack = packs.find((p) => p.price_id === priceId);
-      return (
-        !!pack &&
-        pack.credits === expectedCredits &&
-        pack.unit_amount === amount
-      );
+      if (!pack || pack.credits !== expectedCredits) return false;
+      try {
+        const price = await this.getStripe().prices.retrieve(priceId);
+        const stripeAmount =
+          typeof price.unit_amount === 'number' ? price.unit_amount : 0;
+        return stripeAmount === amount;
+      } catch {
+        return false;
+      }
     }
     const match = packs.find(
       (p) => p.credits === expectedCredits && p.unit_amount === amount,

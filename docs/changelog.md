@@ -1,4 +1,22 @@
-﻿## 2026-06-28 — Stripe invoice: Dátum dodania on PDF
+﻿## 2026-06-28 — Pricing: monthly credits from live catalog (cache bust)
+
+Fixed:
+- **backend-ts/catalog-cache.service:** `invalidate()` / `invalidateCatalog()` now delete Redis keys by prefix; bumped catalog cache keys (`catalog:plans-list:v7`, `catalog:billing-config:v9`, …) so stale `monthly_credits` (e.g. Zadarmo `2` vs DB `5`) no longer appear on `/cennik`.
+- **app-pwa/cennik:** Force-reload plans when opening the Plány tab; bumped session cache keys for plans and billing config.
+
+## 2026-06-28 — Credits checkout: fulfillment on `/platba/vysledok` only + live Stripe Price validation
+
+Fixed:
+- **app-pwa/useCheckoutCredits, useCheckoutSubscription:** After Stripe success on `/platba`, navigate to `/platba/vysledok` with `payment_intent` / `setup_intent` — no inline `confirm-credits` / `confirm-subscription` on the payment form (charged card no longer leaves user stuck on checkout with an error).
+- **app-pwa/app-routes.ts:** `checkoutResultUrl()` accepts `paymentIntentId` / `setupIntentId`.
+- **app-pwa/useCheckoutResult:** Broader retryable fulfillment messages; optional billing from `sessionStorage` on confirm.
+- **backend-ts/stripe.service:** `validateCreditPackForPaymentIntent` compares PI amount to live `stripe.prices.retrieve()` when `metadata.price_id` is set (Postgres `unit_amount` is catalog display only).
+- **backend-ts/payments.controller:** Logs `fulfillCreditsIfNeeded` `reason` on confirm-credits failure (`not_succeeded` vs `not_credits`).
+
+Docs:
+- **docs/payments-credits.md:** post-payment flow on vysledok only.
+
+## 2026-06-28 — Stripe invoice: Dátum dodania on PDF
 
 Changed:
 - **backend-ts/stripe-invoice-sk:** Adds `Dátum dodania` Stripe custom field (= dátum vystavenia, long `sk-SK` format). In-app `delivery_at` now matches `issued_at`.

@@ -119,6 +119,7 @@
 
 <script setup lang="ts">
 import { S } from '~/utils/strings'
+import { creditCountLabel } from '~/utils/sk-plural'
 import type { PlanRow } from '~/composables/usePlans'
 import { isPlusOrProPlanSlug } from '~/utils/billing-account-access'
 import {
@@ -175,7 +176,7 @@ function planFeatures(plan: PlanRow): string[] {
     ...(trialDays > 0
       ? [subscriptionTrialBadgeLabel(trialDays)]
       : []),
-    `${plan.monthly_credits} ${S.credits} / mesiac`,
+    `${creditCountLabel(plan.monthly_credits)} / mesiac`,
     `Max. ${plan.max_active_jobs} aktívnych ponúk`,
     S.pricingCvDatabaseTitle,
   ]

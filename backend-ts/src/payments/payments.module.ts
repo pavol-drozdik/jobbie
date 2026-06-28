@@ -18,6 +18,6 @@ import { SubscriptionMonthlyCreditsCron } from './subscription-monthly-credits.c
     SubscriptionCreditsService,
     SubscriptionMonthlyCreditsCron,
   ],
-  exports: [StripeService],
+  exports: [StripeService, SubscriptionCreditsService],
 })
 export class PaymentsModule {}

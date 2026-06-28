@@ -17,8 +17,8 @@ export type PlanRow = {
 /** Session-cached subscription plans from GET /api/plans */
 export function usePlans() {
   const { api } = useApi()
-  const plans = useState<PlanRow[] | null>('catalog-plans-v6', () => null)
-  const loading = useState('catalog-plans-loading-v6', () => false)
+  const plans = useState<PlanRow[] | null>('catalog-plans-v7', () => null)
+  const loading = useState('catalog-plans-loading-v7', () => false)
 
   async function load(force = false): Promise<PlanRow[]> {
     if (plans.value && !force) return plans.value

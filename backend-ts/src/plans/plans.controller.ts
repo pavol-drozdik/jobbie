@@ -1,6 +1,9 @@
 import { Controller, Get, Header, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CatalogCacheService } from '../redis/catalog-cache.service';
+import {
+  CatalogCacheService,
+  CATALOG_CACHE_KEYS,
+} from '../redis/catalog-cache.service';
 import { JwksAuthGuard } from '../auth/jwks-auth.guard';
 import { CurrentUserDecorator } from '../auth/current-user.decorator';
 import { CurrentUser } from '../auth/auth.types';
@@ -30,7 +33,7 @@ export class PlansController {
   @Public()
   @Header('Cache-Control', 'public, max-age=300')
   async list(): Promise<PlanResponseDto[]> {
-    return this.catalogCache.getOrSet('catalog:plans-list:v6', async () => {
+    return this.catalogCache.getOrSet(CATALOG_CACHE_KEYS.plansList, async () => {
       const { data, error } = await this.supabase
         .getClient()
         .from('subscription_plans')

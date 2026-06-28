@@ -1,10 +1,10 @@
 import type { PlanRow } from '~/composables/usePlans'
 import type { CheckoutBillingPayload } from '~/utils/checkout-billing'
+import { stashCheckoutBillingForIntent } from '~/utils/checkout-billing'
 import type { PreparePaymentResult } from '~/utils/stripe-prepare-payment'
 import { filterPublicSubscriptionPlans } from '~/utils/pricing-catalog'
 import { ROUTES } from '~/utils/app-routes'
 import { parseApiErrorMessage } from '~/utils/api-errors'
-import { parseSafeApiErrorMessage } from '~/utils/safe-user-messages'
 import { S } from '~/utils/strings'
 
 type ProfileBillingPrefill = {
@@ -20,7 +20,6 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
   const { planId, returnPath } = options
   const { ensureRecentLoginForBilling } = useBillingStepUp()
   const { api } = useApi()
-  const { refreshUser } = useAuth()
   const { capture } = useAnalytics()
   const { load: loadPlansCatalog } = usePlans()
   const { load: loadBillingAccount } = useBillingAccount()
@@ -78,7 +77,7 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
       res.data?.intent_type === 'setup' || days > 0 ? 'setup' : 'payment'
   }
 
-  async function confirmSubscriptionFromPaymentIntent(
+  async function navigateToCheckoutResult(
     intentId: string | null | undefined,
     billing?: CheckoutBillingPayload,
   ): Promise<boolean> {
@@ -90,39 +89,17 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
         error.value = S.checkoutPaymentNoIntentId
         return false
       }
-      const gate = await ensureRecentLoginForBilling()
-      if (!gate.ok) {
-        error.value = gate.message
-        return false
+      if (billing) {
+        stashCheckoutBillingForIntent(id, billing)
       }
-      const body: {
-        payment_intent_id?: string
-        setup_intent_id?: string
-        billing?: CheckoutBillingPayload
-      } = isSetup ? { setup_intent_id: id } : { payment_intent_id: id }
-      if (billing) body.billing = billing
-      const res = await api<{ ok: boolean }>('/api/payments/confirm-subscription', {
-        method: 'POST',
-        body,
-      })
-      if (!res.ok) {
-        error.value = parseSafeApiErrorMessage(res, S.checkoutPaymentFailed)
-        return false
-      }
-      error.value = null
-      await refreshUser()
       clientSecret.value = null
-      capture('subscription_purchased', {
-        plan_id: planId,
-        purchaser_type: billing?.purchaser_type,
-      })
       await navigateTo(
         ROUTES.checkoutResultUrl({
-          status: 'success',
           type: 'subscription',
           planId,
           returnPath,
           trial: checkoutTrialDays.value > 0,
+          ...(isSetup ? { setupIntentId: id } : { paymentIntentId: id }),
         }),
         { replace: true },
       )
@@ -236,7 +213,7 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
     checkoutIntentType,
     checkoutUsesSetupDeferred,
     formatPlanPrice,
-    confirmSubscriptionFromPaymentIntent,
+    navigateToCheckoutResult,
     createPaymentIntent,
     init,
   }

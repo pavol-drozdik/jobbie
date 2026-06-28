@@ -46,6 +46,7 @@ import {
 } from '../notifications/notification-prefs-merge.util';
 import { SearchIndexingService } from '../search/search-indexing.service';
 import { StripeService } from '../payments/stripe.service';
+import { SubscriptionCreditsService } from '../payments/subscription-credits.service';
 import { SkRpoLookupService } from '../registry/sk-rpo-lookup.service';
 import { NewsletterService } from '../newsletter/newsletter.service';
 import { ConsentEventsService } from '../consent/consent-events.service';
@@ -205,6 +206,7 @@ export class ProfilesController {
     private searchIndexing: SearchIndexingService,
     private accountClosureListings: AccountClosureListingsService,
     private stripeService: StripeService,
+    private subscriptionCredits: SubscriptionCreditsService,
     private audit: AuditService,
     private skRpoLookup: SkRpoLookupService,
     private newsletter: NewsletterService,
@@ -217,6 +219,13 @@ export class ProfilesController {
   @Get('me')
   @UseGuards(JwksAuthGuard)
   async getMe(@CurrentUserDecorator() user: CurrentUser): Promise<ProfileResponseDto> {
+    void this.subscriptionCredits
+      .ensureFreePlanCreditsForCurrentMonth(user.id)
+      .catch((err) => {
+        this.logger.warn(
+          `ensureFreePlanCreditsForCurrentMonth failed for ${user.id}: ${String(err)}`,
+        );
+      });
     const row = await this.loadProfileRowById(user.id);
     if (row) return rowToProfileResponse(row);
     this.logger.warn(`Profile select failed for user ${user.id}, attempting insert`);
