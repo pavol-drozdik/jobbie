@@ -13,7 +13,13 @@ export default defineEventHandler((event) => {
   if (import.meta.dev) {
     return
   }
-  const origins = resolvePlatformCspOrigins()
+  const publicConfig = useRuntimeConfig(event).public
+  const origins = resolvePlatformCspOrigins({
+    apiBaseUrl: String(publicConfig.apiBaseUrl ?? ''),
+    supabaseUrl: String(publicConfig.supabaseUrl ?? ''),
+    cdnUrl: String(publicConfig.cdnUrl ?? ''),
+    posthogHost: String(publicConfig.posthogHost ?? ''),
+  })
   if (isLocalHttpApiOrigin(origins.apiOrigin)) {
     return
   }

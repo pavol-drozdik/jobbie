@@ -1,4 +1,9 @@
-﻿## 2026-06-28 — Footer CoCreate credit
+﻿## 2026-06-28 — Production CSP connect-src (login blocked)
+
+Fixed:
+- **app-pwa:** CSP `connect-src` now reads API/Supabase/CDN/PostHog origins from `useRuntimeConfig(event).public` (build-time config) instead of empty `process.env` on Cloudflare Workers — fixes login and API calls blocked with `localhost:8000` in CSP while the client targeted `https://api.jobbie.sk`.
+
+## 2026-06-28 — Footer CoCreate credit
 
 Changed:
 - **app-pwa:** Site footer shows „Vytvorilo“ with linked CoCreate logo next to the copyright line.
@@ -8,6 +13,11 @@ Changed:
 Fixed:
 - **backend-ts:** `GET /health` applies normal CORS when the browser sends `Origin` (PWA reachability probe); still bypasses CORS for probe traffic without `Origin` (Docker, Netdata, curl).
 - **app-pwa:** Realtime health probe caches a failed result until the 15s retry (stops CORS error spam when API is unreachable).
+
+## 2026-06-28 — Subscription checkout client secret (trial SetupIntent)
+
+Fixed:
+- **backend-ts:** `resolveSubscriptionPaymentClientSecret` — when `pending_setup_intent` is expanded without `client_secret` (trial checkout), retrieve SetupIntent by id; re-fetch shallow `latest_invoice` with payment expand and use `confirmation_secret` / `paymentIntents.retrieve` for paid first invoice.
 
 ## 2026-06-27 — Subscription checkout Stripe expand depth
 

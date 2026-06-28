@@ -11,9 +11,16 @@ import {
 export default defineEventHandler((event) => {
   const pathname = getRequestURL(event).pathname
   const nonce = (event.context.cspNonce as string | undefined) || undefined
+  const publicConfig = useRuntimeConfig(event).public
   const headers = buildPlatformSecurityHeaders({
     scriptNonce: nonce,
     includeCsp: pathShouldIncludeCsp(pathname),
+    publicConfig: {
+      apiBaseUrl: String(publicConfig.apiBaseUrl ?? ''),
+      supabaseUrl: String(publicConfig.supabaseUrl ?? ''),
+      cdnUrl: String(publicConfig.cdnUrl ?? ''),
+      posthogHost: String(publicConfig.posthogHost ?? ''),
+    },
   })
   for (const [name, value] of Object.entries(headers)) {
     if (!getResponseHeader(event, name)) {

@@ -3,7 +3,9 @@ import {
   apiWebSocketOrigin,
   buildContentSecurityPolicy,
   buildPermissionsPolicy,
+  buildPlatformSecurityHeaders,
   pathShouldIncludeCsp,
+  resolvePlatformCspOrigins,
 } from './platform-csp'
 
 const prodOrigins = {
@@ -55,6 +57,44 @@ describe('buildContentSecurityPolicy', () => {
       posthogHost: 'https://eu.i.posthog.com',
     })
     expect(csp).toContain("script-src 'self' 'unsafe-inline'")
+  })
+})
+
+describe('resolvePlatformCspOrigins', () => {
+  it('uses runtime public config when process.env is unset on the edge', () => {
+    const previous = process.env.NUXT_PUBLIC_API_BASE_URL
+    delete process.env.NUXT_PUBLIC_API_BASE_URL
+    try {
+      const origins = resolvePlatformCspOrigins({
+        apiBaseUrl: 'https://api.jobbie.sk',
+        supabaseUrl: 'https://ctleiabsrsqxjlnuordj.supabase.co',
+      })
+      expect(origins.apiOrigin).toBe('https://api.jobbie.sk')
+      expect(origins.apiWebSocketOrigin).toBe('wss://api.jobbie.sk')
+      expect(origins.supabaseOrigin).toBe('https://ctleiabsrsqxjlnuordj.supabase.co')
+    } finally {
+      if (previous === undefined) {
+        delete process.env.NUXT_PUBLIC_API_BASE_URL
+      } else {
+        process.env.NUXT_PUBLIC_API_BASE_URL = previous
+      }
+    }
+  })
+})
+
+describe('buildPlatformSecurityHeaders', () => {
+  it('includes production API origin in CSP connect-src from publicConfig', () => {
+    const headers = buildPlatformSecurityHeaders({
+      publicConfig: {
+        apiBaseUrl: 'https://api.jobbie.sk',
+        supabaseUrl: 'https://ctleiabsrsqxjlnuordj.supabase.co',
+        posthogHost: 'https://eu.i.posthog.com',
+      },
+    })
+    const csp = headers['Content-Security-Policy'] ?? ''
+    expect(csp).toContain('https://api.jobbie.sk')
+    expect(csp).toContain('wss://api.jobbie.sk')
+    expect(csp).not.toContain('localhost:8000')
   })
 })
 

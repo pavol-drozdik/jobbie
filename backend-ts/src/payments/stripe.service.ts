@@ -803,43 +803,67 @@ export class StripeService {
     pi: PaymentIntent | null;
   }> {
     const stripe = this.getStripe();
+    const invoiceExpand = ['payments.data.payment.payment_intent'] as const;
     const invoiceRef = subscription.latest_invoice;
+    const invoiceId = expandableRefId(invoiceRef);
     let invoice: Invoice | null = null;
+    let invoiceFromShallowExpand = false;
+
     if (invoiceRef && typeof invoiceRef === 'object') {
       invoice = invoiceRef as Invoice;
-    } else if (typeof invoiceRef === 'string') {
-      invoice = await stripe.invoices.retrieve(invoiceRef, {
-        expand: ['payments.data.payment.payment_intent'],
+      invoiceFromShallowExpand = true;
+    } else if (invoiceId) {
+      invoice = await stripe.invoices.retrieve(invoiceId, {
+        expand: [...invoiceExpand],
       });
     }
-    const piRef = invoice ? getInvoicePaymentIntentRef(invoice) : null;
-    if (piRef && typeof piRef === 'object') {
-      const secret = piRef.client_secret?.trim();
-      if (secret) {
-        return { clientSecret: secret, intentType: 'payment', pi: piRef };
+
+    if (invoice) {
+      let secret = getInvoicePaymentIntentClientSecret(invoice);
+      let pi: PaymentIntent | null = null;
+      const piRef = getInvoicePaymentIntentRef(invoice);
+      if (piRef && typeof piRef === 'object') {
+        pi = piRef;
       }
-    }
-    if (typeof piRef === 'string') {
-      const pi = await stripe.paymentIntents.retrieve(piRef);
-      const secret = pi.client_secret?.trim();
+
+      if (!secret && invoiceFromShallowExpand && invoice.id) {
+        invoice = await stripe.invoices.retrieve(invoice.id, {
+          expand: [...invoiceExpand],
+        });
+        secret = getInvoicePaymentIntentClientSecret(invoice);
+        const refetchedPiRef = getInvoicePaymentIntentRef(invoice);
+        if (refetchedPiRef && typeof refetchedPiRef === 'object') {
+          pi = refetchedPiRef;
+        }
+      }
+
+      if (!secret) {
+        const piId = getInvoicePaymentIntentId(invoice);
+        if (piId) {
+          pi = await stripe.paymentIntents.retrieve(piId);
+          secret = pi.client_secret?.trim() || null;
+        }
+      }
+
       if (secret) {
         return { clientSecret: secret, intentType: 'payment', pi };
       }
     }
+
     const setupRef = subscription.pending_setup_intent;
-    if (setupRef && typeof setupRef === 'object') {
-      const secret = setupRef.client_secret?.trim();
-      if (secret) {
-        return { clientSecret: secret, intentType: 'setup', pi: null };
-      }
+    const setupSecret = getSetupIntentClientSecretFromRef(setupRef);
+    if (setupSecret) {
+      return { clientSecret: setupSecret, intentType: 'setup', pi: null };
     }
-    if (typeof setupRef === 'string') {
-      const si = await stripe.setupIntents.retrieve(setupRef);
+    const setupId = getSetupIntentId(setupRef);
+    if (setupId) {
+      const si = await stripe.setupIntents.retrieve(setupId);
       const secret = si.client_secret?.trim();
       if (secret) {
         return { clientSecret: secret, intentType: 'setup', pi: null };
       }
     }
+
     throw new ServiceUnavailableException(
       'Nepodarilo sa vytvoriť platobný formulár predplatného.',
     );

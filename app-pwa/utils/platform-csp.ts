@@ -6,7 +6,16 @@
 
 
 
+import { normalizePublicApiBase } from './api-base-url'
 import { isStaticAssetPath } from './cache-route-policy'
+
+/** Subset of `runtimeConfig.public` used for CSP origin allowlists. */
+export type PlatformCspPublicConfig = {
+  apiBaseUrl?: string
+  supabaseUrl?: string
+  cdnUrl?: string
+  posthogHost?: string
+}
 
 
 
@@ -78,61 +87,49 @@ export function apiWebSocketOrigin(apiOrigin: string): string | null {
   return null
 }
 
-export function resolvePlatformCspOrigins(): {
+function originFromUrl(raw: string): string {
+  const trimmed = raw.trim()
+  if (!trimmed) return ''
+  try {
+    return new URL(trimmed).origin
+  } catch {
+    return ''
+  }
+}
+
+/**
+ * CSP allowlist origins. Prefer {@link PlatformCspPublicConfig} from
+ * `useRuntimeConfig(event).public` on Cloudflare Workers — `process.env` is empty
+ * at the edge while `runtimeConfig` is baked in at build time.
+ */
+export function resolvePlatformCspOrigins(
+  publicConfig?: PlatformCspPublicConfig,
+): {
   apiOrigin: string
   apiWebSocketOrigin: string | null
   cdnOrigin: string
   supabaseOrigin: string
   posthogHost: string
 } {
+  const supabaseUrl =
+    publicConfig?.supabaseUrl?.trim() ||
+    process.env.NUXT_PUBLIC_SUPABASE_URL?.trim() ||
+    ''
+  const supabaseOrigin = originFromUrl(supabaseUrl)
 
-  const supabaseUrl = process.env.NUXT_PUBLIC_SUPABASE_URL?.trim() ?? ''
-
-  let supabaseOrigin = ''
-
-  try {
-
-    if (supabaseUrl) supabaseOrigin = new URL(supabaseUrl).origin
-
-  } catch {
-
-    /* ignore */
-
-  }
-
-  const apiRaw =
-
-    process.env.NUXT_PUBLIC_API_BASE_URL?.trim() || 'http://localhost:8000'
-
-  let apiOrigin = apiRaw.replace(/\/+$/, '')
-
-  try {
-
-    apiOrigin = new URL(apiOrigin).origin
-
-  } catch {
-
-    /* keep string */
-
-  }
+  const apiOrigin = normalizePublicApiBase(
+    publicConfig?.apiBaseUrl?.trim() ||
+      process.env.NUXT_PUBLIC_API_BASE_URL?.trim(),
+  )
 
   const posthogHost =
+    publicConfig?.posthogHost?.trim() ||
+    process.env.NUXT_PUBLIC_POSTHOG_HOST?.trim() ||
+    'https://eu.i.posthog.com'
 
-    process.env.NUXT_PUBLIC_POSTHOG_HOST?.trim() || 'https://eu.i.posthog.com'
-
-  const cdnRaw = process.env.NUXT_PUBLIC_CDN_URL?.trim() ?? ''
-
-  let cdnOrigin = ''
-
-  try {
-
-    if (cdnRaw) cdnOrigin = new URL(cdnRaw).origin
-
-  } catch {
-
-    /* ignore */
-
-  }
+  const cdnRaw =
+    publicConfig?.cdnUrl?.trim() || process.env.NUXT_PUBLIC_CDN_URL?.trim() || ''
+  const cdnOrigin = originFromUrl(cdnRaw)
 
   return {
     apiOrigin,
@@ -141,7 +138,6 @@ export function resolvePlatformCspOrigins(): {
     supabaseOrigin,
     posthogHost,
   }
-
 }
 
 
@@ -310,13 +306,11 @@ export function buildPermissionsPolicy(): string {
 
 
 export type PlatformSecurityHeadersOptions = {
-
   scriptNonce?: string
-
   /** Omit CSP on hashed static assets — policy applies to HTML documents only. */
-
   includeCsp?: boolean
-
+  /** Nitro / Cloudflare: use build-time public runtime config for CSP origins. */
+  publicConfig?: PlatformCspPublicConfig
 }
 
 
@@ -335,9 +329,9 @@ export function buildPlatformSecurityHeaders(
 
       : (scriptNonceOrOptions ?? {})
 
-  const { scriptNonce, includeCsp = true } = options
+  const { scriptNonce, includeCsp = true, publicConfig } = options
 
-  const origins = resolvePlatformCspOrigins()
+  const origins = resolvePlatformCspOrigins(publicConfig)
 
   const headers: Record<string, string> = {
 
