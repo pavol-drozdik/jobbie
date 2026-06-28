@@ -13,8 +13,8 @@ export default defineNuxtPlugin(() => {
   let healthRetryTimer: ReturnType<typeof setTimeout> | null = null
 
   async function ensureApiReachable(): Promise<boolean> {
-    if (apiReachable === true) {
-      return true
+    if (apiReachable !== null) {
+      return apiReachable
     }
     if (!healthProbeInFlight) {
       healthProbeInFlight = isNestApiReachable(

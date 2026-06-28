@@ -17,6 +17,7 @@ function runCorsMiddleware(
   origin: string | undefined,
   allowedOrigins: string[],
   requestHeaders?: Record<string, string>,
+  method = 'OPTIONS',
 ): CorsTestResult {
   const prev = process.env.CORS_ORIGINS;
   process.env.CORS_ORIGINS = allowedOrigins.join(',');
@@ -25,7 +26,7 @@ function runCorsMiddleware(
 
   const mw = createExpressCorsMiddleware(buildNestCorsOptions());
   const req = {
-    method: 'OPTIONS',
+    method,
     headers: {
       ...(origin ? { origin } : {}),
       ...(requestHeaders ?? {}),
@@ -77,6 +78,31 @@ describe('shouldBypassCors', () => {
   it('does not bypass credentialed API routes', () => {
     expect(shouldBypassCors('/api/profiles/me')).toBe(false);
     expect(shouldBypassCors('/metrics')).toBe(false);
+  });
+});
+
+/** Mirrors `main.ts`: skip CORS only when bypass path and no `Origin`. */
+function shouldApplyCorsMiddleware(path: string, origin: string | undefined): boolean {
+  return !(shouldBypassCors(path) && !origin);
+}
+
+describe('health browser probe CORS (main.ts)', () => {
+  it('skips CORS for /health without Origin (Docker, curl)', () => {
+    expect(shouldApplyCorsMiddleware('/health', undefined)).toBe(false);
+  });
+
+  it('applies CORS for /health when the PWA sends Origin', () => {
+    expect(shouldApplyCorsMiddleware('/health', 'https://www.jobbie.sk')).toBe(
+      true,
+    );
+    const result = runCorsMiddleware(
+      'https://www.jobbie.sk',
+      ['https://www.jobbie.sk', 'https://jobbie.sk'],
+      undefined,
+      'GET',
+    );
+    expect(result.acao).toBe('https://www.jobbie.sk');
+    expect(result.rejected).toBe(false);
   });
 });
 

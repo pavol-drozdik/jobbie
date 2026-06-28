@@ -469,6 +469,7 @@
   footerQuickForJobseekers: 'Pre uchádzačov',
   footerQuickForEmployers: 'Pre firmy',
   footerCopyrightRights: 'Všetky práva vyhradené.',
+  footerMadeBy: 'Vytvorilo',
   footerLinkPrivacyShort: 'Ochrana súkromia',
   footerLinkTermsShort: 'Obchodné podmienky',
   footerCookieSettings: 'Spravovať cookies',

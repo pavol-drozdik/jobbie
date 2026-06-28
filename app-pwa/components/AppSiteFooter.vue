@@ -170,9 +170,31 @@
       <div
         class="mt-12 flex flex-col items-start gap-4 border-t border-black/8 pt-5 marketing:flex-row marketing:items-center marketing:justify-between marketing:gap-5"
       >
-        <p class="m-0 font-dmSans text-[14.5px] font-normal text-marketing-abBottom">
-          © {{ copyrightYear }} Jobbie. {{ S.footerCopyrightRights }}
-        </p>
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <p class="m-0 font-dmSans text-[14.5px] font-normal text-marketing-abBottom">
+            © {{ copyrightYear }} Jobbie. {{ S.footerCopyrightRights }}
+          </p>
+          <p class="m-0 inline-flex items-center gap-1.5 font-dmSans text-[14.5px] font-normal text-marketing-abBottom">
+            {{ S.footerMadeBy }}
+            <a
+              :href="COCREATE_WEBSITE_URL"
+              class="inline-flex items-center opacity-70 no-underline transition-opacity duration-200 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marketing-green/40 focus-visible:ring-offset-2"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="CoCreate"
+            >
+              <img
+                :src="COCREATE_LOGO_PATH"
+                alt="CoCreate"
+                width="96"
+                height="20"
+                class="h-[18px] w-auto brightness-0"
+                loading="lazy"
+                decoding="async"
+              >
+            </a>
+          </p>
+        </div>
         <div class="flex flex-wrap items-center gap-x-5 gap-y-2">
           <NuxtLink
             :to="ROUTES.privacy"
@@ -201,6 +223,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { ROUTES } from '~/utils/app-routes'
+import { COCREATE_LOGO_PATH, COCREATE_WEBSITE_URL } from '~/utils/brand-assets'
 import { openCookiePreferences as showCookiePreferencesModal } from '~/utils/cookie-consent-ui'
 import { S } from '~/utils/strings'
 import { useBrandSeoConfig } from '~/utils/brand-seo'

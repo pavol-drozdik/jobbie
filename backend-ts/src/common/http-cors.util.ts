@@ -33,7 +33,10 @@ const DEFAULT_DEV_ORIGINS = [
   'http://127.0.0.1:3001',
 ];
 
-/** Liveness/monitoring paths — no browser Origin; skip credentialed CORS middleware. */
+/**
+ * Liveness/monitoring paths — skip credentialed CORS when there is no `Origin`
+ * header (Docker, curl, Netdata). Browser probes from the PWA still run CORS.
+ */
 const CORS_BYPASS_PATHS = new Set(['/health']);
 
 /** Public SEO read-only routes — Nitro server-side $fetch (sitemap, feeds) sends no Origin. */
