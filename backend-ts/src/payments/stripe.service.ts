@@ -57,6 +57,7 @@ import {
 } from './stripe-catalog-prices';
 import {
   buildInvoiceCustomFieldsSk,
+  buildInvoiceCustomFieldsFromCustomerMetadata,
   buildSkInvoiceFooter,
   buildSkInvoicePaymentSettings,
   buildSkInvoiceRendering,
@@ -699,14 +700,61 @@ export class StripeService {
         ? { start: periodStart, end: periodEnd }
         : null;
 
+    const customerId =
+      typeof invoice.customer === 'string'
+        ? invoice.customer
+        : invoice.customer && typeof invoice.customer === 'object' && 'id' in invoice.customer
+          ? String((invoice.customer as { id: string }).id)
+          : null;
+
+    let customFields: ReturnType<typeof resolveInvoiceCustomFieldsSk> | undefined;
+    if (customerId) {
+      try {
+        const customer = await stripe.customers.retrieve(customerId);
+        if (customer && !('deleted' in customer && customer.deleted)) {
+          const fromSettings = filterStripeInvoiceCustomFields(
+            customer.invoice_settings?.custom_fields?.map((f) => ({
+              name: f.name ?? '',
+              value: f.value ?? '',
+            })),
+          );
+          if (fromSettings.length > 0) {
+            customFields = fromSettings;
+          } else {
+            const fromMeta = buildInvoiceCustomFieldsFromCustomerMetadata(
+              customer.metadata as Record<string, string>,
+            );
+            if (fromMeta && fromMeta.length > 0) {
+              customFields = fromMeta;
+            } else {
+              const buyerType = (
+                customer.metadata as Record<string, string>
+              )?.buyer_type?.trim();
+              if (buyerType === 'individual') {
+                customFields = [];
+              }
+            }
+          }
+        }
+      } catch (err) {
+        this.logger.warn(
+          `Could not load customer ${customerId} for invoice ${invoice.id} custom_fields: ${String(err)}`,
+        );
+      }
+    }
+
+    const footer = buildSkInvoiceFooter(
+      'subscription',
+      this.config,
+      subscriptionPeriod,
+    );
+    const rendering = buildSkInvoiceRendering();
+
     try {
       await stripe.invoices.update(invoice.id, {
-        footer: buildSkInvoiceFooter(
-          'subscription',
-          this.config,
-          subscriptionPeriod,
-        ),
-        rendering: buildSkInvoiceRendering(),
+        footer,
+        rendering,
+        ...(customFields !== undefined ? { custom_fields: customFields } : {}),
       });
     } catch (err) {
       this.logger.warn(
@@ -1308,6 +1356,12 @@ export class StripeService {
 
     if (purchaserType === 'company' && companyName) {
       metadata.company_name = companyName;
+      const ico = details.registration_number?.trim();
+      if (ico) metadata.registration_number = ico.slice(0, 500);
+      const dic = details.tax_id?.trim();
+      if (dic) metadata.tax_id = dic.slice(0, 500);
+      const vat = details.vat_id?.trim();
+      if (vat) metadata.vat_id = vat.slice(0, 500);
       await stripe.customers.update(customerId, {
         name: companyName,
         metadata,

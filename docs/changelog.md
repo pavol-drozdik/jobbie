@@ -1,4 +1,15 @@
-﻿## 2026-06-28 — Fix setup_future_usage mismatch on subscription checkout
+﻿## 2026-06-28 — Stripe § 74 invoice compliance (identifikovaná osoba)
+
+Changed:
+- **backend-ts/stripe-invoice-sk:** `buildSkInvoiceFooter` appends supplier IČO/DIČ/IČ DPH/OR (`BILLING_SUPPLIER_*` / defaults) and § 74(h) exemption text (`STRIPE_INVOICE_VAT_EXEMPTION_TEXT`, optional `STRIPE_INVOICE_VAT_EXEMPTION_REFERENCE`); `buildSkInvoiceRendering` sets `amount_tax_display: exclude_tax`.
+- **backend-ts/stripe.service:** `invoice.created` subscription handler stamps `custom_fields` from Customer `invoice_settings` or metadata (`registration_number`, `tax_id`, `vat_id`); company checkout persists those keys on Customer metadata.
+- **app-pwa/InvoiceDetailPanel:** Footer renders with `whitespace-pre-line` to match Stripe PDF legal block.
+
+Docs:
+- **docs/stripe-invoice-sk-vat.md:** § 74 mapping table, new env vars, footer behaviour.
+- **backend-ts/.env.example:** exemption env documentation.
+
+## 2026-06-28 — Fix setup_future_usage mismatch on subscription checkout
 
 Fixed:
 - **app-pwa/useCheckoutSubscription:** Freeze `checkoutTrialDays` and `checkoutIntentType` from `GET /api/payments/subscription-checkout-preview` on page init only — no longer mutates trial state inside `createPaymentIntent()` (that reactively flipped `deferred-mode` mid-pay and left Elements in deferred `setup` while confirming a PaymentIntent).
