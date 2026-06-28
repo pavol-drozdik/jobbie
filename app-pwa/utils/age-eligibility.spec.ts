@@ -33,8 +33,8 @@ describe('age-eligibility', () => {
   })
 
   it('validates individual registration birth date', () => {
-    expect(validateIndividualRegistrationBirthDate('2010-06-27')).toBeNull()
-    expect(validateIndividualRegistrationBirthDate('2010-06-28')).toMatch(/16 rokov/)
-    expect(validateIndividualRegistrationBirthDate('invalid')).toMatch(/platný dátum/)
+    expect(validateIndividualRegistrationBirthDate('2010-06-27', ref)).toBeNull()
+    expect(validateIndividualRegistrationBirthDate('2010-06-28', ref)).toMatch(/16 rokov/)
+    expect(validateIndividualRegistrationBirthDate('invalid', ref)).toMatch(/platný dátum/)
   })
 })
