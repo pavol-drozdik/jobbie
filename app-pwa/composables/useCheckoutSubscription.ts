@@ -158,6 +158,7 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
       error.value = gate.message
       return null
     }
+    await loadBillingAccount(true)
     const body: { plan_id: string; billing?: CheckoutBillingPayload } = {
       plan_id: planId,
     }

@@ -1,4 +1,14 @@
-﻿## 2026-06-28 — Homepage marketing images + Twitter card
+﻿## 2026-06-28 — Subscription trial checkout: remount Elements on intent mismatch
+
+Fixed:
+- **app-pwa/StripePaymentForm:** When deferred `setup` Elements receive a PaymentIntent from the API (or deferred `payment` receives a SetupIntent), remount Elements with `clientSecret` instead of `elements.update` — Stripe cannot confirm across modes. Re-submit card after remount.
+- **app-pwa/useCheckoutSubscription:** Force-refresh `GET /api/billing/account` before `create-payment-intent-subscription` so trial UI / deferred mode match server eligibility after failed retries.
+- **backend-ts/SubscriptionTrialService:** Abandoned `canceled` / `incomplete_expired` checkouts (no `trial_start`, no paid invoice) no longer block subscription trial eligibility.
+
+Docs:
+- `docs/payments-credits.md` — deferred trial checkout remount + trial eligibility rules.
+
+## 2026-06-28 — Homepage marketing images + Twitter card
 
 Changed:
 - **app-pwa:** Default OG/Twitter image (`summary_large_image`) is now `/img/twittercard.png` from design assets.
@@ -10,6 +20,11 @@ Changed:
 Fixed:
 - **app-pwa:** Production `/favicon.ico` was a 1×1 placeholder; added real `favicon.ico` and `favicon-48.png` (generated from `favicon.svg` via `npm run icons:generate`). Homepage `<head>` now links ICO + 48×48 PNG before SVG so Googlebot-Image can pick a raster icon.
 - **app-pwa:** Removed static `public/robots.txt` fallback that appended `Disallow: /` after Cloudflare managed rules — Nitro `server/routes/robots.txt.get.ts` serves indexing policy when `NUXT_PUBLIC_ALLOW_INDEXING=1`.
+
+## 2026-06-28 — Cookie consent: defer GTM until analytics granted
+
+Fixed:
+- **app-pwa:** GTM (`gtm.js`) no longer loads on first paint without analytics consent — prevents GA4/Clarity from auto-starting when the container tags ignore Consent Mode. `loadGtm()` runs only from `applyAnalyticsConsent(true)`; withdraw calls `teardownGtmAnalytics()` (removes bootstrap + injected tags).
 
 ## 2026-06-28 — Cookie consent: PostHog init + GTM consent signals
 
