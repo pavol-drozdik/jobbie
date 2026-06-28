@@ -250,6 +250,9 @@ let paymentElement: import('@stripe/stripe-js').StripePaymentElement | null = nu
 let taxIdElement: StripeTaxIdElement | null = null
 let mountGeneration = 0
 
+type ElementsMountKind = 'deferred-setup' | 'deferred-payment' | 'client-secret' | null
+const elementsMountKind = ref<ElementsMountKind>(null)
+
 function stripeLocale(): import('@stripe/stripe-js').StripeElementLocale {
   return (props.locale?.trim() || 'sk') as import('@stripe/stripe-js').StripeElementLocale
 }
@@ -329,6 +332,7 @@ function teardownPaymentElement(): void {
   elements = null
   stripe = null
   activeSecret.value = ''
+  elementsMountKind.value = null
 }
 
 async function mountDeferredCheckoutElements(): Promise<void> {
@@ -363,6 +367,8 @@ async function mountDeferredCheckoutElements(): Promise<void> {
 
   if (!mountTaxIdOnElements(generation)) return
   if (!mountPaymentOnElements(generation)) return
+  elementsMountKind.value =
+    props.deferredMode === 'setup' ? 'deferred-setup' : 'deferred-payment'
 }
 
 async function mountWithClientSecret(secret: string): Promise<void> {
@@ -391,6 +397,7 @@ async function mountWithClientSecret(secret: string): Promise<void> {
   if (!mountTaxIdOnElements(generation)) return
   if (!mountPaymentOnElements(generation)) return
   activeSecret.value = trimmed
+  elementsMountKind.value = 'client-secret'
 }
 
 type ApplyPrepareResultOutcome = {
@@ -409,21 +416,39 @@ async function applyPrepareResult(
     return { ok: false }
   }
 
-  const mustRemount =
-    options?.fromDeferredCheckout === true &&
+  const fromDeferred = options?.fromDeferredCheckout === true
+  const priorMountKind = elementsMountKind.value
+
+  const intentMismatch =
+    fromDeferred &&
     shouldRemountElementsForIntentMismatch(
       props.deferredMode,
       secret,
       prepared.intentType,
     )
 
-  if (!stripe || !elements || mustRemount) {
+  /** Never `elements.update` a PI onto deferred-setup — off_session leaks into confirm. */
+  const forcePiRemount =
+    fromDeferred &&
+    isPaymentIntentClientSecret(secret) &&
+    priorMountKind === 'deferred-setup'
+
+  const needsClientSecretMount =
+    !stripe || !elements || intentMismatch || forcePiRemount
+
+  if (needsClientSecretMount) {
     await mountWithClientSecret(secret)
     if (!stripe || !elements) {
       payError.value = S.checkoutPaymentFormNotReady
       return { ok: false }
     }
-    return { ok: true, remounted: mustRemount }
+    const remounted =
+      intentMismatch ||
+      forcePiRemount ||
+      (fromDeferred &&
+        (priorMountKind === 'deferred-setup' ||
+          priorMountKind === 'deferred-payment'))
+    return { ok: true, remounted }
   }
 
   try {
@@ -717,7 +742,7 @@ async function handlePay() {
     const useSetup = shouldConfirmSetupIntent(
       secret,
       preparedIntentType,
-      props.deferredMode,
+      undefined,
     )
     if (useSetup && isPaymentIntentClientSecret(secret)) {
       payError.value = S.checkoutConfirmAfterRemount
@@ -756,6 +781,11 @@ async function handlePay() {
       } else {
         emit('success', setupId, billing)
       }
+      return
+    }
+
+    if (elementsMountKind.value === 'deferred-setup') {
+      payError.value = S.checkoutConfirmAfterRemount
       return
     }
 

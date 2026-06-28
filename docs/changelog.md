@@ -1,4 +1,11 @@
-﻿## 2026-06-28 — Subscription checkout: server trial preview + setup_future_usage guard
+﻿## 2026-06-28 — Fix setup_future_usage mismatch on subscription checkout
+
+Fixed:
+- **app-pwa/useCheckoutSubscription:** Freeze `checkoutTrialDays` and `checkoutIntentType` from `GET /api/payments/subscription-checkout-preview` on page init only — no longer mutates trial state inside `createPaymentIntent()` (that reactively flipped `deferred-mode` mid-pay and left Elements in deferred `setup` while confirming a PaymentIntent).
+- **app-pwa/CheckoutSubscriptionPanel:** Bind `deferred-mode` to frozen `checkoutIntentType`; `:key` on `StripePaymentForm` for clean remount when preview mode differs.
+- **app-pwa/StripePaymentForm:** Track `elementsMountKind`; never `elements.update()` a PaymentIntent onto deferred-setup Elements (always `mountWithClientSecret` + re-enter card); block `confirmPayment` when mount kind is still `deferred-setup`; confirm path uses server `intent_type` only (not stale `deferredMode`).
+
+## 2026-06-28 — Subscription checkout: server trial preview + setup_future_usage guard
 
 Fixed:
 - **backend-ts:** `GET /api/payments/subscription-checkout-preview?plan_id=` returns per-user `trial_period_days` and `intent_type` using the same `resolveSubscriptionTrialDays` logic as `create-payment-intent-subscription`.

@@ -54,13 +54,14 @@
     <p v-if="loading" class="text-sm text-black/55">{{ S.checkoutLoadingPayment }}</p>
     <ClientOnly v-else-if="plan && !successMessage">
       <StripePaymentForm
+        :key="`checkout-stripe-${checkoutIntentType}`"
         variant="auth"
         locale="sk"
         collect-business-billing
         :return-url="stripeReturnUrl"
         :billing-prefill="billingPrefill"
-        :deferred-mode="checkoutUsesSetupDeferred ? 'setup' : 'payment'"
-        :deferred-amount="checkoutUsesSetupDeferred ? undefined : plan.price_monthly_cents"
+        :deferred-mode="checkoutIntentType"
+        :deferred-amount="checkoutIntentType === 'setup' ? undefined : plan.price_monthly_cents"
         deferred-currency="eur"
         :prepare-payment="prepareCheckoutPayment"
         :on-payment-success="confirmSubscriptionFromPaymentIntent"
@@ -92,7 +93,7 @@ const {
   error,
   successMessage,
   checkoutTrialDays,
-  checkoutUsesSetupDeferred,
+  checkoutIntentType,
   billingPrefill,
   stripeReturnUrl,
   formatPlanPrice,
