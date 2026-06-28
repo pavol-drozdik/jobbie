@@ -38,6 +38,7 @@ export function useBillingAccount() {
           currentPeriodEnd: res.data.currentPeriodEnd ?? null,
           cancelAtPeriodEnd: res.data.cancelAtPeriodEnd ?? false,
           hasPlusOrProAccess: res.data.hasPlusOrProAccess ?? false,
+          subscriptionTrialEligible: res.data.subscriptionTrialEligible === true,
           planNameSk: res.data.planNameSk,
           credits: res.data.credits,
         }

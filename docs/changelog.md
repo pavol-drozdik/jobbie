@@ -1,4 +1,10 @@
-﻿## 2026-06-28 — Fix staging health check CORS failure
+﻿## 2026-06-28 — Fix subscription checkout Setup vs PaymentIntent confirm
+
+Fixed:
+- **app-pwa/StripePaymentForm:** Subscription trials mount Stripe Elements in deferred `setup` mode, but users who already used their trial get a PaymentIntent from the API. The form called `confirmPayment` on setup-mode Elements → Stripe error “cannot be confirmed with a Payment Intent”. Now uses `shouldConfirmSetupIntent()` (secret prefix + server `intent_type`) to pick `confirmSetup` vs `confirmPayment`.
+- **app-pwa/useCheckoutSubscription, CheckoutSubscriptionPanel:** Deferred setup mode and trial UI now require `subscriptionTrialEligible` from `GET /api/billing/account`, not catalog trial days alone — aligns Elements mode with what the backend will create.
+
+## 2026-06-28 — Fix staging health check CORS failure
 
 Fixed:
 - **backend-ts/main.ts:** CORS bypass for `/health` and `/api/seo/*` now also matches `Origin: null` (the literal string Undici/Node 22 built-in `fetch` sends for non-browser contexts per the WHATWG spec). The old check `!req.headers.origin` was falsy-safe but `"null"` is a truthy string, so Docker health check probes using Node `fetch` were rejected with a 500, marking the container unhealthy on every deploy.

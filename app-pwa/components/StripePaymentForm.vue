@@ -137,9 +137,9 @@ import {
   type JobbieStripeAppearanceVariant,
 } from '~/utils/stripe-payment-element-ui'
 import {
-  isSetupIntentClientSecret,
   paymentIntentIdFromClientSecret,
   setupIntentIdFromClientSecret,
+  shouldConfirmSetupIntent,
 } from '~/utils/stripe-payment-intent'
 import {
   normalizePreparePaymentResult,
@@ -572,6 +572,7 @@ async function handlePay() {
     }
 
     let secret = resolveEffectiveSecret()
+    let preparedIntentType: PreparePaymentResult['intentType']
     const isDeferredCheckout = usesCheckoutDeferred.value && !secret && props.preparePayment
 
     // Deferred: validate card in Elements before creating PI (Stripe recommended order).
@@ -590,6 +591,7 @@ async function handlePay() {
       if (!prepared) {
         return
       }
+      preparedIntentType = prepared.intentType
       const ready = await applyPrepareResult(prepared)
       if (!ready) {
         return
@@ -601,6 +603,7 @@ async function handlePay() {
       if (!prepared) {
         return
       }
+      preparedIntentType = prepared.intentType
       const ready = await applyPrepareResult(prepared)
       if (!ready) {
         return
@@ -654,7 +657,11 @@ async function handlePay() {
       confirmOptions.clientSecret = secret
     }
 
-    const useSetup = isSetupIntentClientSecret(secret)
+    const useSetup = shouldConfirmSetupIntent(
+      secret,
+      preparedIntentType,
+      props.deferredMode,
+    )
     if (useSetup) {
       const { error: setupError, setupIntent } = await stripe.confirmSetup(confirmOptions)
       if (setupError) {
