@@ -1,6 +1,11 @@
 import { ROUTES } from '~/utils/app-routes'
 import { parseApiErrorMessage } from '~/utils/api-errors'
 import { parseSafeApiErrorMessage } from '~/utils/safe-user-messages'
+import {
+  clearCheckoutBillingForIntent,
+  readCheckoutBillingForIntent,
+  type CheckoutBillingPayload,
+} from '~/utils/checkout-billing'
 import { resolveSafeInternalPath } from '~/utils/safe-navigation'
 import { stripStripeSecretQueryFromBrowserUrl } from '~/utils/stripe-return-query'
 import { S } from '~/utils/strings'
@@ -9,13 +14,20 @@ export type CheckoutResultPhase = 'processing' | 'success' | 'failed'
 
 const CREDITS_PENDING_FULFILLMENT_SNIPPET =
   'Kredity z tejto platby ešte nie je možné pripísať'
+const SUBSCRIPTION_PENDING_FULFILLMENT_SNIPPET =
+  'Predplatné z tejto platby ešte nie je možné aktivovať'
+const PAYMENT_NOT_COMPLETE_SNIPPET = 'Platba ešte nebola dokončená'
 
 function delayMs(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 function isRetryableFulfillmentError(message: string): boolean {
-  return message.includes(CREDITS_PENDING_FULFILLMENT_SNIPPET)
+  return (
+    message.includes(CREDITS_PENDING_FULFILLMENT_SNIPPET) ||
+    message.includes(SUBSCRIPTION_PENDING_FULFILLMENT_SNIPPET) ||
+    message.includes(PAYMENT_NOT_COMPLETE_SNIPPET)
+  )
 }
 
 export function useCheckoutResult() {
@@ -101,9 +113,14 @@ export function useCheckoutResult() {
       fail(gate.message)
       return false
     }
+    const billing = readCheckoutBillingForIntent(paymentIntentId)
+    const body: { payment_intent_id: string; billing?: CheckoutBillingPayload } = {
+      payment_intent_id: paymentIntentId,
+    }
+    if (billing) body.billing = billing
     const res = await api<{ message?: string }>('/api/payments/confirm-credits', {
       method: 'POST',
-      body: { payment_intent_id: paymentIntentId },
+      body,
     })
     if (!res.ok) {
       const errMsg = parseApiErrorMessage(res, S.checkoutPaymentFailed)
@@ -113,6 +130,7 @@ export function useCheckoutResult() {
       fail(errMsg)
       return false
     }
+    clearCheckoutBillingForIntent(paymentIntentId)
     await refreshUser()
     capture('credits_purchased', {})
     succeed()
@@ -146,9 +164,13 @@ export function useCheckoutResult() {
       fail(gate.message)
       return false
     }
-    const body = isSetup
-      ? { setup_intent_id: intentId }
-      : { payment_intent_id: intentId }
+    const billing = readCheckoutBillingForIntent(intentId)
+    const body: {
+      payment_intent_id?: string
+      setup_intent_id?: string
+      billing?: CheckoutBillingPayload
+    } = isSetup ? { setup_intent_id: intentId } : { payment_intent_id: intentId }
+    if (billing) body.billing = billing
     const res = await api<{ ok: boolean }>('/api/payments/confirm-subscription', {
       method: 'POST',
       body,
@@ -161,6 +183,7 @@ export function useCheckoutResult() {
       fail(errMsg)
       return false
     }
+    clearCheckoutBillingForIntent(intentId)
     await refreshUser()
     capture('subscription_purchased', { plan_id: planId.value || undefined })
     succeed()

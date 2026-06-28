@@ -202,7 +202,7 @@ Details: [database.md](./database.md#credit-ledger-rpcs).
 
 
 
-Implementation: [`stripe.service.ts`](../backend-ts/src/payments/stripe.service.ts) — `fulfillCreditsIfNeeded`, `validateCreditPackForPaymentIntent`.
+Implementation: [`stripe.service.ts`](../backend-ts/src/payments/stripe.service.ts) — `fulfillCreditsIfNeeded`, `validateCreditPackForPaymentIntent` (when `metadata.price_id` is set, PI amount is validated against live Stripe Price `unit_amount`, not Postgres catalog alone).
 
 
 
@@ -375,13 +375,13 @@ select slug, price_monthly_cents, stripe_price_id from public.subscription_plans
 
 ### 4. Cache
 
-After DB updates, flush Redis keys if `REDIS_URL` is set: `catalog:credit-packs`, `catalog:subscription-plans`, `catalog:billing-config:v3`, or restart the API.
+After DB updates, flush Redis keys if `REDIS_URL` is set: `catalog:*` (or call `CatalogCacheService.invalidateCatalog()` from ops), or restart the API. Current keys: `catalog:plans-list:v7`, `catalog:billing-config:v9`, `catalog:subscription-plans:v2`, `catalog:credit-packs:v2`.
 
 ### 5. Smoke test
 
 1. `GET /api/payments/credit-packs` — each pack has `price_id` starting with `price_`.
 2. On `/platba`, user selects **Fyzická osoba / Firma**, fills billing + sees Payment Element (card, Google Pay, Apple Pay when available) on one screen; single **Zaplatiť** → `POST /api/payments/create-payment-intent-credits` or `create-payment-intent-subscription` with `{ price_id | plan_id, billing }` — billing is applied to the Stripe Customer **before** the invoice is finalized (IČO/DIČ on invoice PDF via `custom_fields` for companies), then Payment Element confirms in the same action.
-3. `confirm-credits` / `confirm-subscription` on `/platba/vysledok` after Stripe return (or inline success redirect with `status=success`); `setup_intent` returns supported for trial subscriptions.
+3. `confirm-credits` / `confirm-subscription` run only on `/platba/vysledok` after Stripe success (inline navigation with `payment_intent` / `setup_intent` query params, or Stripe redirect return); `/platba` never calls confirm inline. Legacy `status=success` without an intent id still shows success. `setup_intent` returns supported for trial subscriptions.
 4. Free plan: `POST /api/payments/activate-free-plan` with `{ plan_id, confirm_downgrade? }`.
 5. Company invoice PDF: Stripe Dashboard invoice email toggles — [stripe-invoice-emails.md](./stripe-invoice-emails.md).
 
@@ -396,7 +396,7 @@ After adding payment routes, **rebuild and restart** the Nest API (`npm run buil
 ## PWA integration
 
 - Pricing UI: `/cennik` — credit packs and subscription plans only (no per-action cost table). Packs from `GET /api/payments/credit-packs`; plans from `GET /api/plans`.
-- Checkout UI: `/platba` — auth card uses `rounded-[24px]` + `overflow-hidden` (same as login). **Deferred** Payment Element mounts on load (catalog amount); PaymentIntent is created on **Zaplatiť** after billing validation so company data still reaches Stripe before payment. Shared appearance + Apple/Google Pay via `utils/stripe-payment-element-ui.ts` on checkout and saved payment method forms. **Result page:** `/platba/vysledok` — `AuthMarketingSplitShell` success/failure/processing states; Stripe `return_url` from `ROUTES.checkoutResultUrl()`; retry rebuilds `/platba` with preserved `type`, `pack`/`plan_id`, and `return`.
+- Checkout UI: `/platba` — auth card uses `rounded-[24px]` + `overflow-hidden` (same as login). **Deferred** Payment Element mounts on load (catalog amount); PaymentIntent is created on **Zaplatiť** after billing validation so company data still reaches Stripe before payment. Shared appearance + Apple/Google Pay via `utils/stripe-payment-element-ui.ts` on checkout and saved payment method forms. **Result page:** `/platba/vysledok` — all post-payment fulfillment (`confirm-credits` / `confirm-subscription`, invoice ensure, retries) runs here only; after Stripe success on `/platba`, the PWA navigates with `payment_intent` or `setup_intent` (billing may be stashed in `sessionStorage` for confirm). `AuthMarketingSplitShell` success/failure/processing states; Stripe `return_url` from `ROUTES.checkoutResultUrl()`; failure CTA **Overiť platbu znova** retries fulfillment (not a new checkout).
 - **Apple Pay / Google Pay:** Payment Element `wallets: auto`; server uses `payment_method_types: ['card']` (aligned with Elements — no `automatic_payment_methods` on PIs). Register production (and staging) hostnames under Stripe Dashboard → **Settings → Payment method domains** (HTTPS required). Wallets may not appear on `http://localhost`.
 - Credits: `POST /api/payments/create-payment-intent-credits` with `billing` creates a standalone **PaymentIntent**; after success, backend issues a paid SK **Invoice** (`paid_out_of_band`). Fulfillment via `payment_intent.succeeded` / `confirm-credits`. Abandoned open credit invoices are voided; in-app faktúry list shows **paid** only.
 - Subscriptions: `POST /api/payments/create-payment-intent-subscription` with `billing` → `confirm-subscription`; recurring invoices via Stripe Billing (`invoice.paid`, `invoice.payment_failed`, `invoice.payment_action_required`).
@@ -405,7 +405,7 @@ After adding payment routes, **rebuild and restart** the Nest API (`npm run buil
 
 - Per-action costs (`CREDIT_COSTS`) appear in publish/promote wizards only, not on `/cennik`.
 
-- `GET /api/billing/config` returns `creditPackages` + `subscriptionPlans` (Redis key `catalog:billing-config:v3`). After catalog changes, flush Redis catalog keys and hard-refresh the PWA.
+- `GET /api/billing/config` returns `creditPackages` + `subscriptionPlans` (Redis key `catalog:billing-config:v9`). After catalog changes, flush `catalog:*` Redis keys and hard-refresh the PWA.
 
 - Checkout: [`usePricingCheckout`](../app-pwa/composables/usePricingCheckout.ts) + Stripe.js (`NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`).
 

@@ -77,6 +77,33 @@ export class RedisService implements OnModuleDestroy {
     }
   }
 
+  /** Delete all keys matching `prefix*` (Redis SCAN). Returns count removed. */
+  async delByPrefix(prefix: string): Promise<number> {
+    if (!this.client || !prefix) {
+      return 0;
+    }
+    let cursor = '0';
+    let deleted = 0;
+    try {
+      do {
+        const [next, keys] = await this.client.scan(
+          cursor,
+          'MATCH',
+          `${prefix}*`,
+          'COUNT',
+          100,
+        );
+        cursor = next;
+        if (keys.length > 0) {
+          deleted += await this.client.del(...keys);
+        }
+      } while (cursor !== '0');
+    } catch {
+      return deleted;
+    }
+    return deleted;
+  }
+
   async onModuleDestroy(): Promise<void> {
     if (this.client) {
       await this.client.quit().catch(() => undefined);

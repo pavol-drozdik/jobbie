@@ -1,7 +1,7 @@
 /** Session-cached public billing catalog from GET /api/billing/config */
 export function useCatalogBilling() {
   const { api } = useApi()
-  const config = useState<Record<string, unknown> | null>('catalog-billing-config-v8', () => null)
+  const config = useState<Record<string, unknown> | null>('catalog-billing-config-v9', () => null)
   const loading = useState('catalog-billing-loading', () => false)
   const error = useState<string | null>('catalog-billing-error', () => null)
 

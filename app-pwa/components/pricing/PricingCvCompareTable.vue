@@ -92,6 +92,7 @@
 
 <script setup lang="ts">
 import { S } from '~/utils/strings'
+import { creditCountLabel } from '~/utils/sk-plural'
 import type { PlanRow } from '~/composables/usePlans'
 import { cvMonthlyLimitLabel, type CvLimitKind } from '~/utils/pricing-cv-limits'
 import {
@@ -140,7 +141,7 @@ const tierCosts = computed(() =>
 )
 
 function cellValue(plan: PlanRow, row: CvCompareRow): string {
-  if (row.kind === 'credits') return `${plan.monthly_credits} ${S.credits}`
+  if (row.kind === 'credits') return creditCountLabel(plan.monthly_credits)
   if (row.kind === 'jobs') return String(plan.max_active_jobs)
   return cvMonthlyLimitLabel(plan, row.kind)
 }

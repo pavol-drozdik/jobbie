@@ -33,3 +33,43 @@ export type CheckoutBillingPayload = {
   address_country?: string | null
   billing_attestation_sk_residence?: boolean
 }
+
+const CHECKOUT_BILLING_STORAGE_PREFIX = 'jobbie:checkout-billing:'
+
+/** Stash billing for confirm on `/platba/vysledok` (keyed by pi_/seti_ id). */
+export function stashCheckoutBillingForIntent(
+  intentId: string,
+  billing: CheckoutBillingPayload,
+): void {
+  if (!import.meta.client) return
+  try {
+    sessionStorage.setItem(
+      `${CHECKOUT_BILLING_STORAGE_PREFIX}${intentId}`,
+      JSON.stringify(billing),
+    )
+  } catch {
+    /* quota / private mode */
+  }
+}
+
+export function readCheckoutBillingForIntent(
+  intentId: string,
+): CheckoutBillingPayload | null {
+  if (!import.meta.client) return null
+  try {
+    const raw = sessionStorage.getItem(`${CHECKOUT_BILLING_STORAGE_PREFIX}${intentId}`)
+    if (!raw) return null
+    return JSON.parse(raw) as CheckoutBillingPayload
+  } catch {
+    return null
+  }
+}
+
+export function clearCheckoutBillingForIntent(intentId: string): void {
+  if (!import.meta.client) return
+  try {
+    sessionStorage.removeItem(`${CHECKOUT_BILLING_STORAGE_PREFIX}${intentId}`)
+  } catch {
+    /* ignore */
+  }
+}

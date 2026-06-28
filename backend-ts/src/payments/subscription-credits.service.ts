@@ -1,5 +1,5 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
-import type { Invoice } from './stripe-types';
+import type { Invoice, Subscription } from './stripe-types';
 import { getInvoiceSubscriptionId } from './stripe-api-compat';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -11,6 +11,30 @@ function resolveSubscriptionIdFromInvoice(
   invoice: Invoice,
 ): string | null {
   return getInvoiceSubscriptionId(invoice);
+}
+
+function delayMs(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function extractLatestInvoice(sub: Subscription): Invoice | null {
+  const ref = (sub as { latest_invoice?: string | Invoice | null })
+    .latest_invoice;
+  if (!ref || typeof ref === 'string') {
+    return null;
+  }
+  return ref;
+}
+
+function isGrantablePaidSubscriptionInvoice(invoice: Invoice): boolean {
+  if (invoice.status !== 'paid') {
+    return false;
+  }
+  const billingReason = invoice.billing_reason;
+  return (
+    billingReason === 'subscription_create' ||
+    billingReason === 'subscription_cycle'
+  );
 }
 
 /** Monthly subscription grants — idempotent via stripe_invoice_id / subscription_period ref. */
@@ -167,6 +191,92 @@ export class SubscriptionCreditsService {
       omitExternalChannels: true,
     });
     return { applied: true };
+  }
+
+  /**
+   * Idempotent: grant current UTC month credits for active free (`zadarmo`) subscribers.
+   */
+  async ensureFreePlanCreditsForCurrentMonth(
+    userId: string,
+  ): Promise<{ applied: boolean }> {
+    const supabase = this.supabaseService.getClient();
+    const { data: subRow, error: subErr } = await supabase
+      .from('user_subscriptions')
+      .select('plan_id')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .maybeSingle();
+    if (subErr || !subRow) {
+      return { applied: false };
+    }
+    const planId = (subRow as { plan_id: string }).plan_id;
+    const { data: planRow, error: planErr } = await supabase
+      .from('subscription_plans')
+      .select('slug, monthly_credits')
+      .eq('id', planId)
+      .maybeSingle();
+    if (planErr || !planRow) {
+      return { applied: false };
+    }
+    const plan = planRow as { slug: string; monthly_credits: number };
+    if (plan.slug !== 'zadarmo' || plan.monthly_credits < 1) {
+      return { applied: false };
+    }
+    const periodYyyymm = new Date().toISOString().slice(0, 7);
+    if (await this.ledgerHasFreePeriodGrant(userId, periodYyyymm)) {
+      return { applied: true };
+    }
+    await this.tryGrantFreeMonthlyForUser(
+      userId,
+      periodYyyymm,
+      plan.monthly_credits,
+    );
+    return {
+      applied: await this.ledgerHasFreePeriodGrant(userId, periodYyyymm),
+    };
+  }
+
+  /**
+   * Idempotent: grant monthly credits from the subscription's latest paid invoice.
+   */
+  async ensureCreditsFromStripeSubscription(
+    stripeSubscriptionId: string,
+  ): Promise<{ applied: boolean }> {
+    const id = stripeSubscriptionId.trim();
+    if (!id) {
+      return { applied: false };
+    }
+    const invoice = await this.resolveLatestPaidGrantableInvoice(id);
+    if (!invoice) {
+      this.logger.warn(
+        `ensureCreditsFromStripeSubscription: no grantable paid invoice for ${id}`,
+      );
+      return { applied: false };
+    }
+    return this.grantFromPaidSubscriptionInvoice(invoice);
+  }
+
+  private async resolveLatestPaidGrantableInvoice(
+    stripeSubscriptionId: string,
+  ): Promise<Invoice | null> {
+    const attempts = 6;
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      const sub =
+        await this.stripeService.retrieveSubscriptionWithLatestInvoice(
+          stripeSubscriptionId,
+        );
+      if (!sub) {
+        return null;
+      }
+      const invoice = extractLatestInvoice(sub);
+      if (invoice && isGrantablePaidSubscriptionInvoice(invoice)) {
+        return invoice;
+      }
+      if (attempt < attempts - 1) {
+        await delayMs(900);
+      }
+    }
+    return null;
   }
 
   /**

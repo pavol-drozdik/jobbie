@@ -61,6 +61,8 @@ export const ROUTES = {
     planId?: string
     returnPath?: string
     trial?: boolean
+    paymentIntentId?: string
+    setupIntentId?: string
   }) => {
     const params = new URLSearchParams()
     params.set('type', opts.type)
@@ -69,6 +71,8 @@ export const ROUTES = {
     if (opts.returnPath) params.set('return', opts.returnPath)
     if (opts.status) params.set('status', opts.status)
     if (opts.trial) params.set('trial', '1')
+    if (opts.paymentIntentId) params.set('payment_intent', opts.paymentIntentId)
+    if (opts.setupIntentId) params.set('setup_intent', opts.setupIntentId)
     return `/platba/vysledok?${params.toString()}`
   },
 } as const

@@ -58,7 +58,7 @@
         :deferred-amount="checkoutIntentType === 'setup' ? undefined : plan.price_monthly_cents"
         deferred-currency="eur"
         :prepare-payment="prepareCheckoutPayment"
-        :on-payment-success="confirmSubscriptionFromPaymentIntent"
+        :on-payment-success="navigateToCheckoutResult"
         @cancel="emit('cancel')"
       />
     </ClientOnly>
@@ -90,7 +90,7 @@ const {
   billingPrefill,
   stripeReturnUrl,
   formatPlanPrice,
-  confirmSubscriptionFromPaymentIntent,
+  navigateToCheckoutResult,
   createPaymentIntent,
   init,
 } = useCheckoutSubscription({
