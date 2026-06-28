@@ -28,6 +28,9 @@ Docs:
 - **app-pwa:** Nitro middleware `0.preview-host-redirect` 301-redirects `jobbie-pwa.pages.dev` (and `*.jobbie-pwa.pages.dev` previews) to `NUXT_PUBLIC_SITE_URL` (e.g. `https://www.jobbie.sk`). Cloudflare `_redirects` does not support domain-level redirects.
 - **docs/deployment.md:** note on preview hostname redirect.
 
+Fixed:
+- **app-pwa/pages/platba:** Moved checkout from `platba.vue` to `platba/index.vue` so `/platba/vysledok` renders the result page (Nuxt parent route without `<NuxtPage />` had kept the payment form visible while the URL changed).
+
 ## 2026-06-28 — Reliable SK faktúra for credit pack purchases
 
 Fixed:

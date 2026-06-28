@@ -126,6 +126,7 @@ function buildSeoRouteRules(): Record<string, object> {
     '/spravca-uchadzacov/**': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
     '/dashboard/**': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
     '/platba': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
+    '/platba/**': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
     '/profil': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
     '/auth/**': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
     '/zivotopisy/**': { headers: { ...PRIVATE_DOCUMENT_CACHE_HEADERS } },
