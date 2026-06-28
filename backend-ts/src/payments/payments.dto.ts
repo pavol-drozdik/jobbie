@@ -151,6 +151,12 @@ export interface PaymentIntentResponseDto {
   trial_period_days?: number;
 }
 
+/** Per-user subscription checkout trial (matches `createSubscriptionPaymentIntent`). */
+export interface SubscriptionCheckoutPreviewDto {
+  trial_period_days: number;
+  intent_type: 'payment' | 'setup';
+}
+
 export const SUBSCRIPTION_CANCEL_REASON_CODES = [
   'too_expensive',
   'not_using',

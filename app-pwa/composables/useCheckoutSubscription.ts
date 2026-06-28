@@ -24,8 +24,7 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
   const { refreshUser } = useAuth()
   const { capture } = useAnalytics()
   const { load: loadPlansCatalog } = usePlans()
-  const { load: loadBillingCatalog } = useCatalogBilling()
-  const { account: billingAccount, load: loadBillingAccount } = useBillingAccount()
+  const { load: loadBillingAccount } = useBillingAccount()
   const route = useRoute()
   const requestURL = useRequestURL()
 
@@ -35,6 +34,8 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
   const clientSecret = ref<string | null>(null)
   const successMessage = ref<string | null>(null)
   const billingPrefill = ref<ProfileBillingPrefill | null>(null)
+  /** From GET /api/payments/subscription-checkout-preview — matches create-intent logic. */
+  const serverCheckoutTrialDays = ref<number | null>(null)
 
   const stripeReturnUrl = computed(() => {
     const path = ROUTES.checkoutPlan(planId, returnPath)
@@ -49,27 +50,32 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
     return `${(priceCents / 100).toFixed(2)} €${S.planPerMonth}`
   }
 
-  const planTrialDays = computed((): number => {
-    // Authoritative: GET /api/plans returns `trial_period_days` from the live Stripe
-    // Price — the exact value the backend uses when creating the subscription. Do NOT
-    // fall back to catalog/global config here: that made the client mount deferred
-    // `setup` mode while the server created a PaymentIntent (no trial), causing an
-    // Elements intent-type mismatch and a stuck checkout.
-    const fromStripePrice = plan.value?.trial_period_days
-    return typeof fromStripePrice === 'number' && fromStripePrice > 0
-      ? fromStripePrice
-      : 0
-  })
+  const planTrialDays = computed((): number => serverCheckoutTrialDays.value ?? 0)
 
-  /** Trial UI + deferred Setup mode only when this user can actually get a trial. */
-  const checkoutTrialDays = computed((): number => {
-    if (!billingAccount.value?.subscriptionTrialEligible) return 0
-    return planTrialDays.value
-  })
+  /** Trial UI + deferred Setup mode — authoritative server preview for this user + plan. */
+  const checkoutTrialDays = computed((): number => planTrialDays.value)
 
   const checkoutUsesSetupDeferred = computed(
     () => checkoutTrialDays.value > 0,
   )
+
+  async function loadCheckoutPreview(): Promise<void> {
+    const res = await api<{
+      trial_period_days?: number
+      intent_type?: 'payment' | 'setup'
+    }>('/api/payments/subscription-checkout-preview', {
+      query: { plan_id: planId },
+    })
+    if (!res.ok) {
+      serverCheckoutTrialDays.value = 0
+      return
+    }
+    const days =
+      typeof res.data?.trial_period_days === 'number' && res.data.trial_period_days > 0
+        ? res.data.trial_period_days
+        : 0
+    serverCheckoutTrialDays.value = days
+  }
 
   async function confirmSubscriptionFromPaymentIntent(
     intentId: string | null | undefined,
@@ -165,6 +171,7 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
       return null
     }
     await loadBillingAccount(true)
+    await loadCheckoutPreview()
     const body: { plan_id: string; billing?: CheckoutBillingPayload } = {
       plan_id: planId,
     }
@@ -194,12 +201,13 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
     const trialDays =
       typeof res.data?.trial_period_days === 'number' && res.data.trial_period_days > 0
         ? res.data.trial_period_days
-        : null
+        : 0
+    serverCheckoutTrialDays.value = trialDays
     capture('checkout_started', {
       plan_id: planId,
       flow: 'subscription',
       purchaser_type: billing?.purchaser_type,
-      trial_period_days: trialDays ?? undefined,
+      trial_period_days: trialDays > 0 ? trialDays : undefined,
     })
     return {
       clientSecret: secret,
@@ -209,7 +217,7 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
         res.data?.intent_type === 'setup' || res.data?.intent_type === 'payment'
           ? res.data.intent_type
           : undefined,
-      trialPeriodDays: trialDays ?? undefined,
+      trialPeriodDays: trialDays > 0 ? trialDays : undefined,
     }
   }
 
@@ -221,7 +229,7 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
     error.value = null
     try {
       await loadBillingPrefill()
-      await Promise.all([loadBillingCatalog(), loadBillingAccount()])
+      await loadBillingAccount()
       const rows = await loadPlansCatalog()
       const visible = filterPublicSubscriptionPlans(rows)
       const found = visible.find((p) => p.id === planId)
@@ -230,6 +238,7 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
         return
       }
       plan.value = found
+      await loadCheckoutPreview()
       await tryConfirmFromReturnUrl()
     } finally {
       loading.value = false

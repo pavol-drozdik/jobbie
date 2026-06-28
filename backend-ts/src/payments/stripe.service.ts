@@ -53,6 +53,7 @@ import { CreditPackDto } from './payments.dto';
 import {
   isStripeTestMode,
   resolveCreditPackStripePriceId,
+  resolveSubscriptionStripePriceId,
 } from './stripe-catalog-prices';
 import {
   buildInvoiceCustomFieldsSk,
@@ -1564,6 +1565,52 @@ export class StripeService {
         `persistStripeCustomerId insert failed for ${userId}: ${error.message}`,
       );
     }
+  }
+
+  /**
+   * Per-user trial + intent type for `/platba` — same rules as
+   * `createSubscriptionPaymentIntent` (Stripe Price trial + eligibility).
+   */
+  async getSubscriptionCheckoutPreview(
+    userId: string,
+    planId: string,
+  ): Promise<{ trial_period_days: number; intent_type: 'payment' | 'setup' }> {
+    const stripe = this.getStripe();
+    const { data: plan, error } = await this.supabaseService
+      .getClient()
+      .from('subscription_plans')
+      .select('id, slug, price_monthly_cents, stripe_price_id')
+      .eq('id', planId)
+      .single();
+    if (error || !plan) {
+      throw new NotFoundException('Plán nebol nájdený.');
+    }
+    const row = plan as {
+      slug: string;
+      price_monthly_cents: number;
+      stripe_price_id: string | null;
+    };
+    if (!isPublicSubscriptionPlanSlug(row.slug) || row.price_monthly_cents < 1) {
+      return { trial_period_days: 0, intent_type: 'payment' };
+    }
+    const stripePriceId = resolveSubscriptionStripePriceId(
+      this.config,
+      row.slug,
+      row.stripe_price_id,
+    );
+    if (!stripePriceId) {
+      return { trial_period_days: 0, intent_type: 'payment' };
+    }
+    const trialPeriodDays =
+      await this.subscriptionTrial.resolveSubscriptionTrialDays(
+        userId,
+        stripe,
+        stripePriceId,
+      );
+    return {
+      trial_period_days: trialPeriodDays,
+      intent_type: trialPeriodDays > 0 ? 'setup' : 'payment',
+    };
   }
 
   async createSubscriptionPaymentIntent(

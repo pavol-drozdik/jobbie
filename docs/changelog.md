@@ -1,4 +1,11 @@
-﻿## 2026-06-28 — Fix subscription checkout hang + Payment Element styling
+﻿## 2026-06-28 — Subscription checkout: server trial preview + setup_future_usage guard
+
+Fixed:
+- **backend-ts:** `GET /api/payments/subscription-checkout-preview?plan_id=` returns per-user `trial_period_days` and `intent_type` using the same `resolveSubscriptionTrialDays` logic as `create-payment-intent-subscription`.
+- **app-pwa/useCheckoutSubscription:** Checkout trial UI and deferred Elements mode (`setup` vs `payment`) now come from that preview (not catalog global fallback or `subscriptionTrialEligible` alone), so the summary matches what the server will create.
+- **app-pwa/StripePaymentForm:** Before `confirmPayment`/`confirmSetup`, reject intent-type mismatches (e.g. setup-mode Elements + PaymentIntent) with `S.checkoutConfirmAfterRemount` instead of Stripe's `setup_future_usage` error.
+
+## 2026-06-28 — Fix subscription checkout hang + Payment Element styling
 
 Fixed:
 - **app-pwa/StripePaymentForm:** Production subscription checkout could hang on "Spracovávam…" with no error. When deferred `setup` Elements received a PaymentIntent (no trial), the form remounted Elements with the server `clientSecret` and then called `elements.submit()` on the now-empty card field, which never resolved. Now on an intent-type remount the form stops gracefully with `S.checkoutConfirmAfterRemount` ("Skontrolujte údaje karty a potvrďte platbu znova.") so the next click confirms normally. Added a ~30s watchdog (`raceConfirmTimeout`) around `confirmPayment`/`confirmSetup` so the button can never stay stuck.
