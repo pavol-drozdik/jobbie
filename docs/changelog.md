@@ -1,7 +1,9 @@
 ﻿## 2026-06-28 — Fix staging health check CORS failure
 
 Fixed:
-- **backend-ts/Dockerfile, websupport-vps-deployment/docker-compose.yml:** Docker health check used `fetch()` (Node 22 built-in, Undici-based). Per the WHATWG Fetch spec, Undici sets `Origin: null` on requests made outside a browser context. The CORS bypass in `main.ts` only skips CORS when `!req.headers.origin`; the string `"null"` is truthy, so the bypass did not fire, and the CORS middleware rejected the probe with a 500 — marking the container unhealthy on every deploy. Changed both health check commands to use `require('http').get()` (Node's legacy `http` module), which sends no `Origin` header.
+- **backend-ts/main.ts:** CORS bypass for `/health` and `/api/seo/*` now also matches `Origin: null` (the literal string Undici/Node 22 built-in `fetch` sends for non-browser contexts per the WHATWG spec). The old check `!req.headers.origin` was falsy-safe but `"null"` is a truthy string, so Docker health check probes using Node `fetch` were rejected with a 500, marking the container unhealthy on every deploy.
+- **backend-ts/Dockerfile, websupport-vps-deployment/docker-compose.yml:** Switched both health check commands from `fetch()` to `require('http').get()` (Node's `http` module, which never sends an `Origin` header).
+- **.github/workflows/deploy-staging.yml, deploy-production.yml:** Deploy workflows now upload and install `docker-compose.yml` alongside `deploy_backend.sh` so the VPS Compose config stays in sync with the repo on every deploy.
 
 ## 2026-06-28 — Invoice supplier auto-populated from Stripe account
 
