@@ -1,4 +1,14 @@
-﻿## 2026-06-28 — Pricing: monthly credits from live catalog (cache bust)
+﻿## 2026-06-28 — Stripe checkout: accordion icon, invoice email runbook, wallet domains
+
+Fixed:
+- **app-pwa/stripe-payment-element-ui:** Payment Element accordion layout — green card icon (`iconColor`, `.AccordionItem` rules); removed `.TabIcon--selected` white fill that did not apply to accordion headers (“Platba kartou” appeared white on light background).
+
+Changed:
+- **docs/stripe-invoice-emails.md:** “Receipts but no invoice PDF” troubleshooting table (Payments vs Email customers about toggles).
+- **docs/payments-credits.md:** Wallet domain checklist (`jobbie.sk` + `www.jobbie.sk`).
+- **backend-ts/scripts/register-stripe-payment-method-domains.mjs:** Ops helper to register payment method domains for Apple/Google Pay.
+
+## 2026-06-28 — Pricing: monthly credits from live catalog (cache bust)
 
 Fixed:
 - **backend-ts/catalog-cache.service:** `invalidate()` / `invalidateCatalog()` now delete Redis keys by prefix; bumped catalog cache keys (`catalog:plans-list:v7`, `catalog:billing-config:v9`, …) so stale `monthly_credits` (e.g. Zadarmo `2` vs DB `5`) no longer appear on `/cennik`.

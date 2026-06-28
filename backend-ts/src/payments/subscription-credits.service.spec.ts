@@ -53,20 +53,22 @@ describe('SubscriptionCreditsService', () => {
             };
           }
           if (table === 'credit_ledger') {
+            const maybeSingleResult = async () => ({
+              data:
+                ledgerGrantExists || opts.paidInvoiceGrantExists
+                  ? { id: 'ledger-1' }
+                  : null,
+            });
+            const afterGt = { maybeSingle: maybeSingleResult };
+            const afterThirdEq = { gt: () => afterGt };
+            const afterSecondEq = {
+              eq: () => afterThirdEq,
+              gt: () => afterGt,
+            };
+            const afterFirstEq = { eq: () => afterSecondEq };
             return {
               select: () => ({
-                eq: () => ({
-                  eq: () => ({
-                    gt: () => ({
-                      maybeSingle: async () => ({
-                        data:
-                          ledgerGrantExists || opts.paidInvoiceGrantExists
-                            ? { id: 'ledger-1' }
-                            : null,
-                      }),
-                    }),
-                  }),
-                }),
+                eq: () => afterFirstEq,
               }),
             };
           }

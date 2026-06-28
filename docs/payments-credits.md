@@ -385,6 +385,15 @@ After DB updates, flush Redis keys if `REDIS_URL` is set: `catalog:*` (or call `
 4. Free plan: `POST /api/payments/activate-free-plan` with `{ plan_id, confirm_downgrade? }`.
 5. Company invoice PDF: Stripe Dashboard invoice email toggles — [stripe-invoice-emails.md](./stripe-invoice-emails.md).
 
+**Production operator checklist (before expecting wallets + invoice emails):**
+
+| Step | Where | Action |
+|------|-------|--------|
+| Invoice PDF email | Dashboard → Settings → Emails → **Email customers about** | Enable **Successful payments** (test + live) |
+| Optional subscription invoice | Dashboard → Billing → Subscriptions and emails | **Send finalized invoices and credit notes** |
+| Google / Apple Pay | Dashboard → Settings → Payment method domains | Register + verify `jobbie.sk` and `www.jobbie.sk` (or run `register-stripe-payment-method-domains.mjs`) |
+| Wallet methods | Dashboard → Settings → Payment methods | Apple Pay + Google Pay enabled |
+
 After adding payment routes, **rebuild and restart** the Nest API (`npm run build` then restart `start:dev` / production process). A stale process returns `Cannot POST /api/payments/...` (404).
 
 ### Test vs live mode
@@ -397,7 +406,7 @@ After adding payment routes, **rebuild and restart** the Nest API (`npm run buil
 
 - Pricing UI: `/cennik` — credit packs and subscription plans only (no per-action cost table). Packs from `GET /api/payments/credit-packs`; plans from `GET /api/plans`.
 - Checkout UI: `/platba` — auth card uses `rounded-[24px]` + `overflow-hidden` (same as login). **Deferred** Payment Element mounts on load (catalog amount); PaymentIntent is created on **Zaplatiť** after billing validation so company data still reaches Stripe before payment. Shared appearance + Apple/Google Pay via `utils/stripe-payment-element-ui.ts` on checkout and saved payment method forms. **Result page:** `/platba/vysledok` — all post-payment fulfillment (`confirm-credits` / `confirm-subscription`, invoice ensure, retries) runs here only; after Stripe success on `/platba`, the PWA navigates with `payment_intent` or `setup_intent` (billing may be stashed in `sessionStorage` for confirm). `AuthMarketingSplitShell` success/failure/processing states; Stripe `return_url` from `ROUTES.checkoutResultUrl()`; failure CTA **Overiť platbu znova** retries fulfillment (not a new checkout).
-- **Apple Pay / Google Pay:** Payment Element `wallets: auto`; server uses `payment_method_types: ['card']` (aligned with Elements — no `automatic_payment_methods` on PIs). Register production (and staging) hostnames under Stripe Dashboard → **Settings → Payment method domains** (HTTPS required). Wallets may not appear on `http://localhost`.
+- **Apple Pay / Google Pay:** Payment Element `wallets: auto`; server uses `payment_method_types: ['card']` (aligned with Elements — no `automatic_payment_methods` on PIs). Register **both** production hostnames (`jobbie.sk` and `www.jobbie.sk`) under Stripe Dashboard → **Settings → Payment method domains** (HTTPS required). Ops script: `node backend-ts/scripts/register-stripe-payment-method-domains.mjs` (then complete Dashboard verification). Samsung devices use Google Pay via Stripe — there is no separate Samsung Pay option. Wallets may not appear on `http://localhost`.
 - Credits: `POST /api/payments/create-payment-intent-credits` with `billing` creates a standalone **PaymentIntent**; after success, backend issues a paid SK **Invoice** (`paid_out_of_band`). Fulfillment via `payment_intent.succeeded` / `confirm-credits`. Abandoned open credit invoices are voided; in-app faktúry list shows **paid** only.
 - Subscriptions: `POST /api/payments/create-payment-intent-subscription` with `billing` → `confirm-subscription`; recurring invoices via Stripe Billing (`invoice.paid`, `invoice.payment_failed`, `invoice.payment_action_required`).
 - Free plan: `POST /api/payments/activate-free-plan` (no Stripe session).

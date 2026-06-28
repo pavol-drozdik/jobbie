@@ -60,6 +60,20 @@ Ensure the Stripe Customer has an **email** (JOBBIE sets this in `ensureStripeCu
 
 ## Troubleshooting (no email)
 
+### Receipts arrive but invoice PDF / faktúra email does not
+
+This is the most common misconfiguration: Stripe’s **Payments** block and **Email customers about** block each have a **Successful payments** toggle — they send **different** emails.
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| Card receipt in inbox, no invoice PDF | **Payments → Successful payments** is on; **Email customers about → Successful payments** is off | Enable section 1 toggle (test **and** live) |
+| Nothing at all | Customer has no email on Stripe Customer | Re-pay after checkout; check Dashboard → Customers |
+| Invoice exists in Dashboard, no email | Wrong Stripe mode (test vs live) email settings | Match mode to the payment you made |
+
+The card receipt (`receipt_email` on PaymentIntent) does **not** replace the paid-invoice email with PDF attachment. Enable **Email customers about → Successful payments** for faktúry.
+
+### General checklist
+
 1. **Correct Stripe mode** — test payments use test Dashboard email settings; live payments use live settings.
 2. **Customer email** — Dashboard → Customers → your customer must show the same email as the JOBBIE account. JOBBIE syncs auth email at checkout and after payment.
 3. **Wrong toggle** — enable **Email customers about → Successful payments**, not only **Payments → Successful payments** (card receipt without invoice PDF).
