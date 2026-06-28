@@ -16,7 +16,6 @@ import {
   renderDrivingStack,
   renderEducationSection,
   renderEditorialExperienceEducationPanel,
-  renderEducationSidebarSection,
   renderExperienceSection,
   renderExtraBlocks,
   renderExtraInfoSection,
@@ -221,16 +220,16 @@ export function renderMinimalistPage(data: CvDocumentExportData): string {
 
 export function renderMonochromePage(data: CvDocumentExportData): string {
   const contactLine = buildContactLineParts(data)
-  const photo = renderProfilePhoto(data.profilePhoto, 'dark', initialsFrom(data))
-  const photoAside = photo ? `<aside class="monochrome-contact">${photo}</aside>` : ''
   const headerLead =
     data.showSummary && data.summary.trim()
       ? renderHeaderLead(data.summary, 'monochrome-lead')
-      : ''
+      : data.desiredRole
+        ? `<p class="monochrome-role">${escapeHtml(data.desiredRole)}</p>`
+        : ''
+  const contactLineHtml = contactLine
+    ? `<p class="monochrome-contact-line">${escapeHtml(contactLine)}</p>`
+    : ''
   const skillsSection = renderSkillsSidebarSection(data.skills, {
-    wrapperClass: 'monochrome-card',
-  })
-  const educationSection = renderEducationSidebarSection(data.education, {
     wrapperClass: 'monochrome-card',
   })
   const languagesSection = renderLanguagesSidebarSection(data.languages, {
@@ -255,25 +254,24 @@ export function renderMonochromePage(data: CvDocumentExportData): string {
       <section class="monochrome-header">
         <div class="monochrome-header-grid">
           <div class="monochrome-identity">
-            <div>
-              <h1 class="monochrome-name">${escapeHtml(data.fullName)}</h1>
-              ${contactLine ? `<p>${escapeHtml(contactLine)}</p>` : ''}
-              ${headerLead}
-            </div>
+            <h1 class="monochrome-name">${escapeHtml(data.fullName)}</h1>
+            ${contactLineHtml}
+            ${headerLead}
           </div>
-          ${photoAside}
         </div>
       </section>
       <section class="monochrome-grid">
         <div class="monochrome-main">
-          ${renderExperienceSection(data.experiences, 'Pracovné skúsenosti', { wrapperClass: '' })}
+          ${renderEditorialExperienceEducationPanel(data.experiences, data.education, {
+            wrapperClass: '',
+            stackClass: '',
+          })}
           ${hobbiesBlock}
           ${extraInfo}
           ${renderExtraBlocks(data.extraBlocks)}
         </div>
         <aside class="monochrome-side">
           ${skillsSection}
-          ${educationSection}
           ${drivingBlock}
           ${languagesSection}
         </aside>

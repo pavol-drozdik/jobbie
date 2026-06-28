@@ -1,0 +1,102 @@
+/**
+ * @vitest-environment jsdom
+ */
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  analyticsCookieDomainVariants,
+  applyAnalyticsConsentEffect,
+  initGtagConsentDefault,
+  syncGtagConsent,
+} from './analytics-consent'
+import { setAnalyticsConsentGranted } from './cookie-consent-state'
+
+const captureGtmPageView = vi.fn()
+const purgeInjectedAnalyticsScripts = vi.fn()
+const signalAnalyticsConsentToGtm = vi.fn()
+const initPosthogIfConsented = vi.fn()
+const shutdownPosthog = vi.fn()
+
+vi.mock('~/utils/gtm-client', () => ({
+  captureGtmPageView: (...args: unknown[]) => captureGtmPageView(...args),
+  purgeInjectedAnalyticsScripts: (...args: unknown[]) => purgeInjectedAnalyticsScripts(...args),
+  signalAnalyticsConsentToGtm: (...args: unknown[]) => signalAnalyticsConsentToGtm(...args),
+}))
+
+vi.mock('~/utils/posthog-client', () => ({
+  initPosthogIfConsented: (...args: unknown[]) => initPosthogIfConsented(...args),
+  shutdownPosthog: (...args: unknown[]) => shutdownPosthog(...args),
+}))
+
+describe('analytics-consent', () => {
+  beforeEach(() => {
+    captureGtmPageView.mockClear()
+    purgeInjectedAnalyticsScripts.mockClear()
+    signalAnalyticsConsentToGtm.mockClear()
+    initPosthogIfConsented.mockClear()
+    shutdownPosthog.mockClear()
+    setAnalyticsConsentGranted(false)
+    window.dataLayer = []
+    window.gtag = undefined
+    document.cookie = ''
+  })
+
+  it('initGtagConsentDefault sets wait_for_update to 2000ms', () => {
+    initGtagConsentDefault()
+    const consentDefault = window.dataLayer.find(
+      (entry) => Array.isArray(entry) && entry[0] === 'consent' && entry[1] === 'default',
+    ) as unknown[] | undefined
+    expect(consentDefault).toBeDefined()
+    expect((consentDefault?.[2] as { wait_for_update?: number }).wait_for_update).toBe(2000)
+  })
+
+  it('applyAnalyticsConsentEffect(true) grants consent, signals GTM, and starts PostHog', () => {
+    initGtagConsentDefault()
+    const events: Event[] = []
+    window.addEventListener('jobbie:analytics-consent-changed', (e) => events.push(e))
+
+    applyAnalyticsConsentEffect(true)
+
+    expect(signalAnalyticsConsentToGtm).toHaveBeenCalledWith(true)
+    expect(initPosthogIfConsented).toHaveBeenCalled()
+    expect(captureGtmPageView).toHaveBeenCalled()
+    expect(shutdownPosthog).not.toHaveBeenCalled()
+    expect(events).toHaveLength(1)
+
+    const consentUpdate = window.dataLayer.find(
+      (entry) => Array.isArray(entry) && entry[0] === 'consent' && entry[1] === 'update',
+    ) as unknown[] | undefined
+    expect((consentUpdate?.[2] as { analytics_storage?: string }).analytics_storage).toBe('granted')
+  })
+
+  it('applyAnalyticsConsentEffect(false) withdraws consent and tears down analytics', () => {
+    initGtagConsentDefault()
+    applyAnalyticsConsentEffect(true)
+    applyAnalyticsConsentEffect(false)
+
+    expect(signalAnalyticsConsentToGtm).toHaveBeenLastCalledWith(false)
+    expect(shutdownPosthog).toHaveBeenCalled()
+    expect(purgeInjectedAnalyticsScripts).toHaveBeenCalled()
+    expect(initPosthogIfConsented).toHaveBeenCalledTimes(1)
+  })
+
+  it('syncGtagConsent updates analytics_storage signal', () => {
+    initGtagConsentDefault()
+    syncGtagConsent(false)
+    const denied = window.dataLayer.at(-1) as unknown[]
+    expect((denied[2] as { analytics_storage?: string }).analytics_storage).toBe('denied')
+
+    syncGtagConsent(true)
+    const granted = window.dataLayer.at(-1) as unknown[]
+    expect((granted[2] as { analytics_storage?: string }).analytics_storage).toBe('granted')
+  })
+
+  it('analyticsCookieDomainVariants includes registrable root domain', () => {
+    expect(analyticsCookieDomainVariants('www.jobbie.sk')).toEqual([
+      undefined,
+      'www.jobbie.sk',
+      '.www.jobbie.sk',
+      'jobbie.sk',
+      '.jobbie.sk',
+    ])
+  })
+})

@@ -1,4 +1,5 @@
 import type { PostHog } from 'posthog-js'
+import type { Router } from 'vue-router'
 import { isAnalyticsConsentGranted } from '~/utils/cookie-consent-state'
 
 /** Custom events that also start session replay (project triggers + client belt-and-suspenders). */
@@ -9,10 +10,42 @@ export const POSTHOG_SESSION_RECORDING_EVENTS = new Set([
   'subscription_purchased',
 ])
 
+export type PosthogPublicConfig = {
+  posthogKey?: unknown
+  posthogHost?: unknown
+  posthogDefaults?: unknown
+}
+
+export type PosthogInitConfig = {
+  key: string
+  host: string
+  defaults?: string
+  router: Router
+}
+
 let posthogClient: PostHog | null = null
 let posthogModule: typeof import('posthog-js').default | null = null
 let posthogLoadPromise: Promise<typeof import('posthog-js').default> | null = null
 let routerHookRegistered = false
+let posthogShutdown = false
+
+/** Pure config read for init and unit tests (no composables). */
+export function readPosthogPublicConfig(
+  publicConfig: PosthogPublicConfig,
+): Omit<PosthogInitConfig, 'router'> | null {
+  const key = typeof publicConfig.posthogKey === 'string' ? publicConfig.posthogKey.trim() : ''
+  if (!key) {
+    return null
+  }
+  const host =
+    typeof publicConfig.posthogHost === 'string' && publicConfig.posthogHost.trim()
+      ? publicConfig.posthogHost.trim()
+      : 'https://eu.i.posthog.com'
+  const defaultsRaw = publicConfig.posthogDefaults
+  const defaults =
+    typeof defaultsRaw === 'string' && defaultsRaw.trim() ? defaultsRaw.trim() : undefined
+  return { key, host, defaults }
+}
 
 function loadPosthogModule(): Promise<typeof import('posthog-js').default> {
   if (!posthogLoadPromise) {
@@ -32,9 +65,23 @@ async function getPosthogSdk(): Promise<typeof import('posthog-js').default | nu
 }
 
 export function isPosthogKeyConfigured(): boolean {
-  const config = useRuntimeConfig().public
-  const key = typeof config.posthogKey === 'string' ? config.posthogKey.trim() : ''
-  return key.length > 0
+  return readPosthogPublicConfig(useRuntimeConfig().public) !== null
+}
+
+/** Capture Nuxt composables synchronously while still in plugin / event context. */
+export function resolvePosthogInitConfig(): PosthogInitConfig | null {
+  if (!import.meta.client || !isAnalyticsConsentGranted() || posthogShutdown) {
+    return null
+  }
+  const base = readPosthogPublicConfig(useRuntimeConfig().public)
+  if (!base) {
+    return null
+  }
+  try {
+    return { ...base, router: useRouter() }
+  } catch {
+    return null
+  }
 }
 
 export function getPosthogClient(): PostHog | null {
@@ -81,8 +128,7 @@ function buildInitOptions(
   return initOptions
 }
 
-function captureCurrentPageview(client: PostHog): void {
-  const router = useRouter()
+function captureCurrentPageview(client: PostHog, router: Router): void {
   const route = router.currentRoute.value
   client.capture('$pageview', {
     path: route.fullPath,
@@ -90,8 +136,7 @@ function captureCurrentPageview(client: PostHog): void {
   })
 }
 
-function registerRouterPageviews(client: PostHog): void {
-  const router = useRouter()
+function registerRouterPageviews(client: PostHog, router: Router): void {
   if (!routerHookRegistered) {
     router.afterEach((to) => {
       if (!isPosthogCapturing()) {
@@ -104,7 +149,12 @@ function registerRouterPageviews(client: PostHog): void {
     })
     routerHookRegistered = true
   }
-  captureCurrentPageview(client)
+  captureCurrentPageview(client, router)
+}
+
+function warnPosthogInitFailure(err: unknown): void {
+  const detail = err instanceof Error ? err.message : String(err)
+  console.warn('[jobbie] PostHog init failed:', detail)
 }
 
 /** Initialize PostHog when analytics consent is granted. Idempotent. */
@@ -112,16 +162,24 @@ export function initPosthogIfConsented(): PostHog | null {
   if (!import.meta.client || !isPosthogKeyConfigured() || !isAnalyticsConsentGranted()) {
     return null
   }
-  void ensurePosthogInitialized()
+  posthogShutdown = false
+  const config = resolvePosthogInitConfig()
+  if (!config) {
+    return null
+  }
+  void ensurePosthogInitialized(config).catch(warnPosthogInitFailure)
   return posthogClient
 }
 
-async function ensurePosthogInitialized(): Promise<PostHog | null> {
-  if (!import.meta.client || !isPosthogKeyConfigured() || !isAnalyticsConsentGranted()) {
+async function ensurePosthogInitialized(config: PosthogInitConfig): Promise<PostHog | null> {
+  if (!import.meta.client || !isAnalyticsConsentGranted() || posthogShutdown) {
     return null
   }
   const sdk = await getPosthogSdk()
   if (!sdk) {
+    return null
+  }
+  if (!isAnalyticsConsentGranted() || posthogShutdown) {
     return null
   }
   if (posthogClient) {
@@ -132,23 +190,13 @@ async function ensurePosthogInitialized(): Promise<PostHog | null> {
     }
     return posthogClient
   }
-  const runtimeConfig = useRuntimeConfig()
-  const key = (runtimeConfig.public.posthogKey as string).trim()
-  const host =
-    typeof runtimeConfig.public.posthogHost === 'string' &&
-    runtimeConfig.public.posthogHost.trim()
-      ? runtimeConfig.public.posthogHost.trim()
-      : 'https://eu.i.posthog.com'
-  const defaultsRaw = runtimeConfig.public.posthogDefaults
-  const defaults =
-    typeof defaultsRaw === 'string' && defaultsRaw.trim() ? defaultsRaw.trim() : undefined
-  posthogClient = sdk.init(key, buildInitOptions(sdk, host, defaults))
+  posthogClient = sdk.init(config.key, buildInitOptions(sdk, config.host, config.defaults))
   try {
     sdk.opt_in_capturing()
   } catch {
     /* ignore */
   }
-  registerRouterPageviews(posthogClient)
+  registerRouterPageviews(posthogClient, config.router)
   return posthogClient
 }
 
@@ -164,12 +212,13 @@ function clearPosthogPersistence(): void {
     /* ignore */
   }
   try {
+    const secure = location.protocol === 'https:' ? '; Secure' : ''
     for (const part of document.cookie.split(';')) {
       const name = part.split('=')[0]?.trim()
       if (!name?.startsWith('ph_')) {
         continue
       }
-      document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT`
+      document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax${secure}`
     }
   } catch {
     /* ignore */
@@ -181,9 +230,13 @@ export function shutdownPosthog(): void {
   if (!import.meta.client) {
     return
   }
+  posthogShutdown = true
   const sdk = posthogModule
   if (sdk) {
     try {
+      if (typeof sdk.stopSessionRecording === 'function') {
+        sdk.stopSessionRecording()
+      }
       sdk.opt_out_capturing()
       sdk.reset()
     } catch {
@@ -200,7 +253,11 @@ export function syncPosthogWithConsent(): void {
     return
   }
   if (isAnalyticsConsentGranted()) {
-    void ensurePosthogInitialized()
+    posthogShutdown = false
+    const config = resolvePosthogInitConfig()
+    if (config) {
+      void ensurePosthogInitialized(config).catch(warnPosthogInitFailure)
+    }
   } else {
     shutdownPosthog()
   }
@@ -215,13 +272,19 @@ export function capturePosthogEvent(event: string, properties?: Record<string, u
     maybeStartSessionRecordingForEvent(event)
     return
   }
-  void ensurePosthogInitialized().then((client) => {
-    if (!client || !isPosthogCapturing()) {
-      return
-    }
-    client.capture(event, properties)
-    maybeStartSessionRecordingForEvent(event)
-  })
+  const config = resolvePosthogInitConfig()
+  if (!config) {
+    return
+  }
+  void ensurePosthogInitialized(config)
+    .then((client) => {
+      if (!client || !isPosthogCapturing()) {
+        return
+      }
+      client.capture(event, properties)
+      maybeStartSessionRecordingForEvent(event)
+    })
+    .catch(warnPosthogInitFailure)
 }
 
 export function identifyPosthogUser(
@@ -261,9 +324,15 @@ export function identifyPosthogUser(
     runIdentify()
     return
   }
-  void ensurePosthogInitialized().then(() => {
-    runIdentify()
-  })
+  const config = resolvePosthogInitConfig()
+  if (!config) {
+    return
+  }
+  void ensurePosthogInitialized(config)
+    .then(() => {
+      runIdentify()
+    })
+    .catch(warnPosthogInitFailure)
 }
 
 export function resetPosthog(): void {

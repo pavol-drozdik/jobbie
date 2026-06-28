@@ -1,5 +1,9 @@
 /** Static brand assets in `app-pwa/public/`. */
 export const BRAND_FAVICON_PATH = '/favicon.svg'
+/** 48×48 PNG for Google Search favicon (≥48px square). Regenerate: `npm run icons:generate`. */
+export const BRAND_FAVICON_48_PATH = '/favicon-48.png'
+/** Root ICO for legacy crawlers and browsers. Regenerate: `npm run icons:generate`. */
+export const BRAND_FAVICON_ICO_PATH = '/favicon.ico'
 export const BRAND_LOGO_PATH = '/jobbielogo.svg'
 /** White wordmark for dark backgrounds (footer). Source: `Jobbie design/jobbielogowhite.svg`. */
 export const BRAND_LOGO_WHITE_PATH = '/jobbielogowhite.svg'

@@ -94,8 +94,8 @@ const TEMPLATE_COLUMN_LAYOUT: Record<
     headerLeadClass: 'minimalist-lead',
   },
   monochrome: {
-    main: ['Pracovné skúsenosti', 'Záujmy', 'Doplňujúce informácie'],
-    side: ['Znalosti', 'Vzdelanie', 'Vodičský preukaz', 'Jazyky'],
+    main: ['Pracovné skúsenosti', 'Vzdelanie', 'Záujmy', 'Doplňujúce informácie'],
+    side: ['Znalosti', 'Vodičský preukaz', 'Jazyky'],
     headerLeadClass: 'monochrome-lead',
   },
 }
@@ -289,6 +289,46 @@ describe('buildCvDocument', () => {
     },
   )
 
+  it('monochrome places education directly under work experience in the main column', () => {
+    const html = buildCvDocument(fullSectionOrderFixture('monochrome'))
+    const { main } = extractColumnFragments(html, 'monochrome')
+    const expIdx = main.indexOf('>Pracovné skúsenosti<')
+    const eduIdx = main.indexOf('>Vzdelanie<')
+    const hobbiesIdx = main.indexOf('>Záujmy<')
+    const extraIdx = main.indexOf('>Doplňujúce informácie<')
+    expect(expIdx).toBeGreaterThanOrEqual(0)
+    expect(eduIdx).toBeGreaterThan(expIdx)
+    expect(hobbiesIdx).toBeGreaterThan(eduIdx)
+    expect(extraIdx).toBeGreaterThan(hobbiesIdx)
+  })
+
+  it('monochrome extra info uses profile supplement entry layout', () => {
+    const data = fullSectionOrderFixture('monochrome')
+    const html = buildCvDocument(data)
+    expect(html).toContain('>Doplnenie k profilu<')
+    expect(html).toContain('>Dôležité informácie navyše<')
+    expect(html).toContain('>Doplňujúce informácie<')
+  })
+
+  it('monochrome omits profile photo even when photo URL is set', () => {
+    const data = sampleData('monochrome')
+    data.profilePhoto = 'https://example.com/photo.jpg'
+    const html = buildCvDocument(data)
+    expect(html).not.toMatch(/<div class="template-profile-photo/)
+    expect(html).not.toContain('example.com/photo.jpg')
+  })
+
+  it('monochrome header renders contact line in the masthead', () => {
+    const data = sampleData('monochrome')
+    data.birthDate = '1993-01-10'
+    data.gender = 'Muž'
+    const html = buildCvDocument(data)
+    expect(html).toContain('monochrome-contact-line')
+    expect(html).toContain('monochrome-header-grid')
+    expect(html).not.toMatch(/<aside class="monochrome-contact"/)
+    expect(html).not.toContain('monochrome-identity"><div>')
+  })
+
   it('uses template-specific page class', () => {
     expect(buildCvDocument(sampleData('editorial'))).toContain('editorial-page')
     expect(buildCvDocument(sampleData('minimalist'))).toContain('minimalist-page')
@@ -346,8 +386,9 @@ describe('buildCvDocument', () => {
       expect(sideTitles).not.toContain('Vzdelanie')
     }
     if (template === 'monochrome') {
-      expect(sideTitles).toContain('Vzdelanie')
-      expect(mainTitles).not.toContain('Vzdelanie')
+      expect(mainTitles).toContain('Vzdelanie')
+      expect(sideTitles).not.toContain('Vzdelanie')
+      expect(sideTitles).toContain('Znalosti')
     }
   })
 

@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url'
 import { visualizer } from 'rollup-plugin-visualizer'
 import {
   BRAND_APPLE_TOUCH_ICON_PATH,
+  BRAND_FAVICON_48_PATH,
+  BRAND_FAVICON_ICO_PATH,
   BRAND_FAVICON_PATH,
   BRAND_ICON_192_PATH,
   BRAND_ICON_512_PATH,
@@ -255,6 +257,9 @@ export default defineNuxtConfig({
           : []),
       ],
       link: [
+        // PNG/ICO first — Google Search favicon crawler prefers ≥48px raster icons over SVG.
+        { rel: 'icon', href: BRAND_FAVICON_ICO_PATH, sizes: '48x48' },
+        { rel: 'icon', type: 'image/png', href: BRAND_FAVICON_48_PATH, sizes: '48x48' },
         { rel: 'icon', type: 'image/svg+xml', href: BRAND_FAVICON_PATH },
         { rel: 'apple-touch-icon', href: BRAND_APPLE_TOUCH_ICON_PATH },
         { rel: 'privacy-policy', href: '/ochrana-osobnych-udajov' },

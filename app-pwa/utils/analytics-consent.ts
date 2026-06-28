@@ -1,7 +1,7 @@
 import {
   captureGtmPageView,
-  loadGtm,
   purgeInjectedAnalyticsScripts,
+  signalAnalyticsConsentToGtm,
 } from '~/utils/gtm-client'
 import { initPosthogIfConsented, shutdownPosthog } from '~/utils/posthog-client'
 import { setAnalyticsConsentGranted } from '~/utils/cookie-consent-state'
@@ -22,7 +22,7 @@ export function initGtagConsentDefault(): (...args: unknown[]) => void {
     functionality_storage: 'denied',
     personalization_storage: 'denied',
     security_storage: 'granted',
-    wait_for_update: 500,
+    wait_for_update: 2000,
   })
   return gtag
 }
@@ -38,6 +38,19 @@ export function syncGtagConsent(analyticsGranted: boolean): void {
     personalization_storage: 'denied',
     security_storage: 'granted',
   })
+}
+
+/** Cookie domain variants for analytics cookie expiry (host + registrable root). */
+export function analyticsCookieDomainVariants(hostname: string): (string | undefined)[] {
+  const variants: (string | undefined)[] = [undefined, hostname, `.${hostname}`]
+  const parts = hostname.split('.')
+  if (parts.length >= 2) {
+    const root = parts.slice(-2).join('.')
+    if (root !== hostname) {
+      variants.push(root, `.${root}`)
+    }
+  }
+  return variants
 }
 
 function expireCookie(name: string, domain?: string): void {
@@ -66,8 +79,7 @@ function clearAnalyticsCookies(): void {
   if (!import.meta.client) {
     return
   }
-  const hostname = location.hostname
-  const domainVariants = [undefined, hostname, `.${hostname}`]
+  const domainVariants = analyticsCookieDomainVariants(location.hostname)
 
   for (const name of ['_ga', '_gid', '_gat', '_clck', '_clsk']) {
     for (const domain of domainVariants) {
@@ -92,12 +104,10 @@ function clearAnalyticsCookies(): void {
 }
 
 /** Enable or disable third-party analytics based on cookie consent. */
-export function applyAnalyticsConsent(granted: boolean): void {
-  if (!import.meta.client) {
-    return
-  }
+export function applyAnalyticsConsentEffect(granted: boolean): void {
   setAnalyticsConsentGranted(granted)
   syncGtagConsent(granted)
+  signalAnalyticsConsentToGtm(granted)
   if (granted) {
     initPosthogIfConsented()
     captureGtmPageView()
@@ -108,4 +118,12 @@ export function applyAnalyticsConsent(granted: boolean): void {
   purgeInjectedAnalyticsScripts()
   clearAnalyticsCookies()
   window.dispatchEvent(new Event('jobbie:analytics-consent-changed'))
+}
+
+/** Enable or disable third-party analytics based on cookie consent. */
+export function applyAnalyticsConsent(granted: boolean): void {
+  if (!import.meta.client) {
+    return
+  }
+  applyAnalyticsConsentEffect(granted)
 }

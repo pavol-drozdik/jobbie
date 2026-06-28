@@ -47,6 +47,15 @@ export function shouldBypassCors(path: string): boolean {
   return CORS_BYPASS_PREFIXES.some((prefix) => path.startsWith(prefix));
 }
 
+/**
+ * True when the request has no browser Origin (or Undici's opaque `Origin: null`).
+ * Used with {@link shouldBypassCors} for liveness/SEO probe paths only.
+ */
+export function isCorsProbeOrigin(origin: string | undefined): boolean {
+  if (!origin) return true;
+  return origin === 'null';
+}
+
 function resolveAllowedOrigins(): string[] {
   const fromEnv = parseCorsOriginsFromEnv(process.env.CORS_ORIGINS);
   if (fromEnv && fromEnv.length > 0) return fromEnv;
