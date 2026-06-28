@@ -49,12 +49,15 @@ export function maxBirthDateForMinAge(
   return `${year}-${month}-${day}`
 }
 
-export function validateIndividualRegistrationBirthDate(isoDate: string): string | null {
+export function validateIndividualRegistrationBirthDate(
+  isoDate: string,
+  referenceDate: Date = new Date(),
+): string | null {
   const parsed = parseIsoDateOnly(isoDate)
   if (!parsed) {
     return 'Vyberte platný dátum narodenia.'
   }
-  if (!isAtLeastAge(parsed, MIN_INDIVIDUAL_REGISTRATION_AGE)) {
+  if (!isAtLeastAge(parsed, MIN_INDIVIDUAL_REGISTRATION_AGE, referenceDate)) {
     return 'Registrácia je dostupná len pre osoby staršie ako 16 rokov.'
   }
   return null
