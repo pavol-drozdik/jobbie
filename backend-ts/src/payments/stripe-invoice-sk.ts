@@ -202,7 +202,93 @@ export function buildSkInvoicePaymentSettings(): NonNullable<
 }
 
 export function buildSkInvoiceRendering(): NonNullable<InvoiceCreateParams['rendering']> {
-  return { pdf: { page_size: 'a4' } };
+  return {
+    pdf: { page_size: 'a4' },
+    amount_tax_display: 'exclude_tax',
+  };
+}
+
+const DEFAULT_VAT_EXEMPTION_TEXT =
+  'Dodanie je oslobodené od dane. DPH: 0,00 €.';
+
+/** Supplier IČO/DIČ/IČ DPH/OR lines for Stripe PDF footer (§ 74a supplement). */
+export function buildSkInvoiceSupplierFooterLines(
+  config?: ConfigService,
+): string[] {
+  const supplier = config
+    ? getBillingInvoiceSupplier(config)
+    : {
+        name: DEFAULT_BILLING_SUPPLIER.name,
+        address: null,
+        ico: DEFAULT_BILLING_SUPPLIER.ico,
+        dic: DEFAULT_BILLING_SUPPLIER.dic,
+        vat: DEFAULT_BILLING_SUPPLIER.vat,
+        or: DEFAULT_BILLING_SUPPLIER.or,
+        configured: true,
+      };
+  const lines: string[] = [];
+  if (supplier.ico?.trim()) {
+    lines.push(`IČO: ${supplier.ico.trim()}`);
+  }
+  if (supplier.dic?.trim()) {
+    lines.push(`DIČ: ${supplier.dic.trim()}`);
+  }
+  if (supplier.vat?.trim()) {
+    lines.push(`IČ DPH: ${supplier.vat.trim()}`);
+  }
+  if (supplier.or?.trim()) {
+    lines.push(supplier.or.trim());
+  }
+  return lines;
+}
+
+export function getSkInvoiceVatExemptionText(config?: ConfigService): string {
+  const custom = config?.get<string>('STRIPE_INVOICE_VAT_EXEMPTION_TEXT')?.trim();
+  if (custom) {
+    return custom;
+  }
+  return DEFAULT_VAT_EXEMPTION_TEXT;
+}
+
+export function getSkInvoiceVatExemptionReference(
+  config?: ConfigService,
+): string | null {
+  const ref = config?.get<string>('STRIPE_INVOICE_VAT_EXEMPTION_REFERENCE')?.trim();
+  return ref || null;
+}
+
+/** § 74 legal block: supplier IDs + oslobodenie od dane (identifikovaná osoba). */
+export function buildSkInvoiceLegalFooterBlock(config?: ConfigService): string {
+  const parts: string[] = [];
+  const supplierLines = buildSkInvoiceSupplierFooterLines(config);
+  if (supplierLines.length > 0) {
+    parts.push(supplierLines.join('\n'));
+  }
+  const exemption = getSkInvoiceVatExemptionText(config);
+  if (exemption) {
+    parts.push(exemption);
+  }
+  const reference = getSkInvoiceVatExemptionReference(config);
+  if (reference) {
+    parts.push(reference);
+  }
+  return parts.join('\n\n');
+}
+
+/** Rebuild buyer custom_fields from Stripe Customer metadata (subscription invoices). */
+export function buildInvoiceCustomFieldsFromCustomerMetadata(
+  metadata: Record<string, string> | null | undefined,
+): InvoiceCreateParams['custom_fields'] {
+  const meta = metadata ?? {};
+  if (meta.buyer_type !== 'company' && meta.purchaser_type !== 'company') {
+    return undefined;
+  }
+  return buildInvoiceCustomFieldsSk({
+    purchaser_type: 'company',
+    registration_number: meta.registration_number?.trim() || null,
+    tax_id: meta.tax_id?.trim() || null,
+    vat_id: meta.vat_id?.trim() || null,
+  });
 }
 
 /** Off by default — enable only when explicitly configured (platiteľ DPH). */
@@ -242,7 +328,7 @@ export function getSkInvoiceLineUnit(type: SkInvoiceProductType): string {
     : SK_INVOICE_SUBSCRIPTION_UNIT;
 }
 
-/** Footer for Stripe PDF: poznámka (+ obdobie predplatného). No default legal boilerplate. */
+/** Footer for Stripe PDF: poznámka, obdobie, supplier IDs, § 74 exemption, optional extra. */
 export function buildSkInvoiceFooter(
   type: SkInvoiceProductType,
   config?: ConfigService,
@@ -256,6 +342,10 @@ export function buildSkInvoiceFooter(
         subscriptionPeriod.end,
       )}`,
     );
+  }
+  const legal = buildSkInvoiceLegalFooterBlock(config);
+  if (legal) {
+    parts.push(legal);
   }
   const custom = config?.get<string>('STRIPE_INVOICE_FOOTER')?.trim();
   if (custom) {

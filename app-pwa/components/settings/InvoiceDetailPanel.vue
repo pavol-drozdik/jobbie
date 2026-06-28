@@ -191,7 +191,7 @@
 
     <p
       v-if="displayFooter"
-      class="m-0 text-xs leading-relaxed text-black/45"
+      class="m-0 whitespace-pre-line text-xs leading-relaxed text-black/45"
     >
       {{ displayFooter }}
     </p>

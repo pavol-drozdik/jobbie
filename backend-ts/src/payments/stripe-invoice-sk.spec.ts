@@ -2,10 +2,13 @@ import type { ConfigService } from '@nestjs/config';
 import {
   SK_INVOICE_CREDIT_NOTE,
   SK_INVOICE_SUBSCRIPTION_NOTE,
+  buildInvoiceCustomFieldsFromCustomerMetadata,
   buildInvoiceCustomFieldsSk,
   buildSkCreditInvoiceLineDescription,
   buildSkCreditInvoiceLineItem,
   buildSkInvoiceFooter,
+  buildSkInvoiceLegalFooterBlock,
+  buildSkInvoiceRendering,
   filterStripeInvoiceCustomFields,
   isStripeAutomaticTaxEnabled,
   resolveInvoiceCustomFieldsSk,
@@ -64,11 +67,12 @@ describe('stripe-invoice-sk', () => {
   });
 
   describe('buildSkInvoiceFooter', () => {
-    it('includes credit poznámka only (no default legal text)', () => {
+    it('includes credit poznámka and default § 74 legal block', () => {
       const footer = buildSkInvoiceFooter('credits');
       expect(footer).toContain(`Poznámka: ${SK_INVOICE_CREDIT_NOTE}`);
-      expect(footer).not.toContain('platiteľom DPH');
-      expect(footer).not.toContain('bez DPH');
+      expect(footer).toContain('IČO:');
+      expect(footer).toContain('Dodanie je oslobodené od dane');
+      expect(footer).toContain('DPH: 0,00 €');
     });
 
     it('appends STRIPE_INVOICE_FOOTER when configured', () => {
@@ -77,6 +81,17 @@ describe('stripe-invoice-sk', () => {
         mockConfig({ STRIPE_INVOICE_FOOTER: 'Custom footer line.' }),
       );
       expect(footer).toContain('Custom footer line.');
+      expect(footer).toContain('Dodanie je oslobodené od dane');
+    });
+
+    it('uses custom exemption text when configured', () => {
+      const footer = buildSkInvoiceFooter(
+        'credits',
+        mockConfig({
+          STRIPE_INVOICE_VAT_EXEMPTION_TEXT: 'Custom exemption.',
+        }),
+      );
+      expect(footer).toContain('Custom exemption.');
     });
 
     it('includes subscription period when provided', () => {
@@ -86,6 +101,52 @@ describe('stripe-invoice-sk', () => {
       });
       expect(footer).toContain(SK_INVOICE_SUBSCRIPTION_NOTE);
       expect(footer).toContain('Obdobie predplatného:');
+    });
+  });
+
+  describe('buildSkInvoiceRendering', () => {
+    it('uses A4 and exclude_tax for § 74 amounts without VAT', () => {
+      expect(buildSkInvoiceRendering()).toEqual({
+        pdf: { page_size: 'a4' },
+        amount_tax_display: 'exclude_tax',
+      });
+    });
+  });
+
+  describe('buildInvoiceCustomFieldsFromCustomerMetadata', () => {
+    it('rebuilds company buyer fields from customer metadata', () => {
+      expect(
+        buildInvoiceCustomFieldsFromCustomerMetadata({
+          buyer_type: 'company',
+          registration_number: '56273975',
+          tax_id: '2122259634',
+          vat_id: 'SK2122259634',
+        }),
+      ).toEqual([
+        { name: 'IČO', value: '56273975' },
+        { name: 'DIČ', value: '2122259634' },
+        { name: 'IČ DPH', value: 'SK2122259634' },
+      ]);
+    });
+
+    it('returns undefined for individual metadata', () => {
+      expect(
+        buildInvoiceCustomFieldsFromCustomerMetadata({
+          buyer_type: 'individual',
+        }),
+      ).toBeUndefined();
+    });
+  });
+
+  describe('buildSkInvoiceLegalFooterBlock', () => {
+    it('includes supplier ids and exemption reference when set', () => {
+      const block = buildSkInvoiceLegalFooterBlock(
+        mockConfig({
+          STRIPE_INVOICE_VAT_EXEMPTION_REFERENCE: 'Odkaz na zákon.',
+        }),
+      );
+      expect(block).toContain('IČO:');
+      expect(block).toContain('Odkaz na zákon.');
     });
   });
 
