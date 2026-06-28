@@ -597,6 +597,21 @@ onUnmounted(() => {
   teardownPaymentElement()
 })
 
+/** Stripe confirm can stall indefinitely (3DS / network); never leave the button stuck. */
+const PAYMENT_CONFIRM_TIMEOUT_MS = 30_000
+
+async function raceConfirmTimeout<T>(op: Promise<T>): Promise<T | 'timeout'> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<'timeout'>((resolve) => {
+    timer = setTimeout(() => resolve('timeout'), PAYMENT_CONFIRM_TIMEOUT_MS)
+  })
+  try {
+    return await Promise.race([op, timeout])
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
+}
+
 async function handlePay() {
   paying.value = true
   payError.value = null
@@ -634,7 +649,12 @@ async function handlePay() {
         return
       }
       secret = prepared.clientSecret
-      if (preparedResult.remounted && !(await submitElementsOrSetError())) {
+      if (preparedResult.remounted) {
+        // Intent type changed (e.g. trial setup -> immediate payment): Elements
+        // were remounted with the server clientSecret and the card field is now
+        // empty. Submitting it here never resolves; ask the user to re-enter the
+        // card and confirm again (the next click uses the new clientSecret).
+        payError.value = S.checkoutConfirmAfterRemount
         return
       }
     } else if (!secret && props.preparePayment) {
@@ -698,7 +718,14 @@ async function handlePay() {
       props.deferredMode,
     )
     if (useSetup) {
-      const { error: setupError, setupIntent } = await stripe.confirmSetup(confirmOptions)
+      const setupResult = await raceConfirmTimeout(
+        stripe.confirmSetup(confirmOptions),
+      )
+      if (setupResult === 'timeout') {
+        payError.value = S.checkoutPaymentFailed
+        return
+      }
+      const { error: setupError, setupIntent } = setupResult
       if (setupError) {
         payError.value = setupError.message ?? 'Platba zlyhala.'
         return
@@ -722,7 +749,14 @@ async function handlePay() {
       return
     }
 
-    const { error, paymentIntent } = await stripe.confirmPayment(confirmOptions)
+    const confirmResult = await raceConfirmTimeout(
+      stripe.confirmPayment(confirmOptions),
+    )
+    if (confirmResult === 'timeout') {
+      payError.value = S.checkoutPaymentFailed
+      return
+    }
+    const { error, paymentIntent } = confirmResult
     if (error) {
       payError.value = error.message ?? 'Platba zlyhala.'
       return

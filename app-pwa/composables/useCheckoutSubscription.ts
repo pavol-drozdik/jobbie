@@ -6,7 +6,6 @@ import { ROUTES } from '~/utils/app-routes'
 import { parseApiErrorMessage } from '~/utils/api-errors'
 import { parseSafeApiErrorMessage } from '~/utils/safe-user-messages'
 import { stripStripeReturnQueryFromBrowserUrl } from '~/utils/stripe-return-query'
-import { resolvePlanTrialDays } from '~/utils/subscription-trial'
 import { S } from '~/utils/strings'
 
 type ProfileBillingPrefill = {
@@ -25,7 +24,7 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
   const { refreshUser } = useAuth()
   const { capture } = useAnalytics()
   const { load: loadPlansCatalog } = usePlans()
-  const { config: billingCatalogConfig, load: loadBillingCatalog } = useCatalogBilling()
+  const { load: loadBillingCatalog } = useCatalogBilling()
   const { account: billingAccount, load: loadBillingAccount } = useBillingAccount()
   const route = useRoute()
   const requestURL = useRequestURL()
@@ -51,8 +50,15 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
   }
 
   const planTrialDays = computed((): number => {
-    if (!plan.value) return 0
-    return resolvePlanTrialDays(plan.value, billingCatalogConfig.value)
+    // Authoritative: GET /api/plans returns `trial_period_days` from the live Stripe
+    // Price — the exact value the backend uses when creating the subscription. Do NOT
+    // fall back to catalog/global config here: that made the client mount deferred
+    // `setup` mode while the server created a PaymentIntent (no trial), causing an
+    // Elements intent-type mismatch and a stuck checkout.
+    const fromStripePrice = plan.value?.trial_period_days
+    return typeof fromStripePrice === 'number' && fromStripePrice > 0
+      ? fromStripePrice
+      : 0
   })
 
   /** Trial UI + deferred Setup mode only when this user can actually get a trial. */

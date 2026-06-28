@@ -643,6 +643,8 @@
   checkoutPaymentNoIntentId:
     'Platba sa nepodarila dokončiť. Skontrolujte kartu a údaje vo formulári, potom to skúste znova.',
   checkoutPaymentFormNotReady: 'Platobný formulár sa ešte načítava. Počkajte chvíľu.',
+  checkoutConfirmAfterRemount:
+    'Skontrolujte údaje karty a potvrďte platbu znova.',
   checkoutCreditsSuccess: 'Kredity boli úspešne pripísané na váš účet.',
   pricingPageTitle: 'Cenník pre firmy',
   pricingPageSubtitle:
