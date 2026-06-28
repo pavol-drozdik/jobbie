@@ -194,7 +194,7 @@ Details: [database.md](./database.md#credit-ledger-rpcs).
 
 5. `grant_credits` RPC (`source = purchase`).
 
-6. Create finalized Stripe Invoice and mark **paid** (`paid_out_of_band`) with SK custom fields.
+6. Create finalized Stripe Invoice and mark **paid** (`attachPayment` / `paid_out_of_band`) with SK custom fields; `confirm-credits` and webhooks call `ensureCreditPaymentInvoice` (retries + `invoices.sendInvoice` when applicable). Receipt from PaymentIntent is separate — enable Dashboard **Email customers about → Successful payments** for invoice PDF email ([stripe-invoice-emails.md](./stripe-invoice-emails.md)).
 
 7. On duplicate webhook (`23505`), verify ledger row exists before returning success; retry invoice creation if needed.
 

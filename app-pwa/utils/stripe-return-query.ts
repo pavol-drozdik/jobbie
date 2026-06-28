@@ -7,6 +7,12 @@ export const STRIPE_RETURN_QUERY_KEYS = [
   'setup_intent_client_secret',
 ] as const
 
+/** Client secrets only — keep intent ids in the URL so fulfillment can be retried safely. */
+export const STRIPE_SECRET_QUERY_KEYS = [
+  'payment_intent_client_secret',
+  'setup_intent_client_secret',
+] as const
+
 export function readStripeReturnQuery(search: string): {
   paymentIntent: string | null
   setupIntent: string | null
@@ -27,6 +33,22 @@ export function readStripeReturnQuery(search: string): {
 }
 
 /** Remove Stripe secrets from the address bar without a full navigation. */
+export function stripStripeSecretQueryFromBrowserUrl(): void {
+  if (!import.meta.client || typeof window === 'undefined') return
+  const url = new URL(window.location.href)
+  let changed = false
+  for (const key of STRIPE_SECRET_QUERY_KEYS) {
+    if (url.searchParams.has(key)) {
+      url.searchParams.delete(key)
+      changed = true
+    }
+  }
+  if (!changed) return
+  const next = `${url.pathname}${url.search}${url.hash}`
+  window.history.replaceState(window.history.state, '', next)
+}
+
+/** Remove all Stripe return params including intent ids (legacy / post-success cleanup). */
 export function stripStripeReturnQueryFromBrowserUrl(): void {
   if (!import.meta.client || typeof window === 'undefined') return
   const url = new URL(window.location.href)

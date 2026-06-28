@@ -59,15 +59,32 @@
       <p class="mb-9 mt-2 text-[17px] font-normal leading-normal text-black/55">
         {{ message }}
       </p>
+      <button
+        v-if="canRetryFulfillment"
+        type="button"
+        class="mb-4 inline-flex h-14 w-full items-center justify-center rounded-full bg-marketing-green text-lg font-bold text-white transition-opacity duration-200 hover:opacity-[0.88]"
+        @click="retryFulfillment"
+      >
+        {{ S.checkoutResultRetryFulfillment }}
+      </button>
       <NuxtLink
+        v-else
         :to="retryCheckoutPath"
         class="mb-4 inline-flex h-14 w-full items-center justify-center rounded-full bg-marketing-green text-lg font-bold text-white no-underline transition-opacity duration-200 hover:opacity-[0.88]"
       >
         {{ S.checkoutResultRetryCta }}
       </NuxtLink>
       <NuxtLink
+        v-if="canRetryFulfillment"
+        :to="retryCheckoutPath"
+        class="mb-4 inline-flex h-14 w-full items-center justify-center rounded-full border-[1.5px] border-black/12 bg-white text-lg font-semibold text-black no-underline transition-[background-color,border-color] duration-150 hover:border-black/20 hover:bg-marketing-soft"
+      >
+        {{ S.checkoutResultNewCheckout }}
+      </NuxtLink>
+      <NuxtLink
         :to="returnPath"
         class="inline-flex h-14 w-full items-center justify-center rounded-full border-[1.5px] border-black/12 bg-white text-lg font-semibold text-black no-underline transition-[background-color,border-color] duration-150 hover:border-black/20 hover:bg-marketing-soft"
+        :class="canRetryFulfillment ? '' : ''"
       >
         {{ returnLabel }}
       </NuxtLink>
@@ -80,7 +97,15 @@ import { S } from '~/utils/strings'
 
 definePageMeta({ layout: 'app', middleware: ['auth'] })
 
-const { phase, message, returnPath, retryCheckoutPath, returnLabel } = useCheckoutResult()
+const {
+  phase,
+  message,
+  returnPath,
+  retryCheckoutPath,
+  returnLabel,
+  canRetryFulfillment,
+  retryFulfillment,
+} = useCheckoutResult()
 
 const panelTitle = computed(() => {
   if (phase.value === 'success') return S.checkoutResultPanelTitleSuccess
