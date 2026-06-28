@@ -13,15 +13,40 @@ import {
   trialPeriodDaysFromStripePrice,
 } from './subscription-trial.config';
 
-/** Subscriptions that count as having used Stripe Billing (excludes abandoned incomplete checkouts). */
-const STRIPE_SUBSCRIPTION_HISTORY_STATUSES = new Set([
+/** Subscriptions that always block a new trial (paid or in-progress billing). */
+const STRIPE_SUBSCRIPTION_TRIAL_BLOCKING_STATUSES = new Set([
   'active',
   'trialing',
   'past_due',
-  'canceled',
   'unpaid',
   'paused',
 ]);
+
+/**
+ * Canceled / incomplete_expired subs from abandoned checkouts (never reached
+ * active or trialing) do not consume trial eligibility.
+ */
+export function stripeSubscriptionBlocksTrialEligibility(sub: {
+  status: string;
+  trial_start?: number | null;
+  latest_invoice?: string | { status?: string | null } | null;
+}): boolean {
+  const status = sub.status?.trim() ?? '';
+  if (STRIPE_SUBSCRIPTION_TRIAL_BLOCKING_STATUSES.has(status)) {
+    return true;
+  }
+  if (status === 'canceled' || status === 'incomplete_expired') {
+    if (typeof sub.trial_start === 'number' && sub.trial_start > 0) {
+      return true;
+    }
+    const inv = sub.latest_invoice;
+    if (inv && typeof inv === 'object' && inv.status === 'paid') {
+      return true;
+    }
+    return false;
+  }
+  return false;
+}
 
 type PriceTrialCacheEntry = { days: number; expiresAt: number };
 
@@ -118,7 +143,7 @@ export class SubscriptionTrialService {
       limit: 10,
     });
     for (const sub of listed.data) {
-      if (STRIPE_SUBSCRIPTION_HISTORY_STATUSES.has(sub.status)) {
+      if (stripeSubscriptionBlocksTrialEligibility(sub)) {
         return false;
       }
     }

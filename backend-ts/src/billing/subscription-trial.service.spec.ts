@@ -1,7 +1,49 @@
 import { ConfigService } from '@nestjs/config';
 import type { StripeClient } from '../payments/stripe-types';
-import { SubscriptionTrialService } from './subscription-trial.service';
+import {
+  stripeSubscriptionBlocksTrialEligibility,
+  SubscriptionTrialService,
+} from './subscription-trial.service';
 import { SupabaseService } from '../supabase/supabase.service';
+
+describe('stripeSubscriptionBlocksTrialEligibility', () => {
+  it('blocks active and trialing subscriptions', () => {
+    expect(stripeSubscriptionBlocksTrialEligibility({ status: 'active' })).toBe(
+      true,
+    );
+    expect(stripeSubscriptionBlocksTrialEligibility({ status: 'trialing' })).toBe(
+      true,
+    );
+  });
+
+  it('does not block canceled incomplete checkouts without trial or paid invoice', () => {
+    expect(
+      stripeSubscriptionBlocksTrialEligibility({
+        status: 'canceled',
+        trial_start: null,
+        latest_invoice: { status: 'open' },
+      }),
+    ).toBe(false);
+  });
+
+  it('blocks canceled subscriptions that had a trial', () => {
+    expect(
+      stripeSubscriptionBlocksTrialEligibility({
+        status: 'canceled',
+        trial_start: 1_700_000_000,
+      }),
+    ).toBe(true);
+  });
+
+  it('blocks canceled subscriptions with a paid invoice', () => {
+    expect(
+      stripeSubscriptionBlocksTrialEligibility({
+        status: 'canceled',
+        latest_invoice: { status: 'paid' },
+      }),
+    ).toBe(true);
+  });
+});
 
 describe('SubscriptionTrialService', () => {
   function createService(opts: {
@@ -9,6 +51,7 @@ describe('SubscriptionTrialService', () => {
     subRow?: Record<string, unknown> | null;
     priceTrialDays?: number;
     fallbackDays?: string;
+    stripeSubscriptions?: Array<Record<string, unknown>>;
   }): { service: SubscriptionTrialService; stripe: StripeClient } {
     const config = {
       get: (key: string) =>
@@ -60,7 +103,7 @@ describe('SubscriptionTrialService', () => {
         }),
       },
       subscriptions: {
-        list: async () => ({ data: [] }),
+        list: async () => ({ data: opts.stripeSubscriptions ?? [] }),
       },
     } as unknown as StripeClient;
     return {
@@ -93,5 +136,28 @@ describe('SubscriptionTrialService', () => {
       'price_test',
     );
     expect(days).toBe(30);
+  });
+
+  it('remains trial-eligible when Stripe only has abandoned canceled incomplete subs', async () => {
+    const { service, stripe } = createService({
+      priceTrialDays: 30,
+      subRow: {
+        stripe_subscription_id: null,
+        stripe_customer_id: 'cus_test',
+        subscription_plans: { price_monthly_cents: 0 },
+      },
+      stripeSubscriptions: [
+        {
+          status: 'canceled',
+          trial_start: null,
+          latest_invoice: { status: 'open' },
+        },
+      ],
+    });
+    const eligible = await service.isUserEligibleForSubscriptionTrial(
+      'user-1',
+      stripe,
+    );
+    expect(eligible).toBe(true);
   });
 });

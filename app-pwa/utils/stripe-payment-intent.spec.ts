@@ -3,6 +3,7 @@ import {
   isPaymentIntentClientSecret,
   isSetupIntentClientSecret,
   shouldConfirmSetupIntent,
+  shouldRemountElementsForIntentMismatch,
 } from './stripe-payment-intent'
 
 describe('shouldConfirmSetupIntent', () => {
@@ -26,6 +27,35 @@ describe('shouldConfirmSetupIntent', () => {
   it('falls back to deferred Elements mode', () => {
     expect(shouldConfirmSetupIntent('', undefined, 'setup')).toBe(true)
     expect(shouldConfirmSetupIntent('', undefined, 'payment')).toBe(false)
+  })
+})
+
+describe('shouldRemountElementsForIntentMismatch', () => {
+  it('remounts when deferred setup receives a PaymentIntent', () => {
+    expect(
+      shouldRemountElementsForIntentMismatch('setup', 'pi_abc_secret_xyz', 'payment'),
+    ).toBe(true)
+  })
+
+  it('remounts when deferred payment receives a SetupIntent', () => {
+    expect(
+      shouldRemountElementsForIntentMismatch('payment', 'seti_abc_secret_xyz', 'setup'),
+    ).toBe(true)
+  })
+
+  it('does not remount when deferred mode matches server intent', () => {
+    expect(
+      shouldRemountElementsForIntentMismatch('setup', 'seti_abc_secret_xyz', 'setup'),
+    ).toBe(false)
+    expect(
+      shouldRemountElementsForIntentMismatch('payment', 'pi_abc_secret_xyz', 'payment'),
+    ).toBe(false)
+  })
+
+  it('ignores remount when not in deferred checkout', () => {
+    expect(shouldRemountElementsForIntentMismatch(undefined, 'pi_abc_secret_xyz')).toBe(
+      false,
+    )
   })
 })
 

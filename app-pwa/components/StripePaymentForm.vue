@@ -140,6 +140,7 @@ import {
   paymentIntentIdFromClientSecret,
   setupIntentIdFromClientSecret,
   shouldConfirmSetupIntent,
+  shouldRemountElementsForIntentMismatch,
 } from '~/utils/stripe-payment-intent'
 import {
   normalizePreparePaymentResult,
@@ -390,26 +391,49 @@ async function mountWithClientSecret(secret: string): Promise<void> {
   activeSecret.value = trimmed
 }
 
-async function applyPrepareResult(prepared: PreparePaymentResult): Promise<boolean> {
+type ApplyPrepareResultOutcome = {
+  ok: boolean
+  /** Elements were remounted after deferred mode / server intent mismatch — submit again. */
+  remounted?: boolean
+}
+
+async function applyPrepareResult(
+  prepared: PreparePaymentResult,
+  options?: { fromDeferredCheckout?: boolean },
+): Promise<ApplyPrepareResultOutcome> {
   const secret = prepared.clientSecret
   if (!secret) {
     payError.value = S.checkoutPaymentFailed
-    return false
+    return { ok: false }
   }
-  if (!stripe || !elements) {
+
+  const mustRemount =
+    options?.fromDeferredCheckout === true &&
+    shouldRemountElementsForIntentMismatch(
+      props.deferredMode,
+      secret,
+      prepared.intentType,
+    )
+
+  if (!stripe || !elements || mustRemount) {
     await mountWithClientSecret(secret)
-    return Boolean(stripe && elements)
+    if (!stripe || !elements) {
+      payError.value = S.checkoutPaymentFormNotReady
+      return { ok: false }
+    }
+    return { ok: true, remounted: mustRemount }
   }
+
   try {
     const updateResult = await elements.update({ clientSecret: secret })
     if (updateResult?.error) {
       payError.value = updateResult.error.message ?? S.checkoutPaymentFormNotReady
-      return false
+      return { ok: false }
     }
   } catch (err) {
     payError.value =
       err instanceof Error ? err.message : S.checkoutPaymentFormNotReady
-    return false
+    return { ok: false }
   }
   activeSecret.value = secret
   if (
@@ -421,11 +445,27 @@ async function applyPrepareResult(prepared: PreparePaymentResult): Promise<boole
       const fetchResult = await elements.fetchUpdates()
       if (fetchResult?.error) {
         payError.value = fetchResult.error.message ?? S.checkoutPaymentFormNotReady
-        return false
+        return { ok: false }
       }
     } catch {
       // Optional after PI create; confirm still uses clientSecret.
     }
+  }
+  return { ok: true }
+}
+
+async function submitElementsOrSetError(): Promise<boolean> {
+  if (!elements) {
+    payError.value = S.checkoutPaymentFormNotReady
+    return false
+  }
+  const submitResult = await elements.submit()
+  const submitError = submitResult?.error
+  if (submitError) {
+    payError.value =
+      submitError.message ??
+      'Skontrolujte platobné a fakturačné údaje vo formulári.'
+    return false
   }
   return true
 }
@@ -577,12 +617,7 @@ async function handlePay() {
 
     // Deferred: validate card in Elements before creating PI (Stripe recommended order).
     if (isDeferredCheckout) {
-      const submitResult = await elements.submit()
-      const submitError = submitResult?.error
-      if (submitError) {
-        payError.value =
-          submitError.message ??
-          'Skontrolujte platobné a fakturačné údaje vo formulári.'
+      if (!(await submitElementsOrSetError())) {
         return
       }
 
@@ -592,11 +627,16 @@ async function handlePay() {
         return
       }
       preparedIntentType = prepared.intentType
-      const ready = await applyPrepareResult(prepared)
-      if (!ready) {
+      const preparedResult = await applyPrepareResult(prepared, {
+        fromDeferredCheckout: true,
+      })
+      if (!preparedResult.ok) {
         return
       }
       secret = prepared.clientSecret
+      if (preparedResult.remounted && !(await submitElementsOrSetError())) {
+        return
+      }
     } else if (!secret && props.preparePayment) {
       const raw = await props.preparePayment(billing)
       const prepared = normalizePreparePaymentResult(raw)
@@ -604,20 +644,15 @@ async function handlePay() {
         return
       }
       preparedIntentType = prepared.intentType
-      const ready = await applyPrepareResult(prepared)
-      if (!ready) {
+      const preparedResult = await applyPrepareResult(prepared)
+      if (!preparedResult.ok) {
         return
       }
       secret = prepared.clientSecret
     }
 
     if (!isDeferredCheckout) {
-      const submitResult = await elements.submit()
-      const submitError = submitResult?.error
-      if (submitError) {
-        payError.value =
-          submitError.message ??
-          'Skontrolujte platobné a fakturačné údaje vo formulári.'
+      if (!(await submitElementsOrSetError())) {
         return
       }
     }

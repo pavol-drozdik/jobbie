@@ -46,3 +46,19 @@ export function shouldConfirmSetupIntent(
   if (intentType === 'payment') return false
   return deferredMode === 'setup'
 }
+
+/**
+ * Deferred Elements (`mode: setup` / `mode: payment`) cannot switch intent type via
+ * `elements.update` — remount with `clientSecret` when the server returns the other kind.
+ */
+export function shouldRemountElementsForIntentMismatch(
+  deferredMode: 'payment' | 'setup' | undefined,
+  clientSecret: string,
+  intentType?: 'payment' | 'setup',
+): boolean {
+  if (!deferredMode) return false
+  const serverWantsSetup = shouldConfirmSetupIntent(clientSecret, intentType, undefined)
+  if (deferredMode === 'setup' && !serverWantsSetup) return true
+  if (deferredMode === 'payment' && serverWantsSetup) return true
+  return false
+}
