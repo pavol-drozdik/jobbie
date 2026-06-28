@@ -8,7 +8,6 @@ import {
 } from '~/utils/credit-packs'
 import { parseApiErrorMessage } from '~/utils/api-errors'
 import { S } from '~/utils/strings'
-import { stripStripeReturnQueryFromBrowserUrl } from '~/utils/stripe-return-query'
 
 export type CheckoutCreditPack = CreditPackRow & {
   price_id: string
@@ -35,18 +34,20 @@ export function useCheckoutCredits(options: { packSlug: string; returnPath: stri
   const { api } = useApi()
   const { refreshUser } = useAuth()
   const { capture } = useAnalytics()
-  const route = useRoute()
   const requestURL = useRequestURL()
 
   const pack = ref<CheckoutCreditPack | null>(null)
   const loading = ref(true)
   const error = ref<string | null>(null)
   const clientSecret = ref<string | null>(null)
-  const successMessage = ref<string | null>(null)
   const billingPrefill = ref<ProfileBillingPrefill | null>(null)
 
   const stripeReturnUrl = computed(() => {
-    const path = ROUTES.checkoutCredits(packSlug, returnPath)
+    const path = ROUTES.checkoutResultUrl({
+      type: 'credits',
+      pack: packSlug,
+      returnPath,
+    })
     if (import.meta.client && typeof window !== 'undefined') {
       return `${window.location.origin}${path}`
     }
@@ -70,56 +71,43 @@ export function useCheckoutCredits(options: { packSlug: string; returnPath: stri
         return false
       }
       const gate = await ensureRecentLoginForBilling()
-    if (!gate.ok) {
-      error.value = gate.message
-      return false
-    }
-    const body: { payment_intent_id: string; billing?: CheckoutBillingPayload } = {
-      payment_intent_id: id,
-    }
-    if (billing) body.billing = billing
-    const res = await api<{ message?: string }>('/api/payments/confirm-credits', {
-      method: 'POST',
-      body,
-    })
-    if (!res.ok) {
-      error.value = parseApiErrorMessage(res, S.checkoutPaymentFailed)
-      return false
-    }
-    error.value = null
-    await refreshUser()
-    successMessage.value = S.checkoutCreditsSuccess
-    clientSecret.value = null
-    capture('credits_purchased', {
-      purchaser_type: billing?.purchaser_type,
-    })
-    await navigateTo(returnPath, { replace: true })
-    return true
+      if (!gate.ok) {
+        error.value = gate.message
+        return false
+      }
+      const body: { payment_intent_id: string; billing?: CheckoutBillingPayload } = {
+        payment_intent_id: id,
+      }
+      if (billing) body.billing = billing
+      const res = await api<{ message?: string }>('/api/payments/confirm-credits', {
+        method: 'POST',
+        body,
+      })
+      if (!res.ok) {
+        error.value = parseApiErrorMessage(res, S.checkoutPaymentFailed)
+        return false
+      }
+      error.value = null
+      await refreshUser()
+      clientSecret.value = null
+      capture('credits_purchased', {
+        purchaser_type: billing?.purchaser_type,
+      })
+      await navigateTo(
+        ROUTES.checkoutResultUrl({
+          status: 'success',
+          type: 'credits',
+          pack: packSlug,
+          returnPath,
+        }),
+        { replace: true },
+      )
+      return true
     } catch (e) {
       error.value =
         e instanceof Error ? e.message : 'Platbu sa nepodarilo dokončiť na serveri.'
       return false
     }
-  }
-
-  async function clearPaymentQuery(): Promise<void> {
-    const q = { ...route.query }
-    delete (q as Record<string, unknown>).payment_intent
-    delete (q as Record<string, unknown>).payment_intent_client_secret
-    delete (q as Record<string, unknown>).redirect_status
-    await navigateTo({ path: ROUTES.checkout, query: q }, { replace: true })
-  }
-
-  async function tryConfirmFromReturnUrl(): Promise<void> {
-    const pi = typeof route.query.payment_intent === 'string' ? route.query.payment_intent.trim() : ''
-    if (!pi.startsWith('pi_')) return
-    const status = route.query.redirect_status
-    if (status === 'failed') {
-      error.value = S.checkoutPaymentFailed
-      await clearPaymentQuery()
-      return
-    }
-    await confirmCreditsFromPaymentIntent(pi)
   }
 
   async function loadBillingPrefill(): Promise<void> {
@@ -187,7 +175,6 @@ export function useCheckoutCredits(options: { packSlug: string; returnPath: stri
   }
 
   async function init(): Promise<void> {
-    if (import.meta.client) stripStripeReturnQueryFromBrowserUrl()
     loading.value = true
     error.value = null
     try {
@@ -206,7 +193,6 @@ export function useCheckoutCredits(options: { packSlug: string; returnPath: stri
         return
       }
       pack.value = found
-      await tryConfirmFromReturnUrl()
     } finally {
       loading.value = false
     }
@@ -217,7 +203,6 @@ export function useCheckoutCredits(options: { packSlug: string; returnPath: stri
     loading,
     error,
     clientSecret,
-    successMessage,
     billingPrefill,
     stripeReturnUrl,
     formatPrice,

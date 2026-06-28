@@ -9,15 +9,18 @@ export const STRIPE_RETURN_QUERY_KEYS = [
 
 export function readStripeReturnQuery(search: string): {
   paymentIntent: string | null
+  setupIntent: string | null
   clientSecret: string | null
   redirectStatus: string | null
 } {
   const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search)
   const pi = params.get('payment_intent')?.trim() ?? null
+  const si = params.get('setup_intent')?.trim() ?? null
   const secret = params.get('payment_intent_client_secret')?.trim() ?? null
   const redirectStatus = params.get('redirect_status')?.trim() ?? null
   return {
     paymentIntent: pi && pi.startsWith('pi_') ? pi : null,
+    setupIntent: si && si.startsWith('seti_') ? si : null,
     clientSecret: secret,
     redirectStatus,
   }
