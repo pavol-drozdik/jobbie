@@ -119,38 +119,28 @@ watch(initialList, (data) => {
   nextCursor.value = data.next_cursor
 })
 
-async function loadPage(append: boolean) {
-  if (append) {
-    loadingMore.value = true
-  } else {
-    loading.value = true
-    loadError.value = false
-  }
+async function loadMore() {
+  if (!nextCursor.value || loadingMore.value) return
+  loadingMore.value = true
+  loadError.value = false
   const data = await fetchList({
     limit: 6,
-    cursor: append ? cursor.value : undefined,
+    cursor: cursor.value,
     category: activeCategory.value,
   })
+  loadingMore.value = false
   if (!data) {
-    if (!append) loadError.value = true
-    loading.value = false
-    loadingMore.value = false
+    loadError.value = true
     return
   }
-  if (!append) {
-    featured.value = data.featured
-    items.value = data.items
-  } else {
-    items.value = [...items.value, ...data.items]
-  }
+  items.value = [...items.value, ...data.items]
   nextCursor.value = data.next_cursor
   cursor.value = data.next_cursor ?? undefined
-  loading.value = false
-  loadingMore.value = false
 }
 
 function reload() {
   cursor.value = undefined
+  loadError.value = false
   void refreshList()
 }
 
@@ -160,13 +150,8 @@ function selectCategory(id: BlogCategoryId) {
   cursor.value = undefined
 }
 
-function loadMore() {
-  if (!nextCursor.value || loadingMore.value) return
-  void loadPage(true)
-}
-
 onMounted(() => {
   if (items.value.length > 0 || featured.value) return
-  void loadPage(false)
+  void refreshList()
 })
 </script>

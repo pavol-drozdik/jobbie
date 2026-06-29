@@ -1,4 +1,12 @@
-﻿## 2026-06-29 — Turnstile size=invisible removed (Cloudflare API)
+﻿## 2026-06-29 — PWA stale chunk recovery after deploy
+
+Fixed:
+- **app-pwa:** `0.chunk-reload.client.ts` — one automatic reload per tab when a dynamic `_nuxt` import fails (stale HTML after deploy / CDN cache).
+- **app-pwa:** Service worker precache excludes `/_nuxt/**` so an outdated SW does not serve removed route chunks; navigations already use `NetworkOnly`.
+- **app-pwa:** Blog index client retry uses `refreshList()` instead of writing to a read-only `loading` computed.
+- **app-pwa:** Sentry ignores transient post-deploy chunk load errors (handled by reload).
+
+## 2026-06-29 — Turnstile size=invisible removed (Cloudflare API)
 
 Fixed:
 - **app-pwa:** `useTurnstileWidget` no longer passes deprecated `size: 'invisible'` (Turnstile v0 now requires `normal`/`compact`/`flexible`); uses `execution: 'execute'` + `appearance: 'execute'` for programmatic invisible challenges and `reset()` before re-execute to avoid duplicate `execute()` warnings.

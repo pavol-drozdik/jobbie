@@ -433,6 +433,8 @@ export default defineNuxtConfig({
       globPatterns: ['**/*.{js,css,html,png,ico,svg}'],
       maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       globIgnores: [
+        /** Hashed route chunks change every build; precaching them in an old SW causes stale imports after deploy. */
+        '**/_nuxt/**',
         '**/home-design/feature-*.webp',
         '**/home-design/*-illustration.png',
         '**/home-design/jobbie-def-thumb.webp',

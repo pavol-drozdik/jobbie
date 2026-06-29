@@ -47,6 +47,11 @@ export default defineNuxtPlugin((nuxtApp) => {
       Sentry.init({
         app: nuxtApp.vueApp,
         dsn,
+        ignoreErrors: [
+          'Failed to fetch dynamically imported module',
+          'Importing a module script failed',
+          'error loading dynamically imported module',
+        ],
         environment:
           typeof config.sentryEnvironment === 'string' ? config.sentryEnvironment : undefined,
         integrations: [
