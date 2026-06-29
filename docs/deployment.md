@@ -174,8 +174,27 @@ Full list and comments: [`backend-ts/.env.example`](../backend-ts/.env.example).
 ### CDN and static assets
 
 - Set `NUXT_PUBLIC_CDN_URL` for hashed `_nuxt` chunks ([`nuxt.config.ts`](../app-pwa/nuxt.config.ts)).
+  - **Leave empty** unless a separate CDN origin receives the same `dist/_nuxt/**` files on **every** Pages deploy. If HTML is served from `www.jobbie.sk` but script `src` points at a CDN that was not updated, hard refresh on dynamic routes fails (`Couldn't resolve component "default"` → 500).
+  - **If set:** must be the origin only (no trailing path), e.g. `https://www.jobbie.sk` or a dedicated asset host that mirrors `dist/_nuxt` after each `pwa-cloudflare-deploy` run.
 - Optional `NUXT_PUBLIC_MEDIA_CDN_URL` for public job/ad images — Nitro route `GET /media?url=…` on the PWA origin (set to `/media` or `https://jobbie.sk/media`). Not chat signed URLs.
 - Mirror cache headers (long cache for `/_nuxt/**`, `/assets/**`) on CDN.
+- **Post-deploy:** [`pwa-cloudflare-deploy.yml`](../.github/workflows/pwa-cloudflare-deploy.yml) purges the Cloudflare **zone** cache when `CLOUDFLARE_ZONE_ID` is set in the GitHub Environment secrets (same token as `CLOUDFLARE_API_TOKEN`). Prevents stale HTML referencing removed `_nuxt` hashes after a new build.
+- **Cloudflare dashboard:** for `/_nuxt/*`, do not cache 404/HTML error responses at the edge (Pages SPA fallback for missing chunks returns `text/html` and breaks dynamic route lazy loads).
+
+#### Hard refresh 500 on dynamic routes (diagnostic)
+
+Symptom: hard refresh on `/blog/:slug`, `/zivotopisy/:id`, `/ponuka/:id`, etc. shows 500 „Niečo sa pokazilo“; prerendered routes (`/`, `/blog`) work. Client error: `Couldn't resolve component "default"`.
+
+1. DevTools → Network → disable cache → hard refresh the failing URL.
+2. Every `/_nuxt/*.js` request must be **200** with `content-type: application/javascript` (or `text/javascript`). **404** or **200 + text/html** means stale/missing chunk (deploy mismatch or edge cache).
+3. Compare script origins: same host as the page vs `NUXT_PUBLIC_CDN_URL`.
+4. Verify:
+
+```bash
+curl.exe -sI "https://www.jobbie.sk/_nuxt/<hash-from-page-html>.js" | findstr /i content-type
+```
+
+Expected: `Content-Type: application/javascript`. Recovery: client reload (`0.chunk-reload.client.ts` + `emitRouteChunkError`) and zone cache purge after deploy.
 
 ### Security headers
 
@@ -276,12 +295,13 @@ Build: `npm run build:cloudflare` → `app-pwa/dist/`. Workflows: `.github/workf
 
 PR checks (no deploy): `backend-ci` (`pwa-build-and-test`), `pwa-bundle-budget`.
 
-**GitHub:** secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; per-environment variables `PWA_PAGES_PROJECT`, `PWA_PAGES_BRANCH`, `NUXT_PUBLIC_SITE_URL`, and other `NUXT_PUBLIC_*` (see `app-pwa/.env.example`). Host phases: [staging-production-manual.md](./staging-production-manual.md#13-pwa-frontend-deploy).
+**GitHub:** secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_ZONE_ID` (zone cache purge after PWA deploy; optional but recommended for `www.jobbie.sk`); per-environment variables `PWA_PAGES_PROJECT`, `PWA_PAGES_BRANCH`, `NUXT_PUBLIC_SITE_URL`, and other `NUXT_PUBLIC_*` (see `app-pwa/.env.example`). Host phases: [staging-production-manual.md](./staging-production-manual.md#13-pwa-frontend-deploy).
 
 ### Production checklist
 
 - [ ] `REDIS_URL` (multi-instance + queues + websockets)
-- [ ] `NUXT_PUBLIC_CDN_URL`
+- [ ] `NUXT_PUBLIC_CDN_URL` (empty = serve `_nuxt` from Pages origin; if set, CDN must mirror every deploy)
+- [ ] `CLOUDFLARE_ZONE_ID` secret on GitHub production environment (post-deploy cache purge)
 - [ ] Supabase pooler URL on API
 - [ ] `TYPESENSE_HOST` + `TYPESENSE_API_KEY`
 - [ ] `CORS_ORIGINS`, `SESSION_COOKIE_SECRET`, `AUDIT_CHAIN_SECRET`, `METRICS_BEARER_TOKEN`

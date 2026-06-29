@@ -16,18 +16,27 @@ function shouldReloadOnce(): boolean {
   }
 }
 
-function isStaleChunkLoadError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error ?? '')
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'string') return error
+  return String(error ?? '')
+}
+
+/** Stale `_nuxt` chunk or Vue Router failed lazy route load after deploy / CDN HTML lag. */
+export function isStaleChunkLoadError(error: unknown): boolean {
+  const message = errorMessage(error)
   return (
     message.includes('Failed to fetch dynamically imported module')
     || message.includes('Importing a module script failed')
     || message.includes('error loading dynamically imported module')
+    || message.includes("Couldn't resolve component")
   )
 }
 
 /**
- * After a PWA deploy, CDN-cached HTML may reference removed `_nuxt/*` hashes.
- * Reload once to fetch a fresh document and chunk manifest.
+ * Complements Nuxt `emitRouteChunkError: 'automatic-immediate'` (vite preload errors).
+ * Handles Vue Router lazy-route failures (`Couldn't resolve component "default"`) when
+ * HTML references removed `_nuxt/*` hashes or the edge returns HTML for a chunk URL.
  */
 export default defineNuxtPlugin((nuxtApp) => {
   if (!import.meta.client) {
@@ -36,22 +45,38 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   let reloading = false
 
-  function reloadForStaleChunks(): void {
+  function reloadForStaleChunks(fullPath?: string): void {
     if (reloading || !shouldReloadOnce()) {
       return
     }
     reloading = true
+    if (fullPath) {
+      window.location.href = fullPath
+      return
+    }
     window.location.reload()
   }
 
-  nuxtApp.hook('app:chunkError', ({ error }) => {
-    if (isStaleChunkLoadError(error)) {
-      reloadForStaleChunks()
+  const router = useRouter()
+  router.onError((error, to) => {
+    if (!isStaleChunkLoadError(error)) {
+      return
     }
+    reloadForStaleChunks(to?.fullPath || undefined)
   })
 
-  window.addEventListener('vite:preloadError', (event) => {
+  const onUnhandledRejection = (event: PromiseRejectionEvent): void => {
+    const reason = event.reason
+    if (!isStaleChunkLoadError(reason)) {
+      return
+    }
     event.preventDefault()
     reloadForStaleChunks()
+  }
+
+  window.addEventListener('unhandledrejection', onUnhandledRejection)
+
+  nuxtApp.hook('app:unmounted', () => {
+    window.removeEventListener('unhandledrejection', onUnhandledRejection)
   })
 })

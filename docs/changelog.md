@@ -1,4 +1,29 @@
-﻿## 2026-06-29 — Deploy script: missing BACKEND_SCALE in .env
+﻿## 2026-06-29 — Hard refresh 500 on dynamic routes
+
+Fixed:
+- **app-pwa:** `0.chunk-reload.client.ts` — reload once on Vue Router `Couldn't resolve component` (stale `_nuxt` lazy chunks after deploy / CDN HTML lag); `router.onError` + `unhandledrejection` handlers complement Nuxt `emitRouteChunkError: 'automatic-immediate'`.
+- **app-pwa:** Sentry ignores transient `Couldn't resolve component` errors (handled by reload).
+- **CI:** `pwa-cloudflare-deploy.yml` — optional zone cache purge via `CLOUDFLARE_ZONE_ID` after Pages deploy.
+- **docs/deployment.md** — `NUXT_PUBLIC_CDN_URL` guidance, hard-refresh diagnostic, purge secret.
+
+## 2026-06-29 — Moje reklamy wizard UX + incremental publish credits
+
+Fixed:
+- **app-pwa:** Company ad wizard — Kraj/Dostupnosť dropdown placeholders (`Vyberte kraj`, `Vyberte dostupnosť`); removed duplicate „Cena dohodou“ checkbox (dropdown only).
+- **app-pwa:** Publish/top credit display and client balance check on job and company ad wizards now charge incrementally: editing a live listing and enabling topovanie shows top cost only (not publish + top); first publish with top unchanged.
+- **backend-ts:** Company ad `PATCH` with empty field patch still applies `want_top_listing` on live ads (mirror jobs).
+
+## 2026-06-29 — Footer návody (blog links)
+
+Changed:
+- **app-pwa:** Footer NÁVODY column lists five blog guides with links (`ako-topovat-sluzbu`, `ako-propagovat-sluzbu`, `ako-vytvorit-pracovnu-ponuku`, `ako-topovat-pracovnu-ponuku`, `ako-sa-registrovat-na-jobbie`).
+
+## 2026-06-29 — DM Sans latin-ext for Slovak diacritics
+
+Fixed:
+- **app-pwa:** Self-hosted DM Sans now includes `latin-ext` subset (Š, Č, Ž, Ť, Ľ, …); `scripts/sync-dm-sans-fonts.mjs` copies WOFF2 from fontsource on `npm prepare`.
+
+## 2026-06-29 — Deploy script: missing BACKEND_SCALE in .env
 
 Fixed:
 - **deploy_backend.sh:** `grep BACKEND_SCALE` with no match exited 1 under `pipefail`, aborting deploy before pull (ERR trap restored old image). `read_env_value` helper treats missing keys as empty (default scale 1).

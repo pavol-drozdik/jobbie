@@ -266,6 +266,13 @@ export default defineNuxtConfig({
         { rel: 'privacy-policy', href: '/ochrana-osobnych-udajov' },
         {
           rel: 'preload',
+          href: '/fonts/dm-sans-latin-ext-wght-normal.woff2',
+          as: 'font',
+          type: 'font/woff2',
+          crossorigin: 'anonymous',
+        },
+        {
+          rel: 'preload',
           href: '/fonts/dm-sans-latin-wght-normal.woff2',
           as: 'font',
           type: 'font/woff2',
@@ -285,6 +292,8 @@ export default defineNuxtConfig({
      * Otherwise dev crashes: "No entry found in rollupOptions.input" (vite-node reads client-only input).
      */
     viteEnvironmentApi: true,
+    /** Vite preload chunk errors → reload; Vue Router lazy-route errors in `0.chunk-reload.client.ts`. */
+    emitRouteChunkError: 'automatic-immediate',
   },
   compatibilityDate: '2025-03-16',
   devServer: {

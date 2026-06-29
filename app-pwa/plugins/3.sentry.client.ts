@@ -51,6 +51,7 @@ export default defineNuxtPlugin((nuxtApp) => {
           'Failed to fetch dynamically imported module',
           'Importing a module script failed',
           'error loading dynamically imported module',
+          "Couldn't resolve component",
         ],
         environment:
           typeof config.sentryEnvironment === 'string' ? config.sentryEnvironment : undefined,

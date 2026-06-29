@@ -120,3 +120,20 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: app-pwa
           command: pages deploy dist --project-name=${{ steps.cf.outputs.project }} ${{ steps.cf.outputs.branch != '' && format('--branch={0}', steps.cf.outputs.branch) || '' }}
+
+      - name: Purge Cloudflare zone cache
+        shell: bash
+        env:
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${CLOUDFLARE_ZONE_ID:-}" ]]; then
+            echo "CLOUDFLARE_ZONE_ID not set — skipping zone cache purge"
+            exit 0
+          fi
+          resp=$(curl -sf -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}')
+          echo "$resp"
+          echo "$resp" | jq -e '.success == true' >/dev/null

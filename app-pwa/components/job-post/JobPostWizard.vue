@@ -773,6 +773,8 @@ const {
   extraPhotos,
   isUrgent,
   isTopListing,
+  isAlreadyPublished,
+  hadTopOnLoad,
   toggleWorkMode,
   toggleRequiredDocument,
 } = form
@@ -782,25 +784,29 @@ const planTierCosts = computed(() =>
 )
 
 const topListingCredits = computed(() =>
-  isTopListing.value
-    ? getPlanTierCreditCost(
-        planTierCosts.value,
-        billingPlanSlug.value,
-        'topOfCategory7Days',
-      )
-    : 0,
+  getPlanTierCreditCost(
+    planTierCosts.value,
+    billingPlanSlug.value,
+    'topOfCategory7Days',
+  ),
+)
+
+const topCreditsNeeded = computed(() =>
+  isTopListing.value && !hadTopOnLoad.value ? topListingCredits.value : 0,
 )
 
 const topListingCostHint = computed(() => {
-  const n = topListingCredits.value
+  const n = topCreditsNeeded.value
   if (n < 1) return S.jobTopListingHint
   return `${S.jobTopListingHint} (${creditCountLabel(n)}).`
 })
 
 const publishCredits = computed(() => {
   const action = isUrgent.value ? 'publishUrgentJob' : 'publishJobMonth'
-  const base = getPlanTierCreditCost(planTierCosts.value, billingPlanSlug.value, action)
-  return base + topListingCredits.value
+  const base = isAlreadyPublished.value
+    ? 0
+    : getPlanTierCreditCost(planTierCosts.value, billingPlanSlug.value, action)
+  return base + topCreditsNeeded.value
 })
 const publishCostLabel = computed(() => {
   const n = publishCredits.value
@@ -1106,19 +1112,6 @@ async function confirmPublish(): Promise<void> {
   await submitJob(pendingDraft.value)
 }
 
-async function applyTopListingAfterSave(isDraft: boolean): Promise<string | null> {
-  if (isDraft || !isTopListing.value) {
-    return null
-  }
-  const topRes = await api<Job>(`/api/jobs/${props.jobId}/top-listing`, {
-    method: 'POST',
-  })
-  if (!topRes.ok) {
-    return parseApiErrorMessage(topRes.body, 'Topovanie sa nepodarilo aktivovať.')
-  }
-  return null
-}
-
 async function submitJob(isDraft: boolean): Promise<void> {
   error.value = null
   const plain = richEditorRef.value?.getPlainText() ?? ''
@@ -1143,13 +1136,6 @@ async function submitJob(isDraft: boolean): Promise<void> {
         showActionError(parseApiErrorMessage(res.body, S.saveFailed))
       }
       return
-    }
-    if (!isDraft) {
-      const topErr = await applyTopListingAfterSave(isDraft)
-      if (topErr) {
-        showActionError(topErr)
-        return
-      }
     }
     await navigateTo({ path: props.hubRoute }, { replace: true })
   } catch (err) {

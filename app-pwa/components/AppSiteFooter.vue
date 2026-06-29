@@ -87,10 +87,10 @@
             {{ S.footerGuides }}
           </h3>
           <ul class="m-0 flex list-none flex-col gap-2.5 p-0">
-            <li v-for="(label, index) in tutorialLinkLabels" :key="index">
-              <span :class="footerGuideLabelClass">
-                {{ label }}
-              </span>
+            <li v-for="item in footerGuideItems" :key="item.slug">
+              <NuxtLink :to="ROUTES.blogPost(item.slug)" :class="footerLinkClass">
+                {{ item.label }}
+              </NuxtLink>
             </li>
           </ul>
         </nav>
@@ -234,9 +234,6 @@ const footerHeadingClass =
 const footerLinkClass =
   'font-dmSans text-[15px] font-medium leading-normal text-marketing-abLink no-underline transition-colors hover:text-marketing-abGreen focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marketing-green/40'
 
-const footerGuideLabelClass =
-  'font-dmSans text-[15px] font-medium leading-normal text-marketing-abLink'
-
 const newsletterInputClass =
   'h-11 min-h-[44px] w-full min-w-0 rounded-xl border border-black/10 bg-white px-4 font-dmSans text-[15px] font-normal text-marketing-abInk outline-none placeholder:font-dmSans placeholder:font-normal placeholder:text-black/30 focus-visible:border-marketing-abGreen focus-visible:ring-2 focus-visible:ring-marketing-green/20'
 
@@ -266,13 +263,12 @@ function openFooterCookieSettings(): void {
 const { phase: newsletterPhase, submit: submitNewsletter, resetPhase: resetNewsletterPhase } =
   useNewsletterSubscribe()
 
-const tutorialLinkLabels = [
-  S.footerGuideHowItWorks,
-  S.footerGuideHowToRegister,
-  S.footerGuideCreateService,
-  S.footerGuideCreateJob,
-  S.footerGuideCreateProfile,
-  S.footerGuideTopServiceOrJob,
+const footerGuideItems = [
+  { slug: 'ako-topovat-sluzbu', label: S.footerGuideTopService },
+  { slug: 'ako-propagovat-sluzbu', label: S.footerGuidePromoteService },
+  { slug: 'ako-vytvorit-pracovnu-ponuku', label: S.footerGuideCreateJob },
+  { slug: 'ako-topovat-pracovnu-ponuku', label: S.footerGuideTopJob },
+  { slug: 'ako-sa-registrovat-na-jobbie', label: S.footerGuideRegisterJobbie },
 ] as const
 
 const newsletterName = ref<string>('')

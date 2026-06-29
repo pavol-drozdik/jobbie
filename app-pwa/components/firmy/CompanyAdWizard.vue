@@ -109,7 +109,7 @@
               <AppFormDropdown
                 :model-value="form.region ?? ''"
                 :options="krajOptions"
-                :placeholder="S.selectCategory"
+                :placeholder="S.selectRegion"
                 @update:model-value="form.region = $event || null"
               />
             </div>
@@ -187,13 +187,6 @@
                 </div>
               </div>
             </div>
-            <label class="flex is-clickable items-center gap-2 text-sm font-medium text-black/80">
-              <AppCheckbox
-                :model-value="form.price_negotiable"
-                @update:model-value="(checked) => { form.price_negotiable = checked; onPriceNegotiableChange(); }"
-              />
-              {{ S.firmyPriceNegotiable }}
-            </label>
             <div class="flex flex-col gap-2">
               <label class="field-label">{{ S.firmyPriceNote }}</label>
               <textarea v-model="form.price_note" rows="3" class="addjob-textarea" :placeholder="S.firmyPriceNotePh" />
@@ -203,7 +196,7 @@
               <AppFormDropdown
                 :model-value="form.availability ?? ''"
                 :options="availabilityOptions"
-                :placeholder="S.selectCategory"
+                :placeholder="S.selectAvailability"
                 @update:model-value="form.availability = $event || null"
               />
             </div>
@@ -461,7 +454,7 @@ const {
   coverPhoto,
   durationMonths,
   isTopListing,
-  topListingCredits,
+  topCreditsNeeded,
   loadBillingCatalog,
   loadBillingAccount,
   saving,
@@ -480,7 +473,6 @@ const {
   removeGalleryAt,
   updateGalleryCaption,
   toggleServiceArea,
-  onPriceNegotiableChange,
   showPriceAmounts,
 } = useCompanyAdForm({ mode: 'edit', adId: toRef(props, 'adId') })
 
@@ -498,7 +490,7 @@ const categoryTriggerLabel = computed(() =>
 const sliderUnitLabel = computed(() => SK_MONTH_UNITS[durationMonths.value - 1] ?? 'mesiacov')
 
 const firmyTopListingHint = computed(() => {
-  const n = topListingCredits.value
+  const n = topCreditsNeeded.value
   if (n < 1) return S.firmyTopListingHint
   return `${S.firmyTopListingHint} (+${n} ${S.credits}).`
 })

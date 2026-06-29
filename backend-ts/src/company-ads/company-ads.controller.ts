@@ -934,7 +934,23 @@ export class CompanyAdsController {
 
     if (Object.keys(patch).length === 0) {
 
-      return mapAdForViewer(ad, user);
+      if (
+        wantsTopListing(body.want_top_listing) &&
+        isCompanyAdLiveForTop(ad.status)
+      ) {
+        try {
+          await this.topPromotion.applyCompanyAdTopCategoryIfRequested(
+            user.id,
+            id,
+            true,
+            'company_ad_update_top',
+          );
+        } catch {
+          /* Save succeeds; client may retry save with top flag. */
+        }
+      }
+
+      return this.enrichAdTopBadge(mapAdForViewer(ad, user));
 
     }
 
@@ -971,7 +987,7 @@ export class CompanyAdsController {
           'company_ad_update_top',
         );
       } catch {
-        /* Save succeeds; client may retry POST .../top-listing. */
+        /* Save succeeds; client may retry save with top flag. */
       }
     }
 
