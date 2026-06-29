@@ -337,6 +337,25 @@ sudo apt-get upgrade
 
 Before major upgrades, confirm a recent R2 backup exists and take a Websupport VPS snapshot.
 
+### Scale Nest on one VPS
+
+When Infra shows **one hot CPU core**, spare RAM, and **`backend`** (not Typesense) is the bottleneck, run multiple Nest containers on the same host.
+
+**Full runbook:** [docs/staging-production-manual.md](../docs/staging-production-manual.md) §17 — *Scale Nest API on one VPS* (`REDIS_URL`, `BACKEND_SCALE`, `docker compose up -d --scale backend=N`).
+
+Quick reference:
+
+```bash
+# .env — persisted across deploy_backend.sh
+BACKEND_SCALE=2
+
+# .env.backend — required when BACKEND_SCALE > 1
+REDIS_URL=redis://redis:6379   # or managed rediss://...
+
+cd /srv/nestjs-typesense
+sudo docker compose up -d --scale backend=2
+```
+
 ## Deploy Backend Update
 
 **Preferred:** push a `backend-v*` tag or run **backend-ghcr** in GitHub Actions (staging auto-deploy when secrets are set).

@@ -31,7 +31,9 @@
 
 ## Retention (account deletion)
 
-Soft delete: `profiles.is_deleted`, `deleted_at`, auth user banned and email replaced. OAuth/social rows in `auth.identities` are removed via `unlink_auth_identities_for_closed_account` so the same Google account can register again as a new `auth.users` row (hard `deleteUser` is not used — `profiles.id` references `auth.users` with `ON DELETE CASCADE`). Job offers deactivated; CVs hidden (`visible_to_employers = false`); contact fields scrubbed on `cv_personal_info`. Ledger/audit rows may be retained for legal obligations.
+**Voluntary erasure** (`POST /api/profiles/me/delete`) and **admin close-account** permanently delete `auth.users` via `auth.admin.deleteUser` after canceling Stripe, deactivating public listings, and withdrawing marketing consent. The `profiles` row and most user-owned data cascade-delete; `audit_events` retain the subject id with `actor_user_id` nulled on auth delete. Ledger rows tied to the profile cascade with `credit_ledger.user_id`.
+
+**Admin suspend** (`POST …/suspend`) is enforcement only: `account_status: suspended`, auth ban, sessions revoked — the account is **not** deleted and OAuth/email login remains blocked until unsuspend.
 
 ## Testing checklist
 
@@ -40,7 +42,7 @@ Soft delete: `profiles.is_deleted`, `deleted_at`, auth user banned and email rep
 3. Public job with `show_exact_address: false`: no street in API and `job_offers_public`.
 4. Job alert email: pause + unsubscribe links work without login.
 5. Export ZIP opens and contains profile + CV JSON.
-6. Delete account: cannot log in with password (generic invalid credentials); Google can register again after identity unlink; CV not in employer database.
+6. Delete account: auth user removed; same email/Google can register again; audit row may remain.
 
 ## Cursor rule
 

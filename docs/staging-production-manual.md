@@ -794,6 +794,105 @@ When `docker-compose.yml` or `Caddyfile` changes in git:
 sudo docker compose up -d
 ```
 
+### Scale Nest API on one VPS (multiple `backend` containers)
+
+Use this when **JOBBIE Admin Infra** shows **one CPU core near 100%** while other cores stay low, **RAM still has headroom** (~1 GB free per extra Nest replica), and **Docker stats** show the **`backend`** container is hot — not Typesense or Caddy.
+
+Do **not** scale Nest on the same box when **all cores** or **RAM** are already saturated; upgrade the VPS or add a second host instead.
+
+#### Prerequisites
+
+1. **`REDIS_URL` in `.env.backend`** — required for **chat (Socket.IO)** when more than one Nest process runs. HTTP/cookies stay stateless; websockets need the Redis adapter ([deployment.md](./deployment.md) — Horizontal scaling).
+2. **Enough CPU/RAM** — rule of thumb: **4 vCPU / 8 GB** → at most **2** backends; **8 vCPU / 16 GB** → up to **3–4**, leaving room for Typesense + Caddy.
+
+#### Redis (pick one)
+
+**Managed (recommended for production):** Upstash, Redis Cloud, etc. Set in `.env.backend`:
+
+```bash
+REDIS_URL=rediss://:PASSWORD@HOST:PORT
+```
+
+**On the same VPS (staging / simple prod):** create `compose.override.yml` next to `docker-compose.yml` (server-local only, not committed):
+
+```yaml
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - web
+
+  backend:
+    depends_on:
+      redis:
+        condition: service_started
+```
+
+Then in `.env.backend`:
+
+```bash
+REDIS_URL=redis://redis:6379
+```
+
+Apply once:
+
+```bash
+cd /srv/nestjs-typesense
+sudo docker compose up -d
+```
+
+#### Scale backends
+
+Set replica count in **`.env`** (used by `scripts/deploy_backend.sh` on every deploy):
+
+```bash
+# Default 1 — set 2 or 3 when scaling on one VPS
+BACKEND_SCALE=2
+```
+
+Scale immediately:
+
+```bash
+cd /srv/nestjs-typesense
+sudo docker compose up -d --scale backend=2
+sudo docker compose ps
+```
+
+**Caddy** already uses `reverse_proxy backend:8000` in `Caddyfile`. Docker Compose DNS **round-robins** across all `backend` containers — no Caddy edit needed.
+
+#### Verify
+
+```bash
+sudo docker compose ps
+sudo docker stats --no-stream
+curl -fsS "https://YOUR_API_DOMAIN/health"
+```
+
+In **JOBBIE Admin → Infra**: per-core CPU chart should spread load; **Kontajnery** should reflect higher total backend CPU. Smoke-test **chat** in the PWA.
+
+#### Roll back to one instance
+
+```bash
+# In .env
+BACKEND_SCALE=1
+
+cd /srv/nestjs-typesense
+sudo docker compose up -d --scale backend=1
+```
+
+#### Deploys and scale
+
+`scripts/deploy_backend.sh` (GitHub Actions and manual) reads **`BACKEND_SCALE`** from `/srv/nestjs-typesense/.env` (default **1**) and runs `docker compose up -d --scale backend=$BACKEND_SCALE --wait backend`.
+
+Plain `docker compose up -d backend` **without** `--scale` can collapse back to **one** container — prefer `deploy_backend.sh` or always pass `--scale`.
+
+#### When this is not enough
+
+- **Typesense** pegged → more RAM, tune search, or separate search host — not more Nest.
+- **All cores busy** → bigger VPS or second machine + load balancer ([deployment.md](./deployment.md)).
+- **Supabase** limits → upgrade Supabase plan / pooler, not Nest count.
+
 ### Backups
 
 Optional: Cloudflare R2 + `backup_manager.py`. See [README-DEPLOYMENT.md](../websupport-vps-deployment/README-DEPLOYMENT.md) (backup encryption, nightly timer, restore).
@@ -894,5 +993,6 @@ Prod API:    api.jobbie.sk (after PROD_* secrets + VPS ready)
 Image tags:  staging-YYYY.MM.DD-<sha7>  |  YYYY.MM.DD-<sha7>
 VPS path:    /srv/nestjs-typesense/
 Compose:     docker compose pull && docker compose up -d
+Scale API:   BACKEND_SCALE=2 in .env + REDIS_URL in .env.backend (see §17)
 Health:      curl https://<api-domain>/health
 ```

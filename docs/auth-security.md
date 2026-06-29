@@ -177,7 +177,7 @@ Google OAuth uses a separate callback on Supabase (`https://<project-ref>.supaba
 
 **PKCE:** `/auth/callback` skips redundant `exchangeCodeForSession` when a session already exists (`detectSessionInUrl`); login/register set persistent PKCE storage before OAuth redirect.
 
-**Account closure:** `POST /api/profiles/me/delete` bans auth, replaces email, and calls `unlink_auth_identities_for_closed_account` so OAuth providers can register a fresh user. Password login with the freed email shows generic invalid-credentials copy.
+**Account closure:** `POST /api/profiles/me/delete` permanently deletes the auth user (`auth.admin.deleteUser`) after billing/listing teardown — same email and Google can register as a new account. **Admin suspend** bans without deletion (`account_status: suspended`).
 
 If **Confirm email** is enabled in the Supabase project, users cannot `signInWithPassword` until the address is confirmed; the PWA shows a dedicated message (`loginEmailNotConfirmed`).
 

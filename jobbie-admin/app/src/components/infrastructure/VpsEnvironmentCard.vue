@@ -85,6 +85,7 @@ function containerName(row: { Name?: string; Service?: string }): string {
         :env-id="env.id"
         :enabled="sshOk"
         :refresh-at="env.collected_at"
+        :current-cpu-per-core="env.host.cpu_per_core"
       />
 
       <div class="infra-section">

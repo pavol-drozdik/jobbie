@@ -40,7 +40,6 @@ import {
 } from './profiles.dto';
 import { ProfileOpenChatService } from './profile-open-chat.service';
 import { JwtVerifyService } from '../auth/jwt-verify.service';
-import { AuthSecurityService } from '../auth/auth-security.service';
 import {
   mergeNotificationPreferences,
   serializeNotificationPreferencesForClient,
@@ -53,14 +52,10 @@ import { NewsletterService } from '../newsletter/newsletter.service';
 import { ConsentEventsService } from '../consent/consent-events.service';
 import { DataExportService } from '../data-export/data-export.service';
 import { normalizeSkIco } from '../registry/sk-rpo-ico.util';
-import { randomBytes } from 'crypto';
 import {
-  DELETED_ACCOUNT_DISPLAY_NAME,
   displayNameFromProfileRow as displayNameFromProfileRowUtil,
 } from './profile-display.util';
-import { AccountClosureListingsService } from './account-closure-listings.service';
-
-const CLOSED_EMPLOYER_JOB_LABEL = 'Zverejňovateľ odstránil účet';
+import { AccountPermanentDeletionService } from './account-permanent-deletion.service';
 
 const PROFILE_COLUMNS_LEGACY =
   'id,role,app_role,extra_permission_scopes,phone_e164,phone_verified_at,display_name,company_name,first_name,last_name,registered_office,' +
@@ -205,7 +200,6 @@ export class ProfilesController {
   constructor(
     private supabase: SupabaseService,
     private searchIndexing: SearchIndexingService,
-    private accountClosureListings: AccountClosureListingsService,
     private stripeService: StripeService,
     private subscriptionCredits: SubscriptionCreditsService,
     private audit: AuditService,
@@ -215,7 +209,7 @@ export class ProfilesController {
     private dataExport: DataExportService,
     private profileOpenChat: ProfileOpenChatService,
     private jwtVerify: JwtVerifyService,
-    private authSecurity: AuthSecurityService,
+    private accountPermanentDeletion: AccountPermanentDeletionService,
   ) {}
 
   @Get('me')
@@ -283,145 +277,15 @@ export class ProfilesController {
     res.send(zip);
   }
 
-  // SECURITY: scrubs profile/CVs, deactivates jobs/alerts, bans auth user (service role).
+  // SECURITY: cancels billing, hides listings, hard-deletes auth.users (GDPR erasure).
   @Post('me/delete')
   async deleteMe(
     @CurrentUserDecorator() user: CurrentUser,
   ): Promise<{ deleted: boolean }> {
-    await this.stripeService.cancelStripeSubscriptionBeforeAccountDeletion(
-      user.id,
-    );
-    const client = this.supabase.getClient();
-    await this.accountClosureListings.deactivateForClosedAccount(
-      user.id,
-      CLOSED_EMPLOYER_JOB_LABEL,
-    );
-    await this.searchIndexing.removeProfileById(user.id);
-    const deletedAt = new Date().toISOString();
-    await client
-      .from('job_email_alerts')
-      .update({ is_active: false })
-      .eq('user_id', user.id);
-    const { data: ownedCvs } = await client
-      .from('cvs')
-      .select('id')
-      .eq('user_id', user.id);
-    const cvIds = (ownedCvs ?? []).map((r) => String((r as { id: string }).id));
-    if (cvIds.length > 0) {
-      await client
-        .from('cvs')
-        .update({ visible_to_employers: false })
-        .in('id', cvIds);
-      await client
-        .from('cv_personal_info')
-        .update({
-          email: null,
-          phone: null,
-          linkedin_url: null,
-          address_street: null,
-          birth_date: null,
-          gender: null,
-        })
-        .in('cv_id', cvIds);
-    }
-    const { data: authBeforeDelete } = await client.auth.admin.getUserById(user.id);
-    const emailNorm = authBeforeDelete?.user?.email?.trim().toLowerCase();
-    if (emailNorm) {
-      await client
-        .from('subscribers')
-        .update({ consent: false })
-        .eq('email', emailNorm);
-    }
-    const { error: scrubErr } = await client
-      .from('profiles')
-      .update({
-        is_deleted: true,
-        deleted_at: deletedAt,
-        account_status: 'closed',
-        display_name: DELETED_ACCOUNT_DISPLAY_NAME,
-        company_name: null,
-        first_name: null,
-        last_name: null,
-        phone_e164: null,
-        phone_verified_at: null,
-        bio: null,
-        education: null,
-        skills: null,
-        job_interests: null,
-        location: null,
-        description: null,
-        sector: null,
-        experience: null,
-        registration_number: null,
-        website: null,
-        avatar_url: null,
-        logo_url: null,
-        tax_id: null,
-        vat_id: null,
-        registered_office: null,
-        notification_preferences: {
-          new_applications: false,
-          messages: false,
-          reviews: false,
-        },
-        chat_identity_public_key: null,
-        chat_identity_key_updated_at: null,
-        public_show_account_email: false,
-        public_profile_enabled: false,
-        public_show_phone: false,
-        public_show_address: false,
-        public_allow_platform_contact: false,
-        public_show_in_company_search: false,
-        marketing_processing_consent: false,
-        billing_details: {},
-      })
-      .eq('id', user.id);
-    if (scrubErr) {
-      this.logger.error(
-        `Profile scrub on account closure failed: ${scrubErr.message}`,
-      );
-      throw new InternalServerErrorException(
-        'Nepodarilo sa dokončiť odstránenie účtu.',
-      );
-    }
-    await client
-      .from('api_user_sessions')
-      .update({ revoked_at: new Date().toISOString() })
-      .eq('user_id', user.id)
-      .is('revoked_at', null);
-
-    const randomPassword = randomBytes(32).toString('hex');
-    const deadEmail = `deleted+${user.id}@noreply.jobbie.invalid`;
-    const { error: authErr } = await client.auth.admin.updateUserById(user.id, {
-      email: deadEmail,
-      password: randomPassword,
-      ban_duration: '876000h',
-    });
-    if (authErr) {
-      this.logger.error(
-        `auth.admin.updateUserById (close account) failed for ${user.id}: ${authErr.message}`,
-      );
-      throw new InternalServerErrorException(
-        'Nepodarilo sa zmazať účet. Skúste znova alebo kontaktujte podporu.',
-      );
-    }
-    await this.authSecurity.unlinkAuthIdentitiesForClosedAccount(user.id);
-    if (emailNorm) {
-      await this.newsletter.withdrawMarketingForUser(user.id);
-    }
-    await this.audit.recordAuditEvent({
+    return this.accountPermanentDeletion.permanentlyDeleteAccount(user.id, {
       actorUserId: user.id,
-      actorIp: null,
-      actorUserAgent: null,
-      sessionId: null,
-      deviceId: null,
       eventType: 'account.deleted',
-      subjectType: 'profile',
-      subjectId: user.id,
-      payload: { deleted_at: deletedAt },
     });
-    this.jwtVerify.invalidateProfileCache(user.id);
-    return { deleted: true };
   }
 
   @Patch('me')

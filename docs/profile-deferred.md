@@ -10,7 +10,7 @@ Settings and API support **avatar URL** and **logo URL** only. Uploading to Supa
 
 ## Account deletion
 
-`POST /api/profiles/me/delete` is **implemented**. It soft-deletes the profile (PII scrub, `is_deleted`, `deleted_at`), deactivates job offers and job email alerts, hides CVs from employers, scrubs CV contact fields, removes newsletter consent, cancels Stripe subscription, revokes sessions, and bans the auth user with a dead email address. Hard delete of `auth.users` and full cascade of chat messages are not performed (FK and retention policy).
+`POST /api/profiles/me/delete` permanently deletes the auth user (`auth.admin.deleteUser`) after canceling Stripe, deactivating listings, and withdrawing marketing consent. The profile and user-owned rows cascade-delete. Admin **suspend** (not delete) bans the account for moderation.
 
 ## Data export
 

@@ -11,6 +11,7 @@ import { ChatModule } from '../chat/chat.module';
 import { ProfileOpenChatService } from './profile-open-chat.service';
 import { ProfileActivityAuthorizationService } from './profile-activity-authorization.service';
 import { AccountClosureListingsService } from './account-closure-listings.service';
+import { AccountPermanentDeletionService } from './account-permanent-deletion.service';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { AccountClosureListingsService } from './account-closure-listings.servic
     ProfileOpenChatService,
     ProfileActivityAuthorizationService,
     AccountClosureListingsService,
+    AccountPermanentDeletionService,
   ],
   exports: [ProfileActivityAuthorizationService],
 })

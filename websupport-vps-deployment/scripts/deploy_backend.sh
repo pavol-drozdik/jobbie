@@ -89,8 +89,21 @@ fi
 
 cd "${DEPLOY_ROOT}"
 export BACKEND_IMAGE="${NEW_IMAGE}"
+
+BACKEND_SCALE="${BACKEND_SCALE:-}"
+if [[ -z "${BACKEND_SCALE}" ]] && [[ -f "${ENV_FILE}" ]]; then
+  BACKEND_SCALE="$(grep -E '^BACKEND_SCALE=' "${ENV_FILE}" | head -n1 | cut -d= -f2- | tr -d '"' | tr -d "'" | xargs)"
+  BACKEND_SCALE="$(trim_env "${BACKEND_SCALE}")"
+fi
+BACKEND_SCALE="${BACKEND_SCALE:-1}"
+if ! [[ "${BACKEND_SCALE}" =~ ^[0-9]+$ ]] || [[ "${BACKEND_SCALE}" -lt 1 ]]; then
+  echo "BACKEND_SCALE must be a positive integer (got: ${BACKEND_SCALE})" >&2
+  exit 1
+fi
+echo "Backend replicas: ${BACKEND_SCALE}"
+
 compose_cmd pull backend
-if ! compose_cmd up -d --wait --wait-timeout 180 backend; then
+if ! compose_cmd up -d --scale "backend=${BACKEND_SCALE}" --wait --wait-timeout 180 backend; then
   echo "docker compose --wait failed (backend container unhealthy or timed out)." >&2
   compose_cmd ps backend || true
   compose_cmd logs backend --tail 120 || true

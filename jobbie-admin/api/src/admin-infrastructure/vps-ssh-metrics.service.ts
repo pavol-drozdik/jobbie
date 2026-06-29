@@ -7,7 +7,7 @@ import type { VpsHostMetricsDto } from './admin-infrastructure.dto';
 import type { VpsEnvironmentConfig } from './vps-environment.config';
 
 const readFileAsync = promisify(readFile);
-const SSH_TIMEOUT_MS = 15_000;
+const SSH_TIMEOUT_MS = 20_000;
 
 @Injectable()
 export class VpsSshMetricsService {
