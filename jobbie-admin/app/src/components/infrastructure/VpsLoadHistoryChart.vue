@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { adminApi } from '../../composables/adminApi'
 import { useAdminChart } from '../../composables/useAdminChart'
 import type { InfraMetricsRange, VpsMetricsHistory } from '../../types/infrastructure'
@@ -8,6 +8,7 @@ const props = defineProps<{
   envId: 'staging' | 'production'
   enabled: boolean
   refreshAt?: string | null
+  currentCpuPerCore?: number[]
 }>()
 
 const ranges: Array<{ id: InfraMetricsRange; label: string }> = [
@@ -21,12 +22,22 @@ const range = ref<InfraMetricsRange>('24h')
 const loading = ref(false)
 const error = ref<string | null>(null)
 const history = ref<VpsMetricsHistory | null>(null)
-const canvasRef = ref<HTMLCanvasElement | null>(null)
-const { mountLine, destroyAll } = useAdminChart()
+const overviewCanvasRef = ref<HTMLCanvasElement | null>(null)
+const coresCanvasRef = ref<HTMLCanvasElement | null>(null)
+const { mountLine, mountBar, destroyAll } = useAdminChart()
+
+const points = computed(() => history.value?.points ?? [])
+
+const hasCoreHistory = computed(() =>
+  points.value.some((p) => (p.cpu_per_core?.length ?? 0) > 0),
+)
+
+const hasLiveCores = computed(() => (props.currentCpuPerCore?.length ?? 0) > 0)
 
 async function loadHistory() {
   if (!props.enabled) {
     history.value = null
+    renderCharts()
     return
   }
   loading.value = true
@@ -39,11 +50,11 @@ async function loadHistory() {
   if (!res.ok) {
     error.value = res.body.slice(0, 200) || `HTTP ${res.status}`
     history.value = null
-    renderChart()
+    renderCharts()
     return
   }
   history.value = res.data ?? null
-  renderChart()
+  renderCharts()
 }
 
 function formatLabel(iso: string, selected: InfraMetricsRange): string {
@@ -54,22 +65,61 @@ function formatLabel(iso: string, selected: InfraMetricsRange): string {
   return d.toLocaleDateString('sk-SK', { day: 'numeric', month: 'numeric' })
 }
 
-function renderChart() {
+function renderCharts() {
   destroyAll()
-  const points = history.value?.points ?? []
-  if (!canvasRef.value || points.length === 0) {
-    return
-  }
-  const labels = points.map((p) => formatLabel(p.t, range.value))
-  mountLine(
-    canvasRef.value,
-    labels,
-    [
-      { label: 'CPU load', data: points.map((p) => p.load_pct) },
-      { label: 'RAM', data: points.map((p) => p.mem_pct) },
-    ],
-    { yMax: 100, yTickSuffix: '%' },
-  )
+  void nextTick().then(() => {
+    const rows = points.value
+
+    if (overviewCanvasRef.value && rows.length > 0) {
+      const labels = rows.map((p) => formatLabel(p.t, range.value))
+      mountLine(
+        overviewCanvasRef.value,
+        labels,
+        [
+          { label: 'CPU load (priemer)', data: rows.map((p) => p.load_pct) },
+          { label: 'RAM', data: rows.map((p) => p.mem_pct) },
+        ],
+        { yMax: 100, yTickSuffix: '%' },
+      )
+    }
+
+    if (!coresCanvasRef.value) {
+      return
+    }
+
+    if (hasCoreHistory.value && rows.length > 0) {
+      const labels = rows.map((p) => formatLabel(p.t, range.value))
+      const coreCount = Math.max(
+        ...rows.map((p) => p.cpu_per_core?.length ?? 0),
+      )
+      const coreDatasets = Array.from({ length: coreCount }, (_, i) => ({
+        label: `CPU ${i}`,
+        data: rows.map((p) =>
+          Math.min(100, Math.max(0, p.cpu_per_core?.[i] ?? 0)),
+        ),
+      }))
+      mountLine(coresCanvasRef.value, labels, coreDatasets, {
+        yMax: 100,
+        yTickSuffix: '%',
+        fill: false,
+      })
+      return
+    }
+
+    const live = props.currentCpuPerCore ?? []
+    if (live.length > 0) {
+      mountBar(
+        coresCanvasRef.value,
+        live.map((_, i) => `CPU ${i}`),
+        [
+          {
+            label: 'Využitie',
+            data: live.map((n) => Math.min(100, Math.max(0, Math.round(n)))),
+          },
+        ],
+      )
+    }
+  })
 }
 
 onMounted(() => {
@@ -78,6 +128,10 @@ onMounted(() => {
 
 watch([range, () => props.enabled, () => props.refreshAt], () => {
   void loadHistory()
+})
+
+watch(() => props.currentCpuPerCore, () => {
+  renderCharts()
 })
 </script>
 
@@ -102,17 +156,50 @@ watch([range, () => props.enabled, () => props.refreshAt], () => {
     </div>
 
     <p v-if="!enabled" class="muted infra-hint">
-      Graf sa zobrazí po úspešnom SSH načítaní host metrík.
+      Grafy sa zobrazia po úspešnom SSH načítaní host metrík.
     </p>
     <p v-else-if="loading && !history" class="muted infra-hint">Načítavam históriu…</p>
     <p v-else-if="error" class="infra-error">{{ error }}</p>
-    <p v-else-if="history && history.points.length === 0" class="muted infra-hint">
-      Zatiaľ žiadne dáta. História sa ukladá pri obnove (max. každé 4 min) a na pozadí každých 5 min,
-      kým beží admin API.
-    </p>
-    <div v-else class="chart-box chart-box--sm">
-      <canvas ref="canvasRef" />
-    </div>
+    <template v-else>
+      <p
+        v-if="points.length === 0 && !hasLiveCores"
+        class="muted infra-hint"
+      >
+        Zatiaľ žiadne dáta. História sa ukladá pri obnove (max. každé 4 min) a na pozadí každých
+        5 min, kým beží admin API.
+      </p>
+
+      <div
+        v-if="points.length > 0 || hasLiveCores"
+        class="infra-charts"
+      >
+        <div v-if="points.length > 0" class="infra-chart-block">
+          <h4 class="infra-chart-block__title">CPU a RAM</h4>
+          <div class="chart-box chart-box--sm">
+            <canvas ref="overviewCanvasRef" />
+          </div>
+        </div>
+
+        <div v-if="hasCoreHistory || hasLiveCores" class="infra-chart-block">
+          <h4 class="infra-chart-block__title">Jadrá CPU</h4>
+          <p v-if="!hasCoreHistory && hasLiveCores" class="muted infra-chart-block__hint">
+            Okamžitá vzorka — časový graf sa naplní po ďalších obnoveniach.
+          </p>
+          <p
+            v-else-if="!hasCoreHistory && !hasLiveCores"
+            class="muted infra-chart-block__hint"
+          >
+            Per-core dáta zatiaľ nie sú k dispozícii.
+          </p>
+          <div
+            v-if="hasCoreHistory || hasLiveCores"
+            class="chart-box chart-box--sm"
+          >
+            <canvas ref="coresCanvasRef" />
+          </div>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -152,5 +239,24 @@ watch([range, () => props.enabled, () => props.refreshAt], () => {
 .infra-hint {
   margin: 0;
   font-size: 0.85rem;
+}
+
+.infra-charts {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+.infra-chart-block__title {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink2);
+}
+
+.infra-chart-block__hint {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
 }
 </style>

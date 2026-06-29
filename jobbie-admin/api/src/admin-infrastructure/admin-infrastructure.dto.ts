@@ -31,6 +31,8 @@ export type VpsHostMetricsDto = {
   load_1: number;
   load_5: number;
   load_15: number;
+  /** Instantaneous per-core utilization % (1s sample from /proc/stat). */
+  cpu_per_core?: number[];
   memory_total_bytes: number;
   memory_available_bytes: number;
   memory_used_bytes: number;
@@ -81,6 +83,8 @@ export type VpsMetricsHistoryPointDto = {
   t: string;
   load_pct: number;
   mem_pct: number;
+  max_core_pct?: number;
+  cpu_per_core?: number[];
 };
 
 export type VpsMetricsHistoryDto = {

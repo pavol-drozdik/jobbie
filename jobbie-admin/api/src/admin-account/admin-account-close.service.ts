@@ -4,11 +4,9 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { randomBytes } from 'crypto';
 import { SupabaseService } from '../supabase/supabase.service';
 import { AuditService } from '../audit/audit.service';
 
-const DELETED_ACCOUNT_DISPLAY_NAME = 'Zmazaný účet';
 const CLOSED_EMPLOYER_JOB_LABEL = 'Zamestnávateľ — účet ukončený';
 const CLOSE_CONFIRM_PHRASE = 'ZMAZAT UCET';
 
@@ -21,6 +19,7 @@ export class AdminAccountCloseService {
     private readonly audit: AuditService,
   ) {}
 
+  /** Permanent GDPR erasure — not admin suspend/ban (see suspend endpoint). */
   async closeAccount(
     targetUserId: string,
     adminUserId: string,
@@ -35,14 +34,11 @@ export class AdminAccountCloseService {
     const client = this.supabase.getClient();
     const { data: profile } = await client
       .from('profiles')
-      .select('id, is_deleted, account_status')
+      .select('id')
       .eq('id', targetUserId)
       .maybeSingle();
     if (!profile) {
       throw new BadRequestException('User not found');
-    }
-    if ((profile as { is_deleted?: boolean }).is_deleted === true) {
-      throw new BadRequestException('Account already closed');
     }
 
     await client
@@ -63,11 +59,10 @@ export class AdminAccountCloseService {
       .eq('status', 'active');
     if (adsErr) {
       this.logger.warn(
-        `company_ads archive on account closure: ${adsErr.message}`,
+        `company_ads archive on account deletion: ${adsErr.message}`,
       );
     }
 
-    const deletedAt = new Date().toISOString();
     await client
       .from('job_email_alerts')
       .update({ is_active: false })
@@ -105,96 +100,30 @@ export class AdminAccountCloseService {
         .eq('email', emailNorm);
     }
 
-    const { error: scrubErr } = await client
-      .from('profiles')
-      .update({
-        is_deleted: true,
-        deleted_at: deletedAt,
-        account_status: 'closed',
-        display_name: DELETED_ACCOUNT_DISPLAY_NAME,
-        company_name: null,
-        first_name: null,
-        last_name: null,
-        phone_e164: null,
-        phone_verified_at: null,
-        bio: null,
-        education: null,
-        skills: null,
-        job_interests: null,
-        location: null,
-        description: null,
-        sector: null,
-        experience: null,
-        registration_number: null,
-        website: null,
-        avatar_url: null,
-        logo_url: null,
-        tax_id: null,
-        vat_id: null,
-        registered_office: null,
-        notification_preferences: {
-          new_applications: false,
-          messages: false,
-          reviews: false,
-        },
-        chat_identity_public_key: null,
-        chat_identity_key_updated_at: null,
-        public_show_account_email: false,
-        public_profile_enabled: false,
-        public_show_phone: false,
-        public_show_address: false,
-        public_allow_platform_contact: false,
-        public_show_in_company_search: false,
-        marketing_processing_consent: false,
-        billing_details: {},
-      })
-      .eq('id', targetUserId);
-
-    if (scrubErr) {
-      this.logger.error(`Profile scrub failed: ${scrubErr.message}`);
-      throw new InternalServerErrorException('Account closure failed');
-    }
-
     await client
       .from('api_user_sessions')
       .update({ revoked_at: new Date().toISOString() })
       .eq('user_id', targetUserId)
       .is('revoked_at', null);
 
-    const deadEmail = `deleted+${targetUserId}@noreply.jobbie.invalid`;
-    const { error: authErr } = await client.auth.admin.updateUserById(
-      targetUserId,
-      {
-        email: deadEmail,
-        password: randomBytes(32).toString('hex'),
-        ban_duration: '876000h',
-      },
-    );
-    if (authErr) {
-      this.logger.error(`Auth ban failed: ${authErr.message}`);
-      throw new InternalServerErrorException('Account closure failed');
-    }
-
-    const { error: identityErr } = await client.rpc(
-      'unlink_auth_identities_for_closed_account',
-      { p_user_id: targetUserId },
-    );
-    if (identityErr) {
-      this.logger.error(`unlink_auth_identities failed: ${identityErr.message}`);
-      throw new InternalServerErrorException('Account closure failed');
-    }
-
-    void this.audit.recordAuditEvent({
+    const deletedAt = new Date().toISOString();
+    await this.audit.recordAuditEvent({
       actorUserId: adminUserId,
       actorIp: null,
       actorUserAgent: null,
       sessionId: null,
       deviceId: null,
-      eventType: 'admin.user.account_closed',
+      eventType: 'admin.user.account_deleted',
       subjectType: 'profile',
       subjectId: targetUserId,
-      payload: { deleted_at: deletedAt },
+      payload: { deleted_at: deletedAt, permanent: true },
     });
+
+    const { error: deleteErr } = await client.auth.admin.deleteUser(targetUserId);
+    if (deleteErr) {
+      this.logger.error(`auth.admin.deleteUser failed: ${deleteErr.message}`);
+      throw new InternalServerErrorException('Account deletion failed');
+    }
 
     return { closed: true };
   }

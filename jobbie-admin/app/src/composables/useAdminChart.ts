@@ -47,7 +47,20 @@ export function useAdminChart() {
   type LineOptions = {
     yMax?: number
     yTickSuffix?: string
+    /** When false, no dataset uses area fill (better for multi-line core charts). */
+    fill?: boolean
   }
+
+  const LINE_COLORS = [
+    CHART_GREEN,
+    '#3b82f6',
+    '#f59e0b',
+    '#8b5cf6',
+    '#ec4899',
+    '#14b8a6',
+    '#f97316',
+    '#6366f1',
+  ]
 
   function mountBar(
     canvas: HTMLCanvasElement,
@@ -87,7 +100,7 @@ export function useAdminChart() {
     datasets: Array<{ label: string; data: number[] }>,
     options: LineOptions = {},
   ): Chart {
-    const colors = [CHART_GREEN, '#3b82f6', '#f59e0b', '#8b5cf6']
+    const fillFirst = options.fill !== false
     const chart = new Chart(canvas, {
       type: 'line',
       data: {
@@ -95,9 +108,9 @@ export function useAdminChart() {
         datasets: datasets.map((d, i) => ({
           label: d.label,
           data: d.data,
-          borderColor: colors[i % colors.length],
+          borderColor: LINE_COLORS[i % LINE_COLORS.length],
           backgroundColor: CHART_GREEN_LIGHT,
-          fill: i === 0,
+          fill: fillFirst && i === 0,
           tension: 0.25,
           pointRadius: labels.length > 80 ? 0 : 2,
         })),

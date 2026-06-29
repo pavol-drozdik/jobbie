@@ -9,6 +9,8 @@ export type VpsMetricsHistoryPoint = {
   t: string;
   load_pct: number;
   mem_pct: number;
+  max_core_pct?: number;
+  cpu_per_core?: number[];
 };
 
 type StoredPoint = VpsMetricsHistoryPoint & {
@@ -80,12 +82,16 @@ export class VpsMetricsHistoryService implements OnModuleInit, OnModuleDestroy {
       host.memory_total_bytes > 0
         ? (host.memory_used_bytes / host.memory_total_bytes) * 100
         : 0;
+    const max_core_pct = maxCorePct(host.cpu_per_core);
+    const cpu_per_core = normalizeCoreSamples(host.cpu_per_core);
 
     const point: StoredPoint = {
       t: at.toISOString(),
       load_pct: round1(load_pct),
       mem_pct: round1(mem_pct),
       load_1: host.load_1,
+      ...(max_core_pct != null ? { max_core_pct } : {}),
+      ...(cpu_per_core ? { cpu_per_core } : {}),
     };
 
     series.push(point);
@@ -125,7 +131,7 @@ export class VpsMetricsHistoryService implements OnModuleInit, OnModuleDestroy {
         const rows = parsed[key];
         if (Array.isArray(rows)) {
           this.store[key] = this.pruneSeries(
-            rows.filter(isStoredPoint),
+            rows.filter(isStoredPoint).map(sanitizeStoredPoint),
           );
         }
       }
@@ -177,6 +183,68 @@ function round1(n: number): number {
   return Math.round(n * 10) / 10;
 }
 
+export function clampCorePct(n: number): number {
+  if (!Number.isFinite(n)) {
+    return 0;
+  }
+  return round1(Math.min(100, Math.max(0, n)));
+}
+
+export function maxCorePct(cores?: number[]): number | undefined {
+  if (!cores?.length) {
+    return undefined;
+  }
+  const valid = cores.filter((n) => Number.isFinite(n));
+  if (!valid.length) {
+    return undefined;
+  }
+  return round1(Math.max(...valid));
+}
+
+function normalizeCoreSamples(cores?: number[]): number[] | undefined {
+  if (!cores?.length) {
+    return undefined;
+  }
+  const valid = cores.filter((n) => Number.isFinite(n));
+  if (!valid.length) {
+    return undefined;
+  }
+  return valid.map((n) => clampCorePct(n));
+}
+
+function sanitizeStoredPoint(point: StoredPoint): StoredPoint {
+  if (!point.cpu_per_core?.length) {
+    return point;
+  }
+  const cpu_per_core = point.cpu_per_core.map((n) => clampCorePct(n));
+  const max_core_pct = maxCorePct(cpu_per_core);
+  return {
+    ...point,
+    cpu_per_core,
+    ...(max_core_pct != null ? { max_core_pct } : {}),
+  };
+}
+
+function averageCores(bucket: StoredPoint[]): number[] | undefined {
+  const withCores = bucket.filter((p) => p.cpu_per_core?.length);
+  if (!withCores.length) {
+    return undefined;
+  }
+  const coreCount = Math.max(...withCores.map((p) => p.cpu_per_core!.length));
+  const averaged: number[] = [];
+  for (let i = 0; i < coreCount; i += 1) {
+    const values = withCores
+      .map((p) => p.cpu_per_core![i])
+      .filter((n) => Number.isFinite(n));
+    averaged.push(
+      values.length
+        ? clampCorePct(values.reduce((sum, n) => sum + n, 0) / values.length)
+        : 0,
+    );
+  }
+  return averaged;
+}
+
 export function downsample(
   points: StoredPoint[],
   bucketMs: number,
@@ -217,11 +285,22 @@ function averageBucket(bucket: StoredPoint[]): StoredPoint {
     bucket.reduce((sum, p) => sum + p.mem_pct, 0) / bucket.length;
   const load_1 =
     bucket.reduce((sum, p) => sum + p.load_1, 0) / bucket.length;
+  const withMax = bucket.filter((p) => p.max_core_pct != null);
+  const max_core_pct =
+    withMax.length > 0
+      ? round1(
+          withMax.reduce((sum, p) => sum + (p.max_core_pct ?? 0), 0) /
+            withMax.length,
+        )
+      : undefined;
+  const cpu_per_core = averageCores(bucket);
   const mid = bucket[Math.floor(bucket.length / 2)];
   return {
     t: mid.t,
     load_pct: round1(load_pct),
     mem_pct: round1(mem_pct),
     load_1: round1(load_1),
+    ...(max_core_pct != null ? { max_core_pct } : {}),
+    ...(cpu_per_core ? { cpu_per_core } : {}),
   };
 }

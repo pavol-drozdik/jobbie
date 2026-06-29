@@ -1,4 +1,24 @@
-﻿## 2026-06-29 — Admin Infra CPU/RAM history charts
+﻿## 2026-06-29 — Permanent account deletion (vs admin suspend)
+
+Changed:
+- **backend-ts:** `POST /api/profiles/me/delete` and admin close-account now call `auth.admin.deleteUser` after billing/listing teardown — full erasure so email/OAuth can register fresh (`AccountPermanentDeletionService`).
+- **jobbie-admin:** `close-account` permanently deletes auth user (audit `admin.user.account_deleted`); **suspend** unchanged (ban + `account_status: suspended`, account remains).
+- **docs:** GDPR-PRIVACY, auth-security, profile-deferred — deletion vs enforcement ban.
+
+## 2026-06-29 — VPS: scale Nest on one machine (runbook)
+
+Docs:
+- **staging-production-manual.md** §17 — scale multiple `backend` containers on one VPS (`REDIS_URL`, `BACKEND_SCALE`, verify via Admin Infra per-core CPU).
+- **deploy_backend.sh** — reads `BACKEND_SCALE` from `.env` (default 1) on CI/manual deploys.
+- **websupport-vps-deployment/.env.example** — documents `BACKEND_SCALE`.
+
+## 2026-06-29 — Admin Infra per-core CPU bars
+
+Fixed:
+- **host_metrics.sh:** per-core CPU % uses full `/proc/stat` jiffies (fixes negative values like -300%); clamped to 0–100.
+- **jobbie-admin:** history sanitizes/clamps stored `cpu_per_core` on load and record.
+
+## 2026-06-29 — Admin Infra CPU/RAM history charts
 
 Changed:
 - **jobbie-admin:** Infra VPS cards show CPU load % and RAM % line charts with ranges **1 h**, **24 h**, **2 weeks**, **1 month**.

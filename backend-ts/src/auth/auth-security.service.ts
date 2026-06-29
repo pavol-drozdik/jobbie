@@ -324,8 +324,8 @@ export class AuthSecurityService {
   }
 
   /**
-   * Removes auth.identities so OAuth providers can bind to a new auth.users row after closure.
-   * Hard deleteUser is avoided: profiles.id references auth.users ON DELETE CASCADE.
+   * Removes auth.identities (e.g. legacy soft-closed accounts before permanent delete rollout).
+   * Voluntary/admin deletion uses auth.admin.deleteUser instead.
    */
   async unlinkAuthIdentitiesForClosedAccount(userId: string): Promise<void> {
     const { error } = await this.supabase

@@ -13,6 +13,44 @@ uptime_seconds="$(awk '{print int($1)}' /proc/uptime)"
 cpu_count="$(nproc 2>/dev/null || echo 1)"
 read -r load_1 load_5 load_15 _ < /proc/loadavg || true
 
+cpu_per_core='null'
+if [[ -r /proc/stat ]]; then
+  _cpu_json='['
+  _cpu_first=1
+  mapfile -t _cpu_snap1 < <(awk '/^cpu[0-9]+/ {
+    total = $2 + $3 + $4 + $5 + $6 + $7 + $8 + $9
+    idle = $5 + $6
+    print total, idle
+  }' /proc/stat)
+  sleep 1
+  mapfile -t _cpu_snap2 < <(awk '/^cpu[0-9]+/ {
+    total = $2 + $3 + $4 + $5 + $6 + $7 + $8 + $9
+    idle = $5 + $6
+    print total, idle
+  }' /proc/stat)
+  for ((_i=0; _i<${#_cpu_snap1[@]}; _i++)); do
+    read -r _t1 _i1 <<< "${_cpu_snap1[_i]}"
+    read -r _t2 _i2 <<< "${_cpu_snap2[_i]}"
+    _pct=$(awk -v t1="$_t1" -v i1="$_i1" -v t2="$_t2" -v i2="$_i2" 'BEGIN {
+      dt = t2 - t1
+      di = i2 - i1
+      if (dt <= 0) { print "0"; exit }
+      pct = 100 * (1 - di / dt)
+      if (pct < 0) pct = 0
+      if (pct > 100) pct = 100
+      printf "%.1f", pct
+    }')
+    if [[ $_cpu_first -eq 1 ]]; then
+      _cpu_first=0
+    else
+      _cpu_json+=','
+    fi
+    _cpu_json+="$_pct"
+  done
+  _cpu_json+=']'
+  cpu_per_core="$_cpu_json"
+fi
+
 mem_total=0
 mem_available=0
 if [[ -r /proc/meminfo ]]; then
@@ -81,13 +119,14 @@ if [[ -f "$COMPOSE_FILE" ]] && command -v docker >/dev/null 2>&1; then
   compose_ps="$ps_lines"
 fi
 
-printf '{"hostname":"%s","uptime_seconds":%s,"cpu_count":%s,"load_1":%s,"load_5":%s,"load_15":%s,"memory_total_bytes":%s,"memory_available_bytes":%s,"memory_used_bytes":%s,"disk_root":%s,"disk_typesense":%s,"containers":%s,"compose_ps":%s}\n' \
+printf '{"hostname":"%s","uptime_seconds":%s,"cpu_count":%s,"load_1":%s,"load_5":%s,"load_15":%s,"cpu_per_core":%s,"memory_total_bytes":%s,"memory_available_bytes":%s,"memory_used_bytes":%s,"disk_root":%s,"disk_typesense":%s,"containers":%s,"compose_ps":%s}\n' \
   "$hostname" \
   "$uptime_seconds" \
   "$cpu_count" \
   "${load_1:-0}" \
   "${load_5:-0}" \
   "${load_15:-0}" \
+  "${cpu_per_core:-null}" \
   "$mem_total" \
   "$mem_available" \
   "$mem_used" \
