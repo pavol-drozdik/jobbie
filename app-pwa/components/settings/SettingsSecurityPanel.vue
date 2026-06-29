@@ -132,8 +132,11 @@ const confirmPassword = ref('')
 const passwordSaving = ref(false)
 const passwordErr = ref('')
 const passwordCaptchaToken = ref('')
-const passwordSectionRef = ref<{ resetPasswordCaptcha?: () => void } | null>(null)
-const { requireCaptchaToken, supabaseCaptchaOptions } = useAuthCaptcha()
+const passwordSectionRef = ref<{
+  resetPasswordCaptcha?: () => void
+  refreshPasswordCaptcha?: () => Promise<string | null>
+} | null>(null)
+const { turnstileEnabled, captchaRequiredMessage, supabaseCaptchaOptions } = useAuthCaptcha()
 
 const TOTP_FRIENDLY_NAME = 'JOBBIE TOTP'
 
@@ -341,10 +344,15 @@ async function onPasswordChangeClick(): Promise<void> {
 async function handlePasswordChange(): Promise<void> {
   passwordSaving.value = true
   try {
-    const captchaErr = requireCaptchaToken(passwordCaptchaToken.value)
-    if (captchaErr) {
-      passwordErr.value = captchaErr
-      return
+    let captchaForSupabase = ''
+    if (turnstileEnabled.value) {
+      const token = await passwordSectionRef.value?.refreshPasswordCaptcha?.()
+      if (!token) {
+        passwordErr.value = captchaRequiredMessage
+        return
+      }
+      captchaForSupabase = token
+      passwordCaptchaToken.value = token
     }
     const ready = await ensureSupabaseAuthSession()
     if (!ready.ok) {

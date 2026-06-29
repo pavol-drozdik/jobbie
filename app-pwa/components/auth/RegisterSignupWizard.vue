@@ -468,15 +468,12 @@
               <AppCheckbox v-model="newsletterSubscribe" class="mt-1" />
               <span class="text-sm font-medium text-black/70">{{ S.jobAlertsNewsletterLabel }}</span>
             </label>
-            <div
+            <AuthTurnstileWidget
               v-if="turnstileSiteKey"
-              class="flex min-h-[65px] w-full items-center justify-center"
-            >
-              <AuthTurnstileWidget
-                v-model="captchaToken"
-                :active="currentStep === 4"
-              />
-            </div>
+              ref="signupTurnstileRef"
+              v-model="captchaToken"
+              :active="currentStep === 4"
+            />
             <p v-show="showErr4" class="text-sm font-medium text-red-500">{{ err4Message }}</p>
           </div>
           <div class="my-3 flex items-center gap-3">
@@ -607,6 +604,11 @@ const submitError = ref<string | null>(null)
 const oauthLoading = ref(false)
 const turnstileSiteKey = computed(() => (config.turnstileSiteKey as string) || '')
 const captchaToken = ref('')
+const signupTurnstileRef = ref<{
+  refreshToken?: () => Promise<string | null>
+} | null>(null)
+const captchaUnavailableMessage =
+  'Bezpečnostná kontrola sa nepodarila. Obnovte stránku a skúste znova.'
 const maxIndividualBirthDate = maxBirthDateForMinAge(MIN_INDIVIDUAL_REGISTRATION_AGE)
 
 const step3Description = computed(() =>
@@ -804,12 +806,18 @@ async function submitRegister(): Promise<void> {
     showErr4.value = true
     return
   }
-  if (turnstileSiteKey.value && !captchaToken.value.trim()) {
-    err4Message.value = 'Potvrďte, že nie ste robot (Turnstile).'
-    showErr4.value = true
-    return
-  }
   if (!accountType.value) return
+  let signupCaptcha = captchaToken.value
+  if (turnstileSiteKey.value) {
+    const token = await signupTurnstileRef.value?.refreshToken?.()
+    if (!token) {
+      err4Message.value = captchaUnavailableMessage
+      showErr4.value = true
+      return
+    }
+    signupCaptcha = token
+    captchaToken.value = token
+  }
   setCredentials({
     accountType: accountType.value,
     email: em,
@@ -832,7 +840,7 @@ async function submitRegister(): Promise<void> {
     provider_role: providerRole.value,
   })
   const wantsNewsletter = newsletterSubscribe.value
-  const result = await doSignUp(null, captchaToken.value, wantsNewsletter)
+  const result = await doSignUp(null, signupCaptcha, wantsNewsletter)
   if (!result.ok) {
     submitError.value = result.error
     return

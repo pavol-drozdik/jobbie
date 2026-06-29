@@ -1,4 +1,16 @@
-﻿## 2026-06-29 — Supabase Turnstile CAPTCHA on login
+﻿## 2026-06-29 — GET /metrics CORS bypass (admin Infra, scrapes)
+
+Fixed:
+- **backend-ts:** `/metrics` skips production CORS for requests without `Origin` (curl, JOBBIE Admin Infra server fetch). Endpoint stays protected by `METRICS_BEARER_TOKEN`.
+
+## 2026-06-29 — Invisible Turnstile + single-use token fix
+
+Fixed:
+- **app-pwa:** Turnstile runs invisibly (no on-page widget); fresh token per auth attempt via `refreshToken()`.
+- **backend-ts:** Nest no longer calls Cloudflare siteverify on login-status / signup-email-status (tokens are single-use; Supabase Auth verifies captcha).
+- **app-pwa/useRegistrationSignUp:** Removed duplicate `POST /api/auth/captcha/verify` before sign-up.
+
+## 2026-06-29 — Supabase Turnstile CAPTCHA on login
 
 Fixed:
 - **app-pwa:** Login always shows Turnstile and sends `captchaToken` to Supabase when `NUXT_PUBLIC_TURNSTILE_SITE_KEY` is set (fixes `no captcha_token found` with dashboard CAPTCHA enabled). Passkey conditional UI waits for captcha; reset-password and settings password flows include Turnstile; [`useAuthCaptcha`](../app-pwa/composables/useAuthCaptcha.ts) shared helper.
@@ -9,6 +21,11 @@ Changed:
 - **app-pwa:** Shared password validator (`validate-password.ts`) — min 8 characters, letters and digits — used on register, password reset, and settings password change.
 - **app-pwa:** Settings security — current-password reauthentication before email/password `updateUser` when the account has an email identity; improved secure email-change copy and post-confirm redirect to `/nastavenia/bezpecnost`.
 - **docs/auth-security.md** — Supabase Auth password and email policy table.
+
+## 2026-06-29 — JOBBIE Admin: Turnstile for Supabase CAPTCHA
+
+Fixed:
+- **jobbie-admin:** Pass `captcha_token` through `POST /api/auth/login` when Supabase Auth CAPTCHA is enabled; Turnstile widget via `VITE_TURNSTILE_SITE_KEY` in `app/.env`.
 
 ## 2026-06-29 — JOBBIE Admin: login via local API
 

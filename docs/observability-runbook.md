@@ -55,6 +55,7 @@ Monthly free allowances (reset each cycle): **1M product analytics events**, **5
 
 - Scrape `GET /metrics` (root path, **not** under `/api`).
 - Optional: set `METRICS_BEARER_TOKEN` and scrape with `Authorization: Bearer <token>`.
+- Production CORS skips `/metrics` when there is no `Origin` (curl, JOBBIE Admin Infra, Prometheus); bearer auth still required.
 - Histogram `jobbie_http_request_duration_seconds` and counter `jobbie_http_requests_total` cover all non-health routes.
 - **Note:** Rows in `api_request_logs` remain **sampled** (see `AUDIT_API_SAMPLE_RATE`); Prometheus metrics are **not** sampled.
 

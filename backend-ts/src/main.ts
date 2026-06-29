@@ -50,8 +50,8 @@ async function bootstrap() {
     // checks from the PWA send Origin and need the normal allowlist CORS path.
     // Node 22 built-in fetch (Undici) sends `Origin: null` for non-browser
     // contexts per the WHATWG spec — treat it the same as no-origin for
-    // bypass paths only (safe: /health is a liveness probe, /api/seo/* is
-    // public read-only).
+    // bypass paths only (safe: /health and /metrics are probe/scrape paths with
+    // separate auth or no secrets; /api/seo/* is public read-only).
     if (shouldBypassCors(req.path) && isCorsProbeOrigin(req.headers.origin)) {
       return next();
     }

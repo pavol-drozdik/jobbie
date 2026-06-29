@@ -191,9 +191,9 @@ Align **Supabase Dashboard → Authentication → Providers → Email** (and rel
 ## Failed login and abuse
 
 - `POST /api/auth/security/login-attempt` + `login_attempt_counters`
-- Cloudflare Turnstile when `TURNSTILE_SECRET_KEY` / `NUXT_PUBLIC_TURNSTILE_SITE_KEY` configured — shared [`useTurnstileWidget`](../app-pwa/composables/useTurnstileWidget.ts), [`useAuthCaptcha`](../app-pwa/composables/useAuthCaptcha.ts), and [`AuthTurnstileWidget`](../app-pwa/components/auth/AuthTurnstileWidget.vue)
-- **Login:** Turnstile always visible when the site key is set; `captchaToken` required on every `signInWithPassword` (Supabase dashboard CAPTCHA enforces server-side). Nest `login-status` / `login-attempt` still use progressive CAPTCHA after failed attempts as an extra abuse layer.
-- **Register:** widget on wizard step 4; Nest `POST /api/auth/captcha/verify` then `POST /api/auth/security/signup-email-status` (duplicate check via `auth.admin.getUserByEmail`) then Supabase `signUp` with `captchaToken`; PWA also rejects Supabase responses with empty `identities`
+- Cloudflare Turnstile when `TURNSTILE_SECRET_KEY` / `NUXT_PUBLIC_TURNSTILE_SITE_KEY` configured — shared [`useTurnstileWidget`](../app-pwa/composables/useTurnstileWidget.ts) (invisible, off-screen), [`useAuthCaptcha`](../app-pwa/composables/useAuthCaptcha.ts), and [`AuthTurnstileWidget`](../app-pwa/components/auth/AuthTurnstileWidget.vue)
+- **Login:** invisible Turnstile; fresh `captchaToken` on each `signInWithPassword` for Supabase (dashboard CAPTCHA). Nest `login-status` / `login-attempt` do **not** siteverify the same token (single-use).
+- **Register:** invisible Turnstile on wizard step 4; `POST /api/auth/security/signup-email-status` (email only) then Supabase `signUp` with `captchaToken` — no duplicate Nest verify
 - **Forgot password:** widget on email step when keys configured; `resetPasswordForEmail` with `captchaToken`
 - **Password reset / settings:** Turnstile on recovery and settings password forms when keys configured; reauthentication `signInWithPassword` includes `captchaToken`
 - **Supabase Dashboard:** Authentication → Settings → Security → enable CAPTCHA (Turnstile) with the same secret as `TURNSTILE_SECRET_KEY` when enforcing server-side

@@ -8,6 +8,8 @@ export function mapAdminLoginError(
   switch (code) {
     case 'email_not_confirmed':
       return 'E-mail nie je overený. Skontrolujte schránku alebo sa prihláste cez hlavnú aplikáciu.'
+    case 'captcha_failed':
+      return 'Overenie CAPTCHA zlyhalo. Dokončite Turnstile a skúste znova.'
     case 'invalid_credentials':
     case 'invalid_grant':
       return 'Nesprávny e-mail alebo heslo.'
@@ -21,6 +23,9 @@ export function mapAdminLoginError(
     case 'no_session':
       return 'Prihlásenie nevrátilo platnú reláciu. Skúste znova.'
     default:
+      if (msg.includes('captcha')) {
+        return 'Supabase vyžaduje CAPTCHA. Pridajte VITE_TURNSTILE_SITE_KEY do app/.env (rovnaký kľúč ako PWA) a dokončite Turnstile.'
+      }
       if (msg.includes('invalid api key') || msg.includes('api key')) {
         return 'Neplatný Supabase anon kľúč v api/.env (použite anon, nie service role).'
       }

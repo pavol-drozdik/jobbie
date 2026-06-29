@@ -35,9 +35,10 @@ const DEFAULT_DEV_ORIGINS = [
 
 /**
  * Liveness/monitoring paths — skip credentialed CORS when there is no `Origin`
- * header (Docker, curl, Netdata). Browser probes from the PWA still run CORS.
+ * header (Docker, curl, Netdata, JOBBIE Admin Infra). Browser probes from the
+ * PWA still run CORS. `/metrics` remains protected by METRICS_BEARER_TOKEN.
  */
-const CORS_BYPASS_PATHS = new Set(['/health']);
+const CORS_BYPASS_PATHS = new Set(['/health', '/metrics']);
 
 /** Public SEO read-only routes — Nitro server-side $fetch (sitemap, feeds) sends no Origin. */
 const CORS_BYPASS_PREFIXES = ['/api/seo/'] as const;
@@ -73,7 +74,7 @@ function makeOriginValidator(allowed: string[]) {
   ): void => {
     // Non-browser requests have no Origin header. In production we reject on API
     // routes because credentialed PWA calls must carry Origin (see
-    // shouldBypassCors for /health and /api/seo/*). Dev tolerates missing Origin for curl.
+    // shouldBypassCors for /health, /metrics, and /api/seo/*). Dev tolerates missing Origin for curl.
     if (!origin) {
       if (isNodeProduction()) {
         callback(new Error('Not allowed by CORS'));
