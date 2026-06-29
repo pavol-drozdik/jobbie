@@ -147,4 +147,12 @@ self.addEventListener('pushsubscriptionchange', (event: Event) => {
   )
 })
 
+/** Required for @vite-pwa `registerType: 'prompt'` — `updateServiceWorker()` posts this. */
+self.addEventListener('message', (event: ExtendableMessageEvent) => {
+  const data = event.data as { type?: string } | null
+  if (data?.type === 'SKIP_WAITING') {
+    event.waitUntil(self.skipWaiting())
+  }
+})
+
 export {}

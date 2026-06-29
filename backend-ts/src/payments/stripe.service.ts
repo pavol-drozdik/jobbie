@@ -45,6 +45,7 @@ import { isPublicSubscriptionPlanSlug } from '../billing/public-pricing-catalog'
 import { SubscriptionTrialService } from '../billing/subscription-trial.service';
 import { SkRpoLookupService } from '../registry/sk-rpo-lookup.service';
 import { SupabaseService } from '../supabase/supabase.service';
+import { BillingInvoiceEmailService } from './billing-invoice-email.service';
 import {
   assertPurchaserTypeMatchesAccountRole,
   assertSkBillingEligible,
@@ -165,6 +166,7 @@ export class StripeService {
     private credits: CreditsService,
     private subscriptionTrial: SubscriptionTrialService,
     private skRpoLookup: SkRpoLookupService,
+    private billingInvoiceEmail: BillingInvoiceEmailService,
   ) {
     const key = this.config.get<string>('STRIPE_SECRET_KEY');
     if (key) {
@@ -564,14 +566,8 @@ export class StripeService {
    * SK faktúra for credit packs is created only after PaymentIntent succeeds
    * (attachPayment or paid_out_of_band). Legacy invoice-backed PIs keep their Stripe invoice.
    */
-  private async sendCreditInvoiceCustomerEmail(invoiceId: string): Promise<void> {
-    try {
-      await this.getStripe().invoices.sendInvoice(invoiceId);
-    } catch (err) {
-      this.logger.warn(
-        `sendInvoice for credit faktúra ${invoiceId} skipped or failed (Dashboard email toggles may still apply): ${String(err)}`,
-      );
-    }
+  private dispatchPaidInvoiceEmail(invoiceId: string): void {
+    void this.billingInvoiceEmail.sendPaidInvoiceEmailIfNeeded(invoiceId);
   }
 
   /**
@@ -608,6 +604,7 @@ export class StripeService {
       }
       const invoiceId = await this.createPaidSkInvoiceForCreditPayment(pi, merged);
       if (invoiceId) {
+        this.dispatchPaidInvoiceEmail(invoiceId);
         return invoiceId;
       }
       if (attempt < maxAttempts - 1) {
@@ -730,7 +727,6 @@ export class StripeService {
         `Could not persist invoice_id on PI ${pi.id}: ${String(err)}`,
       );
     }
-    await this.sendCreditInvoiceCustomerEmail(paid.id);
     return paid.id;
   }
 

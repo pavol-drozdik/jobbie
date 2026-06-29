@@ -1,4 +1,35 @@
-﻿## 2026-06-28 — Stripe checkout: accordion icon, invoice email runbook, wallet domains
+﻿## 2026-06-29 — PWA update banner: Obnoviť activates new service worker
+
+Fixed:
+- **app-pwa/service-worker/sw.ts:** Listen for `SKIP_WAITING` so `@vite-pwa/nuxt` `updateServiceWorker()` can activate a waiting worker (`registerType: 'prompt'` + injectManifest).
+- **app-pwa/app.vue:** Hard-reload fallback when the new worker never takes control within 1.2s.
+
+## 2026-06-29 — Signup: duplicate email blocked
+
+Fixed:
+- **backend-ts:** Public `POST /api/auth/security/signup-email-status` (rate-limited, Turnstile when configured) checks `auth.admin.getUserByEmail` before signup.
+- **app-pwa/useRegistrationSignUp:** Calls email-status before `signUp`; also rejects Supabase success responses with empty `identities` or duplicate error messages.
+
+## 2026-06-29 — App-sent faktúra emails (SMTP)
+
+Added:
+- **backend-ts/billing-invoice-email.service:** Sends paid Stripe invoice PDF via Nest SMTP after credit pack (`ensureCreditPaymentInvoice`) and subscription invoices (`invoice.paid` / `confirm-subscription`); idempotent `billing_invoice_email_dispatches` table.
+- **backend-ts/email:** `billing-invoice-email.template.ts`; optional PDF attachments on `EmailService.sendHtmlEmail`.
+- Removed broken `invoices.sendInvoice` call for credit faktúry (`charge_automatically`).
+
+Database:
+- `billing_invoice_email_dispatches` — service_role only.
+
+Docs:
+- [stripe-invoice-emails.md](stripe-invoice-emails.md), [email-smtp.md](email-smtp.md), [payments-credits.md](payments-credits.md).
+
+## 2026-06-29 — Signup: focused field border no longer clipped
+
+Fixed:
+- **app-pwa/RegisterSignupWizard:** Step 3 profile fields use `overflow-visible` (same as step 4) so focus styling is not clipped in the flex layout.
+- **app-pwa/assets/css/main.css:** `.cv-field` inputs use inset focus ring + green border on `:focus-visible` instead of an outer `ring-2` that overflow containers crop on pill-shaped fields.
+
+## 2026-06-28 — Stripe checkout: accordion icon, invoice email runbook, wallet domains
 
 Fixed:
 - **app-pwa/stripe-payment-element-ui:** Payment Element accordion layout — green card icon (`iconColor`, `.AccordionItem` rules); removed `.TabIcon--selected` white fill that did not apply to accordion headers (“Platba kartou” appeared white on light background).

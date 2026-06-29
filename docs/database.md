@@ -89,6 +89,7 @@ Deep conventions: [database-schema-conventions.md](./database-schema-conventions
 | `subscription_plans` | Monthly plans (+ `max_active_jobs`, `monthly_credits`) |
 | `subscription_period_credit_grants` | Idempotent monthly grant log |
 | `stripe_credit_fulfillments` | PK `payment_intent_id` — double-grant prevention |
+| `billing_invoice_email_dispatches` | PK `stripe_invoice_id` — idempotent paid faktúra SMTP send |
 | `stripe_webhook_events`, `stripe_financial_events` | Webhook processing and refunds |
 | `cv_contact_unlocks` | Employer paid unlock per CV |
 | `banner_ads` | Banner placements |
@@ -124,7 +125,7 @@ Foreign keys generally reference `profiles(id)` or parent entities (`job_offers`
 | Owner row | `profiles`: `auth.uid() = id` |
 | Participant | `chat_messages`, `applications` — company or applicant |
 | Public read via views | `job_offers_public`, `company_ads_public`; base tables revoked from `anon` where applicable |
-| Deny-all + service_role | `credit_ledger`, `audit_events`, `stripe_credit_fulfillments` |
+| Deny-all + service_role | `credit_ledger`, `audit_events`, `stripe_credit_fulfillments`, `billing_invoice_email_dispatches` |
 | Column-level privacy | `cv_personal_info` — contact columns revoked from broad roles |
 | Storage policies | Path must include `auth.uid()` for user buckets |
 

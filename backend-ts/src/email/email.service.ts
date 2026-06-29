@@ -76,6 +76,11 @@ export class EmailService implements OnModuleInit {
     to: string;
     subject: string;
     html: string;
+    attachments?: Array<{
+      filename: string;
+      content: Buffer;
+      contentType?: string;
+    }>;
   }): Promise<boolean> {
     if (!this.isConfigured()) {
       this.logger.warn(
@@ -91,6 +96,11 @@ export class EmailService implements OnModuleInit {
         to: params.to,
         subject: params.subject,
         html: params.html,
+        attachments: params.attachments?.map((a) => ({
+          filename: a.filename,
+          content: a.content,
+          contentType: a.contentType ?? 'application/pdf',
+        })),
       });
       return true;
     } catch (err) {

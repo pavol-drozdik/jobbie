@@ -15,6 +15,15 @@ export class LoginStatusDto {
   captcha_token?: string;
 }
 
+export class SignupEmailStatusDto {
+  @IsEmail()
+  email!: string;
+
+  @IsOptional()
+  @IsString()
+  captcha_token?: string;
+}
+
 export class LoginAttemptDto {
   @IsEmail()
   email!: string;

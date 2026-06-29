@@ -35,6 +35,7 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { AuditService } from '../audit/audit.service';
 import { StripeService } from './stripe.service';
 import { SubscriptionCreditsService } from './subscription-credits.service';
+import { BillingInvoiceEmailService } from './billing-invoice-email.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { stripeWebhookDurationSeconds } from '../observability/metrics';
 import {
@@ -71,6 +72,7 @@ export class PaymentsController {
     private notifications: NotificationsService,
     private subscriptionCredits: SubscriptionCreditsService,
     private subscriptionTrial: SubscriptionTrialService,
+    private billingInvoiceEmail: BillingInvoiceEmailService,
   ) {}
 
   /** Non-blocking user notifications after Stripe DB work commits. */
@@ -392,6 +394,18 @@ export class PaymentsController {
           `confirm-subscription: subscription synced for user ${user.id} but monthly credits not granted yet (sub=${stripeSubId})`,
         );
       }
+      const sub =
+        await this.stripe.retrieveSubscriptionWithLatestInvoice(stripeSubId);
+      const latestInv = sub?.latest_invoice;
+      const invoiceId =
+        typeof latestInv === 'string'
+          ? latestInv
+          : latestInv && typeof latestInv === 'object' && 'id' in latestInv
+            ? String((latestInv as { id: string }).id)
+            : null;
+      if (invoiceId) {
+        void this.billingInvoiceEmail.sendPaidInvoiceEmailIfNeeded(invoiceId);
+      }
     }
     return { ok: true };
   }
@@ -593,9 +607,15 @@ export class PaymentsController {
             );
           }
         }
-        // Subscription monthly credits; paid-invoice emails are sent by Stripe
-        // when Dashboard invoice email settings are enabled — docs/stripe-invoice-emails.md
+        // Subscription monthly credits; paid-invoice emails via app SMTP (BillingInvoiceEmailService).
         await this.subscriptionCredits.grantFromPaidSubscriptionInvoice(inv);
+        const billingReason = inv.billing_reason;
+        if (
+          billingReason === 'subscription_create' ||
+          billingReason === 'subscription_cycle'
+        ) {
+          void this.billingInvoiceEmail.sendPaidInvoiceEmailIfNeeded(inv.id);
+        }
         if (getInvoiceSubscriptionId(inv)) {
           await this.stripe.syncSubscriptionStatusFromInvoice(inv, 'active');
         }

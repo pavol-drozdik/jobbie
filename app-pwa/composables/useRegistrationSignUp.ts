@@ -19,8 +19,28 @@ export function registrationCaptchaVerifyFailed(
   return null
 }
 
-function mapSignUpError(message: string | undefined): string {
+/** Supabase may return success with empty identities when the email is already registered. */
+export function isSignUpDuplicateEmail(input: {
+  errorMessage?: string
+  identitiesCount?: number
+}): boolean {
+  if (input.identitiesCount === 0) {
+    return true
+  }
+  const raw = input.errorMessage?.trim() ?? ''
+  if (!raw) {
+    return false
+  }
+  return /already.*registered|user.*already|email.*already|duplicate|already exists|already in use/i.test(
+    raw,
+  )
+}
+
+export function mapSignUpError(message: string | undefined): string {
   const raw = message?.trim() ?? ''
+  if (isSignUpDuplicateEmail({ errorMessage: raw })) {
+    return S.authSignupEmailTaken
+  }
   if (/individual_registration_minimum_age/i.test(raw)) {
     return 'Registrácia je dostupná len pre osoby staršie ako 16 rokov.'
   }
@@ -98,13 +118,38 @@ export function useRegistrationSignUp() {
       if (trimmedCaptcha) {
         signUpOptions.captchaToken = trimmedCaptcha
       }
-      const { error: e } = await supabase.auth.signUp({
+      const emailStatusRes = await api<{ available?: boolean }>(
+        '/api/auth/security/signup-email-status',
+        {
+          method: 'POST',
+          body: {
+            email: effectiveCredentials.email,
+            captcha_token: trimmedCaptcha || undefined,
+          },
+          skipSessionExpiry: true,
+        },
+      )
+      if (emailStatusRes.status === 200 && emailStatusRes.data?.available === false) {
+        const msg = S.authSignupEmailTaken
+        error.value = msg
+        return { ok: false, error: msg }
+      }
+      const { data: signUpData, error: e } = await supabase.auth.signUp({
         email: effectiveCredentials.email,
         password: effectiveCredentials.password,
         options: signUpOptions,
       })
       if (e) {
         const msg = mapSignUpError(e.message)
+        error.value = msg
+        return { ok: false, error: msg }
+      }
+      if (
+        isSignUpDuplicateEmail({
+          identitiesCount: signUpData.user?.identities?.length,
+        })
+      ) {
+        const msg = S.authSignupEmailTaken
         error.value = msg
         return { ok: false, error: msg }
       }

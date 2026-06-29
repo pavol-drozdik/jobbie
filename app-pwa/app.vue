@@ -50,7 +50,18 @@ const { syncIfGranted: syncWebPushIfGranted } = useWebPushRegistration()
 
 async function onPwaRefresh(): Promise<void> {
   if (!pwa) return
-  await pwa.updateServiceWorker(true)
+  try {
+    await pwa.updateServiceWorker(true)
+  } catch {
+    window.location.reload()
+    return
+  }
+  // vite-pwa reloads on `controlling`; hard-reload if the SW never activates.
+  window.setTimeout(() => {
+    if (pwa?.needRefresh) {
+      window.location.reload()
+    }
+  }, 1200)
   void syncWebPushIfGranted()
 }
 
