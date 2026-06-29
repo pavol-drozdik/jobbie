@@ -1,4 +1,11 @@
-﻿## 2026-06-29 — GET /metrics CORS bypass (admin Infra, scrapes)
+﻿## 2026-06-29 — Registration activity roles persist at signup
+
+Fixed:
+- **app-pwa:** Signup metadata (`buildRegistrationSignUpMeta`) now includes `customer_role`, `worker_role`, and `provider_role`; Google OAuth registration passes the same flags.
+- **supabase:** `handle_new_user` reads activity roles from signup metadata and sets them on `profiles` at user creation (fixes email-confirmation signups where post-login PATCH was skipped).
+- **docs/features.md** — signup persistence path documented.
+
+## 2026-06-29 — GET /metrics CORS bypass (admin Infra, scrapes)
 
 Fixed:
 - **backend-ts:** `/metrics` skips production CORS for requests without `Origin` (curl, JOBBIE Admin Infra server fetch). Endpoint stays protected by `METRICS_BEARER_TOKEN`.
