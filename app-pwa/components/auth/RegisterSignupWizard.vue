@@ -732,22 +732,30 @@ async function oauthGoogle(): Promise<void> {
   try {
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
     const redirectTo = `${origin}/auth/callback?redirect=${encodeURIComponent(getPostLoginPath())}`
-    const oauthMeta = getMetaForSignUp(undefined, {
-      accountType: accountType.value!,
-      email: '',
-      password: '',
-      termsAgree: false,
-      firstName: firstName.value.trim(),
-      lastName: lastName.value.trim(),
-      companyName: companyName.value.trim(),
-      registeredOffice: registeredOffice.value.trim(),
-      ico: ico.value.trim(),
-      dic: dic.value.trim(),
-      vatId: vatId.value.trim(),
-      birthDate: accountType.value === 'individual' ? birthDate.value.trim() : undefined,
-      companyProfileUsername:
-        accountType.value === 'company' ? companyProfileUsername.value.trim() : undefined,
-    })
+    const oauthMeta = getMetaForSignUp(
+      undefined,
+      {
+        accountType: accountType.value!,
+        email: '',
+        password: '',
+        termsAgree: false,
+        firstName: firstName.value.trim(),
+        lastName: lastName.value.trim(),
+        companyName: companyName.value.trim(),
+        registeredOffice: registeredOffice.value.trim(),
+        ico: ico.value.trim(),
+        dic: dic.value.trim(),
+        vatId: vatId.value.trim(),
+        birthDate: accountType.value === 'individual' ? birthDate.value.trim() : undefined,
+        companyProfileUsername:
+          accountType.value === 'company' ? companyProfileUsername.value.trim() : undefined,
+      },
+      {
+        customer_role: customerRole.value,
+        worker_role: workerRole.value,
+        provider_role: providerRole.value,
+      },
+    )
     const { error: e } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo, skipBrowserRedirect: false, data: oauthMeta },

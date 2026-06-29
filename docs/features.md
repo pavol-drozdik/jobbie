@@ -13,6 +13,8 @@ Map of major JOBBIE features to PWA routes and backend modules. Privacy rules fo
 
 Users can enable multiple activity roles. PWA toggles: **Nastavenia → Profil** → „Čo chcete robiť?“ (`SettingsRolesSection`). Nav filtering: `app-pwa/utils/account-nav-access.ts`.
 
+**Signup:** The registration wizard (`RegisterSignupWizard`) writes `customer_role`, `worker_role`, and `provider_role` into Supabase signup metadata (`buildRegistrationSignUpMeta` in `useRegistration.ts`). The `handle_new_user` trigger copies them onto `profiles` at user creation (including before email confirmation). When signup returns an immediate session, `useRegistrationSignUp` also PATCHes `/api/profiles/me` as a redundant path.
+
 ## Marketing blog
 
 | Aspect | Location |

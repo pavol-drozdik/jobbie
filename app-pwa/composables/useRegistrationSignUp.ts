@@ -176,7 +176,15 @@ export function useRegistrationSignUp() {
         patchBody.marketing_processing_consent = true
       }
       if (Object.keys(patchBody).length > 0) {
-        await api('/api/profiles/me', { method: 'PATCH', body: patchBody })
+        const patchRes = await api('/api/profiles/me', { method: 'PATCH', body: patchBody })
+        if (!patchRes.ok) {
+          if (import.meta.dev) {
+            console.warn('[registration] PATCH /api/profiles/me failed', {
+              status: patchRes.status,
+              body: patchRes.body?.slice(0, 200),
+            })
+          }
+        }
       }
       if (canUsePasskeys()) {
         await enrollPasskey()

@@ -30,6 +30,42 @@ export type RegistrationPreferences = {
   sector: string | null
 }
 
+export function buildRegistrationSignUpMeta(
+  creds: RegistrationCredentials | null,
+  prefs?: RegistrationPreferences | null,
+  roleData?: RegistrationRoles | null,
+): Record<string, string> {
+  const meta: Record<string, string> = {}
+  if (!creds) return meta
+  meta.role = creds.accountType
+  if (creds.accountType === 'individual') {
+    meta.first_name = creds.firstName.trim()
+    meta.last_name = creds.lastName.trim()
+    meta.display_name = `${creds.firstName.trim()} ${creds.lastName.trim()}`.trim()
+    if (creds.birthDate?.trim()) meta.birth_date = creds.birthDate.trim()
+  } else {
+    meta.company_name = creds.companyName.trim()
+    meta.registered_office = creds.registeredOffice.trim()
+    meta.ico = creds.ico.trim()
+    meta.dic = creds.dic.trim()
+    if (creds.vatId.trim()) meta.ic_dph = creds.vatId.trim()
+    if (creds.companyProfileUsername?.trim())
+      meta.profile_username = creds.companyProfileUsername.trim()
+  }
+  if (prefs) {
+    if (prefs.job_interests != null && prefs.job_interests !== '')
+      meta.job_interests = prefs.job_interests
+    if (prefs.location != null && prefs.location !== '') meta.location = prefs.location
+    if (prefs.sector != null && prefs.sector !== '') meta.sector = prefs.sector
+  }
+  if (roleData) {
+    meta.customer_role = roleData.customer_role ? 'true' : 'false'
+    meta.worker_role = roleData.worker_role ? 'true' : 'false'
+    meta.provider_role = roleData.provider_role ? 'true' : 'false'
+  }
+  return meta
+}
+
 // Multi-step signup wizard state survives route changes until welcome/clear.
 export function useRegistration() {
   const credentials = useState<RegistrationCredentials | null>('reg-credentials', () => null)
@@ -53,32 +89,11 @@ export function useRegistration() {
     credentialsOverride?: RegistrationCredentials | null,
     rolesOverride?: RegistrationRoles | null
   ): Record<string, string> {
-    const meta: Record<string, string> = {}
-    const creds = credentialsOverride ?? credentials.value
-    if (!creds) return meta
-    meta.role = creds.accountType
-    if (creds.accountType === 'individual') {
-      meta.first_name = creds.firstName.trim()
-      meta.last_name = creds.lastName.trim()
-      meta.display_name = `${creds.firstName.trim()} ${creds.lastName.trim()}`.trim()
-      if (creds.birthDate?.trim()) meta.birth_date = creds.birthDate.trim()
-    } else {
-      meta.company_name = creds.companyName.trim()
-      meta.registered_office = creds.registeredOffice.trim()
-      meta.ico = creds.ico.trim()
-      meta.dic = creds.dic.trim()
-      if (creds.vatId.trim()) meta.ic_dph = creds.vatId.trim()
-      if (creds.companyProfileUsername?.trim())
-        meta.profile_username = creds.companyProfileUsername.trim()
-    }
-    const prefs = preferencesOverride ?? preferences.value
-    if (prefs) {
-      if (prefs.job_interests != null && prefs.job_interests !== '')
-        meta.job_interests = prefs.job_interests
-      if (prefs.location != null && prefs.location !== '') meta.location = prefs.location
-      if (prefs.sector != null && prefs.sector !== '') meta.sector = prefs.sector
-    }
-    return meta
+    return buildRegistrationSignUpMeta(
+      credentialsOverride ?? credentials.value,
+      preferencesOverride ?? preferences.value,
+      rolesOverride ?? roles.value,
+    )
   }
 
   function clear() {
