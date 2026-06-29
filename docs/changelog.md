@@ -1,4 +1,10 @@
-﻿## 2026-06-29 — Registration post-signup redirect (no welcome page)
+﻿## 2026-06-29 — Deploy script diagnostics + audit erasure FK
+
+Changed:
+- **deploy_backend.sh:** Log target image; explicit pull/up errors; restore previous `BACKEND_IMAGE` on failure; local Caddy health probe before public URL.
+- **supabase:** `prevent_audit_events_mutation` allows `actor_user_id` → NULL only (fixes `auth.admin.deleteUser` when user has audit rows).
+
+## 2026-06-29 — Registration post-signup redirect (no welcome page)
 
 Changed:
 - **app-pwa:** Email/password and Google OAuth registration go to `/` when a session exists, or `/auth/register/confirm-email` when confirmation is required; removed post-signup passkey auto-enroll and `/auth/register/welcome` screen (route redirects to home).
