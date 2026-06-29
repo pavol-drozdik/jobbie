@@ -19,7 +19,7 @@
     :redirect-path="redirectPath"
   />
   <div v-else class="min-h-screen bg-marketing-mint font-dmSans text-black">
-    <JobPostWizard v-if="canEditJob" :job-id="jobId" />
+    <JobPostWizard v-if="canEditJob" :key="jobId" :job-id="jobId" />
   </div>
 </template>
 

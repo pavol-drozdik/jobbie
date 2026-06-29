@@ -20,6 +20,7 @@
   />
   <JobPostWizard
     v-else-if="canEditJob"
+    :key="jobId"
     :job-id="jobId"
     variant="foreign"
     :hub-route="ROUTES.foreignJobHub"

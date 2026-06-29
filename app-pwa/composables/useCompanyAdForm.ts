@@ -1,7 +1,7 @@
 import type { MaybeRef } from 'vue'
 import { toRef } from 'vue'
 import { S } from '~/utils/strings'
-import type { CompanyAd, CompanyAdFormPayload, CompanyAdGalleryItem } from '~/utils/company-ad'
+import type { CompanyAd, CompanyAdFormPayload, CompanyAdGalleryItem, CompanyAdStatus } from '~/utils/company-ad'
 import {
   companyAdToFormState,
   emptyCompanyAdFormState,
@@ -39,6 +39,8 @@ export function useCompanyAdForm(options: {
   const thumbnailTouched = ref(false)
   const durationMonths = ref(3)
   const isTopListing = ref(false)
+  const adStatus = ref<CompanyAdStatus>('draft')
+  const hadTopOnLoad = ref(false)
   const billingPlanSlug = ref('zadarmo')
   const saving = ref(false)
   const formError = ref<string | null>(null)
@@ -56,17 +58,26 @@ export function useCompanyAdForm(options: {
   const creditsDisplay = computed(() => profile.value?.credits ?? 0)
 
   const topListingCredits = computed(() =>
-    isTopListing.value
-      ? getPlanTierCreditCost(
-          planTierCosts.value,
-          billingPlanSlug.value,
-          'topOfCategory7Days',
-        )
-      : 0,
+    getPlanTierCreditCost(
+      planTierCosts.value,
+      billingPlanSlug.value,
+      'topOfCategory7Days',
+    ),
   )
 
-  const requiredCredits = computed(
-    () => CREDITS_PER_AD_MONTH * durationMonths.value + topListingCredits.value,
+  const isAlreadyPublished = computed(() => adStatus.value === 'active')
+
+  const requiredCredits = computed(() => {
+    const publishCreditsNeeded = isAlreadyPublished.value
+      ? 0
+      : CREDITS_PER_AD_MONTH * durationMonths.value
+    const topCreditsNeeded =
+      isTopListing.value && !hadTopOnLoad.value ? topListingCredits.value : 0
+    return publishCreditsNeeded + topCreditsNeeded
+  })
+
+  const topCreditsNeeded = computed(() =>
+    isTopListing.value && !hadTopOnLoad.value ? topListingCredits.value : 0,
   )
 
   async function loadBillingAccount(): Promise<void> {
@@ -110,6 +121,8 @@ export function useCompanyAdForm(options: {
   function loadFromAd(ad: CompanyAd): void {
     const state = companyAdToFormState(ad)
     Object.assign(form, state)
+    adStatus.value = ad.status
+    hadTopOnLoad.value = Boolean(ad.show_top_badge)
     isTopListing.value = Boolean(ad.show_top_badge)
     descriptionHtml.value = sanitizeJobDescriptionHtml(ad.body ?? '')
     coverPhoto.value = ad.thumbnail_url
@@ -184,7 +197,7 @@ export function useCompanyAdForm(options: {
       price_type: form.price_type,
       price_min: parseMoneyInput(form.price_min),
       price_max: parseMoneyInput(form.price_max),
-      price_negotiable: form.price_negotiable,
+      price_negotiable: form.price_type === 'negotiable',
       price_note: form.price_note?.trim() || null,
       availability: form.availability,
       works_weekends: form.works_weekends,
@@ -270,17 +283,6 @@ export function useCompanyAdForm(options: {
           return null
         }
         let saved = res.data as CompanyAd
-        if (publish && isTopListing.value) {
-          const topRes = await api<CompanyAd>(
-            `/api/company-ads/${editId}/top-listing`,
-            { method: 'POST' },
-          )
-          if (!topRes.ok) {
-            formError.value = extractApiError(topRes)
-            return null
-          }
-          saved = topRes.data as CompanyAd
-        }
         await refreshUser()
         return saved
       }
@@ -293,17 +295,6 @@ export function useCompanyAdForm(options: {
         return null
       }
       let created = res.data as CompanyAd
-      if (publish && isTopListing.value && created.id) {
-        const topRes = await api<CompanyAd>(
-          `/api/company-ads/${created.id}/top-listing`,
-          { method: 'POST' },
-        )
-        if (!topRes.ok) {
-          formError.value = extractApiError(topRes)
-          return null
-        }
-        created = topRes.data as CompanyAd
-      }
       await refreshUser()
       return created
     } finally {
@@ -354,12 +345,6 @@ export function useCompanyAdForm(options: {
     }
   }
 
-  function onPriceNegotiableChange(): void {
-    if (form.price_negotiable) {
-      form.price_type = 'negotiable'
-    }
-  }
-
   watch(
     () => form.price_type,
     (t) => {
@@ -371,7 +356,7 @@ export function useCompanyAdForm(options: {
 
   const showPriceAmounts = computed(() => {
     const t = form.price_type
-    return t !== 'negotiable' && t !== 'hidden' && !form.price_negotiable
+    return t !== 'negotiable' && t !== 'hidden'
   })
 
   const isOnlineOnly = computed(() => form.service_areas.includes('online'))
@@ -405,6 +390,7 @@ export function useCompanyAdForm(options: {
     durationMonths,
     isTopListing,
     topListingCredits,
+    topCreditsNeeded,
     loadBillingCatalog,
     loadBillingAccount,
     saving,
@@ -424,7 +410,6 @@ export function useCompanyAdForm(options: {
     removeGalleryAt,
     updateGalleryCaption,
     toggleServiceArea,
-    onPriceNegotiableChange,
     showPriceAmounts,
     isOnlineOnly,
     user,

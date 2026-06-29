@@ -123,6 +123,8 @@ Source: [`plan-tier-credit-costs.ts`](../backend-ts/src/billing/plan-tier-credit
 
 Service profile multi-month publish: `publishCostCredits(months)` = 3 × months (max 12) on all tiers.
 
+**Edit vs first publish (PWA UX):** Wizards show credits needed for *this save* only — live job/company ad + newly enabled topovanie = top tier cost; draft/first publish + top = publish + top. Backend already skipped republish charges on live edits; the fix aligns display and client pre-checks.
+
 ### Flat `CREDIT_COSTS` (other promote types)
 
 From [`billing.config.ts`](../backend-ts/src/billing/billing.config.ts) — fallback when not plan-tier:

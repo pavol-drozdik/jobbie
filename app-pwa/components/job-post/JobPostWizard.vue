@@ -530,7 +530,7 @@
                     {{ S.jobYourCredits }}
                   </dt>
                   <dd class="m-0 font-extrabold text-black">
-                    {{ billingCredits ?? '…' }}
+                    {{ effectiveCreditBalance ?? '…' }}
                   </dd>
                 </div>
                 <div
@@ -566,6 +566,13 @@
         </div>
 
         <template #footer>
+          <p
+            v-if="draftSavedMessage"
+            class="mb-3 w-full basis-full rounded-xl border border-marketing-green/30 bg-marketing-mint px-3 py-2 text-sm font-medium text-marketing-green"
+            role="status"
+          >
+            {{ draftSavedMessage }}
+          </p>
           <p
             v-if="error"
             data-job-post-action-error
@@ -695,7 +702,7 @@ const props = withDefaults(
 
 const supabase = useSupabase()
 const { api, getApiBaseUrl } = useApi()
-const { user } = useAuth()
+const { user, profile, refreshUser } = useAuth()
 const wizardBootstrap = useJobWizardBootstrap()
 const currentStep = ref(0)
 const hydrating = ref(true)
@@ -707,6 +714,7 @@ const billingActiveOffers = ref<number | null>(null)
 const { config: billingCatalogConfig, load: loadBillingCatalog } = useCatalogBilling()
 const publishConfirmOpen = ref(false)
 const pendingDraft = ref(false)
+const draftSavedMessage = ref<string | null>(null)
 const pageTitle = computed(() =>
   props.wizardPageTitle?.trim() ? props.wizardPageTitle : S.addJobPageTitle,
 )
@@ -773,6 +781,8 @@ const {
   extraPhotos,
   isUrgent,
   isTopListing,
+  isAlreadyPublished,
+  hadTopOnLoad,
   toggleWorkMode,
   toggleRequiredDocument,
 } = form
@@ -782,25 +792,34 @@ const planTierCosts = computed(() =>
 )
 
 const topListingCredits = computed(() =>
-  isTopListing.value
-    ? getPlanTierCreditCost(
-        planTierCosts.value,
-        billingPlanSlug.value,
-        'topOfCategory7Days',
-      )
-    : 0,
+  getPlanTierCreditCost(
+    planTierCosts.value,
+    billingPlanSlug.value,
+    'topOfCategory7Days',
+  ),
 )
 
+const topCreditsNeeded = computed(() =>
+  isTopListing.value && !hadTopOnLoad.value ? topListingCredits.value : 0,
+)
+
+const effectiveCreditBalance = computed(() => {
+  if (billingCredits.value != null) return billingCredits.value
+  return profile.value?.credits ?? null
+})
+
 const topListingCostHint = computed(() => {
-  const n = topListingCredits.value
+  const n = topCreditsNeeded.value
   if (n < 1) return S.jobTopListingHint
   return `${S.jobTopListingHint} (${creditCountLabel(n)}).`
 })
 
 const publishCredits = computed(() => {
   const action = isUrgent.value ? 'publishUrgentJob' : 'publishJobMonth'
-  const base = getPlanTierCreditCost(planTierCosts.value, billingPlanSlug.value, action)
-  return base + topListingCredits.value
+  const base = isAlreadyPublished.value
+    ? 0
+    : getPlanTierCreditCost(planTierCosts.value, billingPlanSlug.value, action)
+  return base + topCreditsNeeded.value
 })
 const publishCostLabel = computed(() => {
   const n = publishCredits.value
@@ -808,9 +827,11 @@ const publishCostLabel = computed(() => {
   return creditCountLabel(n)
 })
 const insufficientCreditsForPublish = computed(() => {
-  const balance = billingCredits.value
+  const needed = publishCredits.value
+  if (needed < 1) return false
+  const balance = effectiveCreditBalance.value
   if (balance == null) return false
-  return balance < publishCredits.value
+  return balance < needed
 })
 const publishConfirmMessage = computed(() =>
   S.promotionConfirmMessage.replace('{credits}', String(publishCredits.value)),
@@ -987,6 +1008,7 @@ function removeGalleryAt(index: number): void {
 }
 
 async function loadBillingAccount(): Promise<void> {
+  await waitForAuthReady()
   if (!user.value) return
   const res = await api<{
     credits: number
@@ -1063,6 +1085,13 @@ onMounted(() => {
 })
 
 watch(
+  () => user.value?.id,
+  (id) => {
+    if (id) void loadBillingAccount()
+  },
+)
+
+watch(
   () => props.jobId,
   (id, prev) => {
     if (id && id !== prev) void hydrateWizard()
@@ -1093,8 +1122,13 @@ function parseApiErrorMessage(body: string | undefined, fallback: string): strin
 }
 
 function handleSubmit(isDraft: boolean): void {
+  draftSavedMessage.value = null
   if (isDraft) {
     void submitJob(true)
+    return
+  }
+  if (insufficientCreditsForPublish.value) {
+    showActionError(S.insufficientCreditsMessage)
     return
   }
   // SECURITY: Credit cost shown here is UX only — Nest charges on activate/publish.
@@ -1106,21 +1140,9 @@ async function confirmPublish(): Promise<void> {
   await submitJob(pendingDraft.value)
 }
 
-async function applyTopListingAfterSave(isDraft: boolean): Promise<string | null> {
-  if (isDraft || !isTopListing.value) {
-    return null
-  }
-  const topRes = await api<Job>(`/api/jobs/${props.jobId}/top-listing`, {
-    method: 'POST',
-  })
-  if (!topRes.ok) {
-    return parseApiErrorMessage(topRes.body, 'Topovanie sa nepodarilo aktivovať.')
-  }
-  return null
-}
-
 async function submitJob(isDraft: boolean): Promise<void> {
   error.value = null
+  draftSavedMessage.value = null
   const plain = richEditorRef.value?.getPlainText() ?? ''
   const validationError = form.validateForPublish(plain, isDraft)
   if (validationError) {
@@ -1144,12 +1166,14 @@ async function submitJob(isDraft: boolean): Promise<void> {
       }
       return
     }
-    if (!isDraft) {
-      const topErr = await applyTopListingAfterSave(isDraft)
-      if (topErr) {
-        showActionError(topErr)
-        return
-      }
+    if (res.data) {
+      form.applyJobBillingSnapshot(res.data as Job & Record<string, unknown>)
+    }
+    await refreshUser()
+    void loadBillingAccount()
+    if (isDraft) {
+      draftSavedMessage.value = S.jobDraftSaved
+      return
     }
     await navigateTo({ path: props.hubRoute }, { replace: true })
   } catch (err) {
