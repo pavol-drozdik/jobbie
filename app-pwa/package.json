@@ -42,7 +42,7 @@
     "@tiptap/vue-3": "^3.22.5",
     "chart.js": "^4.5.1",
     "isomorphic-dompurify": "^3.18.0",
-    "nuxt": "^3.14.0",
+    "nuxt": "^4.4.8",
     "pdfjs-dist": "^6.0.227",
     "posthog-js": "^1.386.6",
     "socket.io-client": "^4.7.0",
