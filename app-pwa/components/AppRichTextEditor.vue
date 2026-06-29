@@ -98,7 +98,7 @@
 
 <script setup lang="ts">
 // Parents must sanitize HTML on save (sanitizeJobDescriptionHtml) — editor output is not trusted at display time.
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { EditorContent, useEditor } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
@@ -180,6 +180,17 @@ const editor = useEditor({
   onTransaction() {
     bumpUi()
   },
+})
+
+onMounted(() => {
+  const ed = editor.value
+  if (!ed) return
+  const next = props.modelValue || ''
+  if (ed.getHTML() === next) return
+  skipEmit.value = true
+  ed.commands.setContent(next, { emitUpdate: false })
+  skipEmit.value = false
+  bumpUi()
 })
 
 watch(

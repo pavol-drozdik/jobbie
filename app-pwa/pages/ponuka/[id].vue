@@ -87,23 +87,25 @@
               @apply="handleApply"
               @save="toggleSave"
             />
-            <div class="flex items-center gap-[18px] rounded-[20px] bg-white px-7 py-6 shadow-[0_0_12px_rgba(0,0,0,0.07)]">
-              <div
-                class="flex size-[58px] min-h-[58px] min-w-[58px] shrink-0 items-center justify-center rounded-full bg-marketing-green text-xl font-bold text-white"
-              >{{ employerInitials(job.employer_name) }}</div>
-              <div class="min-w-0 flex-1">
-                <div class="mb-0.5 text-[13px] font-medium text-black/40">{{ S.jobPostedBy }}</div>
-                <div class="mb-1 text-[19px] font-bold text-black">{{ job.employer_name || S.employerDefault }}</div>
-                <div class="text-sm font-semibold text-black/50">{{ S.jobNoRatingsYet }}</div>
+            <div class="flex flex-col gap-3 rounded-[20px] bg-white px-7 py-6 shadow-[0_0_12px_rgba(0,0,0,0.07)] sm:flex-row sm:items-center sm:gap-[18px]">
+              <div class="flex min-w-0 flex-1 items-center gap-[18px]">
+                <div
+                  class="flex size-[58px] min-h-[58px] min-w-[58px] shrink-0 items-center justify-center rounded-full bg-marketing-green text-xl font-bold text-white"
+                >{{ employerInitials(job.employer_name) }}</div>
+                <div class="min-w-0 flex-1">
+                  <div class="mb-0.5 text-[13px] font-medium text-black/40">{{ S.jobPostedBy }}</div>
+                  <div class="mb-1 text-[19px] font-bold text-black">{{ job.employer_name || S.employerDefault }}</div>
+                  <div class="text-sm font-semibold text-black/50">{{ S.jobNoRatingsYet }}</div>
+                </div>
               </div>
               <NuxtLink
                 v-if="job.company_id"
                 :to="ROUTES.publicProfile(job.company_id)"
-                class="inline-flex shrink-0 is-clickable items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-gray-200 bg-marketing-soft px-5 py-2.5 text-[15px] font-semibold text-black no-underline transition-colors hover:border-marketing-green hover:text-marketing-green"
+                class="inline-flex w-full shrink-0 is-clickable items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-gray-200 bg-marketing-soft px-5 py-2.5 text-[15px] font-semibold text-black no-underline transition-colors hover:border-marketing-green hover:text-marketing-green sm:w-auto"
               >{{ S.jobViewProfile }}</NuxtLink>
               <span
                 v-else
-                class="inline-flex shrink-0 is-disabled-cursor items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-gray-200 bg-marketing-soft px-5 py-2.5 text-[15px] font-semibold text-black/35"
+                class="inline-flex w-full shrink-0 is-disabled-cursor items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-gray-200 bg-marketing-soft px-5 py-2.5 text-[15px] font-semibold text-black/35 sm:w-auto"
               >{{ S.jobViewProfile }}</span>
             </div>
             <div class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9">
@@ -226,23 +228,25 @@
                   </div>
                 </div>
               </div>
-              <div class="flex items-center gap-[18px] rounded-[20px] bg-white px-7 py-6 shadow-[0_0_12px_rgba(0,0,0,0.07)]">
-                <div
-                  class="flex size-[58px] min-h-[58px] min-w-[58px] shrink-0 items-center justify-center rounded-full bg-marketing-green text-xl font-bold text-white"
-                >{{ employerInitials(job.employer_name) }}</div>
-                <div class="min-w-0 flex-1">
-                  <div class="mb-0.5 text-[13px] font-medium text-black/40">{{ S.jobPostedBy }}</div>
-                  <div class="mb-1 text-[19px] font-bold text-black">{{ job.employer_name || S.employerDefault }}</div>
-                  <div class="text-sm font-semibold text-black/50">{{ S.jobNoRatingsYet }}</div>
+              <div class="flex flex-col gap-3 rounded-[20px] bg-white px-7 py-6 shadow-[0_0_12px_rgba(0,0,0,0.07)] sm:flex-row sm:items-center sm:gap-[18px]">
+                <div class="flex min-w-0 flex-1 items-center gap-[18px]">
+                  <div
+                    class="flex size-[58px] min-h-[58px] min-w-[58px] shrink-0 items-center justify-center rounded-full bg-marketing-green text-xl font-bold text-white"
+                  >{{ employerInitials(job.employer_name) }}</div>
+                  <div class="min-w-0 flex-1">
+                    <div class="mb-0.5 text-[13px] font-medium text-black/40">{{ S.jobPostedBy }}</div>
+                    <div class="mb-1 text-[19px] font-bold text-black">{{ job.employer_name || S.employerDefault }}</div>
+                    <div class="text-sm font-semibold text-black/50">{{ S.jobNoRatingsYet }}</div>
+                  </div>
                 </div>
                 <NuxtLink
                   v-if="job.company_id"
                   :to="ROUTES.publicProfile(job.company_id)"
-                  class="inline-flex shrink-0 is-clickable items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-gray-200 bg-marketing-soft px-5 py-2.5 text-[15px] font-semibold text-black no-underline transition-colors hover:border-marketing-green hover:text-marketing-green"
+                  class="inline-flex w-full shrink-0 is-clickable items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-gray-200 bg-marketing-soft px-5 py-2.5 text-[15px] font-semibold text-black no-underline transition-colors hover:border-marketing-green hover:text-marketing-green sm:w-auto"
                 >{{ S.jobViewProfile }}</NuxtLink>
                 <span
                   v-else
-                  class="inline-flex shrink-0 is-disabled-cursor items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-gray-200 bg-marketing-soft px-5 py-2.5 text-[15px] font-semibold text-black/35"
+                  class="inline-flex w-full shrink-0 is-disabled-cursor items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-gray-200 bg-marketing-soft px-5 py-2.5 text-[15px] font-semibold text-black/35 sm:w-auto"
                 >{{ S.jobViewProfile }}</span>
               </div>
               <div class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9">

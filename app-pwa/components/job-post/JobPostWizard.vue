@@ -51,6 +51,15 @@
               alt=""
               class="absolute inset-0 size-full object-cover"
             >
+            <button
+              v-if="coverPhoto"
+              type="button"
+              class="absolute right-2 top-2 z-10 flex size-8 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
+              aria-label="Odstrániť obrázok"
+              @click.stop="removeCoverPhoto"
+            >
+              <AppIcon name="x" :size="14" />
+            </button>
           </div>
           <p v-if="uploadingCover" class="m-0 text-sm text-black/50">
             {{ S.loading }}
@@ -1000,6 +1009,11 @@ async function onExtraChange(e: Event): Promise<void> {
     uploadingExtra.value = false
     input.value = ''
   }
+}
+
+function removeCoverPhoto(): void {
+  form.coverPhoto.value = null
+  form.markPhotosTouched()
 }
 
 function removeGalleryAt(index: number): void {

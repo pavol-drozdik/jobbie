@@ -47,6 +47,15 @@
                 <span class="text-lg font-medium text-black/40">{{ S.firmyThumbnailDropHint }}</span>
               </template>
               <img v-else :src="coverPhoto" alt="" class="absolute inset-0 size-full object-cover">
+              <button
+                v-if="coverPhoto"
+                type="button"
+                class="absolute right-2 top-2 z-10 flex size-8 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
+                aria-label="Odstrániť obrázok"
+                @click.stop="removeCoverPhoto"
+              >
+                <AppIcon name="x" :size="14" />
+              </button>
             </div>
             <p v-if="uploadingCover" class="m-0 text-sm text-black/50">{{ S.loading }}</p>
             <p class="m-0 text-sm font-semibold text-black/60">{{ S.firmyCardLogo }}</p>
@@ -579,6 +588,11 @@ async function onCoverChange(e: Event): Promise<void> {
     uploadingCover.value = false
     ;(e.target as HTMLInputElement).value = ''
   }
+}
+
+function removeCoverPhoto(): void {
+  coverPhoto.value = null
+  markThumbnailTouched()
 }
 
 async function onThumbnailDrop(e: DragEvent): Promise<void> {

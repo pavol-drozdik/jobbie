@@ -13,6 +13,7 @@ import {
   ForbiddenException,
   NotFoundException,
   BadRequestException,
+  UnauthorizedException,
   UseInterceptors,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
@@ -321,6 +322,9 @@ export class JobsController {
     const limitNum = Math.min(Number(limit) || 50, 100);
     const offsetNum = Math.max(Number(offset) || 0, 0);
     const filterByMy = my === 'true';
+    if (filterByMy && !user) {
+      throw new UnauthorizedException();
+    }
     const effectiveCompanyId =
       filterByMy && user ? user.id : companyId;
     const isOwnerScopedList = Boolean(
