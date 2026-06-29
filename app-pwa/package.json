@@ -44,7 +44,7 @@
     "isomorphic-dompurify": "^3.18.0",
     "nuxt": "^3.14.0",
     "pdfjs-dist": "^6.0.227",
-    "posthog-js": "^1.386.6",
+    "posthog-js": "^1.396.1",
     "socket.io-client": "^4.7.0",
     "vue": "^3.5.30",
     "vue-router": "^4.6.4",
