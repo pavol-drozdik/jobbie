@@ -208,6 +208,7 @@
   jobLocationOptional: 'Lokácia (voliteľné)',
   createAndPublish: 'Zverejniť',
   saveDraft: 'Uložiť koncept',
+  jobDraftSaved: 'Koncept bol uložený.',
   sortBy: 'Zoradiť podľa',
   sortNewest: 'Od najnovšieho',
   sortSalary: 'Najviac platiaceho',

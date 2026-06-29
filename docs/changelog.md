@@ -6,6 +6,12 @@ Fixed:
 - **CI:** `pwa-cloudflare-deploy.yml` — optional zone cache purge via `CLOUDFLARE_ZONE_ID` after Pages deploy.
 - **docs/deployment.md** — `NUXT_PUBLIC_CDN_URL` guidance, hard-refresh diagnostic, purge secret.
 
+## 2026-06-29 — Job post wizard: credits display + draft save
+
+Fixed:
+- **app-pwa:** JobPostWizard — billing account load waits for auth (fixes stale/missing credit balance on publish step); balance falls back to profile credits; insufficient-credits banner only when publish cost &gt; 0.
+- **app-pwa:** „Uložiť koncept“ keeps you on the wizard and shows „Koncept bol uložený.“ instead of redirecting to hub with no feedback.
+
 ## 2026-06-29 — Moje reklamy wizard UX + incremental publish credits
 
 Fixed:

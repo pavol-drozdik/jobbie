@@ -27,6 +27,7 @@ import {
   formatMoneyInputField,
   parseMoneyInput,
 } from '~/utils/money-amount'
+import { isJobListingPubliclyLive } from '~/utils/job-listing-status'
 
 export type JobPostLanguageRow = { id: number; level: string }
 
@@ -412,6 +413,13 @@ export function useJobPostForm(opts?: { variant?: JobPostVariant }) {
     return null
   }
 
+  function applyJobBillingSnapshot(job: Job & Record<string, unknown>): void {
+    isAlreadyPublished.value = isJobListingPubliclyLive(job)
+    const hasTop = Boolean(job.show_top_badge)
+    hadTopOnLoad.value = hasTop
+    isTopListing.value = hasTop
+  }
+
   function hydrateFromJob(job: Job & Record<string, unknown>): void {
     markAdKindDefaultsSeen()
     const emp = Array.isArray(job.employment_types)
@@ -436,9 +444,7 @@ export function useJobPostForm(opts?: { variant?: JobPostVariant }) {
     coverPhoto.value = photoUrls[0] ?? null
     extraPhotos.value = photoUrls.slice(1)
     isUrgent.value = Boolean(job.is_urgent)
-    isAlreadyPublished.value = job.is_active === true && job.is_draft !== true
-    hadTopOnLoad.value = Boolean(job.show_top_badge)
-    isTopListing.value = Boolean(job.show_top_badge)
+    applyJobBillingSnapshot(job)
     workModes.value = (
       Array.isArray(job.work_modes) && (job.work_modes as string[]).length > 0
         ? (job.work_modes as WorkModeValue[])
@@ -688,6 +694,7 @@ export function useJobPostForm(opts?: { variant?: JobPostVariant }) {
     buildApiBody,
     validateForPublish,
     hydrateFromJob,
+    applyJobBillingSnapshot,
     resolveDomesticMunicipality,
     markPhotosTouched,
     markAdKindDefaultsSeen,
