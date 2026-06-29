@@ -1,4 +1,14 @@
-﻿## 2026-06-29 — Permanent account deletion (vs admin suspend)
+﻿## 2026-06-29 — Registration post-signup redirect (no welcome page)
+
+Changed:
+- **app-pwa:** Email/password and Google OAuth registration go to `/` when a session exists, or `/auth/register/confirm-email` when confirmation is required; removed post-signup passkey auto-enroll and `/auth/register/welcome` screen (route redirects to home).
+
+## 2026-06-29 — Google register lands on homepage
+
+Changed:
+- **app-pwa:** Google OAuth registration redirects to `/` after callback.
+
+## 2026-06-29 — Permanent account deletion (vs admin suspend)
 
 Changed:
 - **backend-ts:** `POST /api/profiles/me/delete` and admin close-account now call `auth.admin.deleteUser` after billing/listing teardown — full erasure so email/OAuth can register fresh (`AccountPermanentDeletionService`).

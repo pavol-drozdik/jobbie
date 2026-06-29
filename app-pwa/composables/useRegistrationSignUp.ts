@@ -1,6 +1,7 @@
 import type { RegistrationCredentials, RegistrationPreferences } from '~/composables/useRegistration'
 import { validateIndividualRegistrationBirthDate } from '~/utils/age-eligibility'
 import { isApiUnreachableStatus } from '~/utils/api-fetch'
+import { ROUTES } from '~/utils/app-routes'
 import { S } from '~/utils/strings'
 
 type CaptchaVerifyData = { ok?: boolean; skipped?: boolean }
@@ -60,13 +61,13 @@ export type SignUpResult =
 
 export function useRegistrationSignUp() {
   const { credentials, roles, getMetaForSignUp, clear } = useRegistration()
-  const { syncSession, canUsePasskeys, enrollPasskey } = useAuth()
+  const { syncSession } = useAuth()
   const supabase = useSupabase()
   const { api } = useApi()
   const saving = ref(false)
   const error = ref<string | null>(null)
 
-  // Branches: email confirmation (no session) vs syncSession + PATCH profile + optional passkey enroll.
+  // Branches: email confirmation (no session) vs syncSession + PATCH profile → home.
   async function doSignUp(
     prefsOverride: RegistrationPreferences | null,
     captchaToken?: string | null,
@@ -189,11 +190,8 @@ export function useRegistrationSignUp() {
           }
         }
       }
-      if (canUsePasskeys()) {
-        await enrollPasskey()
-      }
       clear()
-      await navigateTo('/auth/register/welcome', { replace: true })
+      await navigateTo(ROUTES.home, { replace: true })
       return { ok: true, needsEmailConfirmation: false }
     } catch {
       const msg = 'Pri registrácii sa vyskytla chyba.'
