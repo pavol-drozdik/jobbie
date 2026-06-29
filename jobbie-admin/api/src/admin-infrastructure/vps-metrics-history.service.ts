@@ -77,11 +77,14 @@ export class VpsMetricsHistoryService implements OnModuleInit, OnModuleDestroy {
       }
     }
 
-    const load_pct = host.cpu_count > 0 ? (host.load_1 / host.cpu_count) * 100 : 0;
-    const mem_pct =
+    const load_pct = clampLoadPct(
+      host.cpu_count > 0 ? (host.load_1 / host.cpu_count) * 100 : 0,
+    );
+    const mem_pct = clampLoadPct(
       host.memory_total_bytes > 0
         ? (host.memory_used_bytes / host.memory_total_bytes) * 100
-        : 0;
+        : 0,
+    );
     const max_core_pct = maxCorePct(host.cpu_per_core);
     const cpu_per_core = normalizeCoreSamples(host.cpu_per_core);
 
@@ -190,6 +193,11 @@ export function clampCorePct(n: number): number {
   return round1(Math.min(100, Math.max(0, n)));
 }
 
+/** Load-average % and RAM % for charts (0–100). */
+export function clampLoadPct(n: number): number {
+  return clampCorePct(n);
+}
+
 export function maxCorePct(cores?: number[]): number | undefined {
   if (!cores?.length) {
     return undefined;
@@ -213,13 +221,17 @@ function normalizeCoreSamples(cores?: number[]): number[] | undefined {
 }
 
 function sanitizeStoredPoint(point: StoredPoint): StoredPoint {
+  const load_pct = clampLoadPct(point.load_pct);
+  const mem_pct = clampLoadPct(point.mem_pct);
   if (!point.cpu_per_core?.length) {
-    return point;
+    return { ...point, load_pct, mem_pct };
   }
   const cpu_per_core = point.cpu_per_core.map((n) => clampCorePct(n));
   const max_core_pct = maxCorePct(cpu_per_core);
   return {
     ...point,
+    load_pct,
+    mem_pct,
     cpu_per_core,
     ...(max_core_pct != null ? { max_core_pct } : {}),
   };
@@ -288,7 +300,7 @@ function averageBucket(bucket: StoredPoint[]): StoredPoint {
   const withMax = bucket.filter((p) => p.max_core_pct != null);
   const max_core_pct =
     withMax.length > 0
-      ? round1(
+      ? clampLoadPct(
           withMax.reduce((sum, p) => sum + (p.max_core_pct ?? 0), 0) /
             withMax.length,
         )
@@ -297,8 +309,8 @@ function averageBucket(bucket: StoredPoint[]): StoredPoint {
   const mid = bucket[Math.floor(bucket.length / 2)];
   return {
     t: mid.t,
-    load_pct: round1(load_pct),
-    mem_pct: round1(mem_pct),
+    load_pct: clampLoadPct(load_pct),
+    mem_pct: clampLoadPct(mem_pct),
     load_1: round1(load_1),
     ...(max_core_pct != null ? { max_core_pct } : {}),
     ...(cpu_per_core ? { cpu_per_core } : {}),

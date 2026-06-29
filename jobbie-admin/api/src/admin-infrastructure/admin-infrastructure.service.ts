@@ -52,10 +52,13 @@ export class AdminInfrastructureService implements OnModuleInit, OnModuleDestroy
     envId: 'staging' | 'production',
     range: InfraMetricsRangeDto,
   ): VpsMetricsHistoryDto {
+    const points = this.metricsHistory.getHistory(envId, range);
     return {
       env_id: envId,
       range,
-      points: this.metricsHistory.getHistory(envId, range),
+      points,
+      coverage_from: points[0]?.t ?? null,
+      coverage_to: points[points.length - 1]?.t ?? null,
     };
   }
 

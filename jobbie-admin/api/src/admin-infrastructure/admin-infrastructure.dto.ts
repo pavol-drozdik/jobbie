@@ -91,4 +91,8 @@ export type VpsMetricsHistoryDto = {
   env_id: 'staging' | 'production';
   range: InfraMetricsRangeDto;
   points: VpsMetricsHistoryPointDto[];
+  /** ISO timestamp of oldest returned sample (for coverage hint). */
+  coverage_from: string | null;
+  /** ISO timestamp of newest returned sample. */
+  coverage_to: string | null;
 };

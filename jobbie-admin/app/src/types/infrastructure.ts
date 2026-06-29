@@ -90,4 +90,6 @@ export type VpsMetricsHistory = {
   env_id: 'staging' | 'production'
   range: InfraMetricsRange
   points: VpsMetricsHistoryPoint[]
+  coverage_from: string | null
+  coverage_to: string | null
 }

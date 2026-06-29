@@ -46,6 +46,15 @@ trim_env() {
   printf '%s' "$v"
 }
 
+# grep in a pipeline exits 1 when the key is missing; with pipefail that aborts set -e.
+read_env_value() {
+  local key="$1"
+  local file="$2"
+  local raw
+  raw="$(grep -E "^${key}=" "${file}" 2>/dev/null | head -n1 | cut -d= -f2- | tr -d '"' | tr -d "'" | xargs || true)"
+  trim_env "${raw}"
+}
+
 if [[ -n "${HEALTH_URL:-}" ]]; then
   HEALTH_URL="$(trim_env "${HEALTH_URL}")"
 fi
@@ -65,8 +74,7 @@ if [[ ! -f "${ENV_FILE}" ]]; then
 fi
 
 if [[ -z "${HEALTH_URL:-}" ]]; then
-  APP_DOMAIN="$(grep -E '^APP_DOMAIN=' "${ENV_FILE}" | head -n1 | cut -d= -f2- | tr -d '"' | tr -d "'" | xargs)"
-  APP_DOMAIN="$(trim_env "${APP_DOMAIN}")"
+  APP_DOMAIN="$(read_env_value APP_DOMAIN "${ENV_FILE}")"
   if [[ -n "${APP_DOMAIN}" ]]; then
     HEALTH_URL="https://${APP_DOMAIN}/health"
   fi
@@ -85,8 +93,7 @@ echo "Target image: ${NEW_IMAGE}"
 
 OLD_BACKEND_IMAGE=""
 if grep -q '^BACKEND_IMAGE=' "${ENV_FILE}"; then
-  OLD_BACKEND_IMAGE="$(grep -E '^BACKEND_IMAGE=' "${ENV_FILE}" | head -n1 | cut -d= -f2- | tr -d '"' | tr -d "'" | xargs)"
-  OLD_BACKEND_IMAGE="$(trim_env "${OLD_BACKEND_IMAGE}")"
+  OLD_BACKEND_IMAGE="$(read_env_value BACKEND_IMAGE "${ENV_FILE}")"
 fi
 
 restore_backend_image() {
@@ -108,8 +115,7 @@ export BACKEND_IMAGE="${NEW_IMAGE}"
 
 BACKEND_SCALE="${BACKEND_SCALE:-}"
 if [[ -z "${BACKEND_SCALE}" ]] && [[ -f "${ENV_FILE}" ]]; then
-  BACKEND_SCALE="$(grep -E '^BACKEND_SCALE=' "${ENV_FILE}" | head -n1 | cut -d= -f2- | tr -d '"' | tr -d "'" | xargs)"
-  BACKEND_SCALE="$(trim_env "${BACKEND_SCALE}")"
+  BACKEND_SCALE="$(read_env_value BACKEND_SCALE "${ENV_FILE}")"
 fi
 BACKEND_SCALE="${BACKEND_SCALE:-1}"
 if ! [[ "${BACKEND_SCALE}" =~ ^[0-9]+$ ]] || [[ "${BACKEND_SCALE}" -lt 1 ]]; then
@@ -135,8 +141,7 @@ fi
 
 # GET /health bypasses CORS (no Origin required) — safe for curl and load balancers.
 # Prefer local Caddy (Host header) before the public URL — avoids false fails during DNS/CF flap.
-APP_DOMAIN="$(grep -E '^APP_DOMAIN=' "${ENV_FILE}" | head -n1 | cut -d= -f2- | tr -d '"' | tr -d "'" | xargs || true)"
-APP_DOMAIN="$(trim_env "${APP_DOMAIN}")"
+APP_DOMAIN="$(read_env_value APP_DOMAIN "${ENV_FILE}")"
 LOCAL_HEALTH_URL=""
 if [[ -n "${APP_DOMAIN}" ]]; then
   LOCAL_HEALTH_URL="http://127.0.0.1/health"

@@ -1,4 +1,9 @@
-﻿## 2026-06-29 — Deploy script diagnostics + audit erasure FK
+﻿## 2026-06-29 — Deploy script: missing BACKEND_SCALE in .env
+
+Fixed:
+- **deploy_backend.sh:** `grep BACKEND_SCALE` with no match exited 1 under `pipefail`, aborting deploy before pull (ERR trap restored old image). `read_env_value` helper treats missing keys as empty (default scale 1).
+
+## 2026-06-29 — Deploy script diagnostics + audit erasure FK
 
 Changed:
 - **deploy_backend.sh:** Log target image; explicit pull/up errors; restore previous `BACKEND_IMAGE` on failure; local Caddy health probe before public URL.
