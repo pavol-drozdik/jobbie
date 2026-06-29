@@ -11,5 +11,5 @@ alwaysApply: false
 - `login-attempt` / `login-status`: rate-limited, CAPTCHA on failures when Turnstile configured.
 - Never return distinct errors for "unknown email" vs "wrong password".
 - `app_role`, `credits`, `extra_permission_scopes`, `account_status`: only service role or triggers may change.
-- Admin routes: `AppRoleGuard` + `@RequireAppRoles('admin')` + `AdminMfaGuard` (AAL2).
+- Admin routes (desktop `jobbie-admin/api`): `AppRoleGuard` + `@RequireAppRoles('admin')`.
 - Sensitive routes: `@RequireRecentLogin()` (billing, account delete, admin moderation).

@@ -107,6 +107,7 @@ onMounted(async () => {
 
   try {
     const handoff = readRecoveryHandoffFromRoute(route)
+    const isEmailChangeHandoff = handoff.type === 'email_change'
     if (
       handoff.tokenHash &&
       handoff.type &&
@@ -150,7 +151,10 @@ onMounted(async () => {
       return
     }
 
-    const flow = await finishAuthAfterSignIn(supaSession, target)
+    const postAuthTarget = isEmailChangeHandoff
+      ? '/nastavenia/bezpecnost?email_changed=1'
+      : target
+    const flow = await finishAuthAfterSignIn(supaSession, postAuthTarget)
     if (flow.outcome === 'mfa') {
       return
     }

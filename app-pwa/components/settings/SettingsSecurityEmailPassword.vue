@@ -32,6 +32,25 @@
       <p v-if="emailErr" class="mt-2 text-sm text-red-600" role="alert">{{ emailErr }}</p>
     </div>
 
+    <div
+      v-if="requiresCurrentPassword"
+      class="border-t border-black/10 pt-6"
+    >
+      <div :class="fieldWrapClass">
+        <label :class="labelClass" for="security-current-password">{{ S.settingsCurrentPassword }}</label>
+        <p class="mb-2 font-dmSans text-sm text-black/55">{{ S.settingsCurrentPasswordHint }}</p>
+        <input
+          id="security-current-password"
+          :value="currentPassword"
+          type="password"
+          :class="inputClass"
+          :placeholder="S.settingsCurrentPassword"
+          autocomplete="current-password"
+          @input="emit('update:currentPassword', ($event.target as HTMLInputElement).value)"
+        >
+      </div>
+    </div>
+
     <div class="border-t border-black/10 pt-6">
       <h3 class="m-0 mb-2 font-dmSans text-[15px] font-extrabold text-black">
         {{ S.settingsPasswordSection }}
@@ -42,6 +61,7 @@
       >
         {{ S.settingsSecurityPasswordWarning }}
       </p>
+      <p class="mb-3 font-dmSans text-sm text-black/55">{{ passwordPolicyHint }}</p>
       <div class="space-y-3">
         <div :class="fieldWrapClass">
           <label :class="labelClass" for="security-new-password">{{ S.settingsNewPassword }}</label>
@@ -68,6 +88,13 @@
           >
         </div>
       </div>
+      <AuthTurnstileWidget
+        v-if="turnstileEnabled"
+        ref="passwordTurnstileRef"
+        :model-value="passwordCaptchaToken"
+        class="mb-3"
+        @update:model-value="emit('update:passwordCaptchaToken', $event)"
+      />
       <AppButton
         type="button"
         class="mt-3"
@@ -84,8 +111,14 @@
 
 <script setup lang="ts">
 import { S } from '~/utils/strings'
+import { passwordPolicyHint } from '~/utils/validate-password'
 
 const { labelClass, inputClass, fieldWrapClass } = useSettingsFormStyles()
+const { turnstileEnabled } = useAuthCaptcha()
+
+const passwordTurnstileRef = ref<{ reset?: () => void } | null>(null)
+
+defineExpose({ resetPasswordCaptcha: () => passwordTurnstileRef.value?.reset?.() })
 
 defineProps<{
   currentEmail: string
@@ -93,16 +126,21 @@ defineProps<{
   emailSaving: boolean
   emailMsg: string
   emailErr: string
+  requiresCurrentPassword: boolean
+  currentPassword: string
   newPassword: string
   confirmPassword: string
   passwordSaving: boolean
   passwordErr: string
+  passwordCaptchaToken: string
 }>()
 
 const emit = defineEmits<{
   'update:newEmail': [value: string]
+  'update:currentPassword': [value: string]
   'update:newPassword': [value: string]
   'update:confirmPassword': [value: string]
+  'update:passwordCaptchaToken': [value: string]
   saveEmail: []
   savePassword: []
 }>()

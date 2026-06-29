@@ -414,7 +414,7 @@
                   v-model="password"
                   :type="showPassword1 ? 'text' : 'password'"
                   autocomplete="new-password"
-                  placeholder="Minimálne 8 znakov"
+                  :placeholder="S.passwordPolicyHint"
                   :class="inputWithTrailingIconClass"
                 />
                 <button
@@ -556,6 +556,7 @@ import {
   MIN_INDIVIDUAL_REGISTRATION_AGE,
   validateIndividualRegistrationBirthDate,
 } from '~/utils/age-eligibility'
+import { validatePassword } from '~/utils/validate-password'
 import type { AccountType } from '~/composables/useRegistration'
 
 const fieldLabelClass = formFieldLabelClass
@@ -787,8 +788,9 @@ async function submitRegister(): Promise<void> {
     showErr4.value = true
     return
   }
-  if (password.value.length < 8) {
-    err4Message.value = 'Heslo musí mať aspoň 8 znakov.'
+  const passwordError = validatePassword(password.value)
+  if (passwordError) {
+    err4Message.value = passwordError
     showErr4.value = true
     return
   }

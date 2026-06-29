@@ -152,7 +152,7 @@ async function exportFile(format: 'csv' | 'jsonl') {
   if (!res.ok) {
     exportError.value =
       res.status === 403
-        ? `Export vyžaduje čerstvé prihlásenie (MFA do ${recentLoginMinutes.value} min). Odhláste sa a prihláste znova.`
+        ? `Export vyžaduje čerstvé prihlásenie (do ${recentLoginMinutes.value} min). Odhláste sa a prihláste znova.`
         : res.body || `HTTP ${res.status}`
   }
   exporting.value = false

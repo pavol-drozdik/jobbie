@@ -31,7 +31,7 @@ The Nest API uses `SUPABASE_SERVICE_ROLE_KEY` and **must enforce authorization i
 | Security headers | `helmet` (API); CSP + X-Frame-Options etc. (PWA) |
 | Secrets | `.env` only; see [database-operations-runbook.md](./database-operations-runbook.md#secret-rotation) |
 | Authentication | `GlobalAuthGuard` (cookie or Bearer during transition); JWKS |
-| Admin MFA | `AdminMfaGuard` — JWT claim `aal === aal2` |
+| Desktop admin | [`jobbie-admin/api`](../jobbie-admin/api) — `AppRoleGuard` + Bearer JWT; `@RequireRecentLogin()` on sensitive routes |
 | Step-up | `@RequireRecentLogin()` — `api_user_sessions.last_step_up_at` within 15 min |
 | Authorization | Ownership checks, `AppRoleGuard`, `PermissionsGuard` + scopes |
 | Account status | `profiles.account_status` (`active` / `suspended` / `closed`); `AccountStatusGuard` |

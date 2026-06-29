@@ -1,4 +1,31 @@
-﻿## 2026-06-29 — PWA update banner: Obnoviť activates new service worker
+﻿## 2026-06-29 — Supabase Turnstile CAPTCHA on login
+
+Fixed:
+- **app-pwa:** Login always shows Turnstile and sends `captchaToken` to Supabase when `NUXT_PUBLIC_TURNSTILE_SITE_KEY` is set (fixes `no captcha_token found` with dashboard CAPTCHA enabled). Passkey conditional UI waits for captcha; reset-password and settings password flows include Turnstile; [`useAuthCaptcha`](../app-pwa/composables/useAuthCaptcha.ts) shared helper.
+
+## 2026-06-29 — Supabase Auth policy alignment (PWA)
+
+Changed:
+- **app-pwa:** Shared password validator (`validate-password.ts`) — min 8 characters, letters and digits — used on register, password reset, and settings password change.
+- **app-pwa:** Settings security — current-password reauthentication before email/password `updateUser` when the account has an email identity; improved secure email-change copy and post-confirm redirect to `/nastavenia/bezpecnost`.
+- **docs/auth-security.md** — Supabase Auth password and email policy table.
+
+## 2026-06-29 — JOBBIE Admin: login via local API
+
+Fixed:
+- **jobbie-admin:** `POST /api/auth/login` on localhost uses `SUPABASE_ANON_KEY` from `api/.env` (same project as JWT verify). UI no longer depends on client-side Supabase env for sign-in.
+
+## 2026-06-29 — JOBBIE Admin: login error messages
+
+Fixed:
+- **jobbie-admin:** Clearer Supabase login errors and `app/.env` validation hint. No Turnstile on admin — PWA/Nest CAPTCHA is separate from Supabase Auth.
+
+## 2026-06-29 — JOBBIE Admin: MFA no longer required
+
+Changed:
+- **jobbie-admin:** Removed `AdminMfaGuard` (AAL2) and TOTP step from login; password + `app_role = admin` is enough. Sensitive routes still use `@RequireRecentLogin()`.
+
+## 2026-06-29 — PWA update banner: Obnoviť activates new service worker
 
 Fixed:
 - **app-pwa/service-worker/sw.ts:** Listen for `SKIP_WAITING` so `@vite-pwa/nuxt` `updateServiceWorker()` can activate a waiting worker (`registerType: 'prompt'` + injectManifest).

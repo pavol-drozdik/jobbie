@@ -58,6 +58,7 @@
               <label :class="fieldLabelClass" for="reset-password">
                 {{ S.settingsNewPassword }}
               </label>
+              <p class="m-0 font-dmSans text-sm text-black/55">{{ passwordPolicyHint() }}</p>
               <div class="relative flex items-center">
                 <input
                   id="reset-password"
@@ -162,6 +163,12 @@
               </div>
             </div>
 
+            <AuthTurnstileWidget
+              ref="resetTurnstileRef"
+              v-model="captchaToken"
+              class="mb-4"
+            />
+
             <button
               type="submit"
               class="mb-4 h-14 w-full is-clickable rounded-full border-none bg-marketing-green text-lg font-bold text-white transition-opacity duration-200 hover:opacity-[0.88] disabled:is-disabled-cursor disabled:opacity-50"
@@ -203,7 +210,9 @@ import {
   readRecoveryHandoffForBootstrap,
 } from '~/utils/bootstrap-password-recovery-session'
 import { mapSupabaseResetError } from '~/utils/map-supabase-reset-error'
+import { isCaptchaLoginError } from '~/utils/map-supabase-login-error'
 import { S } from '~/utils/strings'
+import { validatePassword, passwordPolicyHint } from '~/utils/validate-password'
 import { formFieldLabelClass, formTextInputTrailingIconClass } from '~/utils/form-field-ui'
 
 const fieldLabelClass = formFieldLabelClass
@@ -228,6 +237,9 @@ const confirmPasswordVisible = ref(false)
 const saving = ref(false)
 const error = ref<string | null>(null)
 const success = ref<string | null>(null)
+const captchaToken = ref('')
+const resetTurnstileRef = ref<{ reset?: () => void } | null>(null)
+const { requireCaptchaToken } = useAuthCaptcha()
 
 async function bootstrapRecoverySession(): Promise<void> {
   sessionError.value = null
@@ -247,8 +259,15 @@ async function handleSubmit(): Promise<void> {
     error.value = S.settingsPasswordMismatch
     return
   }
-  if (password.value.length < 6) {
-    error.value = S.settingsPasswordMinLength
+  const passwordError = validatePassword(password.value)
+  if (passwordError) {
+    error.value = passwordError
+    return
+  }
+
+  const captchaErr = requireCaptchaToken(captchaToken.value)
+  if (captchaErr) {
+    error.value = captchaErr
     return
   }
 
@@ -265,6 +284,10 @@ async function handleSubmit(): Promise<void> {
       password: password.value,
     })
     if (updateError) {
+      if (isCaptchaLoginError(updateError.code, updateError.message)) {
+        captchaToken.value = ''
+        resetTurnstileRef.value?.reset?.()
+      }
       error.value = mapSupabaseResetError(updateError.code, updateError.message)
       return
     }
