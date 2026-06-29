@@ -12,7 +12,7 @@ type ProfileActivityRow = {
 
 const MESSAGES: Record<ProfileActivityRole, string> = {
   customer:
-    'Táto funkcia vyžaduje zapnutú rolu „Potrebujem pomoc s prácou“ v profile.',
+    'Táto funkcia vyžaduje zapnutú rolu „Poskytujem prácu“ v profile.',
   worker:
     'Táto funkcia vyžaduje zapnutú rolu „Hľadám malé práce“ v profile.',
   provider:

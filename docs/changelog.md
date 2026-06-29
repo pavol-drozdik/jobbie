@@ -1,4 +1,22 @@
-﻿## 2026-06-29 — Registration activity roles persist at signup
+﻿## 2026-06-29 — Google OAuth + Turnstile CAPTCHA
+
+Fixed:
+- **app-pwa:** `signInWithOAuth` (login + registration wizard) now passes Turnstile `captchaToken` when Supabase Auth CAPTCHA is enabled — fixes generic „Prihlásenie cez Google zlyhalo“ after recent Turnstile rollout.
+- **app-pwa:** Google registration stores wizard metadata in `sessionStorage`, applies `updateUser` + `PATCH /api/profiles/me` on callback (roles, profile fields, newsletter consent); requires terms acceptance before OAuth.
+- **app-pwa:** Clearer CAPTCHA-specific OAuth error copy (`authOAuthCaptchaFailed`).
+
+## 2026-06-29 — Customer role label + blog layout
+
+Changed:
+- **app-pwa:** Renamed customer role display label from „Potrebujem pomoc s prácou“ to „Poskytujem prácu“ (signup, profile, settings, dashboard copy, CV database gate).
+- **backend-ts:** Matching role name in customer-only API error messages.
+- **app-pwa:** Blog post detail cover uses 4:3 aspect ratio (`aspect-[4/3]`); blog/home list card titles clamp to 2 lines.
+- **docs/features.md** — updated `customer_role` label.
+
+Fixed:
+- **app-pwa:** Blog post hard refresh no longer shows generic 404 when the API is unreachable — SSR only 404s on `GET /api/blog/:slug` HTTP 404; load failures show retry UI. `fetchPublicBlogPost` uses `apiUrl` (Vite proxy in dev) and Nitro `devProxy` for SSR.
+
+## 2026-06-29 — Registration activity roles persist at signup
 
 Fixed:
 - **app-pwa:** Signup metadata (`buildRegistrationSignUpMeta`) now includes `customer_role`, `worker_role`, and `provider_role`; Google OAuth registration passes the same flags.

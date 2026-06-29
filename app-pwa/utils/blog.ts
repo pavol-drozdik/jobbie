@@ -24,9 +24,9 @@ export const BLOG_DEFAULT_COVER = BRAND_DEFAULT_THUMB_WEBP_PATH
 /** Blog cover / list thumbnail aspect ratio (width : height). */
 export const BLOG_COVER_ASPECT_CLASS = 'aspect-[4/3]'
 
-/** Grid card: fixed 3-line title block (text-xl, leading-tight). */
+/** Grid card: fixed 2-line title block (text-xl, leading-tight). */
 export const BLOG_CARD_TITLE_CLASS =
-  'm-0 mb-2.5 min-h-[4.6875rem] line-clamp-3 font-dmSans text-xl font-extrabold leading-tight text-black'
+  'm-0 mb-2.5 min-h-[3.125rem] line-clamp-2 font-dmSans text-xl font-extrabold leading-tight text-black'
 
 /** Grid card: fixed 3-line excerpt block. */
 export const BLOG_CARD_EXCERPT_CLASS =

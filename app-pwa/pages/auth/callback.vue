@@ -19,6 +19,11 @@ import {
 } from '~/utils/map-supabase-auth-callback-error'
 import { mapSupabaseRecoveryVerifyError } from '~/utils/map-supabase-reset-error'
 import { resolveSafeInternalPath } from '~/utils/safe-navigation'
+import {
+  buildProfilePatchFromSignupMeta,
+  clearOAuthSignupPending,
+  readOAuthSignupPending,
+} from '~/utils/oauth-signup-pending'
 
 const AUTH_CALLBACK_OTP_TYPES = new Set([
   'signup',
@@ -32,6 +37,8 @@ definePageMeta({ layout: 'app' })
 const supabase = useSupabase()
 const route = useRoute()
 const { finishAuthAfterSignIn } = usePasskeySignInFlow()
+const { api } = useApi()
+const { clear: clearRegistrationState } = useRegistration()
 
 function resolveRedirectPath(): string {
   const raw = route.query.redirect
@@ -59,6 +66,7 @@ async function redirectWithAuthError(
   redirectPath?: string,
 ): Promise<void> {
   setAuthLoginBootstrap(false)
+  clearOAuthSignupPending()
   const mapped = mapSupabaseAuthCallbackError(error, errorCode, errorDescription, message)
   const path = mapped.destination === 'register' ? '/auth/register' : '/auth/login'
   const reason = mapped.destination === 'register' ? 'auth_signup_failed' : 'auth_callback_failed'
@@ -70,6 +78,36 @@ async function redirectWithAuthError(
     query.redirect = redirectPath
   }
   await navigateTo({ path, query }, { replace: true })
+}
+
+async function applyPendingOAuthSignupProfile(accessToken?: string): Promise<void> {
+  const pending = readOAuthSignupPending()
+  if (!pending) return
+
+  if (Object.keys(pending.meta).length > 0) {
+    await supabase.auth.updateUser({ data: pending.meta })
+  }
+
+  const patchBody = buildProfilePatchFromSignupMeta(pending.meta)
+  if (pending.newsletterSubscribe) {
+    patchBody.marketing_processing_consent = true
+  }
+  if (Object.keys(patchBody).length > 0) {
+    const patchRes = await api('/api/profiles/me', {
+      method: 'PATCH',
+      body: patchBody,
+      ...(accessToken ? { token: accessToken } : {}),
+    })
+    if (!patchRes.ok && import.meta.dev) {
+      console.warn('[auth/callback] OAuth registration PATCH /api/profiles/me failed', {
+        status: patchRes.status,
+        body: patchRes.body?.slice(0, 200),
+      })
+    }
+  }
+
+  clearOAuthSignupPending()
+  clearRegistrationState()
 }
 
 function stripOAuthCallbackParamsFromUrl(): void {
@@ -154,6 +192,7 @@ onMounted(async () => {
     const postAuthTarget = isEmailChangeHandoff
       ? '/nastavenia/bezpecnost?email_changed=1'
       : target
+    await applyPendingOAuthSignupProfile(supaSession.access_token)
     const flow = await finishAuthAfterSignIn(supaSession, postAuthTarget)
     if (flow.outcome === 'mfa') {
       return

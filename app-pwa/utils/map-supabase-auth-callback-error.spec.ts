@@ -75,6 +75,15 @@ describe('mapSupabaseAuthCallbackError', () => {
     })
   })
 
+  it('routes captcha failures to login with captcha copy', () => {
+    expect(
+      mapSupabaseAuthCallbackError('server_error', 'captcha_failed', 'captcha verification failed'),
+    ).toEqual({
+      message: S.authOAuthCaptchaFailed,
+      destination: 'login',
+    })
+  })
+
   it('routes generic oauth errors to login', () => {
     expect(mapSupabaseAuthCallbackError('access_denied', null, null)).toEqual({
       message: S.authOAuthCancelled,
