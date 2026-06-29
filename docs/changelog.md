@@ -1,4 +1,20 @@
-﻿## 2026-06-29 — Turnstile size=invisible removed (Cloudflare API)
+﻿## 2026-06-29 — Homepage mobile PageSpeed (images + font preload)
+
+Changed:
+- **app-pwa:** Hero phone column uses `<picture>` — `jobbie-mobile-hero-760.webp` below 900px, full asset on desktop; media-scoped image preloads in `HomeHeroSection`.
+- **app-pwa:** Homepage feature sections use pre-exported `phone-image-400.webp` and `spotlight-400.webp` via `<picture>` (Cloudflare Pages does not resize `NuxtImg` at runtime).
+- **app-pwa:** DM Sans normal weight loads from `/fonts/dm-sans-latin-wght-normal.woff2` (matches `nuxt.config` preload); italic stays deferred via fontsource.
+- **app-pwa:** `scripts/optimize-home-marketing-images.mjs` — regenerate `jobbie-mobile-hero-760.webp` (760w) and 400w marketing WebPs with backend `sharp`.
+
+## 2026-06-29 — PWA stale chunk recovery after deploy
+
+Fixed:
+- **app-pwa:** `0.chunk-reload.client.ts` — one automatic reload per tab when a dynamic `_nuxt` import fails (stale HTML after deploy / CDN cache).
+- **app-pwa:** Service worker precache excludes `/_nuxt/**` so an outdated SW does not serve removed route chunks; navigations already use `NetworkOnly`.
+- **app-pwa:** Blog index client retry uses `refreshList()` instead of writing to a read-only `loading` computed.
+- **app-pwa:** Sentry ignores transient post-deploy chunk load errors (handled by reload).
+
+## 2026-06-29 — Turnstile size=invisible removed (Cloudflare API)
 
 Fixed:
 - **app-pwa:** `useTurnstileWidget` no longer passes deprecated `size: 'invisible'` (Turnstile v0 now requires `normal`/`compact`/`flexible`); uses `execution: 'execute'` + `appearance: 'execute'` for programmatic invisible challenges and `reset()` before re-execute to avoid duplicate `execute()` warnings.

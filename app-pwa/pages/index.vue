@@ -117,36 +117,44 @@
           </div>
         </div>
         <div class="w-full marketing:w-1/2">
-          <NuxtImg
-            class="mx-auto block w-full rounded-[20px] object-contain marketing:w-[90%]"
-            src="/img/phone-image.webp"
-            alt="Mobilná aplikácia Jobbie na telefóne"
-            width="800"
-            height="600"
-            sizes="(max-width: 900px) 90vw, 640px"
-            format="webp"
-            quality="82"
-            loading="lazy"
-            decoding="async"
-          />
+          <picture>
+            <source
+              media="(max-width: 899px)"
+              srcset="/img/phone-image-400.webp"
+              type="image/webp"
+            >
+            <img
+              src="/img/phone-image.webp"
+              alt="Mobilná aplikácia Jobbie na telefóne"
+              width="800"
+              height="600"
+              loading="lazy"
+              decoding="async"
+              class="mx-auto block w-full rounded-[20px] object-contain marketing:w-[90%]"
+            >
+          </picture>
         </div>
       </div>
     </section>
     <section class="mt-[72px] flex w-full flex-col items-center marketing:mt-[120px] marketingXl:mt-[140px]">
       <div class="box-border flex w-full max-w-[1400px] flex-col gap-6 px-5 marketing:flex-row marketing:items-center">
         <div class="order-2 w-full marketing:order-none marketing:w-1/2">
-          <NuxtImg
-            class="mx-auto block w-full rounded-[20px] object-contain marketing:w-[90%]"
-            src="/img/spotlight.webp"
-            alt="Profil a hodnotenia v aplikácii Jobbie"
-            width="800"
-            height="600"
-            sizes="(max-width: 900px) 90vw, 640px"
-            format="webp"
-            quality="82"
-            loading="lazy"
-            decoding="async"
-          />
+          <picture>
+            <source
+              media="(max-width: 899px)"
+              srcset="/img/spotlight-400.webp"
+              type="image/webp"
+            >
+            <img
+              src="/img/spotlight.webp"
+              alt="Profil a hodnotenia v aplikácii Jobbie"
+              width="800"
+              height="600"
+              loading="lazy"
+              decoding="async"
+              class="mx-auto block w-full rounded-[20px] object-contain marketing:w-[90%]"
+            >
+          </picture>
         </div>
         <div class="order-1 w-full marketing:order-none marketing:w-1/2">
           <h2 class="mt-0 font-dmSans text-[32px] font-extrabold leading-[1.1] text-black marketing:text-[52px] marketing:leading-[1.05] marketingXl:text-[60px] marketingXl:leading-[60px]">
