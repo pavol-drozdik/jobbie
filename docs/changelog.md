@@ -1,4 +1,11 @@
-﻿## 2026-06-29 — Google OAuth registration, PKCE flash, post-delete re-register
+﻿## 2026-06-29 — Admin Infra CPU/RAM history charts
+
+Changed:
+- **jobbie-admin:** Infra VPS cards show CPU load % and RAM % line charts with ranges **1 h**, **24 h**, **2 weeks**, **1 month**.
+- **jobbie-admin API:** `GET /api/admin/infrastructure/:envId/history?range=1h|24h|2w|1m` — local JSON time series (samples every 4+ min on refresh, background poll every 5 min while API runs; 35-day retention).
+- **jobbie-admin:** Optional `INFRA_METRICS_HISTORY_PATH`; Electron stores history in `userData/infrastructure-history.json`.
+
+## 2026-06-29 — Google OAuth registration, PKCE flash, post-delete re-register
 
 Fixed:
 - **supabase:** `handle_new_user` validates `birth_date` only when present in signup metadata — OAuth signups apply wizard fields on `/auth/callback` via `updateUser` (Supabase cannot pass custom metadata on `signInWithOAuth`).

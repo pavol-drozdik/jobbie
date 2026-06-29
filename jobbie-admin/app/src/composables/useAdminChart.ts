@@ -44,6 +44,11 @@ export function useAdminChart() {
 
   onBeforeUnmount(destroyAll)
 
+  type LineOptions = {
+    yMax?: number
+    yTickSuffix?: string
+  }
+
   function mountBar(
     canvas: HTMLCanvasElement,
     labels: string[],
@@ -80,6 +85,7 @@ export function useAdminChart() {
     canvas: HTMLCanvasElement,
     labels: string[],
     datasets: Array<{ label: string; data: number[] }>,
+    options: LineOptions = {},
   ): Chart {
     const colors = [CHART_GREEN, '#3b82f6', '#f59e0b', '#8b5cf6']
     const chart = new Chart(canvas, {
@@ -93,7 +99,7 @@ export function useAdminChart() {
           backgroundColor: CHART_GREEN_LIGHT,
           fill: i === 0,
           tension: 0.25,
-          pointRadius: 2,
+          pointRadius: labels.length > 80 ? 0 : 2,
         })),
       },
       options: {
@@ -105,7 +111,17 @@ export function useAdminChart() {
         },
         scales: {
           x: { grid: { display: false }, ticks: { color: CHART_INK3, maxTicksLimit: 12 } },
-          y: { beginAtZero: true, ticks: { color: CHART_INK3, precision: 0 } },
+          y: {
+            beginAtZero: true,
+            max: options.yMax,
+            ticks: {
+              color: CHART_INK3,
+              precision: 0,
+              callback: options.yTickSuffix
+                ? (value) => `${value}${options.yTickSuffix}`
+                : undefined,
+            },
+          },
         },
       },
     })

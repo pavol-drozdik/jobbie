@@ -42,6 +42,7 @@ App icons: `jobbie-admin/build/icon.{svg,icns,ico}` (regenerate with `npm run ic
 | GET | `/health` (`ok`, `version`, `recentLoginMinutes`) |
 | GET | `/api/admin/overview` |
 | GET | `/api/admin/infrastructure` |
+| GET | `/api/admin/infrastructure/:envId/history?range=1h\|24h\|2w\|1m` |
 | GET | `/api/admin/analytics/summary` |
 | GET | `/api/admin/analytics/external` |
 | GET | `/api/admin/analytics/external/test` |
@@ -88,7 +89,7 @@ User-facing content reports remain on the main API: `POST /api/reports`. Public 
 
 **Prehľad** (`/overview`): open reports count, signups/jobs KPIs (today + 7d), failed Stripe webhooks (7d), last five **your** audit events, quick links.
 
-**Infra** (`/infrastructure`): staging and production VPS — API health latency, host CPU load / RAM / disk (SSH), Docker container stats, optional Nest Prometheus gauges (`GET /metrics` with bearer). Requires `VPS_STAGING_*` and `VPS_PRODUCTION_*` in `jobbie-admin/api/.env` (SSH host/user/key from GitHub deploy secrets; `METRICS_BEARER_TOKEN` from each VPS `.env.backend`). Throttled to 6 requests/min. Auto-refresh 60s in UI.
+**Infra** (`/infrastructure`): staging and production VPS — API health latency, host CPU load / RAM / disk (SSH), Docker container stats, optional Nest Prometheus gauges (`GET /metrics` with bearer), **CPU/RAM history charts** (1 h / 24 h / 2 weeks / 1 month; local JSON store, background sample every 5 min). Requires `VPS_STAGING_*` and `VPS_PRODUCTION_*` in `jobbie-admin/api/.env` (SSH host/user/key from GitHub deploy secrets; `METRICS_BEARER_TOKEN` from each VPS `.env.backend`). Throttled to 6 requests/min. Auto-refresh 60s in UI.
 
 **Podpora** (`/support`): UUID hub; job/ad detail with unpublish + public URL; user detail with billing, applications, chat rooms, grant credits, GDPR export, account close.
 

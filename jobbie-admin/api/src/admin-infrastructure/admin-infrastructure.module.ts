@@ -3,6 +3,7 @@ import { AdminAuthModule } from '../auth/admin-auth.module';
 import { AdminInfrastructureController } from './admin-infrastructure.controller';
 import { AdminInfrastructureService } from './admin-infrastructure.service';
 import { VpsHttpMetricsService } from './vps-http-metrics.service';
+import { VpsMetricsHistoryService } from './vps-metrics-history.service';
 import { VpsSshMetricsService } from './vps-ssh-metrics.service';
 
 @Module({
@@ -11,6 +12,7 @@ import { VpsSshMetricsService } from './vps-ssh-metrics.service';
   providers: [
     AdminInfrastructureService,
     VpsHttpMetricsService,
+    VpsMetricsHistoryService,
     VpsSshMetricsService,
   ],
 })

@@ -45,10 +45,15 @@ describe('AdminInfrastructureService', () => {
       fetchHealth: jest.fn().mockResolvedValue({ health_ok: true, latency_ms: 42 }),
       fetchAppMetrics: jest.fn().mockResolvedValue({ rss_bytes: 100 }),
     };
+    const metricsHistory = {
+      recordSample: jest.fn(),
+      getHistory: jest.fn().mockReturnValue([]),
+    };
 
     const service = new AdminInfrastructureService(
       sshMetrics as never,
       httpMetrics as never,
+      metricsHistory as never,
     );
 
     const result = await service.getInfrastructure();
@@ -60,6 +65,9 @@ describe('AdminInfrastructureService', () => {
     expect(env.api).toEqual({ health_ok: true, latency_ms: 42 });
     expect(env.app_metrics).toEqual({ rss_bytes: 100 });
     expect(env.errors).toEqual({});
+    expect(metricsHistory.recordSample).toHaveBeenCalledWith('staging', expect.objectContaining({
+      hostname: 'vps-staging',
+    }));
   });
 
   it('records errors without failing the whole response', async () => {
@@ -72,10 +80,15 @@ describe('AdminInfrastructureService', () => {
       fetchHealth: jest.fn().mockResolvedValue({ health_ok: true, latency_ms: 10 }),
       fetchAppMetrics: jest.fn().mockRejectedValue(new Error('401')),
     };
+    const metricsHistory = {
+      recordSample: jest.fn(),
+      getHistory: jest.fn().mockReturnValue([]),
+    };
 
     const service = new AdminInfrastructureService(
       sshMetrics as never,
       httpMetrics as never,
+      metricsHistory as never,
     );
 
     const result = await service.getInfrastructure();

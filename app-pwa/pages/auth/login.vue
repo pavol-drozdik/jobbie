@@ -284,21 +284,20 @@ import {
 } from '~/utils/auth-recovery'
 import { mapSupabaseForgotPasswordError } from '~/utils/map-supabase-forgot-password-error'
 import { mapSupabaseLoginError, isCaptchaLoginError } from '~/utils/map-supabase-login-error'
-import { setAuthRememberMePreference } from '~/utils/supabase-auth-storage'
-import { resolveWebmailUrl } from '~/utils/email-webmail-url'
-import { S } from '~/utils/strings'
-import { authMarketingPanelClass } from '~/utils/marketing-ui'
-import { formFieldLabelClass, formTextInputTrailingIconClass } from '~/utils/form-field-ui'
-
-const fieldLabelClass = formFieldLabelClass
-const inputWithIconClass = formTextInputTrailingIconClass
 import {
   readAuthRememberMePreference,
   setAuthRememberMePreference,
 } from '~/utils/supabase-auth-storage'
+import { resolveWebmailUrl } from '~/utils/email-webmail-url'
+import { S } from '~/utils/strings'
+import { authMarketingPanelClass } from '~/utils/marketing-ui'
+import { formFieldLabelClass, formTextInputTrailingIconClass } from '~/utils/form-field-ui'
 import { ROUTES } from '~/utils/app-routes'
 import { resolveSafeInternalPath } from '~/utils/safe-navigation'
 import { waitForAuthReady } from '~/utils/wait-for-auth'
+
+const fieldLabelClass = formFieldLabelClass
+const inputWithIconClass = formTextInputTrailingIconClass
 
 definePageMeta({ layout: 'app' })
 

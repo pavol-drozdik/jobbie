@@ -74,3 +74,17 @@ export type VpsEnvironment = {
 export type AdminInfrastructure = {
   environments: VpsEnvironment[]
 }
+
+export type InfraMetricsRange = '1h' | '24h' | '2w' | '1m'
+
+export type VpsMetricsHistoryPoint = {
+  t: string
+  load_pct: number
+  mem_pct: number
+}
+
+export type VpsMetricsHistory = {
+  env_id: 'staging' | 'production'
+  range: InfraMetricsRange
+  points: VpsMetricsHistoryPoint[]
+}
