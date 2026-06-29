@@ -180,10 +180,10 @@ If **Confirm email** is enabled in the Supabase project, users cannot `signInWit
 - `POST /api/auth/security/login-attempt` + `login_attempt_counters`
 - Cloudflare Turnstile when `TURNSTILE_SECRET_KEY` / `NUXT_PUBLIC_TURNSTILE_SITE_KEY` configured — shared [`useTurnstileWidget`](../app-pwa/composables/useTurnstileWidget.ts) + [`AuthTurnstileWidget`](../app-pwa/components/auth/AuthTurnstileWidget.vue)
 - **Login:** progressive widget (after failed attempt or when `login-status` returns `captcha_required`); `captchaToken` passed to Nest `login-status` / `login-attempt` and Supabase `signInWithPassword` when present
-- **Register:** widget on wizard step 4; Nest `POST /api/auth/captcha/verify` then Supabase `signUp` with `captchaToken`
+- **Register:** widget on wizard step 4; Nest `POST /api/auth/captcha/verify` then `POST /api/auth/security/signup-email-status` (duplicate check via `auth.admin.getUserByEmail`) then Supabase `signUp` with `captchaToken`; PWA also rejects Supabase responses with empty `identities`
 - **Forgot password:** widget on email step when keys configured; `resetPasswordForEmail` with `captchaToken`
 - **Supabase Dashboard:** Authentication → Settings → Security → enable CAPTCHA (Turnstile) with the same secret as `TURNSTILE_SECRET_KEY` when enforcing server-side
-- Generic error messages — no email enumeration (except safe cases such as unconfirmed email)
+- Generic error messages — no email enumeration on **login** (except safe cases such as unconfirmed email); registration shows an explicit message when the email is already registered
 - `POST /api/reports` → `content_reports` + audit
 - Global `@nestjs/throttler` (webhook and health excluded)
 

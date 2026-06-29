@@ -27,6 +27,7 @@ import {
   LoginStatusDto,
   SessionHeartbeatDto,
   SessionReportDto,
+  SignupEmailStatusDto,
   VerifyCaptchaDto,
 } from './auth-security.dto';
 
@@ -101,6 +102,21 @@ export class AuthSecurityController {
     }
     const status = await this.security.getLoginStatus(body.email);
     return { ...status, captcha_required: captchaRequired };
+  }
+
+  @Post('security/signup-email-status')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 15, ttl: 60_000 } })
+  async signupEmailStatus(
+    @Body() body: SignupEmailStatusDto,
+  ): Promise<{ available: boolean }> {
+    const captcha = await this.security.verifyTurnstileToken(body.captcha_token);
+    if (!captcha.ok && !captcha.skipped) {
+      throw new BadRequestException('Overenie CAPTCHA zlyhalo.');
+    }
+    const taken = await this.security.isSignupEmailTaken(body.email);
+    return { available: !taken };
   }
 
   @Post('security/login-attempt')

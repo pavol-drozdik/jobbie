@@ -1,21 +1,23 @@
-# Stripe automatic invoice emails (no Resend)
+# Stripe and app invoice emails (faktúry)
 
-JOBBIE does **not** send billing emails via the app SMTP service. Paid **faktúry** (invoice PDF + hosted invoice page) are delivered by **Stripe** when you enable the correct Dashboard settings (test **and** live).
+Paid **faktúry** (invoice PDF) are delivered primarily by **JOBBIE Nest SMTP** (`BillingInvoiceEmailService`) after a Stripe invoice is **paid** — credit packs and subscription invoices (`subscription_create` / `subscription_cycle`). Requires `SMTP_HOST`, `SMTP_FROM`, and Stripe configured; optional `BILLING_INVOICE_EMAIL_ENABLED=false` to disable. See [email-smtp.md](./email-smtp.md).
+
+Stripe may still send a separate **card payment receipt** (`receipt_email` on PaymentIntent). That is not the faktúra PDF.
 
 Checkout creates Stripe `Invoice` objects:
 
-- **Credits** — standalone PaymentIntent on `/platba`; after `payment_intent.succeeded`, backend creates a finalized Invoice and marks it **paid** (`paid_out_of_band`). Abandoned open credit invoices are voided.
-- **Subscriptions** — [Stripe Billing](https://docs.stripe.com/billing/subscriptions/overview) (`subscriptions.create` → recurring invoices). Incomplete checkout subscriptions are canceled with their open first invoice voided; in-app history shows **paid** invoices only.
+- **Credits** — standalone PaymentIntent on `/platba`; after `payment_intent.succeeded`, backend creates a finalized Invoice and marks it **paid** (`attachPayment` / `paid_out_of_band`), then emails the PDF via SMTP.
+- **Subscriptions** — [Stripe Billing](https://docs.stripe.com/billing/subscriptions/overview) (`subscriptions.create` → recurring invoices). `invoice.paid` webhook emails the faktúra via SMTP.
 
-With `collection_method: charge_automatically`, Stripe **does not email** the customer unless the toggles below are on. The API cannot replace these Dashboard settings.
-
-JOBBIE sets `receipt_email` on credit PaymentIntents and subscription checkout PaymentIntents (`/platba`). For subscription invoice-backed payments, Stripe’s receipt email [includes a link to the hosted invoice](https://docs.stripe.com/receipts). Credit packs get the paid faktúra PDF via Dashboard **Successful payments** (section 1) after post-payment invoice creation. Enable both receipt and invoice-summary toggles for best coverage.
+Idempotency: `billing_invoice_email_dispatches` (one email per `stripe_invoice_id`).
 
 ---
 
-## 1. Paid invoice email (PDF + links) — required
+## Optional: Stripe Dashboard emails (supplementary)
 
-**Settings → Emails** → scroll to **Email customers about** (this is **not** the **Payments** block above it).
+You can still enable Stripe’s own customer emails. They are **not required** when app SMTP is configured.
+
+**Settings → Business → Customer emails** (or [settings/emails](https://dashboard.stripe.com/settings/emails)):
 
 | Toggle | Purpose |
 |--------|---------|
@@ -90,11 +92,10 @@ Customers open past invoices in-app under **Nastavenia → Fakturácia** → **Z
 
 ## API limitations
 
-- There is **no** Stripe API to turn on “email paid invoices” (Dashboard only).
-- `invoices.sendInvoice` is for **`send_invoice`** collection (unpaid / payment instructions), not for replacing paid-invoice emails on `/platba` card checkout.
-- `receipt_email` on invoice-backed PaymentIntents sends a receipt with a **hosted invoice link** (JOBBIE sets this at checkout). Dashboard **Successful payments** (section 1) adds Stripe’s invoice-summary email with PDF links — use both.
+- `invoices.sendInvoice` only works for `send_invoice` collection (unpaid invoices) — JOBBIE does **not** use this for `/platba` card checkout.
+- App faktúra email: `BillingInvoiceEmailService.sendPaidInvoiceEmailIfNeeded` after paid invoice exists.
 
-See also [payments-credits.md](./payments-credits.md) (checkout flows) and [stripe-invoice-sk-vat.md](./stripe-invoice-sk-vat.md) (§ 74 invoice mandatory fields).
+See also [payments-credits.md](./payments-credits.md) and [stripe-invoice-sk-vat.md](./stripe-invoice-sk-vat.md).
 
 ---
 
@@ -112,4 +113,6 @@ Register these on your Stripe webhook endpoint (test **and** live). See [Subscri
 
 Full list: [`backend-ts/.env.example`](../backend-ts/.env.example).
 
-Paid-invoice **email** delivery is still controlled only by Dashboard toggles (sections 1–2), not webhooks. For reminders on unpaid invoices, see [Send email reminders](https://docs.stripe.com/invoicing/send-email) (`send_invoice` collection — not used on `/platba` card checkout).
+Paid-invoice **email** delivery is primarily app SMTP (see top of this doc). Webhooks below handle credits and subscription sync.
+
+For reminders on unpaid invoices, see [Send email reminders](https://docs.stripe.com/invoicing/send-email) (`send_invoice` collection — not used on `/platba` card checkout).

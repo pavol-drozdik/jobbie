@@ -1,6 +1,36 @@
 import { describe, expect, it } from 'vitest'
-import { registrationCaptchaVerifyFailed } from '~/composables/useRegistrationSignUp'
+import {
+  isSignUpDuplicateEmail,
+  mapSignUpError,
+  registrationCaptchaVerifyFailed,
+} from '~/composables/useRegistrationSignUp'
 import { S } from '~/utils/strings'
+
+describe('isSignUpDuplicateEmail', () => {
+  it('detects Supabase empty identities response', () => {
+    expect(isSignUpDuplicateEmail({ identitiesCount: 0 })).toBe(true)
+  })
+
+  it('detects known duplicate error messages', () => {
+    expect(
+      isSignUpDuplicateEmail({ errorMessage: 'User already registered' }),
+    ).toBe(true)
+  })
+
+  it('returns false for unrelated errors', () => {
+    expect(isSignUpDuplicateEmail({ errorMessage: 'Invalid password' })).toBe(false)
+  })
+})
+
+describe('mapSignUpError', () => {
+  it('maps duplicate email errors to Slovak copy', () => {
+    expect(mapSignUpError('User already registered')).toBe(S.authSignupEmailTaken)
+  })
+
+  it('maps minimum age database errors', () => {
+    expect(mapSignUpError('individual_registration_minimum_age')).toContain('16')
+  })
+})
 
 describe('registrationCaptchaVerifyFailed', () => {
   it('returns network error message when API is unreachable (503)', () => {

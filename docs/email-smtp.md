@@ -1,8 +1,10 @@
 # Transactional email (SMTP)
 
-JOBBIE sends product email (job alerts, saved-search alerts, notification digests, employer applicant auto-replies) through a single Nest service: [`EmailService`](../backend-ts/src/email/email.service.ts) using **nodemailer** and your SMTP server.
+JOBBIE sends product email (job alerts, saved-search alerts, notification digests, employer applicant auto-replies, **paid invoice faktúry**) through a single Nest service: [`EmailService`](../backend-ts/src/email/email.service.ts) using **nodemailer** and your SMTP server.
 
-Billing invoice PDFs are **not** sent this way — they use [Stripe Dashboard settings](./stripe-invoice-emails.md). Auth messages (signup, password reset, email confirm) use **Supabase Auth** SMTP settings in the Supabase project — **separate** from Nest `SMTP_*` below. Newsletter signups sync to **MailerLite** when `MAILERLITE_API_KEY` is set.
+Billing faktúry: [`BillingInvoiceEmailService`](../backend-ts/src/payments/billing-invoice-email.service.ts) — PDF attachment + link to `/nastavenia/fakturacia/:id` after credit or subscription invoice is paid. Disable with `BILLING_INVOICE_EMAIL_ENABLED=false`. See [stripe-invoice-emails.md](./stripe-invoice-emails.md).
+
+Auth messages (signup, password reset, email confirm) use **Supabase Auth** SMTP settings in the Supabase project — **separate** from Nest `SMTP_*` below. Newsletter signups sync to **MailerLite** when `MAILERLITE_API_KEY` is set.
 
 ## Supabase Auth SMTP (password reset, signup confirm)
 
@@ -54,6 +56,7 @@ If GEO/SMTP settings match the working domain and it still times out, use Resend
 |----------|----------|-------------|
 | `SMTP_HOST` | Yes | SMTP hostname |
 | `SMTP_FROM` | Yes | From header, e.g. `Jobbie <noreply@yourdomain.sk>` |
+| `BILLING_INVOICE_EMAIL_ENABLED` | No | Default on when SMTP is set; set `false` to skip paid faktúra emails |
 | `SMTP_PORT` | No | Default `587` |
 | `SMTP_SECURE` | No | `true` / `false`; if omitted, `465` → secure, else STARTTLS on 587 |
 | `SMTP_USER` | No | Auth username (omit for IP-relay without auth) |

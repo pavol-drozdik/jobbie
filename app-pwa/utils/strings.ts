@@ -24,6 +24,8 @@
     'Prihlásenie prebehlo, ale aplikáciu sa nepodarilo načítať. Skúste obnoviť stránku alebo sa prihláste znova.',
   authSignupDatabaseFailed:
     'Účet sa nepodarilo vytvoriť. Ak ste nový používateľ, dokončite registráciu vrátane dátumu narodenia (pre jednotlivcov).',
+  authSignupEmailTaken:
+    'Účet s touto e-mailovou adresou už existuje. Prihláste sa alebo použite inú adresu.',
   authOAuthCancelled: 'Prihlásenie cez Google bolo zrušené.',
   authOAuthFailed: 'Prihlásenie cez Google zlyhalo. Skúste to znova.',
   loginApiUnreachable:

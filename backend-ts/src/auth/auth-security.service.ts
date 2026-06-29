@@ -287,4 +287,34 @@ export class AuthSecurityService {
     }
     return { synced: true };
   }
+
+  /** True when auth.users already has this email (service role lookup). */
+  async isSignupEmailTaken(rawEmail: string): Promise<boolean> {
+    const email = normalizeEmail(rawEmail);
+    if (!email) {
+      return false;
+    }
+    const adminApi = this.supabase.getClient().auth.admin as {
+      getUserByEmail?: (lookupEmail: string) => Promise<{
+        data: { user?: { id: string } | null };
+        error: { message: string } | null;
+      }>;
+    };
+    if (typeof adminApi.getUserByEmail !== 'function') {
+      this.logger.warn('auth.admin.getUserByEmail unavailable for signup check');
+      return false;
+    }
+    try {
+      const { data, error } = await adminApi.getUserByEmail(email);
+      if (error || !data?.user?.id) {
+        return false;
+      }
+      return true;
+    } catch (err) {
+      this.logger.warn(
+        `isSignupEmailTaken failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return false;
+    }
+  }
 }

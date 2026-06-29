@@ -1511,6 +1511,12 @@ a.btn-w,
     border-width: 1px;
     border-color: rgb(0 0 0 / 0.06);
   }
+  /* Inset focus ring — outer ring-2 is clipped inside overflow/flex scroll areas (e.g. signup step 3). */
+  .addjob-input.cv-field:focus-visible,
+  .addjob-textarea.cv-field:focus-visible,
+  .app-form-dropdown__trigger--bordered.cv-field:focus-visible {
+    @apply border-marketing-green ring-inset;
+  }
   .addjob-input--inset.cv-field {
     border-width: 0;
   }

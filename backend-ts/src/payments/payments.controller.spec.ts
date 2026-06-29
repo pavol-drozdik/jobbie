@@ -26,6 +26,9 @@ function makeController(
     {
       markSubscriptionTrialUsed: jest.fn(),
     } as unknown as SubscriptionTrialService,
+    {
+      sendPaidInvoiceEmailIfNeeded: jest.fn().mockResolvedValue({ sent: false }),
+    } as unknown as import('./billing-invoice-email.service').BillingInvoiceEmailService,
   );
 }
 
@@ -94,6 +97,9 @@ describe('PaymentsController subscription credit ensure', () => {
         syncSubscriptionFromPaymentIntent: jest
           .fn()
           .mockResolvedValue({ applied: true, reason: 'ok' }),
+        retrieveSubscriptionWithLatestInvoice: jest
+          .fn()
+          .mockResolvedValue({ latest_invoice: { id: 'in_sub' } }),
       },
       subscriptionCredits: {
         ensureCreditsFromStripeSubscription: ensureCredits,
@@ -140,6 +146,9 @@ describe('PaymentsController subscription credit ensure', () => {
         syncSubscriptionFromSetupIntent: jest
           .fn()
           .mockResolvedValue({ applied: true, reason: 'ok' }),
+        retrieveSubscriptionWithLatestInvoice: jest
+          .fn()
+          .mockResolvedValue({ latest_invoice: { id: 'in_sub' } }),
       },
       subscriptionCredits: {
         ensureCreditsFromStripeSubscription: jest
