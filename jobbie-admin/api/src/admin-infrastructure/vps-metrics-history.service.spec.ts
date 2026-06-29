@@ -1,5 +1,6 @@
 import {
   clampCorePct,
+  clampLoadPct,
   downsample,
   maxCorePct,
   VpsMetricsHistoryService,
@@ -117,6 +118,70 @@ describe('VpsMetricsHistoryService', () => {
     );
     expect(points.length).toBeGreaterThan(0);
     expect(points.length).toBeLessThanOrEqual(13);
+  });
+
+  it('clamps load_pct when load average exceeds core count', () => {
+    const service = new VpsMetricsHistoryService();
+    const host = {
+      hostname: 'vps',
+      uptime_seconds: 100,
+      cpu_count: 2,
+      load_1: 3.5,
+      load_5: 2,
+      load_15: 1.5,
+      memory_total_bytes: 1000,
+      memory_available_bytes: 200,
+      memory_used_bytes: 800,
+      disk_root: null,
+      disk_typesense: null,
+      containers: [],
+      compose_ps: [],
+    };
+    const at = new Date('2026-06-29T14:00:00.000Z');
+    service.recordSample('staging', host, at);
+    const points = service.getHistory('staging', '1h', at);
+    expect(points[0].load_pct).toBe(100);
+    expect(points[0].mem_pct).toBe(80);
+  });
+
+  it('returns more points for 2w than 1h when history spans multiple days', () => {
+    const service = new VpsMetricsHistoryService();
+    const host = {
+      hostname: 'vps',
+      uptime_seconds: 100,
+      cpu_count: 4,
+      load_1: 0.4,
+      load_5: 0.3,
+      load_15: 0.2,
+      memory_total_bytes: 1000,
+      memory_available_bytes: 500,
+      memory_used_bytes: 500,
+      disk_root: null,
+      disk_typesense: null,
+      containers: [],
+      compose_ps: [],
+    };
+    const base = new Date('2026-06-01T12:00:00.000Z').getTime();
+    for (let day = 0; day < 10; day++) {
+      for (let slot = 0; slot < 6; slot++) {
+        service.recordSample(
+          'staging',
+          host,
+          new Date(base + day * 24 * 60 * 60 * 1000 + slot * 5 * 60 * 1000),
+        );
+      }
+    }
+    const now = new Date(base + 9 * 24 * 60 * 60 * 1000);
+    const oneHour = service.getHistory('staging', '1h', now);
+    const twoWeeks = service.getHistory('staging', '2w', now);
+    expect(oneHour.length).toBeLessThan(twoWeeks.length);
+  });
+});
+
+describe('clampLoadPct', () => {
+  it('clamps load and memory percentages to 0–100', () => {
+    expect(clampLoadPct(175)).toBe(100);
+    expect(clampLoadPct(-5)).toBe(0);
   });
 });
 

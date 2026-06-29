@@ -2,7 +2,11 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { adminApi } from '../../composables/adminApi'
 import { useAdminChart } from '../../composables/useAdminChart'
-import type { InfraMetricsRange, VpsMetricsHistory } from '../../types/infrastructure'
+import type {
+  InfraMetricsRange,
+  VpsMetricsHistory,
+  VpsMetricsHistoryPoint,
+} from '../../types/infrastructure'
 
 const props = defineProps<{
   envId: 'staging' | 'production'
@@ -17,6 +21,13 @@ const ranges: Array<{ id: InfraMetricsRange; label: string }> = [
   { id: '2w', label: '2 týž.' },
   { id: '1m', label: '1 mes.' },
 ]
+
+const RANGE_MS: Record<InfraMetricsRange, number> = {
+  '1h': 60 * 60 * 1000,
+  '24h': 24 * 60 * 60 * 1000,
+  '2w': 14 * 24 * 60 * 60 * 1000,
+  '1m': 30 * 24 * 60 * 60 * 1000,
+}
 
 const range = ref<InfraMetricsRange>('24h')
 const loading = ref(false)
@@ -33,6 +44,52 @@ const hasCoreHistory = computed(() =>
 )
 
 const hasLiveCores = computed(() => (props.currentCpuPerCore?.length ?? 0) > 0)
+
+const dataSpanMs = computed(() => {
+  const h = history.value
+  if (h?.coverage_from && h?.coverage_to) {
+    return (
+      new Date(h.coverage_to).getTime() - new Date(h.coverage_from).getTime()
+    )
+  }
+  const rows = points.value
+  if (rows.length < 2) {
+    return 0
+  }
+  return (
+    new Date(rows[rows.length - 1].t).getTime() -
+    new Date(rows[0].t).getTime()
+  )
+})
+
+const coverageHint = computed(() => {
+  if (!history.value?.coverage_from || points.value.length < 2) {
+    return null
+  }
+  const requested = RANGE_MS[range.value]
+  const span = dataSpanMs.value
+  if (span >= requested * 0.9) {
+    return null
+  }
+  const hours = span / (60 * 60 * 1000)
+  if (hours < 48) {
+    const h = Math.max(1, Math.round(hours))
+    return `Dostupná história: ~${h} h — dlhšie obdobie sa naplní postupne pri obnovách.`
+  }
+  const days = Math.max(1, Math.round(hours / 24))
+  return `Dostupná história: ~${days} dní — dlhšie obdobie sa naplní postupne pri obnovách.`
+})
+
+function clampPct(n: number): number {
+  return Math.min(100, Math.max(0, n))
+}
+
+function cpuOverviewPct(point: VpsMetricsHistoryPoint): number {
+  if (point.max_core_pct != null) {
+    return clampPct(point.max_core_pct)
+  }
+  return clampPct(point.load_pct)
+}
 
 async function loadHistory() {
   if (!props.enabled) {
@@ -57,10 +114,16 @@ async function loadHistory() {
   renderCharts()
 }
 
-function formatLabel(iso: string, selected: InfraMetricsRange): string {
+function formatLabel(iso: string, spanMs: number): string {
   const d = new Date(iso)
-  if (selected === '1h' || selected === '24h') {
-    return d.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })
+  const showTime = spanMs < 3 * 24 * 60 * 60 * 1000
+  if (showTime) {
+    return d.toLocaleString('sk-SK', {
+      day: 'numeric',
+      month: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
   }
   return d.toLocaleDateString('sk-SK', { day: 'numeric', month: 'numeric' })
 }
@@ -71,13 +134,18 @@ function renderCharts() {
     const rows = points.value
 
     if (overviewCanvasRef.value && rows.length > 0) {
-      const labels = rows.map((p) => formatLabel(p.t, range.value))
+      const spanMs = dataSpanMs.value
+      const labels = rows.map((p) => formatLabel(p.t, spanMs))
+      const usesCoreCpu = rows.some((p) => p.max_core_pct != null)
       mountLine(
         overviewCanvasRef.value,
         labels,
         [
-          { label: 'CPU load (priemer)', data: rows.map((p) => p.load_pct) },
-          { label: 'RAM', data: rows.map((p) => p.mem_pct) },
+          {
+            label: usesCoreCpu ? 'CPU (max jadro)' : 'CPU load (priemer)',
+            data: rows.map(cpuOverviewPct),
+          },
+          { label: 'RAM', data: rows.map((p) => clampPct(p.mem_pct)) },
         ],
         { yMax: 100, yTickSuffix: '%' },
       )
@@ -88,7 +156,8 @@ function renderCharts() {
     }
 
     if (hasCoreHistory.value && rows.length > 0) {
-      const labels = rows.map((p) => formatLabel(p.t, range.value))
+      const spanMs = dataSpanMs.value
+      const labels = rows.map((p) => formatLabel(p.t, spanMs))
       const coreCount = Math.max(
         ...rows.map((p) => p.cpu_per_core?.length ?? 0),
       )
@@ -161,6 +230,7 @@ watch(() => props.currentCpuPerCore, () => {
     <p v-else-if="loading && !history" class="muted infra-hint">Načítavam históriu…</p>
     <p v-else-if="error" class="infra-error">{{ error }}</p>
     <template v-else>
+      <p v-if="coverageHint" class="muted infra-hint">{{ coverageHint }}</p>
       <p
         v-if="points.length === 0 && !hasLiveCores"
         class="muted infra-hint"
