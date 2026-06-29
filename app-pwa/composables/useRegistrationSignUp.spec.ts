@@ -30,6 +30,10 @@ describe('mapSignUpError', () => {
   it('maps minimum age database errors', () => {
     expect(mapSignUpError('individual_registration_minimum_age')).toContain('16')
   })
+
+  it('maps user_banned to account closed copy', () => {
+    expect(mapSignUpError('User is banned')).toBe(S.authAccountClosed)
+  })
 })
 
 describe('registrationCaptchaVerifyFailed', () => {

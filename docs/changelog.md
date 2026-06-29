@@ -1,4 +1,15 @@
-﻿## 2026-06-29 — Homepage mobile PageSpeed (images + font preload)
+﻿## 2026-06-29 — Google OAuth registration, PKCE flash, post-delete re-register
+
+Fixed:
+- **supabase:** `handle_new_user` validates `birth_date` only when present in signup metadata — OAuth signups apply wizard fields on `/auth/callback` via `updateUser` (Supabase cannot pass custom metadata on `signInWithOAuth`).
+- **supabase:** `unlink_auth_identities_for_closed_account` RPC — removes `auth.identities` on account closure so Google can bind to a new `auth.users` row (hard `deleteUser` avoided: `profiles` FK cascade).
+- **backend-ts:** `POST /api/profiles/me/delete` calls identity unlink after auth ban; **jobbie-admin** admin close mirrors the RPC.
+- **app-pwa:** OAuth callback uses session-first PKCE handoff (`oauth-callback-session.ts`) — no flash of „PKCE code verifier not found“ when `detectSessionInUrl` already exchanged the code.
+- **app-pwa:** Google OAuth sets persistent PKCE storage before redirect; registration wizard no longer passes ignored `options.data` to Supabase.
+- **app-pwa:** `user_banned` / closed-account copy (`authAccountClosed`); OAuth signup errors route to `/auth/register` when wizard pending metadata exists.
+- **docs:** `auth-security.md`, `GDPR-PRIVACY.md` — OAuth birth-date deferral and identity unlink on erasure.
+
+## 2026-06-29 — Homepage mobile PageSpeed (images + font preload)
 
 Changed:
 - **app-pwa:** Hero phone column uses `<picture>` — `jobbie-mobile-hero-760.webp` below 900px, full asset on desktop; media-scoped image preloads in `HomeHeroSection`.

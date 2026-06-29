@@ -22,4 +22,8 @@ describe('mapSupabaseLoginError', () => {
       'Nesprávny e-mail alebo heslo. Skontrolujte údaje a skúste znova.',
     )
   })
+
+  it('maps user_banned to account closed copy', () => {
+    expect(mapSupabaseLoginError('user_banned', 'User is banned')).toBe(S.authAccountClosed)
+  })
 })

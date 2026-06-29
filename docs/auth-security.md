@@ -173,6 +173,12 @@ Set **Site URL** to the PWA origin (production: `https://jobbie.sk`; local: e.g.
 
 Google OAuth uses a separate callback on Supabase (`https://<project-ref>.supabase.co/auth/v1/callback`) — configure that in Google Cloud, not in this redirect list. See [`supabase/AUTH-GOOGLE-OAUTH.md`](../supabase/AUTH-GOOGLE-OAUTH.md).
 
+**Google registration:** wizard metadata (role, birth date, activity flags) is stored in `sessionStorage` before redirect and applied on [`callback.vue`](../app-pwa/pages/auth/callback.vue) via `updateUser` + `PATCH /api/profiles/me` — Supabase does not accept custom metadata on `signInWithOAuth`. `handle_new_user` validates `birth_date` only when present in auth metadata at INSERT (email/password path); OAuth age gate is enforced on callback.
+
+**PKCE:** `/auth/callback` skips redundant `exchangeCodeForSession` when a session already exists (`detectSessionInUrl`); login/register set persistent PKCE storage before OAuth redirect.
+
+**Account closure:** `POST /api/profiles/me/delete` bans auth, replaces email, and calls `unlink_auth_identities_for_closed_account` so OAuth providers can register a fresh user. Password login with the freed email shows generic invalid-credentials copy.
+
 If **Confirm email** is enabled in the Supabase project, users cannot `signInWithPassword` until the address is confirmed; the PWA shows a dedicated message (`loginEmailNotConfirmed`).
 
 ## Supabase Auth password and email policy

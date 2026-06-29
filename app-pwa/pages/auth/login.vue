@@ -284,6 +284,7 @@ import {
 } from '~/utils/auth-recovery'
 import { mapSupabaseForgotPasswordError } from '~/utils/map-supabase-forgot-password-error'
 import { mapSupabaseLoginError, isCaptchaLoginError } from '~/utils/map-supabase-login-error'
+import { setAuthRememberMePreference } from '~/utils/supabase-auth-storage'
 import { resolveWebmailUrl } from '~/utils/email-webmail-url'
 import { S } from '~/utils/strings'
 import { authMarketingPanelClass } from '~/utils/marketing-ui'
@@ -520,6 +521,7 @@ async function oauthGoogle(): Promise<void> {
 
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
     const redirectTo = `${origin}/auth/callback?redirect=${encodeURIComponent(getPostLoginPath())}`
+    setAuthRememberMePreference(true)
     const { error: e } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

@@ -40,6 +40,7 @@ import {
 } from './profiles.dto';
 import { ProfileOpenChatService } from './profile-open-chat.service';
 import { JwtVerifyService } from '../auth/jwt-verify.service';
+import { AuthSecurityService } from '../auth/auth-security.service';
 import {
   mergeNotificationPreferences,
   serializeNotificationPreferencesForClient,
@@ -214,6 +215,7 @@ export class ProfilesController {
     private dataExport: DataExportService,
     private profileOpenChat: ProfileOpenChatService,
     private jwtVerify: JwtVerifyService,
+    private authSecurity: AuthSecurityService,
   ) {}
 
   @Get('me')
@@ -403,6 +405,7 @@ export class ProfilesController {
         'Nepodarilo sa zmazať účet. Skúste znova alebo kontaktujte podporu.',
       );
     }
+    await this.authSecurity.unlinkAuthIdentitiesForClosedAccount(user.id);
     if (emailNorm) {
       await this.newsletter.withdrawMarketingForUser(user.id);
     }

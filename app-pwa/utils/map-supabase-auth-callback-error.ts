@@ -13,6 +13,11 @@ export type MappedAuthCallbackError = {
   destination: AuthCallbackErrorDestination
 }
 
+export type MapSupabaseAuthCallbackErrorOptions = {
+  /** True when registration wizard stored pending OAuth signup metadata. */
+  oauthSignupPending?: boolean
+}
+
 const AUTH_ERROR_PARAM_KEYS = ['error', 'error_code', 'error_description', 'sb'] as const
 
 function isSignupProfileFailure(text: string): boolean {
@@ -27,6 +32,20 @@ function isSignupProfileFailure(text: string): boolean {
 function isCaptchaFailure(text: string): boolean {
   const lower = text.toLowerCase()
   return lower.includes('captcha') || lower.includes('turnstile')
+}
+
+function isUserBanned(text: string, errorCode?: string | null): boolean {
+  const lower = text.toLowerCase()
+  return (errorCode ?? '').trim() === 'user_banned' || lower.includes('user is banned')
+}
+
+function isPkceVerifierMissing(text: string, errorCode?: string | null): boolean {
+  const normalizedCode = (errorCode ?? '').trim().toLowerCase()
+  const lower = text.toLowerCase()
+  return (
+    normalizedCode === 'pkce_code_verifier_missing' ||
+    lower.includes('pkce code verifier not found')
+  )
 }
 
 /** Reads Supabase OAuth/OTP failure params from query or hash. */
@@ -64,6 +83,7 @@ export function mapSupabaseAuthCallbackError(
   errorCode?: string | null,
   errorDescription?: string | null,
   message?: string | null,
+  options?: MapSupabaseAuthCallbackErrorOptions,
 ): MappedAuthCallbackError {
   const parts = [errorDescription, message, error, errorCode]
     .map((v) => (v ?? '').trim())
@@ -76,6 +96,17 @@ export function mapSupabaseAuthCallbackError(
 
   if (isCaptchaFailure(combined)) {
     return { message: S.authOAuthCaptchaFailed, destination: 'login' }
+  }
+
+  if (isUserBanned(combined, errorCode)) {
+    return {
+      message: S.authAccountClosed,
+      destination: options?.oauthSignupPending ? 'register' : 'login',
+    }
+  }
+
+  if (isPkceVerifierMissing(combined, errorCode)) {
+    return { message: S.authOAuthPkceVerifierMissing, destination: 'login' }
   }
 
   const description = (errorDescription ?? message ?? '').trim()

@@ -175,6 +175,15 @@ export class AdminAccountCloseService {
       throw new InternalServerErrorException('Account closure failed');
     }
 
+    const { error: identityErr } = await client.rpc(
+      'unlink_auth_identities_for_closed_account',
+      { p_user_id: targetUserId },
+    );
+    if (identityErr) {
+      this.logger.error(`unlink_auth_identities failed: ${identityErr.message}`);
+      throw new InternalServerErrorException('Account closure failed');
+    }
+
     void this.audit.recordAuditEvent({
       actorUserId: adminUserId,
       actorIp: null,

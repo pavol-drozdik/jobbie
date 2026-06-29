@@ -38,6 +38,9 @@ export function isSignUpDuplicateEmail(input: {
 
 export function mapSignUpError(message: string | undefined): string {
   const raw = message?.trim() ?? ''
+  if (/user is banned/i.test(raw) || raw === 'user_banned') {
+    return S.authAccountClosed
+  }
   if (isSignUpDuplicateEmail({ errorMessage: raw })) {
     return S.authSignupEmailTaken
   }
