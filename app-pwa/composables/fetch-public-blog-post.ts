@@ -1,18 +1,9 @@
 import type { BlogPostDetail } from '~/composables/useBlog'
-import { apiUrl } from '~/utils/api-base-url'
+import { publicContentApiUrl } from '~/utils/api-base-url'
 
 export type PublicBlogPostFetchResult = {
   data: BlogPostDetail | null
   status: number
-}
-
-function resolvePublicFetchUrl(path: string): string {
-  const config = useRuntimeConfig()
-  if (import.meta.dev && import.meta.server) {
-    // Nitro devProxy forwards same-origin /api to Nest during SSR.
-    return path
-  }
-  return apiUrl(String(config.public.apiBaseUrl ?? ''), path)
 }
 
 function readFetchErrorStatus(error: unknown): number {
@@ -29,7 +20,7 @@ export async function fetchPublicBlogPost(slug: string): Promise<PublicBlogPostF
   if (!trimmed) return { data: null, status: 0 }
   const path = `/api/blog/${encodeURIComponent(trimmed)}`
   try {
-    const data = await $fetch<BlogPostDetail>(resolvePublicFetchUrl(path))
+    const data = await $fetch<BlogPostDetail>(publicContentApiUrl(path))
     return { data, status: 200 }
   } catch (error: unknown) {
     return { data: null, status: readFetchErrorStatus(error) }

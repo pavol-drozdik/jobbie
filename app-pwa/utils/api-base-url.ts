@@ -45,3 +45,9 @@ export function apiUrl(base: string, path: string): string {
   const normalized = resolvePublicApiBase(base)
   return `${normalized}${path.startsWith('/') ? path : `/${path}`}`
 }
+
+/** Public catalog/content reads (`GET /api/blog`, jobs, …) — SSR uses configured API origin; dev client uses Vite proxy. */
+export function publicContentApiUrl(path: string): string {
+  const config = useRuntimeConfig()
+  return apiUrl(String(config.public.apiBaseUrl ?? ''), path)
+}

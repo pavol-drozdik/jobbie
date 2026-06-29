@@ -1,4 +1,9 @@
-﻿## 2026-06-29 — Google OAuth + Turnstile CAPTCHA
+﻿## 2026-06-29 — Turnstile size=invisible removed (Cloudflare API)
+
+Fixed:
+- **app-pwa:** `useTurnstileWidget` no longer passes deprecated `size: 'invisible'` (Turnstile v0 now requires `normal`/`compact`/`flexible`); uses `execution: 'execute'` + `appearance: 'execute'` for programmatic invisible challenges and `reset()` before re-execute to avoid duplicate `execute()` warnings.
+
+## 2026-06-29 — Google OAuth + Turnstile CAPTCHA
 
 Fixed:
 - **app-pwa:** `signInWithOAuth` (login + registration wizard) now passes Turnstile `captchaToken` when Supabase Auth CAPTCHA is enabled — fixes generic „Prihlásenie cez Google zlyhalo“ after recent Turnstile rollout.
@@ -14,7 +19,8 @@ Changed:
 - **docs/features.md** — updated `customer_role` label.
 
 Fixed:
-- **app-pwa:** Blog post hard refresh no longer shows generic 404 when the API is unreachable — SSR only 404s on `GET /api/blog/:slug` HTTP 404; load failures show retry UI. `fetchPublicBlogPost` uses `apiUrl` (Vite proxy in dev) and Nitro `devProxy` for SSR.
+- **app-pwa:** Blog post hard refresh no longer shows generic 404 when the API is unreachable — SSR only 404s on `GET /api/blog/:slug` HTTP 404; client retries fetch after hydration when SSR could not reach the API.
+- **app-pwa:** Blog post detail uses article skeleton + standard `error.vue` / `AppHttpErrorPage` for missing posts (not list error banner); `publicContentApiUrl()` for reliable SSR API base.
 
 ## 2026-06-29 — Registration activity roles persist at signup
 

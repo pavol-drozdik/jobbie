@@ -1,13 +1,29 @@
 <template>
   <div class="font-dmSans pb-20 pt-[calc(6.875rem+env(safe-area-inset-top))] md:pt-[calc(110px+env(safe-area-inset-top))]">
-    <AppAsyncListState
-      :loading="loading"
-      :error="loadError"
-      :empty="false"
-      :show-retry="!!loadError"
-      @retry="reload"
+    <div
+      v-if="showLoading"
+      class="mx-auto max-w-[1200px] px-5"
+      role="status"
+      aria-busy="true"
+      aria-label="Načítava sa"
     >
-      <div v-if="post" class="mx-auto max-w-[1200px] px-5">
+      <div class="mb-4 h-7 w-24 animate-pulse rounded-full bg-[#cff0db]" />
+      <div class="mb-3 h-10 w-full max-w-3xl animate-pulse rounded-lg bg-gray-200/60 lg:h-14" />
+      <div class="mb-8 h-6 w-full max-w-2xl animate-pulse rounded-lg bg-gray-200/45" />
+      <div class="mb-8 flex flex-wrap gap-3">
+        <div class="h-5 w-32 animate-pulse rounded bg-gray-200/40" />
+        <div class="h-5 w-28 animate-pulse rounded bg-gray-200/40" />
+      </div>
+      <div class="mb-9 aspect-[4/3] w-full animate-pulse rounded-[20px] bg-gray-200/45" />
+      <div class="space-y-3">
+        <div class="h-4 w-full animate-pulse rounded bg-gray-200/40" />
+        <div class="h-4 w-full animate-pulse rounded bg-gray-200/35" />
+        <div class="h-4 w-[94%] animate-pulse rounded bg-gray-200/35" />
+        <div class="h-4 w-[88%] animate-pulse rounded bg-gray-200/30" />
+      </div>
+    </div>
+
+    <div v-else-if="post" class="mx-auto max-w-[1200px] px-5">
         <div ref="containerRef" class="flex flex-col items-start gap-8 lg:flex-row lg:gap-12">
           <article class="min-w-0 flex-1">
             <span
@@ -114,8 +130,7 @@
             @newsletter-submit="submitSidebarNewsletter"
           />
         </div>
-      </div>
-    </AppAsyncListState>
+    </div>
   </div>
 </template>
 
@@ -158,44 +173,59 @@ const {
 )
 
 if (import.meta.server && slug.value && initialFetch.value?.status === 404) {
-  throw createError({ statusCode: 404, statusMessage: 'Blog post not found' })
+  throw createError({ statusCode: 404, statusMessage: S.blogPostNotFound })
 }
 
 const post = ref<BlogPostDetail | null>(initialFetch.value?.data ?? null)
-const loading = computed(() => postPending.value)
-const loadError = ref<string | null>(
-  initialFetch.value && !initialFetch.value.data && initialFetch.value.status !== 404
-    ? S.blogPostLoadError
-    : null,
+const pageReady = ref(Boolean(initialFetch.value?.data))
+
+const showLoading = computed(
+  () => !post.value && (!pageReady.value || postPending.value),
 )
 
 watch(initialFetch, (value) => {
   post.value = value?.data ?? null
-  if (!value?.data && !postPending.value) {
-    if (value?.status === 404) {
-      loadError.value = null
-      if (import.meta.client) {
-        onPostLoadMissing()
-      }
-      return
-    }
+  if (value?.data) {
+    pageReady.value = true
     if (import.meta.client) {
-      loadError.value = S.blogPostLoadError
+      nextTick(() => {
+        buildToc()
+        updateStickySidebar()
+      })
     }
-    return
-  }
-  loadError.value = null
-  if (value?.data && import.meta.client) {
-    nextTick(() => {
-      buildToc()
-      updateStickySidebar()
-    })
   }
 })
 
-async function reload(): Promise<void> {
-  loadError.value = null
-  await refreshPost()
+async function handlePostMissing(): Promise<void> {
+  const status = initialFetch.value?.status ?? 0
+  if (status === 404) {
+    showNotFound(S.blogPostNotFound)
+    return
+  }
+  showError({
+    statusCode: status >= 400 && status < 600 ? status : 503,
+    message: S.blogPostLoadError,
+    fatal: true,
+  })
+}
+
+async function ensurePostLoaded(): Promise<void> {
+  if (post.value || !slug.value) {
+    pageReady.value = true
+    return
+  }
+  if (initialFetch.value?.status === 404) {
+    pageReady.value = true
+    await handlePostMissing()
+    return
+  }
+  if (import.meta.client && initialFetch.value?.status !== 404) {
+    await refreshPost()
+  }
+  pageReady.value = true
+  if (!post.value) {
+    await handlePostMissing()
+  }
 }
 
 const bodyHtml = computed(() =>
@@ -219,11 +249,12 @@ const newsletterEmail = ref('')
 
 useBlogPostDetailSeo(post)
 
-function onPostLoadMissing(): void {
-  if (!import.meta.client) {
-    return
-  }
-  showNotFound(S.blogPostNotFound)
+function initPostChrome(): void {
+  if (!import.meta.client || !post.value) return
+  nextTick(() => {
+    buildToc()
+    updateStickySidebar()
+  })
 }
 
 function buildToc() {
@@ -310,12 +341,10 @@ async function submitSidebarNewsletter() {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await ensurePostLoaded()
   if (post.value) {
-    nextTick(() => {
-      buildToc()
-      updateStickySidebar()
-    })
+    initPostChrome()
   }
   if (import.meta.client) {
     window.addEventListener('scroll', updateStickySidebar, { passive: true })
@@ -332,8 +361,16 @@ onUnmounted(() => {
   }
 })
 
-watch(slug, () => {
+watch(slug, async () => {
   activeTocId.value = ''
+  pageReady.value = false
+  await refreshPost()
+  pageReady.value = true
+  if (!post.value) {
+    await handlePostMissing()
+    return
+  }
+  initPostChrome()
 })
 </script>
 
