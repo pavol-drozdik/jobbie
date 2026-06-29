@@ -101,6 +101,10 @@ function startApi() {
     NODE_ENV: isDev ? 'development' : 'production',
     ADMIN_API_PORT: API_PORT,
     PORT: API_PORT,
+    INFRA_METRICS_HISTORY_PATH: path.join(
+      app.getPath('userData'),
+      'infrastructure-history.json',
+    ),
   }
   if (envPath) {
     apiEnv.DOTENV_CONFIG_PATH = envPath

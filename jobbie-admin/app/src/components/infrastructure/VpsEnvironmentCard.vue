@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { VpsEnvironment } from '../../types/infrastructure'
+import VpsLoadHistoryChart from './VpsLoadHistoryChart.vue'
 import {
   barClass,
   fmtBytes,
@@ -79,6 +80,12 @@ function containerName(row: { Name?: string; Service?: string }): string {
           · 15m {{ fmtLoad(env.host.load_15, env.host.cpu_count) }}
         </p>
       </div>
+
+      <VpsLoadHistoryChart
+        :env-id="env.id"
+        :enabled="sshOk"
+        :refresh-at="env.collected_at"
+      />
 
       <div class="infra-section">
         <h3 class="infra-section__title">RAM</h3>

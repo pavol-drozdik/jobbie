@@ -74,3 +74,17 @@ export type VpsEnvironmentDto = {
 export type AdminInfrastructureDto = {
   environments: VpsEnvironmentDto[];
 };
+
+export type InfraMetricsRangeDto = '1h' | '24h' | '2w' | '1m';
+
+export type VpsMetricsHistoryPointDto = {
+  t: string;
+  load_pct: number;
+  mem_pct: number;
+};
+
+export type VpsMetricsHistoryDto = {
+  env_id: 'staging' | 'production';
+  range: InfraMetricsRangeDto;
+  points: VpsMetricsHistoryPointDto[];
+};

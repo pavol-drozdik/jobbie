@@ -7,4 +7,5 @@ release/
 release-build-*/
 api/.env
 app/.env
+api/.data/
 *.log
