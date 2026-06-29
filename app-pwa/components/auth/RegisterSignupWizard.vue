@@ -752,7 +752,7 @@ async function oauthGoogle(): Promise<void> {
     }
 
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    const redirectTo = `${origin}/auth/callback?redirect=${encodeURIComponent('/auth/register/welcome')}`
+    const redirectTo = `${origin}/auth/callback?redirect=${encodeURIComponent(ROUTES.home)}`
     const oauthMeta = getMetaForSignUp(
       undefined,
       {
