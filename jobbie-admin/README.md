@@ -118,6 +118,7 @@ Stop-Process -Id <pid> -Force
 |---------|-----|
 | `Chýba app/.env` / missing Supabase | `app/.env`: `VITE_ADMIN_API_URL=http://127.0.0.1:3099` (Supabase keys live in **api/.env**) |
 | `SUPABASE_ANON_KEY missing` | `api/.env`: copy `NUXT_PUBLIC_SUPABASE_ANON_KEY` from `app-pwa/.env` — **not** the service role key |
+| `captcha_failed` / Turnstile | Supabase Auth CAPTCHA is on — add `VITE_TURNSTILE_SITE_KEY` to `app/.env` (same as PWA site key), complete widget before login |
 | `Nesprávny e-mail alebo heslo` | Same credentials as [jobbie.sk](https://jobbie.sk); reset password in the PWA if needed |
 | Login OK but 403 on overview | Set `profiles.app_role = 'admin'` for your user in Supabase |
 | `Missing or invalid Bearer token` after login | `api/.env` — `SUPABASE_JWT_SECRET` must match Supabase Dashboard → API → JWT Secret |

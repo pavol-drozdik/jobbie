@@ -1,5 +1,6 @@
+import { computed, onBeforeUnmount, ref } from 'vue'
+
 const TURNSTILE_SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js'
-const ENSURE_TOKEN_MS = 15_000
 let turnstileScriptPromise: Promise<void> | null = null
 
 declare global {
@@ -9,21 +10,16 @@ declare global {
         el: HTMLElement,
         opts: {
           sitekey: string
-          size?: 'invisible' | 'normal' | 'compact' | 'flexible'
           callback: (token: string) => void
           'expired-callback'?: () => void
-          'error-callback'?: () => void
         },
       ) => string | undefined
-      execute?: (widgetId?: string) => void
-      reset?: (widgetId?: string) => void
       remove?: (widgetId?: string) => void
     }
   }
 }
 
 function loadTurnstileScript(): Promise<void> {
-  if (!import.meta.client) return Promise.resolve()
   if (window.turnstile?.render) return Promise.resolve()
   if (turnstileScriptPromise) return turnstileScriptPromise
   turnstileScriptPromise = new Promise((resolve, reject) => {
@@ -49,29 +45,10 @@ function loadTurnstileScript(): Promise<void> {
   return turnstileScriptPromise
 }
 
-function waitForToken(captchaToken: Ref<string>, timeoutMs: number): Promise<string | null> {
-  const existing = captchaToken.value.trim()
-  if (existing) return Promise.resolve(existing)
-
-  return new Promise((resolve) => {
-    const stop = watch(captchaToken, (value) => {
-      const trimmed = value.trim()
-      if (trimmed) {
-        stop()
-        clearTimeout(timer)
-        resolve(trimmed)
-      }
-    })
-    const timer = setTimeout(() => {
-      stop()
-      resolve(null)
-    }, timeoutMs)
-  })
-}
-
 export function useTurnstileWidget() {
-  const config = useRuntimeConfig().public
-  const siteKey = computed(() => String(config.turnstileSiteKey ?? '').trim())
+  const siteKey = computed(() =>
+    String(import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '').trim(),
+  )
   const enabled = computed(() => Boolean(siteKey.value))
   const captchaToken = ref('')
   const containerRef = ref<HTMLElement | null>(null)
@@ -91,63 +68,24 @@ export function useTurnstileWidget() {
   }
 
   function reset(): void {
-    if (widgetId.value && typeof window.turnstile?.reset === 'function') {
-      window.turnstile.reset(widgetId.value)
-      clearToken()
-      return
-    }
     removeWidget()
     remountKey.value += 1
   }
 
-  async function executeChallenge(): Promise<void> {
-    await loadTurnstileScript()
-    if (!widgetId.value || typeof window.turnstile?.execute !== 'function') return
-    clearToken()
-    window.turnstile.execute(widgetId.value)
-  }
-
   async function mount(): Promise<void> {
-    if (!import.meta.client || !siteKey.value || !containerRef.value) return
+    if (!siteKey.value || !containerRef.value) return
     await loadTurnstileScript()
     if (!window.turnstile?.render || !containerRef.value) return
     removeWidget()
     widgetId.value = window.turnstile.render(containerRef.value, {
       sitekey: siteKey.value,
-      size: 'invisible',
       callback: (token: string) => {
         captchaToken.value = token
       },
       'expired-callback': () => {
         clearToken()
       },
-      'error-callback': () => {
-        clearToken()
-      },
     })
-    await executeChallenge()
-  }
-
-  /** Wait for a token from the invisible widget (does not reset an existing valid token). */
-  async function ensureToken(): Promise<string | null> {
-    if (!siteKey.value) return null
-    if (!widgetId.value) {
-      await mount()
-    }
-    if (!widgetId.value) return null
-    const existing = captchaToken.value.trim()
-    if (existing) return existing
-    await executeChallenge()
-    return waitForToken(captchaToken, ENSURE_TOKEN_MS)
-  }
-
-  /** Reset and obtain a fresh single-use token (call immediately before Supabase auth). */
-  async function refreshToken(): Promise<string | null> {
-    if (!siteKey.value) return null
-    reset()
-    await nextTick()
-    await mount()
-    return waitForToken(captchaToken, ENSURE_TOKEN_MS)
   }
 
   onBeforeUnmount(() => {
@@ -164,7 +102,5 @@ export function useTurnstileWidget() {
     reset,
     removeWidget,
     clearToken,
-    ensureToken,
-    refreshToken,
   }
 }

@@ -61,9 +61,9 @@
           <p v-if="error" class="mb-4 text-sm text-red-600" role="alert">{{ error }}</p>
 
           <AuthTurnstileWidget
+            ref="forgotTurnstileRef"
             v-model="forgotCaptchaToken"
             :active="forgotPasswordStep === 'email'"
-            class="mb-4"
           />
 
           <form class="contents" @submit.prevent="submitForgotPasswordEmail">
@@ -121,7 +121,6 @@
           ref="loginTurnstileRef"
           v-model="loginCaptchaToken"
           :active="showTurnstile"
-          class="mb-4"
         />
 
         <form class="contents" @submit.prevent="handleLoginSubmit">
@@ -329,14 +328,21 @@ const rememberMe = ref(false)
 const passwordVisible = ref(false)
 const loginCaptchaToken = ref('')
 const forgotCaptchaToken = ref('')
-const { turnstileEnabled, trimCaptchaToken, captchaRequiredMessage, requireCaptchaToken, supabaseCaptchaOptions } =
+const { turnstileEnabled, captchaRequiredMessage, supabaseCaptchaOptions } =
   useAuthCaptcha()
 const captchaRequired = ref(false)
 const loginFailedOnce = ref(false)
 const showTurnstile = computed(
   () => forgotPasswordStep.value === 'login' && turnstileEnabled.value,
 )
-const loginTurnstileRef = ref<{ reset?: () => void } | null>(null)
+type TurnstileWidgetHandle = {
+  reset?: () => void
+  ensureToken?: () => Promise<string | null>
+  refreshToken?: () => Promise<string | null>
+}
+
+const loginTurnstileRef = ref<TurnstileWidgetHandle | null>(null)
+const forgotTurnstileRef = ref<TurnstileWidgetHandle | null>(null)
 let passkeyAutofillStarted = false
 const forgotWebmailUrl = computed(() => resolveWebmailUrl(forgotEmailForWebmail.value))
 
@@ -360,7 +366,6 @@ async function recordLoginAttempt(success: boolean): Promise<boolean> {
     body: {
       email: email.value.trim(),
       success,
-      captcha_token: trimCaptchaToken(loginCaptchaToken.value),
     },
     skipSessionExpiry: true,
   })
@@ -373,16 +378,23 @@ async function recordLoginAttempt(success: boolean): Promise<boolean> {
   return false
 }
 
-function beginConditionalPasskeyAutofill(): void {
+async function beginConditionalPasskeyAutofill(): Promise<void> {
   if (forgotPasswordStep.value !== 'login') return
   if (passkeyAutofillStarted) return
-  if (turnstileEnabled.value && !loginCaptchaToken.value.trim()) return
+
+  let captcha: string | undefined
+  if (turnstileEnabled.value) {
+    const token = await loginTurnstileRef.value?.ensureToken?.()
+    if (!token) return
+    captcha = token
+    loginCaptchaToken.value = token
+  }
 
   passkeyAutofillStarted = true
   startConditionalPasskeySignIn({
     redirectPath: getPostLoginPath(),
     getRememberMe: () => rememberMe.value,
-    captchaToken: trimCaptchaToken(loginCaptchaToken.value),
+    captchaToken: captcha,
     onError: (msg) => {
       error.value = msg
       loading.value = false
@@ -418,10 +430,15 @@ async function runPasswordLogin(): Promise<void> {
     return
   }
   try {
-    const captchaErr = requireCaptchaToken(loginCaptchaToken.value)
-    if (captchaErr) {
-      error.value = captchaErr
-      return
+    let captchaForSupabase = ''
+    if (turnstileEnabled.value) {
+      const token = await loginTurnstileRef.value?.refreshToken?.()
+      if (!token) {
+        error.value = captchaRequiredMessage
+        return
+      }
+      captchaForSupabase = token
+      loginCaptchaToken.value = token
     }
     const statusRes = await api.request<{
       allowed?: boolean
@@ -431,21 +448,11 @@ async function runPasswordLogin(): Promise<void> {
       method: 'POST',
       body: {
         email: email.value.trim(),
-        captcha_token: trimCaptchaToken(loginCaptchaToken.value),
       },
       skipSessionExpiry: true,
     })
-    if (statusRes.status === 400 && !statusRes.ok) {
-      error.value = 'Overenie CAPTCHA zlyhalo. Skúste znova.'
-      loginFailedOnce.value = true
-      return
-    }
     if (statusRes.ok && statusRes.data) {
       captchaRequired.value = Boolean(statusRes.data.captcha_required)
-      if (statusRes.data.captcha_required && !loginCaptchaToken.value.trim()) {
-        error.value = captchaRequiredMessage
-        return
-      }
       if (statusRes.data.allowed === false) {
         error.value = LOCKOUT_ERROR
         return
@@ -457,7 +464,7 @@ async function runPasswordLogin(): Promise<void> {
     const { data: signInData, error: e } = await supabase.auth.signInWithPassword({
       email: email.value.trim(),
       password: password.value,
-      options: supabaseCaptchaOptions(loginCaptchaToken.value),
+      options: supabaseCaptchaOptions(captchaForSupabase || loginCaptchaToken.value),
     })
     if (e) {
       loginFailedOnce.value = true
@@ -519,9 +526,15 @@ async function oauthGoogle(): Promise<void> {
 async function sendForgotPasswordEmail(em: string): Promise<void> {
   error.value = null
   infoMessage.value = null
-  if (turnstileEnabled.value && !forgotCaptchaToken.value.trim()) {
-    error.value = captchaRequiredMessage
-    return
+  let forgotCaptcha = ''
+  if (turnstileEnabled.value) {
+    const token = await forgotTurnstileRef.value?.refreshToken?.()
+    if (!token) {
+      error.value = captchaRequiredMessage
+      return
+    }
+    forgotCaptcha = token
+    forgotCaptchaToken.value = token
   }
   forgotLoading.value = true
   let supabaseError: { code?: string; message?: string } | null = null
@@ -531,7 +544,6 @@ async function sendForgotPasswordEmail(em: string): Promise<void> {
       supabaseError = { code: 'validation_failed', message: 'redirect origin missing' }
     } else {
       const redirectTo = `${origin}${AUTH_RESET_PASSWORD_PATH}`
-      const forgotCaptcha = trimCaptchaToken(forgotCaptchaToken.value)
       const { error: e } = await supabase.auth.resetPasswordForEmail(em, {
         redirectTo,
         ...(forgotCaptcha ? { captchaToken: forgotCaptcha } : {}),
@@ -570,7 +582,9 @@ function returnToLoginForm(): void {
   error.value = null
   infoMessage.value = null
   passkeyAutofillStarted = false
-  nextTick(() => beginConditionalPasskeyAutofill())
+  nextTick(() => {
+    void beginConditionalPasskeyAutofill()
+  })
 }
 
 async function submitForgotPasswordEmail(): Promise<void> {
@@ -597,7 +611,7 @@ async function handleForgotPassword(): Promise<void> {
 
 watch(loginCaptchaToken, () => {
   if (forgotPasswordStep.value === 'login') {
-    beginConditionalPasskeyAutofill()
+    void beginConditionalPasskeyAutofill()
   }
 })
 
@@ -665,7 +679,7 @@ onMounted(async () => {
     }
   }
   if (!turnstileEnabled.value) {
-    beginConditionalPasskeyAutofill()
+    void beginConditionalPasskeyAutofill()
   }
 })
 </script>

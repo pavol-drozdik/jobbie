@@ -3,7 +3,8 @@
     v-if="enabled && active !== false"
     :key="remountKey"
     ref="containerRef"
-    class="min-h-[65px] w-full"
+    class="pointer-events-none fixed -left-[9999px] top-0 h-px w-px overflow-hidden opacity-0"
+    aria-hidden="true"
     data-captcha="turnstile"
   />
 </template>
@@ -26,6 +27,8 @@ const {
   mount,
   reset,
   removeWidget,
+  ensureToken,
+  refreshToken,
 } = useTurnstileWidget()
 
 watch(captchaToken, (value) => {
@@ -46,5 +49,5 @@ watch(
   { immediate: true },
 )
 
-defineExpose({ reset, mount, removeWidget })
+defineExpose({ reset, mount, removeWidget, ensureToken, refreshToken })
 </script>

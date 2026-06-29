@@ -13,6 +13,6 @@ export class AdminAuthLoginController {
   @Post('login')
   @Throttle({ default: { limit: 15, ttl: 60_000 } })
   login(@Body() dto: AdminAuthLoginDto) {
-    return this.loginService.signIn(dto.email, dto.password);
+    return this.loginService.signIn(dto.email, dto.password, dto.captcha_token);
   }
 }

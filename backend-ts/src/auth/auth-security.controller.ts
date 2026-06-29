@@ -89,17 +89,11 @@ export class AuthSecurityController {
     retry_after_seconds: number | null;
     captcha_required: boolean;
   }> {
+    // Turnstile tokens are single-use; Supabase Auth verifies captcha on sign-in.
+    // Do not call siteverify here — it would consume the token before Supabase can use it.
     const captchaRequired = await this.security.requiresCaptchaForLogin(
       body.email,
     );
-    if (captchaRequired) {
-      const captcha = await this.security.verifyTurnstileToken(
-        body.captcha_token,
-      );
-      if (!captcha.ok && !captcha.skipped) {
-        throw new BadRequestException('Overenie CAPTCHA zlyhalo.');
-      }
-    }
     const status = await this.security.getLoginStatus(body.email);
     return { ...status, captcha_required: captchaRequired };
   }
@@ -111,10 +105,7 @@ export class AuthSecurityController {
   async signupEmailStatus(
     @Body() body: SignupEmailStatusDto,
   ): Promise<{ available: boolean }> {
-    const captcha = await this.security.verifyTurnstileToken(body.captcha_token);
-    if (!captcha.ok && !captcha.skipped) {
-      throw new BadRequestException('Overenie CAPTCHA zlyhalo.');
-    }
+    // Captcha is enforced by Supabase signUp; do not siteverify here (single-use tokens).
     const taken = await this.security.isSignupEmailTaken(body.email);
     return { available: !taken };
   }
@@ -132,24 +123,6 @@ export class AuthSecurityController {
       );
     }
     if (!body.success) {
-      const captchaRequired = await this.security.requiresCaptchaForLogin(
-        body.email,
-      );
-      if (captchaRequired) {
-        const captcha = await this.security.verifyTurnstileToken(
-          body.captcha_token,
-        );
-        if (!captcha.ok && !captcha.skipped) {
-          throw new BadRequestException('Overenie CAPTCHA zlyhalo.');
-        }
-      }
-    }
-    const headerUa =
-      typeof req.headers['user-agent'] === 'string'
-        ? req.headers['user-agent']
-        : null;
-    const userAgent = body.user_agent?.trim() || headerUa;
-    if (!body.success) {
       const before = await this.security.getLoginStatus(body.email);
       if (!before.allowed) {
         throw new HttpException(
@@ -162,6 +135,11 @@ export class AuthSecurityController {
         );
       }
     }
+    const headerUa =
+      typeof req.headers['user-agent'] === 'string'
+        ? req.headers['user-agent']
+        : null;
+    const userAgent = body.user_agent?.trim() || headerUa;
     await this.security.recordLoginAttempt({
       email: body.email,
       success: body.success,

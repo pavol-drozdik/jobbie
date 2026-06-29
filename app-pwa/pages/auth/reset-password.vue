@@ -166,7 +166,6 @@
             <AuthTurnstileWidget
               ref="resetTurnstileRef"
               v-model="captchaToken"
-              class="mb-4"
             />
 
             <button
@@ -238,8 +237,11 @@ const saving = ref(false)
 const error = ref<string | null>(null)
 const success = ref<string | null>(null)
 const captchaToken = ref('')
-const resetTurnstileRef = ref<{ reset?: () => void } | null>(null)
-const { requireCaptchaToken } = useAuthCaptcha()
+const resetTurnstileRef = ref<{
+  reset?: () => void
+  refreshToken?: () => Promise<string | null>
+} | null>(null)
+const { turnstileEnabled, captchaRequiredMessage } = useAuthCaptcha()
 
 async function bootstrapRecoverySession(): Promise<void> {
   sessionError.value = null
@@ -265,10 +267,13 @@ async function handleSubmit(): Promise<void> {
     return
   }
 
-  const captchaErr = requireCaptchaToken(captchaToken.value)
-  if (captchaErr) {
-    error.value = captchaErr
-    return
+  if (turnstileEnabled.value) {
+    const token = await resetTurnstileRef.value?.refreshToken?.()
+    if (!token) {
+      error.value = captchaRequiredMessage
+      return
+    }
+    captchaToken.value = token
   }
 
   const { data: beforeUpdate } = await supabase.auth.getSession()

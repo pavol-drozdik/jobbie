@@ -33,14 +33,17 @@ export class AdminAuthLoginService {
   async signIn(
     email: string,
     password: string,
+    captchaToken?: string,
   ): Promise<{
     access_token: string;
     refresh_token: string;
     expires_in: number | null;
   }> {
+    const trimmedCaptcha = captchaToken?.trim()
     const { data, error } = await this.getAnonClient().auth.signInWithPassword({
       email: email.trim(),
       password,
+      options: trimmedCaptcha ? { captchaToken: trimmedCaptcha } : undefined,
     });
     if (error) {
       throw new UnauthorizedException({

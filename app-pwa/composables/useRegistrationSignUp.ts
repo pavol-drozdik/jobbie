@@ -80,27 +80,11 @@ export function useRegistrationSignUp() {
     error.value = null
     const config = useRuntimeConfig().public
     const siteKey = (config.turnstileSiteKey as string) || ''
-    if (siteKey) {
-      if (!captchaToken?.trim()) {
-        const msg = 'Potvrďte, že nie ste robot (Turnstile).'
-        error.value = msg
-        saving.value = false
-        return { ok: false, error: msg }
-      }
-      const verifyRes = await api<CaptchaVerifyData>('/api/auth/captcha/verify', {
-        method: 'POST',
-        body: { token: captchaToken },
-        skipSessionExpiry: true,
-      })
-      const captchaError = registrationCaptchaVerifyFailed(
-        verifyRes.status,
-        verifyRes.data,
-      )
-      if (captchaError) {
-        error.value = captchaError
-        saving.value = false
-        return { ok: false, error: captchaError }
-      }
+    if (siteKey && !captchaToken?.trim()) {
+      const msg = 'Bezpečnostná kontrola sa nepodarila. Obnovte stránku a skúste znova.'
+      error.value = msg
+      saving.value = false
+      return { ok: false, error: msg }
     }
     try {
       if (effectiveCredentials.accountType === 'individual') {
@@ -124,7 +108,6 @@ export function useRegistrationSignUp() {
           method: 'POST',
           body: {
             email: effectiveCredentials.email,
-            captcha_token: trimmedCaptcha || undefined,
           },
           skipSessionExpiry: true,
         },

@@ -92,7 +92,6 @@
         v-if="turnstileEnabled"
         ref="passwordTurnstileRef"
         :model-value="passwordCaptchaToken"
-        class="mb-3"
         @update:model-value="emit('update:passwordCaptchaToken', $event)"
       />
       <AppButton
@@ -116,9 +115,15 @@ import { passwordPolicyHint } from '~/utils/validate-password'
 const { labelClass, inputClass, fieldWrapClass } = useSettingsFormStyles()
 const { turnstileEnabled } = useAuthCaptcha()
 
-const passwordTurnstileRef = ref<{ reset?: () => void } | null>(null)
+const passwordTurnstileRef = ref<{
+  reset?: () => void
+  refreshToken?: () => Promise<string | null>
+} | null>(null)
 
-defineExpose({ resetPasswordCaptcha: () => passwordTurnstileRef.value?.reset?.() })
+defineExpose({
+  resetPasswordCaptcha: () => passwordTurnstileRef.value?.reset?.(),
+  refreshPasswordCaptcha: () => passwordTurnstileRef.value?.refreshToken?.(),
+})
 
 defineProps<{
   currentEmail: string

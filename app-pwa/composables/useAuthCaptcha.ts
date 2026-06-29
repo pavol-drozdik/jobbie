@@ -5,7 +5,8 @@ export function useAuthCaptcha() {
     () => String(config.turnstileSiteKey ?? '').trim().length > 0,
   )
 
-  const captchaRequiredMessage = 'Potvrďte, že nie ste robot (Turnstile).'
+  const captchaRequiredMessage =
+    'Bezpečnostná kontrola sa nepodarila. Obnovte stránku a skúste znova.'
 
   function trimCaptchaToken(token: string): string | undefined {
     const trimmed = token.trim()
