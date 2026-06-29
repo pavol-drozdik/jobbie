@@ -9,7 +9,9 @@ declare global {
         el: HTMLElement,
         opts: {
           sitekey: string
-          size?: 'invisible' | 'normal' | 'compact' | 'flexible'
+          size?: 'normal' | 'compact' | 'flexible'
+          execution?: 'render' | 'execute'
+          appearance?: 'always' | 'execute' | 'interaction-only'
           callback: (token: string) => void
           'expired-callback'?: () => void
           'error-callback'?: () => void
@@ -100,9 +102,12 @@ export function useTurnstileWidget() {
     remountKey.value += 1
   }
 
-  async function executeChallenge(): Promise<void> {
+  async function executeChallenge(retry = false): Promise<void> {
     await loadTurnstileScript()
     if (!widgetId.value || typeof window.turnstile?.execute !== 'function') return
+    if (retry && typeof window.turnstile.reset === 'function') {
+      window.turnstile.reset(widgetId.value)
+    }
     clearToken()
     window.turnstile.execute(widgetId.value)
   }
@@ -114,7 +119,10 @@ export function useTurnstileWidget() {
     removeWidget()
     widgetId.value = window.turnstile.render(containerRef.value, {
       sitekey: siteKey.value,
-      size: 'invisible',
+      // Invisible widget type in Cloudflare dashboard — size must be normal|compact|flexible (not "invisible").
+      size: 'compact',
+      execution: 'execute',
+      appearance: 'execute',
       callback: (token: string) => {
         captchaToken.value = token
       },
@@ -137,7 +145,7 @@ export function useTurnstileWidget() {
     if (!widgetId.value) return null
     const existing = captchaToken.value.trim()
     if (existing) return existing
-    await executeChallenge()
+    await executeChallenge(true)
     return waitForToken(captchaToken, ENSURE_TOKEN_MS)
   }
 
