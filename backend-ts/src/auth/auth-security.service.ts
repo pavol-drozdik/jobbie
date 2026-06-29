@@ -1,4 +1,9 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { fetchWithTimeout } from '../common/fetch-with-timeout';
 import { SupabaseService } from '../supabase/supabase.service';
@@ -315,6 +320,24 @@ export class AuthSecurityService {
         `isSignupEmailTaken failed: ${err instanceof Error ? err.message : String(err)}`,
       );
       return false;
+    }
+  }
+
+  /**
+   * Removes auth.identities so OAuth providers can bind to a new auth.users row after closure.
+   * Hard deleteUser is avoided: profiles.id references auth.users ON DELETE CASCADE.
+   */
+  async unlinkAuthIdentitiesForClosedAccount(userId: string): Promise<void> {
+    const { error } = await this.supabase
+      .getClient()
+      .rpc('unlink_auth_identities_for_closed_account', { p_user_id: userId });
+    if (error) {
+      this.logger.error(
+        `unlink_auth_identities_for_closed_account failed for ${userId}: ${error.message}`,
+      );
+      throw new InternalServerErrorException(
+        'Nepodarilo sa dokončiť odstránenie účtu.',
+      );
     }
   }
 }

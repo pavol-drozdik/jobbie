@@ -19,11 +19,18 @@ export function mapSupabaseLoginError(
   switch (code) {
     case 'email_not_confirmed':
       return S.loginEmailNotConfirmed
+    case 'user_banned':
+      return S.authAccountClosed
     case 'invalid_credentials':
     case 'invalid_grant':
       return GENERIC_LOGIN_ERROR
-    default:
+    default: {
+      const msg = (message ?? '').trim().toLowerCase()
+      if (msg.includes('user is banned')) {
+        return S.authAccountClosed
+      }
       return GENERIC_LOGIN_ERROR
+    }
   }
 }
 

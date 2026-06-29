@@ -30,6 +30,9 @@
   authOAuthFailed: 'Prihlásenie cez Google zlyhalo. Skúste to znova.',
   authOAuthCaptchaFailed:
     'Bezpečnostná kontrola zlyhala. Obnovte stránku a skúste prihlásenie cez Google znova.',
+  authAccountClosed: 'Účet bol zrušený. Zaregistrujte sa znova.',
+  authOAuthPkceVerifierMissing:
+    'Otvorte odkaz v tom istom prehliadači, kde ste začali prihlásenie cez Google, a skúste to znova.',
   loginApiUnreachable:
     'Backend API nebeží alebo nie je dostupný. V termináli spustite backend-ts (port 8000), potom obnovte stránku a prihláste sa znova.',
   resetPasswordTitle: 'Nové',

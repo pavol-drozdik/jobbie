@@ -18,6 +18,7 @@ import {
   stripSupabaseAuthErrorFromUrl,
 } from '~/utils/map-supabase-auth-callback-error'
 import { mapSupabaseRecoveryVerifyError } from '~/utils/map-supabase-reset-error'
+import { establishOAuthCallbackSession } from '~/utils/oauth-callback-session'
 import { resolveSafeInternalPath } from '~/utils/safe-navigation'
 import {
   buildProfilePatchFromSignupMeta,
@@ -65,9 +66,16 @@ async function redirectWithAuthError(
   message?: string,
   redirectPath?: string,
 ): Promise<void> {
+  const oauthSignupPending = Boolean(readOAuthSignupPending())
   setAuthLoginBootstrap(false)
   clearOAuthSignupPending()
-  const mapped = mapSupabaseAuthCallbackError(error, errorCode, errorDescription, message)
+  const mapped = mapSupabaseAuthCallbackError(
+    error,
+    errorCode,
+    errorDescription,
+    message,
+    { oauthSignupPending },
+  )
   const path = mapped.destination === 'register' ? '/auth/register' : '/auth/login'
   const reason = mapped.destination === 'register' ? 'auth_signup_failed' : 'auth_callback_failed'
   const query: Record<string, string> = {
@@ -80,12 +88,20 @@ async function redirectWithAuthError(
   await navigateTo({ path, query }, { replace: true })
 }
 
-async function applyPendingOAuthSignupProfile(accessToken?: string): Promise<void> {
+async function applyPendingOAuthSignupProfile(accessToken?: string): Promise<string | null> {
   const pending = readOAuthSignupPending()
-  if (!pending) return
+  if (!pending) return null
+
+  const role = pending.meta.role === 'company' ? 'company' : 'individual'
+  if (role === 'individual' && !pending.meta.birth_date?.trim()) {
+    return S.authSignupDatabaseFailed
+  }
 
   if (Object.keys(pending.meta).length > 0) {
-    await supabase.auth.updateUser({ data: pending.meta })
+    const { error } = await supabase.auth.updateUser({ data: pending.meta })
+    if (error) {
+      return error.message?.trim() || S.authSignupDatabaseFailed
+    }
   }
 
   const patchBody = buildProfilePatchFromSignupMeta(pending.meta)
@@ -108,6 +124,7 @@ async function applyPendingOAuthSignupProfile(accessToken?: string): Promise<voi
 
   clearOAuthSignupPending()
   clearRegistrationState()
+  return null
 }
 
 function stripOAuthCallbackParamsFromUrl(): void {
@@ -164,16 +181,16 @@ onMounted(async () => {
     } else {
       const codeStr = readQueryString('code')
       if (codeStr) {
-        const { error } = await supabase.auth.exchangeCodeForSession(codeStr)
-        if (error) {
+        const exchanged = await establishOAuthCallbackSession(supabase, codeStr)
+        if (!exchanged.ok) {
           if (import.meta.dev) {
-            console.warn('[auth/callback] exchangeCodeForSession failed', error)
+            console.warn('[auth/callback] OAuth session handoff failed', exchanged)
           }
           await redirectWithAuthError(
             undefined,
-            error.code,
+            exchanged.code,
             undefined,
-            error.message?.trim() || S.loginPostAuthFailed,
+            exchanged.message || S.loginPostAuthFailed,
             target,
           )
           return
@@ -192,7 +209,11 @@ onMounted(async () => {
     const postAuthTarget = isEmailChangeHandoff
       ? '/nastavenia/bezpecnost?email_changed=1'
       : target
-    await applyPendingOAuthSignupProfile(supaSession.access_token)
+    const signupApplyError = await applyPendingOAuthSignupProfile(supaSession.access_token)
+    if (signupApplyError) {
+      await redirectWithAuthError(undefined, undefined, undefined, signupApplyError, target)
+      return
+    }
     const flow = await finishAuthAfterSignIn(supaSession, postAuthTarget)
     if (flow.outcome === 'mfa') {
       return

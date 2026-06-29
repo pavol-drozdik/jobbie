@@ -99,4 +99,35 @@ describe('mapSupabaseAuthCallbackError', () => {
       destination: 'login',
     })
   })
+
+  it('routes user_banned to login by default', () => {
+    expect(mapSupabaseAuthCallbackError(null, 'user_banned', 'User is banned')).toEqual({
+      message: S.authAccountClosed,
+      destination: 'login',
+    })
+  })
+
+  it('routes user_banned to register when OAuth signup is pending', () => {
+    expect(
+      mapSupabaseAuthCallbackError(null, 'user_banned', 'User is banned', null, {
+        oauthSignupPending: true,
+      }),
+    ).toEqual({
+      message: S.authAccountClosed,
+      destination: 'register',
+    })
+  })
+
+  it('maps pkce verifier missing to OAuth copy', () => {
+    expect(
+      mapSupabaseAuthCallbackError(
+        null,
+        'pkce_code_verifier_missing',
+        'PKCE code verifier not found in storage.',
+      ),
+    ).toEqual({
+      message: S.authOAuthPkceVerifierMissing,
+      destination: 'login',
+    })
+  })
 })

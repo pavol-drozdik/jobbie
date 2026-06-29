@@ -556,6 +556,7 @@ import {
 import { validatePassword } from '~/utils/validate-password'
 import type { AccountType } from '~/composables/useRegistration'
 import { saveOAuthSignupPending } from '~/utils/oauth-signup-pending'
+import { setAuthRememberMePreference } from '~/utils/supabase-auth-storage'
 import { useAuthCaptcha } from '~/composables/useAuthCaptcha'
 
 const fieldLabelClass = formFieldLabelClass
@@ -780,12 +781,12 @@ async function oauthGoogle(): Promise<void> {
       meta: oauthMeta,
       newsletterSubscribe: newsletterSubscribe.value,
     })
+    setAuthRememberMePreference(true)
     const { error: e } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo,
         skipBrowserRedirect: false,
-        data: oauthMeta,
         ...supabaseCaptchaOptions(signupCaptcha),
       },
     })

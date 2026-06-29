@@ -4,6 +4,7 @@ import {
   readSupabaseAuthErrorFromUrl,
   stripSupabaseAuthErrorFromUrl,
 } from '~/utils/map-supabase-auth-callback-error'
+import { readOAuthSignupPending } from '~/utils/oauth-signup-pending'
 
 /**
  * Catches Supabase OAuth errors on any route (e.g. homepage) and redirects to login/register.
@@ -32,6 +33,8 @@ export default defineNuxtPlugin((nuxtApp) => {
       authError.error,
       authError.errorCode,
       authError.errorDescription,
+      undefined,
+      { oauthSignupPending: Boolean(readOAuthSignupPending()) },
     )
     stripSupabaseAuthErrorFromUrl()
 
