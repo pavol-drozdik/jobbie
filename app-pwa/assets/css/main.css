@@ -1,4 +1,4 @@
-@import '@fontsource-variable/dm-sans/wght.css';
+@import './dm-sans-normal.css';
 
 @tailwind base;
 @tailwind components;

@@ -140,16 +140,28 @@
           </div>
         </div>
         <div class="relative flex w-full min-w-0 items-center justify-center marketing:items-end">
-          <img
-            src="/img/jobbie-mobile-hero.webp"
-            alt="Ukážka mobilnej aplikácie Jobbie"
-            width="663"
-            height="960"
-            loading="eager"
-            fetchpriority="high"
-            decoding="async"
-            class="h-auto w-full max-w-[min(100%,380px)] object-contain object-center marketing:max-w-none"
-          >
+          <picture>
+            <source
+              media="(min-width: 900px)"
+              srcset="/img/jobbie-mobile-hero.webp"
+              type="image/webp"
+            >
+            <source
+              media="(max-width: 899px)"
+              srcset="/img/jobbie-mobile-hero-760.webp"
+              type="image/webp"
+            >
+            <img
+              src="/img/jobbie-mobile-hero-760.webp"
+              alt="Ukážka mobilnej aplikácie Jobbie"
+              width="663"
+              height="960"
+              loading="eager"
+              fetchpriority="high"
+              decoding="async"
+              class="h-auto w-full max-w-[min(100%,380px)] object-contain object-center marketing:max-w-none"
+            >
+          </picture>
         </div>
       </div>
     </div>
@@ -169,15 +181,25 @@ import {
   type RecentFindFilterSnapshot,
 } from '~/utils/recent-find-filters'
 
-const HERO_PHONE_SRC = '/img/jobbie-mobile-hero.webp'
+const HERO_PHONE_SRC_DESKTOP = '/img/jobbie-mobile-hero.webp'
+const HERO_PHONE_SRC_MOBILE = '/img/jobbie-mobile-hero-760.webp'
 
 useHead({
   link: [
     {
       rel: 'preload',
       as: 'image',
-      href: HERO_PHONE_SRC,
+      href: HERO_PHONE_SRC_MOBILE,
       type: 'image/webp',
+      media: '(max-width: 899px)',
+      fetchpriority: 'high',
+    },
+    {
+      rel: 'preload',
+      as: 'image',
+      href: HERO_PHONE_SRC_DESKTOP,
+      type: 'image/webp',
+      media: '(min-width: 900px)',
       fetchpriority: 'high',
     },
   ],
