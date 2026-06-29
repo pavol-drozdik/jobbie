@@ -1,4 +1,9 @@
-﻿## 2026-06-29 — Invisible Turnstile + single-use token fix
+﻿## 2026-06-29 — GET /metrics CORS bypass (admin Infra, scrapes)
+
+Fixed:
+- **backend-ts:** `/metrics` skips production CORS for requests without `Origin` (curl, JOBBIE Admin Infra server fetch). Endpoint stays protected by `METRICS_BEARER_TOKEN`.
+
+## 2026-06-29 — Invisible Turnstile + single-use token fix
 
 Fixed:
 - **app-pwa:** Turnstile runs invisibly (no on-page widget); fresh token per auth attempt via `refreshToken()`.

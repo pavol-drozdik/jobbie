@@ -76,9 +76,12 @@ describe('shouldBypassCors', () => {
     expect(shouldBypassCors('/api/seo/feeds/ads')).toBe(true);
   });
 
+  it('allows /metrics without Origin for bearer scrapes (admin Infra, curl)', () => {
+    expect(shouldBypassCors('/metrics')).toBe(true);
+  });
+
   it('does not bypass credentialed API routes', () => {
     expect(shouldBypassCors('/api/profiles/me')).toBe(false);
-    expect(shouldBypassCors('/metrics')).toBe(false);
   });
 });
 
@@ -122,6 +125,16 @@ describe('health browser probe CORS (main.ts)', () => {
     );
     expect(result.acao).toBe('https://www.jobbie.sk');
     expect(result.rejected).toBe(false);
+  });
+});
+
+describe('metrics probe CORS (main.ts)', () => {
+  it('skips CORS for /metrics without Origin (admin Infra, curl)', () => {
+    expect(shouldApplyCorsMiddleware('/metrics', undefined)).toBe(false);
+  });
+
+  it('skips CORS for /metrics with Undici Origin null', () => {
+    expect(shouldApplyCorsMiddleware('/metrics', 'null')).toBe(false);
   });
 });
 
