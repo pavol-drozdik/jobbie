@@ -12,7 +12,7 @@
 
     title="Databáza životopisov"
 
-    description="Vyhľadávaj kandidátov a prezeraj ich virtuálne životopisy. Zapni rolu „Potrebujem pomoc s prácou“ v profile a oslov správnych ľudí."
+    description="Vyhľadávaj kandidátov a prezeraj ich virtuálne životopisy. Zapni rolu „Poskytujem prácu“ v profile a oslov správnych ľudí."
 
     :benefits="[
 

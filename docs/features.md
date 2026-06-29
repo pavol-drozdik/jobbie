@@ -7,7 +7,7 @@ Map of major JOBBIE features to PWA routes and backend modules. Privacy rules fo
 | Field | Meaning | Gates |
 |-------|---------|--------|
 | `profiles.role` | `individual` or `company` (Jednotlivec / Firma · SZČO) | Firma settings (`/nastavenia/firma`), IČO, company public profile fields — **not** product nav |
-| `customer_role` | „Potrebujem pomoc s prácou“ | Job posts, applicants, CV database (`customer-only` middleware, Nest `ProfileActivityAuthorizationService`) |
+| `customer_role` | „Poskytujem prácu“ | Job posts, applicants, CV database (`customer-only` middleware, Nest `ProfileActivityAuthorizationService`) |
 | `worker_role` | „Hľadám malé práce“ | CV builder, job email alerts (`worker-only`) |
 | `provider_role` | „Chcem aby ma klienti našli“ | Company/service ads (`provider-only`) |
 

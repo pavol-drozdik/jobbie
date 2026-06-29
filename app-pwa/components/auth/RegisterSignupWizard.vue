@@ -555,6 +555,8 @@ import {
 } from '~/utils/age-eligibility'
 import { validatePassword } from '~/utils/validate-password'
 import type { AccountType } from '~/composables/useRegistration'
+import { saveOAuthSignupPending } from '~/utils/oauth-signup-pending'
+import { useAuthCaptcha } from '~/composables/useAuthCaptcha'
 
 const fieldLabelClass = formFieldLabelClass
 const inputClass = formTextInputClass
@@ -566,6 +568,7 @@ const supabase = useSupabase()
 const { setCredentials, setRoles, getMetaForSignUp } = useRegistration()
 const { doSignUp, saving } = useRegistrationSignUp()
 const { submit: submitNewsletter } = useNewsletterSubscribe()
+const { turnstileEnabled, captchaRequiredMessage, supabaseCaptchaOptions } = useAuthCaptcha()
 
 const progressLabels = ['Typ účtu', 'Role', 'Profil', 'Prístup'] as const
 
@@ -725,20 +728,37 @@ function getPostLoginPath(): string {
 
 async function oauthGoogle(): Promise<void> {
   submitError.value = null
+  showErr4.value = false
   if (!validateStep(1) || !validateStep(2) || !validateStep(3)) {
+    return
+  }
+  if (!termsAgree.value) {
+    err4Message.value = S.termsRequired
+    showErr4.value = true
     return
   }
   oauthLoading.value = true
   try {
+    let signupCaptcha = captchaToken.value
+    if (turnstileEnabled.value) {
+      const token = await signupTurnstileRef.value?.refreshToken?.()
+      if (!token) {
+        submitError.value = captchaRequiredMessage
+        return
+      }
+      signupCaptcha = token
+      captchaToken.value = token
+    }
+
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    const redirectTo = `${origin}/auth/callback?redirect=${encodeURIComponent(getPostLoginPath())}`
+    const redirectTo = `${origin}/auth/callback?redirect=${encodeURIComponent('/auth/register/welcome')}`
     const oauthMeta = getMetaForSignUp(
       undefined,
       {
         accountType: accountType.value!,
         email: '',
         password: '',
-        termsAgree: false,
+        termsAgree: termsAgree.value,
         firstName: firstName.value.trim(),
         lastName: lastName.value.trim(),
         companyName: companyName.value.trim(),
@@ -756,9 +776,18 @@ async function oauthGoogle(): Promise<void> {
         provider_role: providerRole.value,
       },
     )
+    saveOAuthSignupPending({
+      meta: oauthMeta,
+      newsletterSubscribe: newsletterSubscribe.value,
+    })
     const { error: e } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo, skipBrowserRedirect: false, data: oauthMeta },
+      options: {
+        redirectTo,
+        skipBrowserRedirect: false,
+        data: oauthMeta,
+        ...supabaseCaptchaOptions(signupCaptcha),
+      },
     })
     if (e) submitError.value = e.message ?? 'OAuth zlyhal.'
   } catch {

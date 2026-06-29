@@ -28,6 +28,8 @@
     'Účet s touto e-mailovou adresou už existuje. Prihláste sa alebo použite inú adresu.',
   authOAuthCancelled: 'Prihlásenie cez Google bolo zrušené.',
   authOAuthFailed: 'Prihlásenie cez Google zlyhalo. Skúste to znova.',
+  authOAuthCaptchaFailed:
+    'Bezpečnostná kontrola zlyhala. Obnovte stránku a skúste prihlásenie cez Google znova.',
   loginApiUnreachable:
     'Backend API nebeží alebo nie je dostupný. V termináli spustite backend-ts (port 8000), potom obnovte stránku a prihláste sa znova.',
   resetPasswordTitle: 'Nové',
@@ -142,7 +144,7 @@
   preferencesLookingTitle: 'Preferencie – hľadám prácu',
   preferencesOfferingTitle: 'Preferencie – ponúkam prácu',
   rolesQuestion: 'Čo chcete robiť?',
-  roleCustomerCard: 'Potrebujem pomoc s prácou',
+  roleCustomerCard: 'Poskytujem prácu',
   roleWorkerCard: 'Hľadám prácu, brigádu alebo fušku',
   roleProviderCard: 'Ponúkam svoje služby',
   rolesValidationAtLeastOne: 'Vyberte aspoň jednu možnosť.',
@@ -280,6 +282,7 @@
   errorPageTitleError: 'Chyba',
   errorPageRecovering: 'Načítavam…',
   blogPostNotFound: 'Článok sa nenašiel.',
+  blogPostLoadError: 'Nepodarilo sa načítať článok. Skúste to znova.',
   jobListingInactiveNotice:
     'Lehota na prihlásenie na túto ponuku uplynula. Detail ponuky a konverzácie ostávajú dostupné pre zúčastnené strany.',
   jobBackToOffers: 'Späť na ponuky',
@@ -1328,7 +1331,7 @@
   chatOpenProfile: 'Profil',
   dashboardCustomerTitle: 'Štatistiky pracovných ponúk',
   dashboardCustomerSubtitle:
-    'Pre účty, ktoré pridávajú ponuky a hľadajú ľudí na prácu („Potrebujem pomoc s prácou“).',
+    'Pre účty, ktoré pridávajú ponuky a hľadajú ľudí na prácu („Poskytujem prácu“).',
   dashboardProviderTitle: 'Štatistiky reklamy',
   dashboardProviderSubtitle:
     'Zobrazenia profilu, kontakty cez chat a hodnotenia v zvolenom období (reklamy podľa kategórie).',
@@ -1342,13 +1345,13 @@
   dashboardDateTo: 'Do',
   dashboardApplyRange: 'Použiť obdobie',
   dashboardRoleDeniedCustomer:
-    'Tieto štatistiky sú pre rolu „Potrebujem pomoc s prácou“. Zapnite ju v sekcii nižšie.',
+    'Tieto štatistiky sú pre rolu „Poskytujem prácu“. Zapnite ju v sekcii nižšie.',
   dashboardRoleDeniedProvider:
     'Reklamy medzi profesionálmi a súvisiace štatistiky vyžadujú rolu „Ponúkam svoje služby“. Zapnite ju v sekcii nižšie.',
   dashboardRoleDeniedWorker:
     'Životopisy a e-mailové ponuky vyžadujú rolu „Hľadám prácu, brigádu alebo fušku“. Zapnite ju v sekcii nižšie.',
   dashboardRoleDeniedCompany:
-    'Pracovné ponuky, správa uchádzačov a databáza životopisov vyžadujú rolu „Potrebujem pomoc s prácou“. Zapnite ju v sekcii nižšie.',
+    'Pracovné ponuky, správa uchádzačov a databáza životopisov vyžadujú rolu „Poskytujem prácu“. Zapnite ju v sekcii nižšie.',
   dashboardCustomerAvgApplicants: 'Priemerne prihlásení na ponuku',
   dashboardCustomerAvgApplicantsWhy:
     'Pomáha zistiť, či vaše ponuky lámu ľudí — vyšší priemer znamená väčší záujem.',

@@ -371,6 +371,12 @@ export default defineNuxtConfig({
         : [],
     },
     routeRules: buildSeoRouteRules(),
+    devProxy: {
+      '/api': {
+        target: normalizePublicApiBase(process.env.NUXT_PUBLIC_API_BASE_URL),
+        changeOrigin: true,
+      },
+    },
   },
   image: {
     format: ['webp', 'avif'],

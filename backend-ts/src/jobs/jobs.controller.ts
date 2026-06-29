@@ -767,7 +767,7 @@ export class JobsController {
     await this.profileActivity.assertActivityRole(
       user.id,
       'customer',
-      'Inzerát môže vytvárať len používateľ s rolou „Potrebujem pomoc s prácou“.',
+      'Inzerát môže vytvárať len používateľ s rolou „Poskytujem prácu“.',
     );
     const isDraft = body.is_draft ?? true;
     validateJobForPublish(body, { isDraft });

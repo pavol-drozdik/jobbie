@@ -24,6 +24,11 @@ function isSignupProfileFailure(text: string): boolean {
   )
 }
 
+function isCaptchaFailure(text: string): boolean {
+  const lower = text.toLowerCase()
+  return lower.includes('captcha') || lower.includes('turnstile')
+}
+
 /** Reads Supabase OAuth/OTP failure params from query or hash. */
 export function readSupabaseAuthErrorFromSearchParams(
   params: URLSearchParams,
@@ -67,6 +72,10 @@ export function mapSupabaseAuthCallbackError(
 
   if (isSignupProfileFailure(combined)) {
     return { message: S.authSignupDatabaseFailed, destination: 'register' }
+  }
+
+  if (isCaptchaFailure(combined)) {
+    return { message: S.authOAuthCaptchaFailed, destination: 'login' }
   }
 
   const description = (errorDescription ?? message ?? '').trim()

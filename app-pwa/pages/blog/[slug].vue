@@ -70,12 +70,12 @@
               {{ post.author_bio }}
             </p>
 
-            <div class="mb-9 h-[280px] overflow-hidden rounded-[20px] bg-[#cff0db] sm:h-[360px] lg:h-[420px]">
+            <div :class="['mb-9 w-full overflow-hidden rounded-[20px] bg-[#cff0db]', BLOG_COVER_ASPECT_CLASS]">
               <img
                 :src="post.cover_image_url || BLOG_DEFAULT_COVER"
                 :alt="post.title"
                 width="1200"
-                height="420"
+                height="900"
                 class="size-full object-cover"
               >
             </div>
@@ -124,6 +124,7 @@ import { S } from '~/utils/strings'
 import type { BlogPostDetail } from '~/composables/useBlog'
 import BlogPostSingularSidebar from '~/components/blog/BlogPostSingularSidebar.vue'
 import {
+  BLOG_COVER_ASPECT_CLASS,
   BLOG_DEFAULT_COVER,
   blogCategoryLabel,
   blogReadingLabel,
@@ -147,7 +148,7 @@ const route = useRoute()
 const slug = computed(() => String(route.params.slug ?? ''))
 
 const {
-  data: initialPost,
+  data: initialFetch,
   pending: postPending,
   refresh: refreshPost,
 } = await useAsyncData(
@@ -156,28 +157,46 @@ const {
   { watch: [slug] },
 )
 
-if (import.meta.server && slug.value && !initialPost.value) {
+if (import.meta.server && slug.value && initialFetch.value?.status === 404) {
   throw createError({ statusCode: 404, statusMessage: 'Blog post not found' })
 }
 
-const post = ref<BlogPostDetail | null>(initialPost.value)
+const post = ref<BlogPostDetail | null>(initialFetch.value?.data ?? null)
 const loading = computed(() => postPending.value)
-const loadError = ref<string | null>(null)
+const loadError = ref<string | null>(
+  initialFetch.value && !initialFetch.value.data && initialFetch.value.status !== 404
+    ? S.blogPostLoadError
+    : null,
+)
 
-watch(initialPost, (value) => {
-  post.value = value
-  loadError.value = null
-  if (!value && import.meta.client && !postPending.value) {
-    onPostLoadMissing()
+watch(initialFetch, (value) => {
+  post.value = value?.data ?? null
+  if (!value?.data && !postPending.value) {
+    if (value?.status === 404) {
+      loadError.value = null
+      if (import.meta.client) {
+        onPostLoadMissing()
+      }
+      return
+    }
+    if (import.meta.client) {
+      loadError.value = S.blogPostLoadError
+    }
     return
   }
-  if (value && import.meta.client) {
+  loadError.value = null
+  if (value?.data && import.meta.client) {
     nextTick(() => {
       buildToc()
       updateStickySidebar()
     })
   }
 })
+
+async function reload(): Promise<void> {
+  loadError.value = null
+  await refreshPost()
+}
 
 const bodyHtml = computed(() =>
   post.value ? sanitizeBlogBodyForDisplay(post.value.body_html) : '',

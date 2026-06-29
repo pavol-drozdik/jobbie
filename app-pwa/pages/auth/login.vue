@@ -507,11 +507,26 @@ async function oauthGoogle(): Promise<void> {
   error.value = null
   oauthLoading.value = true
   try {
+    let oauthCaptcha = loginCaptchaToken.value
+    if (turnstileEnabled.value) {
+      const token = await loginTurnstileRef.value?.refreshToken?.()
+      if (!token) {
+        error.value = captchaRequiredMessage
+        return
+      }
+      oauthCaptcha = token
+      loginCaptchaToken.value = token
+    }
+
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
     const redirectTo = `${origin}/auth/callback?redirect=${encodeURIComponent(getPostLoginPath())}`
     const { error: e } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo, skipBrowserRedirect: false },
+      options: {
+        redirectTo,
+        skipBrowserRedirect: false,
+        ...supabaseCaptchaOptions(oauthCaptcha),
+      },
     })
     if (e) {
       error.value = e.message ?? 'OAuth zlyhal.'
