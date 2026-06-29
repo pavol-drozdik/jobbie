@@ -3,6 +3,7 @@ import { setAuthRememberMePreference } from '~/utils/supabase-auth-storage'
 export type PasskeyConditionalSignInOptions = {
   redirectPath: string
   getRememberMe?: () => boolean
+  captchaToken?: string
   onError?: (message: string) => void
   onSigningIn?: () => void
 }
@@ -33,7 +34,10 @@ export function usePasskeyConditionalSignIn() {
     running = true
 
     try {
-      const result = await signInWithPasskeyConditional(controller.signal)
+      const result = await signInWithPasskeyConditional(
+        controller.signal,
+        options.captchaToken?.trim() || undefined,
+      )
       if (controller.signal.aborted || result.cancelled) return
       if (!result.ok || !result.session) {
         if (result.error) options.onError?.(result.error)

@@ -36,9 +36,6 @@ function toggle() {
       </header>
       <ul class="help-list">
         <li>
-          <strong>MFA:</strong> TOTP AAL2 povinné — overte v Supabase Auth pred citlivými akciami.
-        </li>
-        <li>
           <strong>Step-up:</strong>
           <code>ADMIN_RECENT_LOGIN_MINUTES</code>
           (default 120) — JWT <code>auth_time</code> / <code>iat</code>.
@@ -49,7 +46,7 @@ function toggle() {
           <code>%APPDATA%\jobbie-admin\.env</code> po inštalácii).
         </li>
         <li>
-          <strong>403 export:</strong> skontrolujte MFA + recent login; audit vyžaduje
+          <strong>403 export:</strong> skontrolujte recent login; audit vyžaduje
           <code>AUDIT_CHAIN_SECRET</code>.
         </li>
         <li>

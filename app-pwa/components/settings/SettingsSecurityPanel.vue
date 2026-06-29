@@ -24,18 +24,24 @@
         first
       >
         <SettingsSecurityEmailPassword
+          ref="passwordSectionRef"
           :current-email="user?.email ?? ''"
           :new-email="newEmail"
           :email-saving="emailSaving"
           :email-msg="emailMsg"
           :email-err="emailErr"
+          :requires-current-password="requiresCurrentPassword"
+          :current-password="currentPassword"
           :new-password="newPassword"
           :confirm-password="confirmPassword"
           :password-saving="passwordSaving"
           :password-err="passwordErr"
+          :password-captcha-token="passwordCaptchaToken"
           @update:new-email="newEmail = $event"
+          @update:current-password="currentPassword = $event"
           @update:new-password="newPassword = $event"
           @update:confirm-password="confirmPassword = $event"
+          @update:password-captcha-token="passwordCaptchaToken = $event"
           @save-email="handleEmailChange"
           @save-password="onPasswordChangeClick"
         />
@@ -93,6 +99,7 @@
 
 <script setup lang="ts">
 // MFA TOTP, passkeys, password change — destructive actions use useConfirm; admin needs aal2 on API.
+import type { Session } from '@supabase/supabase-js'
 import { normalizePublicApiBase } from '~/utils/api-base-url'
 import { ensureSupabaseAuthSession } from '~/utils/ensure-supabase-auth-session'
 import {
@@ -101,7 +108,10 @@ import {
   findTotpFactor,
 } from '~/utils/mfa-aal2'
 import { formatMfaAuthError } from '~/utils/mfa-auth-errors'
+import { mapSupabaseResetError } from '~/utils/map-supabase-reset-error'
+import { isCaptchaLoginError } from '~/utils/map-supabase-login-error'
 import { S } from '~/utils/strings'
+import { validatePassword } from '~/utils/validate-password'
 type TotpUiMode = 'off' | 'enroll' | 'active' | 'disabling'
 
 const supabase = useSupabase()
@@ -115,10 +125,15 @@ const emailSaving = ref(false)
 const emailMsg = ref('')
 const emailErr = ref('')
 
+const currentPassword = ref('')
+const requiresCurrentPassword = ref(false)
 const newPassword = ref('')
 const confirmPassword = ref('')
 const passwordSaving = ref(false)
 const passwordErr = ref('')
+const passwordCaptchaToken = ref('')
+const passwordSectionRef = ref<{ resetPasswordCaptcha?: () => void } | null>(null)
+const { requireCaptchaToken, supabaseCaptchaOptions } = useAuthCaptcha()
 
 const TOTP_FRIENDLY_NAME = 'JOBBIE TOTP'
 
@@ -226,6 +241,46 @@ async function unenrollUnverifiedTotpIfAny(): Promise<string | null> {
   return unenrollTotpFactor(unverified.id)
 }
 
+function userHasEmailIdentity(session: Session | null): boolean {
+  return Boolean(session?.user?.identities?.some((identity) => identity.provider === 'email'))
+}
+
+async function refreshCredentialPolicy(): Promise<void> {
+  const ready = await ensureSupabaseAuthSession()
+  if (!ready.ok || !ready.session) {
+    requiresCurrentPassword.value = false
+    return
+  }
+  requiresCurrentPassword.value = userHasEmailIdentity(ready.session)
+}
+
+async function reauthenticateWithPassword(password: string): Promise<string | null> {
+  const ready = await ensureSupabaseAuthSession()
+  const email = ready.session?.user?.email?.trim()
+  if (!email) {
+    return S.settingsSecurityReauthRequired
+  }
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+    options: supabaseCaptchaOptions(passwordCaptchaToken.value),
+  })
+  if (error) {
+    return S.settingsCurrentPasswordWrong
+  }
+  return null
+}
+
+async function ensureCurrentPasswordForCredentialChange(): Promise<string | null> {
+  if (!requiresCurrentPassword.value) {
+    return null
+  }
+  if (!currentPassword.value) {
+    return S.required
+  }
+  return reauthenticateWithPassword(currentPassword.value)
+}
+
 async function handleEmailChange(): Promise<void> {
   emailErr.value = ''
   emailMsg.value = ''
@@ -241,13 +296,19 @@ async function handleEmailChange(): Promise<void> {
       emailErr.value = ready.error ?? S.settingsSecurityReauthRequired
       return
     }
+    const reauthErr = await ensureCurrentPasswordForCredentialChange()
+    if (reauthErr) {
+      emailErr.value = reauthErr
+      return
+    }
     const { error } = await supabase.auth.updateUser({ email: e })
     if (error) {
-      emailErr.value = error.message
+      emailErr.value = mapSupabaseResetError(error.code, error.message, 'settings')
       return
     }
     emailMsg.value = S.settingsEmailUpdated
     newEmail.value = ''
+    currentPassword.value = ''
   } finally {
     emailSaving.value = false
   }
@@ -259,8 +320,9 @@ async function onPasswordChangeClick(): Promise<void> {
     passwordErr.value = S.settingsPasswordMismatch
     return
   }
-  if (newPassword.value.length < 6) {
-    passwordErr.value = S.settingsPasswordMinLength
+  const passwordError = validatePassword(newPassword.value)
+  if (passwordError) {
+    passwordErr.value = passwordError
     return
   }
   const ok = await confirm({
@@ -279,20 +341,36 @@ async function onPasswordChangeClick(): Promise<void> {
 async function handlePasswordChange(): Promise<void> {
   passwordSaving.value = true
   try {
+    const captchaErr = requireCaptchaToken(passwordCaptchaToken.value)
+    if (captchaErr) {
+      passwordErr.value = captchaErr
+      return
+    }
     const ready = await ensureSupabaseAuthSession()
     if (!ready.ok) {
       passwordErr.value = ready.error ?? S.settingsSecurityReauthRequired
       return
     }
+    const reauthErr = await ensureCurrentPasswordForCredentialChange()
+    if (reauthErr) {
+      passwordErr.value = reauthErr
+      return
+    }
     const { error } = await supabase.auth.updateUser({ password: newPassword.value })
     if (error) {
-      passwordErr.value = error.message
+      if (isCaptchaLoginError(error.code, error.message)) {
+        passwordCaptchaToken.value = ''
+        passwordSectionRef.value?.resetPasswordCaptcha?.()
+      }
+      passwordErr.value = mapSupabaseResetError(error.code, error.message, 'settings')
       return
     }
     await revokeAllSessionsEverywhere()
     await signOut()
     newPassword.value = ''
     confirmPassword.value = ''
+    currentPassword.value = ''
+    passwordCaptchaToken.value = ''
     await navigateTo('/auth/login', { replace: true })
   } finally {
     passwordSaving.value = false
@@ -571,6 +649,11 @@ async function disableTotp(code: string): Promise<void> {
 
 onMounted(async () => {
   await load()
+  try {
+    await refreshCredentialPolicy()
+  } catch {
+    /* non-fatal */
+  }
   try {
     await refreshTotpState()
   } catch {

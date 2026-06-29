@@ -27,7 +27,7 @@ alwaysApply: true
 ## Auth & account risk
 
 - Failed logins: `POST /api/auth/security/login-attempt` + `auth_security_events`; Turnstile on failures when configured.
-- Admin routes: `AppRoleGuard` + `AdminMfaGuard` (JWT `aal === aal2`).
+- Admin routes (desktop `jobbie-admin/api`): `AppRoleGuard` + `@RequireRecentLogin()` on sensitive mutations.
 - Sensitive mutations: `@RequireRecentLogin()` (step-up within 15 min) — billing, account delete, admin moderation, passkeys.
 - Account enforcement: `profiles.account_status`; admin suspend via service role only; audit `account.suspended` / `account.unsuspended`.
 

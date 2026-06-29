@@ -47,7 +47,7 @@ Roles are stored on `profiles` and enforced in the Nest API (not only in the UI)
 | Account type | `profiles.role` — `company` or individual | Company vs job seeker flows |
 | Worker | `profiles.worker_role` | Worker-only pages (`middleware/worker-only.ts`) |
 | Customer / provider | `customer_role`, `provider_role` | Dashboard routes |
-| Platform admin | `profiles.app_role` = `admin` | Desktop app [`jobbie-admin/`](../jobbie-admin/), `AdminMfaGuard` on local admin API |
+| Platform admin | `profiles.app_role` = `admin` | Desktop app [`jobbie-admin/`](../jobbie-admin/), `AppRoleGuard` on local admin API |
 | Permission scopes | `permission_scopes` (company users) | Fine-grained employer actions |
 
 UI hints: [`app-pwa/composables/useCan.ts`](../app-pwa/composables/useCan.ts) — **never** rely on these alone; backend must enforce access.

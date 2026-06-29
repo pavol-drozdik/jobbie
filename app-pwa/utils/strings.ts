@@ -67,7 +67,10 @@
   resetPasswordSaveFailed:
     'Nepodarilo sa uložiť heslo. Skúste to znova alebo požiadajte o nový odkaz.',
   resetPasswordWeakPassword:
-    'Heslo je príliš slabé. Použite aspoň 6 znakov.',
+    'Heslo je príliš slabé. Použite aspoň 8 znakov, písmeno a číslicu.',
+  passwordPolicyHint: 'Minimálne 8 znakov, písmeno a číslica',
+  passwordPolicyComplexity:
+    'Heslo musí obsahovať aspoň jedno písmeno a jednu číslicu.',
   resetPasswordSamePassword:
     'Nové heslo musí byť iné ako predchádzajúce.',
   resetPasswordReauthRequired:
@@ -980,8 +983,11 @@
   settingsEmailSection: 'E-mail',
   settingsNewEmail: 'Nový e-mail',
   settingsEmailHint:
-    'Po zmene môže byť potrebné potvrdiť nový e-mail podľa nastavení účtu.',
-  settingsEmailUpdated: 'Žiadosť o zmenu e-mailu bola odoslaná. Skontrolujte schránku.',
+    'Po uložení potvrďte zmenu v oboch e-mailových schránkach — na aktuálnej aj novej adrese.',
+  settingsEmailUpdated:
+    'Žiadosť o zmenu e-mailu bola odoslaná. Skontrolujte obe schránky a potvrďte odkazy v každom e-maile.',
+  settingsEmailChangeConfirmed:
+    'E-mailová adresa bola úspešne zmenená.',
   settingsPasswordSection: 'Heslo',
   settingsNewPassword: 'Nové heslo',
   settingsConfirmPassword: 'Potvrďte heslo',
@@ -989,7 +995,14 @@
   settingsPasswordUpdated: 'Heslo bolo zmenené.',
   settingsPasswordUpdatedRelogin:
     'Heslo bolo zmenené. Všetky zariadenia boli odhlásené — prihláste sa znova.',
-  settingsPasswordMinLength: 'Heslo musí mať aspoň 6 znakov.',
+  settingsPasswordMinLength:
+    'Heslo musí mať aspoň 8 znakov, písmeno a číslicu.',
+  settingsCurrentPassword: 'Aktuálne heslo',
+  settingsCurrentPasswordWrong: 'Nesprávne heslo. Skúste to znova.',
+  settingsCurrentPasswordHint:
+    'Pri zmene e-mailu alebo hesla zadajte heslo, ktorým sa prihlasujete.',
+  settingsReauthenticationNeeded:
+    'Pred zmenou je potrebné overiť identitu. Skontrolujte e-mail s overovacím kódom alebo zadajte aktuálne heslo.',
   settingsSecuritySummaryTitle: 'Stav zabezpečenia',
   settingsSecurityCurrentEmail: 'Aktuálny e-mail',
   settingsSecurityCredentialsSection: 'Prihlasovacie údaje',

@@ -232,7 +232,7 @@ onMounted(() => void load())
     </section>
 
     <div v-if="needsReLogin" class="section-card moderation-relogin">
-      <p>Citlivé akcie vyžadujú čerstvé prihlásenie s MFA.</p>
+      <p>Citlivé akcie vyžadujú čerstvé prihlásenie.</p>
       <button type="button" class="btn btn-primary btn-sm" @click="goReLogin">
         Odhlásiť a prihlásiť znova
       </button>

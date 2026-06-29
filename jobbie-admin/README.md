@@ -25,9 +25,8 @@ Local-only admin panel for platform operators. **Not** deployed as a public webs
 ## Auth
 
 1. Sign in with Supabase (email/password) using the **anon** key in the UI.
-2. Complete **TOTP MFA** in the login flow (JWT `aal2`).
-3. UI sends `Authorization: Bearer <access_token>` to the local admin API.
-4. API enforces `app_role = admin`, `AdminMfaGuard` (AAL2), and `@RequireRecentLogin()` via JWT `auth_time` / `iat` on sensitive routes. Window: **`ADMIN_RECENT_LOGIN_MINUTES`** (default **120**; main `backend-ts` API remains 15 min).
+2. UI sends `Authorization: Bearer <access_token>` to the local admin API.
+3. API enforces `app_role = admin` and `@RequireRecentLogin()` via JWT `auth_time` / `iat` on sensitive routes. Window: **`ADMIN_RECENT_LOGIN_MINUTES`** (default **120**; main `backend-ts` API remains 15 min).
 
 Set `profiles.app_role = 'admin'` in the database for your operator account (that is enough for Moderácia and all desktop scopes). Optional `profiles.admin_role` is only used for fine-grained limits when `app_role` is not `admin`.
 
@@ -112,6 +111,19 @@ Stop-Process -Id <pid> -Force
 **Electron alone** (`npx electron .`): the shell spawns `npm run start:dev` and waits up to 2 minutes for `/health` before loading the window. Prefer `npm run dev` for daily work.
 
 **Do not** bind the admin API to `0.0.0.0` — it must stay on `127.0.0.1` only.
+
+## Troubleshooting (login failed)
+
+| Symptom | Fix |
+|---------|-----|
+| `Chýba app/.env` / missing Supabase | `app/.env`: `VITE_ADMIN_API_URL=http://127.0.0.1:3099` (Supabase keys live in **api/.env**) |
+| `SUPABASE_ANON_KEY missing` | `api/.env`: copy `NUXT_PUBLIC_SUPABASE_ANON_KEY` from `app-pwa/.env` — **not** the service role key |
+| `Nesprávny e-mail alebo heslo` | Same credentials as [jobbie.sk](https://jobbie.sk); reset password in the PWA if needed |
+| Login OK but 403 on overview | Set `profiles.app_role = 'admin'` for your user in Supabase |
+| `Missing or invalid Bearer token` after login | `api/.env` — `SUPABASE_JWT_SECRET` must match Supabase Dashboard → API → JWT Secret |
+| `E-mail nie je overený` | Confirm email via PWA signup link first |
+
+After changing `app/.env`, restart Vite/Electron (`npm run dev`).
 
 ## External analytics (optional)
 

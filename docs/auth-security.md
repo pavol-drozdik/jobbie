@@ -99,7 +99,7 @@ Middleware and guards are **UX only** — backend must enforce the same rules.
 | Mechanism | Where |
 |-----------|--------|
 | `profiles.role` | `company` vs individual — enforced in services/controllers |
-| `profiles.app_role` | `admin` — [`jobbie-admin/api`](../jobbie-admin/api) (`AppRoleGuard` + `AdminMfaGuard`) |
+| `profiles.app_role` | `admin` — [`jobbie-admin/api`](../jobbie-admin/api) (`AppRoleGuard`) |
 | `permission_scopes` | Derived from `app_role` + `extra_permission_scopes`; if `app_role` is still `user`, **`profiles.role = company` maps to employer scopes** for API checks (see `effectiveAppRoleForScopes` in [`scopes.ts`](../backend-ts/src/auth/scopes.ts)) |
 | `profiles.account_status` | `active` / `suspended` / `closed` — `AccountStatusGuard` |
 
@@ -114,7 +114,7 @@ Scope check API: `GET /api/auth/scope-check`.
 | Feature | Implementation |
 |---------|----------------|
 | User MFA | Supabase TOTP — [`pages/auth/mfa.vue`](../app-pwa/pages/auth/mfa.vue) |
-| Admin routes | Desktop admin API (`jobbie-admin/api`) — `AdminMfaGuard` requires JWT claim `aal === 'aal2'` |
+| Admin routes | Desktop admin API (`jobbie-admin/api`) — `AppRoleGuard` + Bearer JWT; `@RequireRecentLogin()` (JWT `auth_time` / `iat`, default 120 min) |
 | Sensitive mutations | `@RequireRecentLogin()` — `api_user_sessions.last_step_up_at` within **15 minutes** |
 
 Step-up endpoint: `POST /api/auth/session/step-up`. Fresh login (`POST /api/auth/session`) sets `last_step_up_at` for all users; step-up with `aal1` is allowed only when the account has no verified TOTP factor.
@@ -175,13 +175,27 @@ Google OAuth uses a separate callback on Supabase (`https://<project-ref>.supaba
 
 If **Confirm email** is enabled in the Supabase project, users cannot `signInWithPassword` until the address is confirmed; the PWA shows a dedicated message (`loginEmailNotConfirmed`).
 
+## Supabase Auth password and email policy
+
+Align **Supabase Dashboard → Authentication → Providers → Email** (and related security toggles) with the PWA. The website does not read these settings at runtime; client validation mirrors the expected dashboard values.
+
+| Dashboard setting | PWA enforcement |
+|-------------------|-----------------|
+| **Enable email provider** | Register/login/forgot-password call Supabase email APIs; no extra code when enabled |
+| **Minimum password length** (8) + **Letters and digits** | [`validate-password.ts`](../app-pwa/utils/validate-password.ts) — register, reset, settings |
+| **Require current password when updating** | Settings: current-password field + `signInWithPassword` before `updateUser` ([`SettingsSecurityPanel.vue`](../app-pwa/components/settings/SettingsSecurityPanel.vue)); hidden for OAuth-only accounts (no `email` identity) |
+| **Secure email change** | `updateUser({ email })` + confirmation links → [`callback.vue`](../app-pwa/pages/auth/callback.vue) `verifyOtp({ type: 'email_change' })`; copy tells users to confirm **both** inboxes; success redirect → `/nastavenia/bezpecnost?email_changed=1` |
+
+**Operational checklist:** custom SMTP in Supabase for auth mail; branded templates from [`supabase/AUTH-EMAIL-TEMPLATES.md`](../supabase/AUTH-EMAIL-TEMPLATES.md); redirect URLs `{origin}/auth/callback` and `{origin}/auth/reset-password`. See [email-smtp.md](./email-smtp.md).
+
 ## Failed login and abuse
 
 - `POST /api/auth/security/login-attempt` + `login_attempt_counters`
-- Cloudflare Turnstile when `TURNSTILE_SECRET_KEY` / `NUXT_PUBLIC_TURNSTILE_SITE_KEY` configured — shared [`useTurnstileWidget`](../app-pwa/composables/useTurnstileWidget.ts) + [`AuthTurnstileWidget`](../app-pwa/components/auth/AuthTurnstileWidget.vue)
-- **Login:** progressive widget (after failed attempt or when `login-status` returns `captcha_required`); `captchaToken` passed to Nest `login-status` / `login-attempt` and Supabase `signInWithPassword` when present
+- Cloudflare Turnstile when `TURNSTILE_SECRET_KEY` / `NUXT_PUBLIC_TURNSTILE_SITE_KEY` configured — shared [`useTurnstileWidget`](../app-pwa/composables/useTurnstileWidget.ts), [`useAuthCaptcha`](../app-pwa/composables/useAuthCaptcha.ts), and [`AuthTurnstileWidget`](../app-pwa/components/auth/AuthTurnstileWidget.vue)
+- **Login:** Turnstile always visible when the site key is set; `captchaToken` required on every `signInWithPassword` (Supabase dashboard CAPTCHA enforces server-side). Nest `login-status` / `login-attempt` still use progressive CAPTCHA after failed attempts as an extra abuse layer.
 - **Register:** widget on wizard step 4; Nest `POST /api/auth/captcha/verify` then `POST /api/auth/security/signup-email-status` (duplicate check via `auth.admin.getUserByEmail`) then Supabase `signUp` with `captchaToken`; PWA also rejects Supabase responses with empty `identities`
 - **Forgot password:** widget on email step when keys configured; `resetPasswordForEmail` with `captchaToken`
+- **Password reset / settings:** Turnstile on recovery and settings password forms when keys configured; reauthentication `signInWithPassword` includes `captchaToken`
 - **Supabase Dashboard:** Authentication → Settings → Security → enable CAPTCHA (Turnstile) with the same secret as `TURNSTILE_SECRET_KEY` when enforcing server-side
 - Generic error messages — no email enumeration on **login** (except safe cases such as unconfirmed email); registration shows an explicit message when the email is already registered
 - `POST /api/reports` → `content_reports` + audit
@@ -212,7 +226,6 @@ If **Confirm email** is enabled in the Supabase project, users cannot `signInWit
 - BFF HttpOnly cookies for API auth
 - CSRF on mutations
 - Short-lived access cookie (`SESSION_ACCESS_TTL_SECONDS`)
-- MFA for admin (`aal2`)
 - Step-up for high-risk mutations
 
 For adding endpoints, use the template in [SECURITY.md](./SECURITY.md#adding-a-new-protected-endpoint).

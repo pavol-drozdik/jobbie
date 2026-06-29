@@ -118,6 +118,7 @@
         <p v-if="infoMessage" class="mb-4 text-sm text-black/60" role="status">{{ infoMessage }}</p>
 
         <AuthTurnstileWidget
+          ref="loginTurnstileRef"
           v-model="loginCaptchaToken"
           :active="showTurnstile"
           class="mb-4"
@@ -274,7 +275,7 @@
 </template>
 
 <script setup lang="ts">
-// Generic login errors (no email enumeration); syncSession → BFF cookies; Turnstile after failures when configured.
+// Generic login errors (no email enumeration); syncSession → BFF cookies; Turnstile when site key configured.
 import {
   AUTH_RESET_PASSWORD_PATH,
   isAuthRecoveryInUrl,
@@ -283,7 +284,7 @@ import {
   resolveAuthRedirectOrigin,
 } from '~/utils/auth-recovery'
 import { mapSupabaseForgotPasswordError } from '~/utils/map-supabase-forgot-password-error'
-import { mapSupabaseLoginError } from '~/utils/map-supabase-login-error'
+import { mapSupabaseLoginError, isCaptchaLoginError } from '~/utils/map-supabase-login-error'
 import { resolveWebmailUrl } from '~/utils/email-webmail-url'
 import { S } from '~/utils/strings'
 import { authMarketingPanelClass } from '~/utils/marketing-ui'
@@ -328,22 +329,20 @@ const rememberMe = ref(false)
 const passwordVisible = ref(false)
 const loginCaptchaToken = ref('')
 const forgotCaptchaToken = ref('')
-const turnstileEnabled = computed(
-  () => String(config.turnstileSiteKey ?? '').trim().length > 0,
-)
+const { turnstileEnabled, trimCaptchaToken, captchaRequiredMessage, requireCaptchaToken, supabaseCaptchaOptions } =
+  useAuthCaptcha()
 const captchaRequired = ref(false)
 const loginFailedOnce = ref(false)
 const showTurnstile = computed(
-  () =>
-    forgotPasswordStep.value === 'login' &&
-    turnstileEnabled.value &&
-    (captchaRequired.value || loginFailedOnce.value),
+  () => forgotPasswordStep.value === 'login' && turnstileEnabled.value,
 )
+const loginTurnstileRef = ref<{ reset?: () => void } | null>(null)
+let passkeyAutofillStarted = false
 const forgotWebmailUrl = computed(() => resolveWebmailUrl(forgotEmailForWebmail.value))
 
-function trimCaptchaToken(token: string): string | undefined {
-  const trimmed = token.trim()
-  return trimmed || undefined
+function resetLoginCaptcha(): void {
+  loginCaptchaToken.value = ''
+  loginTurnstileRef.value?.reset?.()
 }
 
 function getPostLoginPath(): string {
@@ -376,9 +375,14 @@ async function recordLoginAttempt(success: boolean): Promise<boolean> {
 
 function beginConditionalPasskeyAutofill(): void {
   if (forgotPasswordStep.value !== 'login') return
+  if (passkeyAutofillStarted) return
+  if (turnstileEnabled.value && !loginCaptchaToken.value.trim()) return
+
+  passkeyAutofillStarted = true
   startConditionalPasskeySignIn({
     redirectPath: getPostLoginPath(),
     getRememberMe: () => rememberMe.value,
+    captchaToken: trimCaptchaToken(loginCaptchaToken.value),
     onError: (msg) => {
       error.value = msg
       loading.value = false
@@ -414,8 +418,9 @@ async function runPasswordLogin(): Promise<void> {
     return
   }
   try {
-    if (showTurnstile.value && !loginCaptchaToken.value.trim()) {
-      error.value = 'Potvrďte, že nie ste robot (Turnstile).'
+    const captchaErr = requireCaptchaToken(loginCaptchaToken.value)
+    if (captchaErr) {
+      error.value = captchaErr
       return
     }
     const statusRes = await api.request<{
@@ -438,7 +443,7 @@ async function runPasswordLogin(): Promise<void> {
     if (statusRes.ok && statusRes.data) {
       captchaRequired.value = Boolean(statusRes.data.captcha_required)
       if (statusRes.data.captcha_required && !loginCaptchaToken.value.trim()) {
-        error.value = 'Potvrďte, že nie ste robot (Turnstile).'
+        error.value = captchaRequiredMessage
         return
       }
       if (statusRes.data.allowed === false) {
@@ -449,16 +454,19 @@ async function runPasswordLogin(): Promise<void> {
 
     setAuthRememberMePreference(rememberMe.value)
     setAuthLoginBootstrap(true)
-    const loginCaptcha = trimCaptchaToken(loginCaptchaToken.value)
     const { data: signInData, error: e } = await supabase.auth.signInWithPassword({
       email: email.value.trim(),
       password: password.value,
-      options: loginCaptcha ? { captchaToken: loginCaptcha } : undefined,
+      options: supabaseCaptchaOptions(loginCaptchaToken.value),
     })
     if (e) {
       loginFailedOnce.value = true
       captchaRequired.value = true
-      loginCaptchaToken.value = ''
+      if (isCaptchaLoginError(e.code, e.message)) {
+        resetLoginCaptcha()
+      } else {
+        loginCaptchaToken.value = ''
+      }
       try {
         const lockedOut = await recordLoginAttempt(false)
         if (lockedOut) {
@@ -468,7 +476,7 @@ async function runPasswordLogin(): Promise<void> {
       } catch {
         /* best-effort */
       }
-      error.value = mapSupabaseLoginError(e.code)
+      error.value = mapSupabaseLoginError(e.code, e.message)
       return
     }
     if (!signInData.session?.access_token || !signInData.session.refresh_token) {
@@ -512,7 +520,7 @@ async function sendForgotPasswordEmail(em: string): Promise<void> {
   error.value = null
   infoMessage.value = null
   if (turnstileEnabled.value && !forgotCaptchaToken.value.trim()) {
-    error.value = 'Potvrďte, že nie ste robot (Turnstile).'
+    error.value = captchaRequiredMessage
     return
   }
   forgotLoading.value = true
@@ -561,6 +569,7 @@ function returnToLoginForm(): void {
   forgotCaptchaToken.value = ''
   error.value = null
   infoMessage.value = null
+  passkeyAutofillStarted = false
   nextTick(() => beginConditionalPasskeyAutofill())
 }
 
@@ -585,6 +594,12 @@ async function handleForgotPassword(): Promise<void> {
   }
   await sendForgotPasswordEmail(em)
 }
+
+watch(loginCaptchaToken, () => {
+  if (forgotPasswordStep.value === 'login') {
+    beginConditionalPasskeyAutofill()
+  }
+})
 
 watch(forgotPasswordStep, (step) => {
   if (step !== 'login') {
@@ -649,6 +664,8 @@ onMounted(async () => {
       await signOut()
     }
   }
-  beginConditionalPasskeyAutofill()
+  if (!turnstileEnabled.value) {
+    beginConditionalPasskeyAutofill()
+  }
 })
 </script>

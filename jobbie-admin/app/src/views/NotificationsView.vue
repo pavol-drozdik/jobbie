@@ -80,7 +80,7 @@ async function sendBroadcast() {
     <header>
       <h1 class="page-title">Hromadné upozornenia</h1>
       <p class="page-subtitle">
-        In-app notifikácia <code>admin_broadcast</code>. Vyžaduje AAL2 a nedávne prihlásenie.
+        In-app notifikácia <code>admin_broadcast</code>. Vyžaduje nedávne prihlásenie.
       </p>
     </header>
 

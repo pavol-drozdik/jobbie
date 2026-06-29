@@ -51,9 +51,9 @@ function tick() {
 
 const message = computed(() => {
   if (minutesLeft.value <= 0) {
-    return 'Platnosť nedávneho prihlásenia vypršala. Pre pozastavenie účtu, moderáciu alebo export auditu sa znova prihláste s MFA.'
+    return 'Platnosť nedávneho prihlásenia vypršala. Pre pozastavenie účtu, moderáciu alebo export auditu sa znova prihláste.'
   }
-  return `Nedávne prihlásenie (step-up) vyprší o ~${minutesLeft.value} min. Citlivé akcie môžu zlyhať — pri potrebe sa znova prihláste s MFA.`
+  return `Nedávne prihlásenie (step-up) vyprší o ~${minutesLeft.value} min. Citlivé akcie môžu zlyhať — pri potrebe sa znova prihláste.`
 })
 
 onMounted(() => {

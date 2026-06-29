@@ -5,7 +5,7 @@ Platform admin tools were removed from the public PWA (`app-pwa`) and main API (
 ## Why separate
 
 - Admin UI is not linked from the consumer PWA.
-- Admin API binds to localhost and expects Bearer JWT + MFA, not public BFF cookies.
+- Admin API binds to localhost and expects Bearer JWT, not public BFF cookies.
 - Reduces attack surface on the production web deployment.
 
 ## Operator requirements
@@ -13,7 +13,6 @@ Platform admin tools were removed from the public PWA (`app-pwa`) and main API (
 | Requirement | Detail |
 |-------------|--------|
 | `profiles.app_role` | `admin` |
-| MFA | Verified TOTP (Supabase AAL2 on access token) |
 | Recent login | Suspend/moderation/audit export: JWT `auth_time` / `iat` within **`ADMIN_RECENT_LOGIN_MINUTES`** (admin API default **120**; main `backend-ts` remains 15 min) |
 | Env | Copy `jobbie-admin/api/.env` from main `backend-ts/.env` (service role, JWT, audit secret) |
 
@@ -105,18 +104,18 @@ User-facing content reports remain on the main API: `POST /api/reports`. Public 
 
 ### Audit log (desktop UI)
 
-**Audit log** screen: filters (7/30/90d, event type, actor UUID, limit 50–200), detailed table (subject, IP, payload preview; click row for full JSON), **Export CSV** / **Export JSONL** (downloads via Bearer auth; same filters as list), **Načítať ďalšie** (cursor pagination), **Overiť reťazec** (HMAC chain for selected period). List items include `actor_label` from `profiles`. Export CSV columns: id, timestamps, actor, subject, session/device, payload, row_hash. Requires recent MFA login (`@RequireRecentLogin` on audit routes).
+**Audit log** screen: filters (7/30/90d, event type, actor UUID, limit 50–200), detailed table (subject, IP, payload preview; click row for full JSON), **Export CSV** / **Export JSONL** (downloads via Bearer auth; same filters as list), **Načítať ďalšie** (cursor pagination), **Overiť reťazec** (HMAC chain for selected period). List items include `actor_label` from `profiles`. Export CSV columns: id, timestamps, actor, subject, session/device, payload, row_hash. Requires recent login (`@RequireRecentLogin` on audit routes).
 
 Blog cover images use the public `blog-covers` bucket; inline article images use `blog-content`. Both use signed upload init/finalize on admin API only (`purpose`: `blog_cover` | `blog_content`); PWA reads public URLs after server-side HTML sanitization.
 
 ### Step-up window (`ADMIN_RECENT_LOGIN_MINUTES`)
 
-Mutation routes (moderation claim/dismiss/hide, user suspend, audit export, …) use `@RequireRecentLogin()` + `BearerRecentLoginGuard` (JWT `auth_time` or `iat`, not BFF cookies). Moderation **GET** queue/count and **Prehľad** work without a fresh step-up. Re-login with MFA after token refresh if actions return 403. The desktop API does **not** share `backend-ts`’s 15-minute `api_user_sessions.last_step_up_at` window.
+Mutation routes (moderation claim/dismiss/hide, user suspend, audit export, …) use `@RequireRecentLogin()` + `BearerRecentLoginGuard` (JWT `auth_time` or `iat`, not BFF cookies). Moderation **GET** queue/count and **Prehľad** work without a fresh step-up. Re-login if sensitive actions return 403. The desktop API does **not** share `backend-ts`’s 15-minute `api_user_sessions.last_step_up_at` window.
 
 | Setting | Default | Notes |
 |---------|---------|--------|
 | `ADMIN_RECENT_LOGIN_MINUTES` | `120` | Exposed on `GET /health` as `recentLoginMinutes` for `AdminMfaBanner` |
-| Solo operator | `120`–`480` | Longer window is acceptable on localhost-only admin; MFA at login (AAL2) still required |
+| Solo operator | `120`–`480` | Longer window is acceptable on localhost-only admin |
 | Stricter | `15` | Match main API step-up if desired |
 
 Set in `jobbie-admin/api/.env` or packaged operator `.env`; restart API/Electron after change.

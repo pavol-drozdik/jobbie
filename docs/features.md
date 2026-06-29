@@ -171,7 +171,7 @@ Public token routes for pause/unsubscribe: `public/job-alerts`.
 | **Purpose** | Platform admin analytics, user enforcement, audit |
 | **Desktop** | [`jobbie-admin/`](../jobbie-admin/) — Electron app (not in public PWA) |
 | **Backend** | Local admin API in `jobbie-admin/api/`; main API keeps `POST /api/reports` only |
-| **Security** | `AdminMfaGuard`, `@RequireRecentLogin()` (Bearer JWT step-up on desktop API) |
+| **Security** | `AppRoleGuard`, `@RequireRecentLogin()` (Bearer JWT step-up on desktop API) |
 
 ## Dashboards (role-specific)
 

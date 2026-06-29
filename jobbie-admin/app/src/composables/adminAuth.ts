@@ -1,28 +1,67 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { computed, ref } from 'vue'
+import { parseAdminLoginApiError } from '../utils/map-admin-login-error'
+
+const ACCESS_STORAGE_KEY = 'jb_admin_access_token'
+const REFRESH_STORAGE_KEY = 'jb_admin_refresh_token'
 
 const accessToken = ref<string | null>(null)
 const authError = ref<string | null>(null)
+const lastAuthErrorCode = ref<string | null>(null)
 const loading = ref(false)
 
 let supabase: SupabaseClient | null = null
 
-function getSupabase(): SupabaseClient {
-  if (!supabase) {
-    const url = import.meta.env.VITE_SUPABASE_URL
-    const key = import.meta.env.VITE_SUPABASE_ANON_KEY
-    if (!url || !key) {
-      throw new Error('Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY')
-    }
-    supabase = createClient(url, key, {
-      auth: { persistSession: true, autoRefreshToken: true },
-    })
-  }
+const adminApiBase =
+  import.meta.env.VITE_ADMIN_API_URL?.replace(/\/$/, '') ||
+  'http://127.0.0.1:3099'
+
+function getSupabaseOptional(): SupabaseClient | null {
+  if (supabase) return supabase
+  const url = import.meta.env.VITE_SUPABASE_URL?.trim()
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
+  if (!url || !key) return null
+  supabase = createClient(url, key, {
+    auth: { persistSession: true, autoRefreshToken: true },
+  })
   return supabase
 }
 
+function persistTokens(access: string, refresh: string): void {
+  try {
+    sessionStorage.setItem(ACCESS_STORAGE_KEY, access)
+    sessionStorage.setItem(REFRESH_STORAGE_KEY, refresh)
+  } catch {
+    /* private mode */
+  }
+}
+
+function clearPersistedTokens(): void {
+  try {
+    sessionStorage.removeItem(ACCESS_STORAGE_KEY)
+    sessionStorage.removeItem(REFRESH_STORAGE_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
 async function syncToken(): Promise<void> {
-  const client = getSupabase()
+  if (accessToken.value) return
+  const stored = sessionStorage.getItem(ACCESS_STORAGE_KEY)
+  if (stored) {
+    accessToken.value = stored
+    const client = getSupabaseOptional()
+    const refresh = sessionStorage.getItem(REFRESH_STORAGE_KEY)
+    if (client && refresh) {
+      await client.auth.setSession({
+        access_token: stored,
+        refresh_token: refresh,
+      })
+    }
+    return
+  }
+  const client = getSupabaseOptional()
+  if (!client) return
   const { data } = await client.auth.getSession()
   accessToken.value = data.session?.access_token ?? null
 }
@@ -32,7 +71,8 @@ export function useAdminAuth() {
 
   async function init(): Promise<void> {
     await syncToken()
-    getSupabase().auth.onAuthStateChange(() => {
+    const client = getSupabaseOptional()
+    client?.auth.onAuthStateChange(() => {
       void syncToken()
     })
   }
@@ -40,74 +80,79 @@ export function useAdminAuth() {
   async function signIn(email: string, password: string): Promise<boolean> {
     loading.value = true
     authError.value = null
-    const { error } = await getSupabase().auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    })
-    loading.value = false
-    if (error) {
-      authError.value = 'Prihlásenie zlyhalo.'
+    lastAuthErrorCode.value = null
+    try {
+      let res: Response
+      try {
+        res = await fetch(`${adminApiBase}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email.trim(),
+            password,
+          }),
+        })
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        if (import.meta.env.DEV) {
+          console.warn('[admin-auth] login fetch failed', msg)
+        }
+        const { message, code } = parseAdminLoginApiError(0, msg)
+        authError.value = message
+        lastAuthErrorCode.value = code
+        return false
+      }
+
+      const text = await res.text()
+      if (!res.ok) {
+        if (import.meta.env.DEV) {
+          console.warn('[admin-auth] signIn failed', res.status, text)
+        }
+        const { message, code } = parseAdminLoginApiError(res.status, text)
+        authError.value = message
+        lastAuthErrorCode.value = code
+        return false
+      }
+
+      const data = JSON.parse(text) as {
+        access_token?: string
+        refresh_token?: string
+      }
+      if (!data.access_token || !data.refresh_token) {
+        authError.value = 'Prihlásenie nevrátilo platnú reláciu.'
+        return false
+      }
+
+      accessToken.value = data.access_token
+      persistTokens(data.access_token, data.refresh_token)
+
+      const client = getSupabaseOptional()
+      if (client) {
+        await client.auth.setSession({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+        })
+      }
+      return true
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (import.meta.env.DEV) {
+        console.warn('[admin-auth] signIn unexpected', msg)
+      }
+      authError.value = parseAdminLoginApiError(0, msg).message
       return false
+    } finally {
+      loading.value = false
     }
-    await syncToken()
-    return true
   }
 
   async function signOut(): Promise<void> {
-    await getSupabase().auth.signOut()
+    clearPersistedTokens()
     accessToken.value = null
-  }
-
-  async function ensureMfa(): Promise<{ ok: boolean; needsVerify: boolean }> {
-    const client = getSupabase()
-    const { data: aal, error: aalErr } =
-      await client.auth.mfa.getAuthenticatorAssuranceLevel()
-    if (aalErr) {
-      authError.value = aalErr.message
-      return { ok: false, needsVerify: false }
+    const client = getSupabaseOptional()
+    if (client) {
+      await client.auth.signOut()
     }
-    if (aal.currentLevel === 'aal2') {
-      await syncToken()
-      return { ok: true, needsVerify: false }
-    }
-    const { data: factors } = await client.auth.mfa.listFactors()
-    const totp = factors?.totp?.find((f) => f.status === 'verified')
-    if (!totp) {
-      authError.value =
-        'Účet nemá overené TOTP MFA. Nastavte ho v Supabase / hlavnej aplikácii.'
-      return { ok: false, needsVerify: false }
-    }
-    return { ok: false, needsVerify: true }
-  }
-
-  async function verifyTotp(code: string): Promise<boolean> {
-    const client = getSupabase()
-    const { data: factors } = await client.auth.mfa.listFactors()
-    const totp = factors?.totp?.find((f) => f.status === 'verified')
-    if (!totp) {
-      authError.value = 'Chýba TOTP faktor.'
-      return false
-    }
-    const { data: challenge, error: chErr } = await client.auth.mfa.challenge({
-      factorId: totp.id,
-    })
-    if (chErr || !challenge) {
-      authError.value = chErr?.message ?? 'MFA challenge failed'
-      return false
-    }
-    const { error } = await client.auth.mfa.verify({
-      factorId: totp.id,
-      challengeId: challenge.id,
-      code: code.trim(),
-    })
-    if (error) {
-      authError.value = 'Neplatný kód.'
-      return false
-    }
-    await client.auth.refreshSession()
-    await syncToken()
-    authError.value = null
-    return true
   }
 
   function getAccessToken(): string | null {
@@ -117,12 +162,11 @@ export function useAdminAuth() {
   return {
     loading,
     authError,
+    lastAuthErrorCode,
     isAuthenticated,
     init,
     signIn,
     signOut,
-    ensureMfa,
-    verifyTotp,
     getAccessToken,
   }
 }

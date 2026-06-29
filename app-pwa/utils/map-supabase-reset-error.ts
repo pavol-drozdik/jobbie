@@ -4,6 +4,7 @@ import { S } from '~/utils/strings'
 export function mapSupabaseResetError(
   code?: string | null,
   message?: string | null,
+  context: 'reset' | 'settings' = 'reset',
 ): string {
   const normalizedCode = (code ?? '').toLowerCase()
   const msg = (message ?? '').toLowerCase()
@@ -21,7 +22,9 @@ export function mapSupabaseResetError(
     case 'invalid_grant':
       return S.resetPasswordExpired
     case 'reauthentication_needed':
-      return S.resetPasswordReauthRequired
+      return context === 'settings'
+        ? S.settingsReauthenticationNeeded
+        : S.resetPasswordReauthRequired
     default:
       break
   }

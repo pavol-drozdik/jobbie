@@ -4,6 +4,7 @@ import * as path from 'path';
 const REQUIRED_KEYS = [
   'SUPABASE_URL',
   'SUPABASE_SERVICE_ROLE_KEY',
+  'SUPABASE_ANON_KEY',
   'SUPABASE_JWT_SECRET',
 ] as const;
 
@@ -33,7 +34,7 @@ export function validateAdminApiEnv(): void {
     }
     console.error(`[admin-api]   Edit: ${resolved}`);
     console.error(
-      '[admin-api]   Use the same values as backend-ts/.env (SUPABASE_URL, service role, JWT secret).',
+      '[admin-api]   Use the same values as backend-ts/.env (SUPABASE_URL, service role, anon key, JWT secret).',
     );
     process.exit(1);
   }

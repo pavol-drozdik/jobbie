@@ -20,14 +20,14 @@ export function formatAdminApiError(
         hints.needsReLogin = true
         return {
           message:
-            'Platnosť nedávneho prihlásenia vypršala. Odhláste sa a znova sa prihláste s MFA (TOTP), potom skúste akciu znova.',
+            'Platnosť nedávneho prihlásenia vypršala. Odhláste sa a znova sa prihláste, potom skúste akciu znova.',
           hints,
         }
       }
       if (lower.includes('aal2') || lower.includes('mfa')) {
         return {
           message:
-            'Vyžaduje sa admin MFA (AAL2). Odhláste sa a prihláste sa znova s TOTP kódom.',
+            'Platnosť prihlásenia vypršala alebo nie je platná. Odhláste sa a prihláste sa znova.',
           hints: { needsReLogin: true },
         }
       }
@@ -53,7 +53,7 @@ export function formatAdminApiError(
     }
     if (!hints.needsReLogin && message === body.slice(0, 280)) {
       message =
-        'Prístup zamietnutý (403). Skontrolujte admin_role, MFA (AAL2) alebo nedávne prihlásenie.'
+        'Prístup zamietnutý (403). Skontrolujte admin_role alebo nedávne prihlásenie.'
     }
   }
 
