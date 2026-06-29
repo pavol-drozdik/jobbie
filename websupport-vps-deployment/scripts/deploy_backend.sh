@@ -81,6 +81,22 @@ fi
 echo "Health check URL: ${HEALTH_URL}"
 
 NEW_IMAGE="${GHCR_IMAGE}:${BACKEND_VERSION}"
+echo "Target image: ${NEW_IMAGE}"
+
+OLD_BACKEND_IMAGE=""
+if grep -q '^BACKEND_IMAGE=' "${ENV_FILE}"; then
+  OLD_BACKEND_IMAGE="$(grep -E '^BACKEND_IMAGE=' "${ENV_FILE}" | head -n1 | cut -d= -f2- | tr -d '"' | tr -d "'" | xargs)"
+  OLD_BACKEND_IMAGE="$(trim_env "${OLD_BACKEND_IMAGE}")"
+fi
+
+restore_backend_image() {
+  if [[ -n "${OLD_BACKEND_IMAGE}" ]] && [[ "${OLD_BACKEND_IMAGE}" != "${NEW_IMAGE}" ]]; then
+    sed -i "s|^BACKEND_IMAGE=.*|BACKEND_IMAGE=${OLD_BACKEND_IMAGE}|" "${ENV_FILE}"
+    echo "Restored BACKEND_IMAGE to ${OLD_BACKEND_IMAGE}" >&2
+  fi
+}
+trap restore_backend_image ERR
+
 if grep -q '^BACKEND_IMAGE=' "${ENV_FILE}"; then
   sed -i "s|^BACKEND_IMAGE=.*|BACKEND_IMAGE=${NEW_IMAGE}|" "${ENV_FILE}"
 else
@@ -102,7 +118,14 @@ if ! [[ "${BACKEND_SCALE}" =~ ^[0-9]+$ ]] || [[ "${BACKEND_SCALE}" -lt 1 ]]; the
 fi
 echo "Backend replicas: ${BACKEND_SCALE}"
 
-compose_cmd pull backend
+echo "Pulling backend image..."
+if ! compose_cmd pull backend; then
+  echo "Failed to pull ${NEW_IMAGE}." >&2
+  echo "Verify the tag exists on GHCR and GHCR_TOKEN can read the package." >&2
+  exit 1
+fi
+
+echo "Starting backend (scale=${BACKEND_SCALE}, wait up to 180s)..."
 if ! compose_cmd up -d --scale "backend=${BACKEND_SCALE}" --wait --wait-timeout 180 backend; then
   echo "docker compose --wait failed (backend container unhealthy or timed out)." >&2
   compose_cmd ps backend || true
@@ -111,13 +134,30 @@ if ! compose_cmd up -d --scale "backend=${BACKEND_SCALE}" --wait --wait-timeout 
 fi
 
 # GET /health bypasses CORS (no Origin required) — safe for curl and load balancers.
-# Retry through Caddy in case the reverse proxy flaps briefly after container recreate.
+# Prefer local Caddy (Host header) before the public URL — avoids false fails during DNS/CF flap.
+APP_DOMAIN="$(grep -E '^APP_DOMAIN=' "${ENV_FILE}" | head -n1 | cut -d= -f2- | tr -d '"' | tr -d "'" | xargs || true)"
+APP_DOMAIN="$(trim_env "${APP_DOMAIN}")"
+LOCAL_HEALTH_URL=""
+if [[ -n "${APP_DOMAIN}" ]]; then
+  LOCAL_HEALTH_URL="http://127.0.0.1/health"
+fi
+
+health_probe() {
+  if [[ -n "${LOCAL_HEALTH_URL}" ]]; then
+    if curl -fsS -H "Host: ${APP_DOMAIN}" "${LOCAL_HEALTH_URL}"; then
+      return 0
+    fi
+  fi
+  curl -fsS "${HEALTH_URL}"
+}
+
 HEALTH_RETRIES="${HEALTH_RETRIES:-30}"
 HEALTH_SLEEP="${HEALTH_SLEEP:-3}"
 attempt=1
 while [[ "${attempt}" -le "${HEALTH_RETRIES}" ]]; do
-  if curl -fsS "${HEALTH_URL}"; then
+  if health_probe; then
     echo
+    trap - ERR
     echo "Deploy OK: ${NEW_IMAGE}"
     exit 0
   fi
