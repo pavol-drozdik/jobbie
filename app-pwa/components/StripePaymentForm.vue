@@ -6,7 +6,17 @@
       </p>
 
       <div v-show="accountPurchaserType === 'company'" class="mb-4 space-y-4">
-        <div ref="taxIdRef" :class="[jobbieStripeElementsMountClass, 'min-h-[88px]']" />
+        <div :class="fieldRowClass">
+          <label :class="fieldLabelClass">
+            {{ S.companyName }}
+          </label>
+          <input
+            v-model="companyName"
+            type="text"
+            :class="fieldInputClass"
+            autocomplete="organization"
+          >
+        </div>
         <div class="grid gap-3 sm:grid-cols-2">
           <div :class="fieldRowClass">
             <label :class="fieldLabelClass">
@@ -30,6 +40,25 @@
               autocomplete="off"
             >
           </div>
+        </div>
+        <label class="flex is-clickable items-center gap-3 text-sm font-medium leading-snug text-black/70">
+          <input
+            v-model="vatPayer"
+            type="checkbox"
+            class="size-4 shrink-0 rounded border-black/20 text-marketing-green focus:ring-marketing-green"
+          >
+          <span>{{ S.vatPayer }}</span>
+        </label>
+        <div v-show="vatPayer" :class="fieldRowClass">
+          <label :class="fieldLabelClass">
+            {{ S.vatIdIcDph }}
+          </label>
+          <input
+            v-model="vatId"
+            type="text"
+            :class="fieldInputClass"
+            autocomplete="off"
+          >
         </div>
       </div>
 
@@ -115,7 +144,6 @@
 </template>
 
 <script setup lang="ts">
-import type { StripeTaxIdElement } from '@stripe/stripe-js'
 import {
   type CheckoutBillingPayload,
   type CheckoutPurchaserType,
@@ -221,7 +249,6 @@ const emit = defineEmits<{
 }>()
 
 const elementRef = ref<HTMLDivElement | null>(null)
-const taxIdRef = ref<HTMLDivElement | null>(null)
 const paying = ref(false)
 const payError = ref<string | null>(null)
 const activeSecret = ref('')
@@ -230,8 +257,11 @@ const accountPurchaserType = computed((): CheckoutPurchaserType =>
   resolveAccountPurchaserType(user.value?.role),
 )
 
+const companyName = ref('')
 const registrationNumber = ref('')
 const taxIdDic = ref('')
+const vatPayer = ref(false)
+const vatId = ref('')
 const addressLine1 = ref('')
 const addressCity = ref('')
 const addressPostalCode = ref('')
@@ -247,7 +277,6 @@ const usesCheckoutDeferred = computed(
 let stripe: import('@stripe/stripe-js').Stripe | null = null
 let elements: import('@stripe/stripe-js').StripeElements | null = null
 let paymentElement: import('@stripe/stripe-js').StripePaymentElement | null = null
-let taxIdElement: StripeTaxIdElement | null = null
 let mountGeneration = 0
 
 type ElementsMountKind = 'deferred-setup' | 'deferred-payment' | 'client-secret' | null
@@ -257,51 +286,21 @@ function stripeLocale(): import('@stripe/stripe-js').StripeElementLocale {
   return (props.locale?.trim() || 'sk') as import('@stripe/stripe-js').StripeElementLocale
 }
 
-function loadStripeBetas(): readonly ['elements_tax_id_1'] | undefined {
-  return props.collectBusinessBilling ? (['elements_tax_id_1'] as const) : undefined
-}
-
 async function loadJobbieStripe(): Promise<import('@stripe/stripe-js').Stripe | null> {
   if (!stripePublishableKey) return null
-  const betas = loadStripeBetas()
   const { loadStripe } = await import('@stripe/stripe-js')
-  return loadStripe(stripePublishableKey, betas ? { betas: [...betas] } : undefined)
+  return loadStripe(stripePublishableKey)
 }
 
 function applyBillingPrefill(): void {
   const p = props.billingPrefill
   if (!p) return
+  companyName.value = p.company_name?.trim() ?? ''
   registrationNumber.value = p.registration_number?.trim() ?? ''
   taxIdDic.value = p.tax_id?.trim() ?? ''
-}
-
-function mountTaxIdOnElements(generation: number): boolean {
-  if (!props.collectBusinessBilling || !taxIdRef.value || !elements) {
-    return true
-  }
-  taxIdElement?.unmount()
-  taxIdElement = null
-  applyBillingPrefill()
-  taxIdElement = elements.create('taxId', {
-    visibility: accountPurchaserType.value === 'company' ? 'always' : 'never',
-    fields: { businessName: 'always' },
-    validation: {
-      businessName: { required: 'auto' },
-      taxId: { required: 'auto' },
-    },
-    defaultValues: {
-      taxIdType: 'sk_vat',
-      businessName: props.billingPrefill?.company_name?.trim() || undefined,
-      taxId: props.billingPrefill?.vat_id?.trim() || undefined,
-    },
-  })
-  if (generation !== mountGeneration) {
-    taxIdElement.unmount()
-    taxIdElement = null
-    return false
-  }
-  taxIdElement.mount(taxIdRef.value)
-  return true
+  const storedVatId = p.vat_id?.trim() ?? ''
+  vatId.value = storedVatId
+  if (storedVatId) vatPayer.value = true
 }
 
 function mountPaymentOnElements(generation: number): boolean {
@@ -327,8 +326,6 @@ function teardownPaymentElement(): void {
   mountGeneration += 1
   paymentElement?.unmount()
   paymentElement = null
-  taxIdElement?.unmount()
-  taxIdElement = null
   elements = null
   stripe = null
   activeSecret.value = ''
@@ -343,6 +340,7 @@ async function mountDeferredCheckoutElements(): Promise<void> {
   payError.value = null
   teardownPaymentElement()
   mountGeneration = generation
+  applyBillingPrefill()
 
   const loaded = await loadJobbieStripe()
   if (!loaded || generation !== mountGeneration) {
@@ -365,7 +363,6 @@ async function mountDeferredCheckoutElements(): Promise<void> {
           ),
         )
 
-  if (!mountTaxIdOnElements(generation)) return
   if (!mountPaymentOnElements(generation)) return
   elementsMountKind.value =
     props.deferredMode === 'setup' ? 'deferred-setup' : 'deferred-payment'
@@ -380,9 +377,8 @@ async function mountWithClientSecret(secret: string): Promise<void> {
 
   paymentElement?.unmount()
   paymentElement = null
-  taxIdElement?.unmount()
-  taxIdElement = null
   elements = null
+  applyBillingPrefill()
 
   const loaded = await loadJobbieStripe()
   if (!loaded || generation !== mountGeneration) {
@@ -394,7 +390,6 @@ async function mountWithClientSecret(secret: string): Promise<void> {
     buildClientSecretElementsOptions(appearanceVariant.value, stripeLocale(), trimmed),
   )
 
-  if (!mountTaxIdOnElements(generation)) return
   if (!mountPaymentOnElements(generation)) return
   activeSecret.value = trimmed
   elementsMountKind.value = 'client-secret'
@@ -532,25 +527,21 @@ async function buildBillingPayload(): Promise<CheckoutBillingPayload | undefined
       billing_attestation_sk_residence: true,
     }
   }
+  const nameVal = companyName.value.trim()
+  if (!nameVal) {
+    payError.value = 'Vyplňte názov spoločnosti.'
+    return undefined
+  }
   const ico = registrationNumber.value.trim()
   if (!isValidSkIcoFormat(ico)) {
     payError.value = S.checkoutBillingIcoInvalid
     return undefined
   }
-  if (!taxIdElement) {
-    payError.value = 'Údaje firmy sa nepodarilo načítať.'
-    return undefined
-  }
-  const taxResult = await taxIdElement.getValue()
-  if (!taxResult.complete) {
-    payError.value = 'Vyplňte názov firmy a IČ DPH.'
-    return undefined
-  }
   return {
     purchaser_type: 'company',
-    company_name: taxResult.value.businessName?.trim() || null,
-    vat_id: taxResult.value.taxId?.trim() || null,
-    registration_number: registrationNumber.value.trim() || null,
+    company_name: nameVal,
+    vat_id: vatId.value.trim() || null,
+    registration_number: ico || null,
     tax_id: taxIdDic.value.trim() || null,
     address_line1: address.line1,
     address_city: address.city,
@@ -561,13 +552,6 @@ async function buildBillingPayload(): Promise<CheckoutBillingPayload | undefined
 
 function resolveEffectiveSecret(): string {
   return (activeSecret.value || props.clientSecret || '').trim()
-}
-
-function syncTaxIdVisibility(): void {
-  if (!taxIdElement) return
-  taxIdElement.update({
-    visibility: accountPurchaserType.value === 'company' ? 'always' : 'never',
-  })
 }
 
 function syncPaymentBillingFields(): void {
@@ -606,6 +590,10 @@ watch(
   },
 )
 
+watch(vatPayer, (checked) => {
+  if (!checked) vatId.value = ''
+})
+
 watch(
   accountPurchaserType,
   () => {
@@ -615,7 +603,6 @@ watch(
       void mountDeferredCheckoutElements()
       return
     }
-    syncTaxIdVisibility()
     syncPaymentBillingFields()
   },
 )

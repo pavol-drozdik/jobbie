@@ -28,6 +28,7 @@ import {
   parseMoneyInput,
 } from '~/utils/money-amount'
 import { isJobListingPubliclyLive } from '~/utils/job-listing-status'
+import { parseJobRequirementsMeta } from '~/utils/job-detail-display'
 
 export type JobPostLanguageRow = { id: number; level: string }
 
@@ -555,7 +556,7 @@ export function useJobPostForm(opts?: { variant?: JobPostVariant }) {
       }
     }
     try {
-      const req = job.requirements ? JSON.parse(job.requirements) : null
+      const req = parseJobRequirementsMeta(job.requirements)
       if (jobType.value === 'brigada' && req?.brigada) {
         nastupAsap.value =
           Boolean(req.brigada.asap) || job.start_type === 'asap'

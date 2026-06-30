@@ -8,7 +8,6 @@
         <NuxtLink
           :to="editHref"
           class="m-0 text-[16px] font-bold leading-snug text-black hover:text-marketing-green"
-          @click="primeBootstrap"
         >
           {{ displayTitle }}
         </NuxtLink>
@@ -22,7 +21,6 @@
         v-if="job.is_draft"
         :to="editHref"
         class="inline-flex h-10 w-full items-center justify-center rounded-full bg-marketing-green px-4 text-[13px] font-bold text-white no-underline hover:opacity-95 sm:w-auto sm:min-w-[7.5rem] sm:flex-initial"
-        @click="primeBootstrap"
       >
         {{ S.jobHubContinueJob }}
       </NuxtLink>
@@ -30,7 +28,6 @@
         v-else
         :to="editHref"
         class="inline-flex h-10 w-full items-center justify-center rounded-full border border-black/12 bg-white px-4 text-[13px] font-semibold text-black/80 no-underline hover:bg-neutral-50 sm:w-auto sm:min-w-[7.5rem] sm:flex-initial"
-        @click="primeBootstrap"
       >
         {{ S.jobHubEditJob }}
       </NuxtLink>
@@ -82,7 +79,6 @@
 import { computed, ref } from 'vue'
 import { ROUTES } from '~/utils/app-routes'
 import { S } from '~/utils/strings'
-import { primeJobWizardBootstrap } from '~/utils/job-post-hub'
 import { employmentTypeLabel } from '~/utils/employment-types'
 import type { Job } from '~/utils/job'
 
@@ -127,10 +123,6 @@ const metaLine = computed(() => {
   if (props.dateLine) parts.push(props.dateLine)
   return parts.join(' · ')
 })
-
-function primeBootstrap(): void {
-  primeJobWizardBootstrap(props.job)
-}
 
 function closeMenu(): void {
   if (moreDetailsRef.value) {

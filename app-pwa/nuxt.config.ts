@@ -168,6 +168,7 @@ function buildSeoRouteRules(): Record<string, object> {
       const prev = rules[pattern] as { headers?: Record<string, string> }
       rules[pattern] = {
         ...prev,
+        ssr: false,
         headers: {
           ...(prev.headers ?? {}),
           ...PRIVATE_DOCUMENT_CACHE_HEADERS,
@@ -283,15 +284,13 @@ export default defineNuxtConfig({
     },
   },
   devtools: { enabled: false },
-  // Avoid Vite pre-transform trying to resolve `#app-manifest` inside dead branches (Nuxt + Vite 6).
-  // Unrelated to PWA `pwa.manifest` in this file.
   experimental: {
-    appManifest: false,
     /**
      * Required with Nuxt 3.21 + Vite 7 when `ssr` is false (local dev / non-indexing builds).
-     * Otherwise dev crashes: "No entry found in rollupOptions.input" (vite-node reads client-only input).
+     * Must NOT be set in production SSR builds — it corrupts the hybrid-SSR server bundle
+     * and causes "Couldn't resolve component" 500 errors on dynamically-routed pages.
      */
-    viteEnvironmentApi: true,
+    viteEnvironmentApi: !allowIndexing,
     /** Vite preload chunk errors → reload; Vue Router lazy-route errors in `0.chunk-reload.client.ts`. */
     emitRouteChunkError: 'automatic-immediate',
   },
