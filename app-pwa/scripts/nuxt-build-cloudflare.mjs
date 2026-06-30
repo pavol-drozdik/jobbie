@@ -15,7 +15,7 @@
  *     produces a pre-bundled single file that Wrangler deploys without re-bundling
  */
 import { spawnSync } from 'node:child_process'
-import { existsSync, readdirSync, renameSync, unlinkSync } from 'node:fs'
+import { existsSync, readdirSync, renameSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -79,8 +79,8 @@ renameSync(outFile, entryFile)
 
 for (const file of readdirSync(workerDir)) {
   if (file !== 'index.js') {
-    unlinkSync(path.join(workerDir, file))
-    console.log(`[post-build] Removed chunk: ${file}`)
+    rmSync(path.join(workerDir, file), { recursive: true, force: true })
+    console.log(`[post-build] Removed: ${file}`)
   }
 }
 
