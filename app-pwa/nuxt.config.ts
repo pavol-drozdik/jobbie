@@ -18,6 +18,7 @@ import {
   SEO_DEFAULT_OG_IMAGE_PATH,
 } from './utils/seo-config'
 import {
+  SEO_DYNAMIC_CSR_ROUTE_PATTERNS,
   SEO_NOINDEX_ROUTE_PATTERNS,
   SEO_PUBLIC_SSR_ROUTE_PATTERNS,
 } from './utils/seo-route-policy'
@@ -160,6 +161,18 @@ function buildSeoRouteRules(): Record<string, object> {
       headers: {
         ...PUBLIC_DOCUMENT_CACHE_HEADERS,
         'X-Robots-Tag': robots,
+      },
+    }
+  }
+  // Dynamic content pages: indexable but rendered client-side.
+  // SSR for /blog/:slug, /ponuka/:id etc. fails on CF Pages; disabling SSR
+  // makes the Worker return an app shell and the client fetches the API data.
+  for (const pattern of SEO_DYNAMIC_CSR_ROUTE_PATTERNS) {
+    rules[pattern] = {
+      ssr: false,
+      headers: {
+        ...PUBLIC_DOCUMENT_CACHE_HEADERS,
+        'X-Robots-Tag': 'index, follow',
       },
     }
   }
