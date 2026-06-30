@@ -125,15 +125,6 @@ export const SEO_PUBLIC_SSR_ROUTE_PATTERNS: readonly string[] = [
   ...Object.entries(EXACT)
     .filter(([, policy]) => policy.ssr)
     .map(([path]) => path),
-]
-
-/**
- * Dynamic content routes that must be indexable but use client-side rendering.
- * SSR for these routes is disabled because the SSR renderer fails on CF Pages
- * for dynamic segments. The client fetches the data from the API directly.
- * Google crawls JS-rendered pages, so indexability is preserved.
- */
-export const SEO_DYNAMIC_CSR_ROUTE_PATTERNS: readonly string[] = [
   '/ponuka/**',
   '/profesionali/**',
   '/profil/**',
