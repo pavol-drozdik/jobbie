@@ -390,9 +390,14 @@ export function buildPlatformSecurityHeaders(
 
         'max-age=63072000; includeSubDomains; preload'
 
+      // upgrade-insecure-requests is invalid in report-only policies (browsers ignore + warn).
+      const reportOnlyCsp = csp
+        .split('; ')
+        .filter((d) => !d.startsWith('upgrade-insecure-requests'))
+        .join('; ')
       headers['Content-Security-Policy-Report-Only'] =
 
-        `${csp}; report-uri ${origins.apiOrigin}/api/csp-report`
+        `${reportOnlyCsp}; report-uri ${origins.apiOrigin}/api/csp-report`
 
     }
 
