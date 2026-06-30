@@ -495,7 +495,9 @@ watch(
 
 onMounted(() => {
   document.addEventListener('click', onDocClick, true)
-  if (!initialAds.value) {
+  // Refetch when SSR produced no items (covers both null and empty-array payloads).
+  // `!initialAds.value` is false for `[]`, which would otherwise leave the list empty.
+  if (!companyAds.value.length) {
     void fetchAds()
   }
 })

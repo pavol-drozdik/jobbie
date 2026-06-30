@@ -365,17 +365,16 @@ export default defineNuxtConfig({
      */
     prerender: {
       crawlLinks: false,
+      // NOTE: Do NOT prerender dynamic list pages (jobs/ads/blog catalogs). Prerendering
+      // freezes the build-time API response (often empty if the build runner can't reach the
+      // API) into static HTML, so normal loads hydrate an empty list and never refetch —
+      // results only appear after a hard refresh that hits live SSR. These routes keep
+      // `ssr: true` via routeRules, so they're rendered live with fresh data on each request.
       routes: allowIndexing
         ? [
             '/',
             '/bezpecnost',
             '/cennik',
-            '/pracovne-ponuky',
-            '/zahranicne-pracovne-ponuky',
-            '/profesionali',
-            '/blog',
-            '/ponuky-na-email',
-            '/databaza-zivotopisov',
             '/vseobecne-podmienky',
             '/ochrana-osobnych-udajov',
           ]
