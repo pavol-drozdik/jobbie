@@ -61,10 +61,8 @@ const heading = computed(() =>
 )
 
 const body = computed(() => {
-  if (import.meta.dev) {
-    const msg = props.error?.message?.trim()
-    if (msg) return msg
-  }
+  const msg = props.error?.message?.trim()
+  if (msg) return msg
   return isNotFound.value ? S.errorPageNotFoundLead : S.errorPageGenericLead
 })
 
