@@ -1,68 +1,49 @@
 /**
  * SSR diagnostics — temporary debugging endpoint.
- * Visit /api/ssr-diag on production to see what the CF Worker sees at runtime.
  * Remove after the production 500 issue is resolved.
+ *
+ * Usage: /api/ssr-diag?slug=your-blog-slug
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event)
   const apiBase = String(config.public.apiBaseUrl ?? '')
+  const querySlug = String(getQuery(event).slug ?? '')
 
-  // Step 1: fetch blog list with GET to grab a real slug
-  let listStatus: number = 0
-  let listError = ''
-  let firstSlug = ''
-  let listShape: unknown = null
-  try {
-    const list = await $fetch<unknown>(
-      `${apiBase}/api/blog`,
-      { timeout: 6000, ignoreResponseError: true },
-    )
-    listStatus = 200
-    // Expose top-level shape so we can see the real structure
-    if (Array.isArray(list)) {
-      listShape = { type: 'array', length: list.length, firstItemKeys: Object.keys((list[0] as Record<string, unknown>) ?? {}) }
-      firstSlug = (list[0] as { slug?: string })?.slug ?? ''
-    } else if (list && typeof list === 'object') {
-      listShape = { type: 'object', keys: Object.keys(list as Record<string, unknown>) }
-      const obj = list as Record<string, unknown>
-      // try common shapes
-      if (Array.isArray(obj.data)) {
-        firstSlug = (obj.data[0] as { slug?: string })?.slug ?? ''
-      } else if (Array.isArray(obj.items)) {
-        firstSlug = (obj.items[0] as { slug?: string })?.slug ?? ''
-      } else if (Array.isArray(obj.posts)) {
-        firstSlug = (obj.posts[0] as { slug?: string })?.slug ?? ''
-      } else if (Array.isArray(obj.results)) {
-        firstSlug = (obj.results[0] as { slug?: string })?.slug ?? ''
-      } else if (typeof obj.slug === 'string') {
-        firstSlug = obj.slug
-      }
-    }
-  } catch (e: unknown) {
-    const err = e as { statusCode?: number; status?: number; message?: string }
-    listStatus = err.statusCode ?? err.status ?? 0
-    listError = err.message ?? String(e)
-  }
-
-  // Step 2: fetch a specific blog post (slug from query or from list)
-  const querySlug = String(getQuery(event).slug ?? firstSlug ?? '')
-  let postStatus: number = 0
-  let postError = ''
-  let postDataKeys: string[] = []
-  if (querySlug) {
+  async function probe(url: string): Promise<{
+    status: number
+    bodyPreview: unknown
+    error: string | null
+  }> {
     try {
-      const post = await $fetch<Record<string, unknown>>(
-        `${apiBase}/api/blog/${encodeURIComponent(querySlug)}`,
-        { timeout: 6000, ignoreResponseError: true },
-      )
-      postStatus = 200
-      postDataKeys = Object.keys(post ?? {})
+      const raw = await $fetch.raw<unknown>(url, {
+        timeout: 8000,
+        ignoreResponseError: true,
+        headers: { Accept: 'application/json' },
+      })
+      const body = raw._data
+      let bodyPreview: unknown
+      if (Array.isArray(body)) {
+        bodyPreview = { type: 'array', length: body.length, first: body[0] }
+      } else if (body && typeof body === 'object') {
+        bodyPreview = body
+      } else {
+        bodyPreview = String(body ?? '').slice(0, 200)
+      }
+      return { status: raw.status, bodyPreview, error: null }
     } catch (e: unknown) {
       const err = e as { statusCode?: number; status?: number; message?: string }
-      postStatus = err.statusCode ?? err.status ?? 0
-      postError = err.message ?? String(e)
+      return {
+        status: err.statusCode ?? err.status ?? 0,
+        bodyPreview: null,
+        error: err.message ?? String(e),
+      }
     }
   }
+
+  const [listResult, postResult] = await Promise.all([
+    probe(`${apiBase}/api/blog`),
+    querySlug ? probe(`${apiBase}/api/blog/${encodeURIComponent(querySlug)}`) : Promise.resolve(null),
+  ])
 
   return {
     runtime: {
@@ -70,20 +51,8 @@ export default defineEventHandler(async (event) => {
       siteUrl: String(config.public.siteUrl ?? ''),
       allowIndexing: String(config.public.allowIndexing ?? ''),
     },
-    blogList: {
-      status: listStatus,
-      error: listError || null,
-      shape: listShape,
-      firstSlugFound: firstSlug || null,
-    },
-    blogPost: querySlug
-      ? {
-          slug: querySlug,
-          status: postStatus,
-          error: postError || null,
-          dataKeys: postDataKeys,
-        }
-      : null,
+    blogList: listResult,
+    blogPost: querySlug ? { slug: querySlug, ...postResult } : '(pass ?slug=your-slug to test)',
     workerTimestamp: new Date().toISOString(),
   }
 })
