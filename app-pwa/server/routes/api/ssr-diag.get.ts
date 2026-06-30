@@ -40,9 +40,14 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const [listResult, postResult] = await Promise.all([
-    probe(`${apiBase}/api/blog`),
-    querySlug ? probe(`${apiBase}/api/blog/${encodeURIComponent(querySlug)}`) : Promise.resolve(null),
+  const query = getQuery(event)
+  const jobId = String(query.job_id ?? '')
+  const adId = String(query.ad_id ?? '')
+
+  const [blogResult, jobResult, adResult] = await Promise.all([
+    probe(`${apiBase}/api/blog/${encodeURIComponent(querySlug)}`),
+    jobId ? probe(`${apiBase}/api/jobs/${encodeURIComponent(jobId)}`) : Promise.resolve(null),
+    adId ? probe(`${apiBase}/api/company-ads/${encodeURIComponent(adId)}`) : Promise.resolve(null),
   ])
 
   return {
@@ -51,8 +56,9 @@ export default defineEventHandler(async (event) => {
       siteUrl: String(config.public.siteUrl ?? ''),
       allowIndexing: String(config.public.allowIndexing ?? ''),
     },
-    blogList: listResult,
-    blogPost: querySlug ? { slug: querySlug, ...postResult } : '(pass ?slug=your-slug to test)',
+    blog: querySlug ? { slug: querySlug, ...blogResult } : '(pass ?slug= to test)',
+    job: jobId ? { id: jobId, ...jobResult } : '(pass ?job_id= to test)',
+    companyAd: adId ? { id: adId, ...adResult } : '(pass ?ad_id= to test)',
     workerTimestamp: new Date().toISOString(),
   }
 })
