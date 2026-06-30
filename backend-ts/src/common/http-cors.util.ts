@@ -37,8 +37,15 @@ const DEFAULT_DEV_ORIGINS = [
  * Liveness/monitoring paths — skip credentialed CORS when there is no `Origin`
  * header (Docker, curl, Netdata, JOBBIE Admin Infra). Browser probes from the
  * PWA still run CORS. `/metrics` remains protected by METRICS_BEARER_TOKEN.
+ *
+ * /api/payments/webhook — Stripe posts webhooks server-to-server with no Origin
+ * header; the event is authenticated by Stripe signature verification, not CORS.
  */
-const CORS_BYPASS_PATHS = new Set(['/health', '/metrics']);
+const CORS_BYPASS_PATHS = new Set([
+  '/health',
+  '/metrics',
+  '/api/payments/webhook',
+]);
 
 /**
  * Public read-only routes fetched by Nitro SSR (CF Worker) without an Origin header.
