@@ -40,8 +40,24 @@ const DEFAULT_DEV_ORIGINS = [
  */
 const CORS_BYPASS_PATHS = new Set(['/health', '/metrics']);
 
-/** Public SEO read-only routes — Nitro server-side $fetch (sitemap, feeds) sends no Origin. */
-const CORS_BYPASS_PREFIXES = ['/api/seo/'] as const;
+/**
+ * Public read-only routes fetched by Nitro SSR (CF Worker) without an Origin header.
+ * Browsers always send Origin, so bypassing here doesn't weaken browser CORS protection.
+ * Auth guards still protect any private sub-routes within these prefixes.
+ *
+ * /api/seo/      — sitemap, feeds (Nuxt server routes)
+ * /api/blog      — blog list + /api/blog/:slug (blog detail SSR)
+ * /api/jobs/     — /api/jobs/:id (job detail SSR via /ponuka/:id)
+ * /api/company-ads — catalog + /api/company-ads/:id (ad detail SSR via /profesionali/:id)
+ * /api/search    — job search used by /pracovne-ponuky and /zahranicne-pracovne-ponuky SSR
+ */
+const CORS_BYPASS_PREFIXES = [
+  '/api/seo/',
+  '/api/blog',
+  '/api/jobs/',
+  '/api/company-ads',
+  '/api/search',
+] as const;
 
 export function shouldBypassCors(path: string): boolean {
   if (CORS_BYPASS_PATHS.has(path)) return true;
