@@ -286,12 +286,14 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   experimental: {
     /**
-     * Required with Nuxt 3.21 + Vite 7 for a correct SSR server bundle.
-     * Without this, Vite 7 transforms only 1 module for the SSR environment,
-     * producing a 0.10 kB server.mjs with no page components — causing
-     * "Couldn't resolve component" 500s on all SSR routes.
+     * Must be false for production hybrid-SSR builds (allowIndexing = true).
+     * Vite's Environment API + hybrid SSR (global ssr:true but private routes
+     * have ssr:false via routeRules) breaks Vue Router's dynamic route component
+     * registry — /blog/:slug, /ponuka/:id etc resolve to undefined, causing 500.
+     * For CSR-only builds (allowIndexing = false, staging) the value is true
+     * so the server environment is still built correctly for local dev.
      */
-    viteEnvironmentApi: true,
+    viteEnvironmentApi: !allowIndexing,
     /** Vite preload chunk errors → reload; Vue Router lazy-route errors in `0.chunk-reload.client.ts`. */
     emitRouteChunkError: 'automatic-immediate',
   },
