@@ -68,7 +68,7 @@ jobs:
           echo "branch=${BRANCH}" >> "${GITHUB_OUTPUT}"
           echo "Deploy env=${DEPLOY_ENV} project=${PROJECT} branch=${BRANCH:-<production deploy>}"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: npm
