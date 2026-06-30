@@ -2,14 +2,17 @@
  * SSR diagnostics — temporary debugging endpoint.
  * Remove after the production 500 issue is resolved.
  *
- * Usage: /api/ssr-diag?slug=your-blog-slug
+ * Usage: /api/ssr-diag?job_id=xxx&ad_id=yyy&slug=zzz
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event)
-  const apiBase = String(config.public.apiBaseUrl ?? '')
-  const querySlug = String(getQuery(event).slug ?? '')
+  const apiBase = String(config.public.apiBaseUrl ?? '').replace(/\/+$/, '')
+  const query = getQuery(event)
+  const jobId = String(query.job_id ?? '')
+  const adId = String(query.ad_id ?? '')
+  const querySlug = String(query.slug ?? '')
 
-  async function probe(url: string): Promise<{
+  async function probeRaw(url: string): Promise<{
     status: number
     bodyPreview: unknown
     error: string | null
@@ -31,24 +34,49 @@ export default defineEventHandler(async (event) => {
       }
       return { status: raw.status, bodyPreview, error: null }
     } catch (e: unknown) {
-      const err = e as { statusCode?: number; status?: number; message?: string }
+      const err = e as { statusCode?: number; status?: number; message?: string; stack?: string }
       return {
         status: err.statusCode ?? err.status ?? 0,
         bodyPreview: null,
-        error: err.message ?? String(e),
+        error: `${err.message ?? String(e)} | stack: ${(err.stack ?? '').split('\n').slice(0, 4).join(' > ')}`,
       }
     }
   }
 
-  const query = getQuery(event)
-  const jobId = String(query.job_id ?? '')
-  const adId = String(query.ad_id ?? '')
+  async function probeFetch(url: string): Promise<{
+    result: unknown
+    error: string | null
+  }> {
+    try {
+      const result = await $fetch<unknown>(url, { timeout: 8000 })
+      return {
+        result: result && typeof result === 'object' ? { type: 'object', keys: Object.keys(result as object).slice(0, 10) } : result,
+        error: null,
+      }
+    } catch (e: unknown) {
+      const err = e as { statusCode?: number; status?: number; message?: string; stack?: string }
+      return {
+        result: null,
+        error: `status=${err.statusCode ?? err.status ?? 0} message=${err.message ?? String(e)} | stack: ${(err.stack ?? '').split('\n').slice(0, 4).join(' > ')}`,
+      }
+    }
+  }
 
-  const [blogResult, jobResult, adResult] = await Promise.all([
-    probe(`${apiBase}/api/blog/${encodeURIComponent(querySlug)}`),
-    jobId ? probe(`${apiBase}/api/jobs/${encodeURIComponent(jobId)}`) : Promise.resolve(null),
-    adId ? probe(`${apiBase}/api/company-ads/${encodeURIComponent(adId)}`) : Promise.resolve(null),
+  const [
+    jobRaw,
+    jobFetch,
+    adRaw,
+    adFetch,
+    similarRaw,
+  ] = await Promise.all([
+    jobId ? probeRaw(`${apiBase}/api/jobs/${encodeURIComponent(jobId)}`) : Promise.resolve(null),
+    jobId ? probeFetch(`${apiBase}/api/jobs/${encodeURIComponent(jobId)}`) : Promise.resolve(null),
+    adId ? probeRaw(`${apiBase}/api/company-ads/${encodeURIComponent(adId)}`) : Promise.resolve(null),
+    adId ? probeFetch(`${apiBase}/api/company-ads/${encodeURIComponent(adId)}`) : Promise.resolve(null),
+    jobId ? probeRaw(`${apiBase}/api/jobs/${encodeURIComponent(jobId)}/similar?limit=6`) : Promise.resolve(null),
   ])
+
+  const blogResult = querySlug ? await probeRaw(`${apiBase}/api/blog/${encodeURIComponent(querySlug)}`) : null
 
   return {
     runtime: {
@@ -56,9 +84,18 @@ export default defineEventHandler(async (event) => {
       siteUrl: String(config.public.siteUrl ?? ''),
       allowIndexing: String(config.public.allowIndexing ?? ''),
     },
-    blog: querySlug ? { slug: querySlug, ...blogResult } : '(pass ?slug= to test)',
-    job: jobId ? { id: jobId, ...jobResult } : '(pass ?job_id= to test)',
-    companyAd: adId ? { id: adId, ...adResult } : '(pass ?ad_id= to test)',
+    job: jobId ? {
+      id: jobId,
+      raw: jobRaw,
+      fetch: jobFetch,
+      similar: similarRaw,
+    } : '(pass ?job_id= to test)',
+    companyAd: adId ? {
+      id: adId,
+      raw: adRaw,
+      fetch: adFetch,
+    } : '(pass ?ad_id= to test)',
+    blog: querySlug ? { slug: querySlug, raw: blogResult } : '(pass ?slug= to test)',
     workerTimestamp: new Date().toISOString(),
   }
 })
