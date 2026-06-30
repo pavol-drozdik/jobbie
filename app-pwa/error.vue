@@ -11,6 +11,13 @@
         {{ S.errorPageRecovering }}
       </p>
     </div>
+    <!-- Temporary debug: show Vue SSR error details. Remove after /ponuka/:id fix. -->
+    <pre
+      v-if="ssrVueError"
+      style="position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1e1e1e;color:#f8f8f2;font-size:11px;padding:12px;max-height:50vh;overflow:auto;white-space:pre-wrap;word-break:break-all;"
+    >SSR ERROR: {{ ssrVueError.message }}
+INFO: {{ ssrVueError.info }}
+STACK: {{ ssrVueError.stack }}</pre>
   </NuxtLayout>
 </template>
 
@@ -19,6 +26,12 @@ import { S } from '~/utils/strings'
 import { isNotFoundError } from '~/utils/not-found'
 
 const error = useError()
+
+// Temporary: expose Vue SSR render error details for diagnosing production 500.
+// Remove after the /ponuka/:id / /profesionali/:id crash is fixed.
+const ssrVueError = import.meta.server
+  ? (useRequestEvent()?.context?.ssrVueError as { message: string; info: string; stack: string } | undefined)
+  : undefined
 
 useHead(() => ({
   title: isNotFoundError(error.value)
