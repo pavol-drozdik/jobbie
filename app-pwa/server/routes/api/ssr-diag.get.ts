@@ -78,12 +78,33 @@ export default defineEventHandler(async (event) => {
 
   const blogResult = querySlug ? await probeRaw(`${apiBase}/api/blog/${encodeURIComponent(querySlug)}`) : null
 
+  // Test if page components are importable from within the Worker bundle.
+  // A missing or broken component export = "Couldn't resolve component" 500.
+  async function probePageComponent(label: string, importFn: () => Promise<unknown>): Promise<{
+    hasDefault: boolean; keys: string[]; error: string | null
+  }> {
+    try {
+      const mod = await importFn() as Record<string, unknown>
+      return { hasDefault: 'default' in mod, keys: Object.keys(mod).slice(0, 10), error: null }
+    } catch (e: unknown) {
+      const err = e as Error
+      return { hasDefault: false, keys: [], error: `${label}: ${err?.message ?? String(e)}` }
+    }
+  }
+
+  const [ponukaPage, profesionaliPage, blogPage] = await Promise.all([
+    probePageComponent('ponuka', () => import('../../../pages/ponuka/[id].vue')),
+    probePageComponent('profesionali', () => import('../../../pages/profesionali/[id].vue')),
+    probePageComponent('blog', () => import('../../../pages/blog/[slug].vue')),
+  ])
+
   return {
     runtime: {
       apiBaseUrl: apiBase,
       siteUrl: String(config.public.siteUrl ?? ''),
       allowIndexing: String(config.public.allowIndexing ?? ''),
     },
+    pageComponents: { ponuka: ponukaPage, profesionali: profesionaliPage, blog: blogPage },
     job: jobId ? {
       id: jobId,
       raw: jobRaw,
