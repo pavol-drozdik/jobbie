@@ -176,16 +176,15 @@ if (import.meta.server && slug.value && initialFetch.value?.status === 404) {
   throw createError({ statusCode: 404, statusMessage: S.blogPostNotFound })
 }
 
-const post = ref<BlogPostDetail | null>(initialFetch.value?.data ?? null)
+const post = computed<BlogPostDetail | null>(() => initialFetch.value?.data ?? null)
 const pageReady = ref(Boolean(initialFetch.value?.data))
 
 const showLoading = computed(
   () => !post.value && (!pageReady.value || postPending.value),
 )
 
-watch(initialFetch, (value) => {
-  post.value = value?.data ?? null
-  if (value?.data) {
+watch(post, (value) => {
+  if (value) {
     pageReady.value = true
     if (import.meta.client) {
       nextTick(() => {
