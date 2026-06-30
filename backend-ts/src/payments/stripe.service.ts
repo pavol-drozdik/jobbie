@@ -962,8 +962,10 @@ export class StripeService {
     if (email) {
       update.receipt_email = email;
     }
-    // @ts-expect-error SDK 22.x types lag behind API 2026-05-27; tax_id_collection is supported
-    update.tax_id_collection = { enabled: true, required: 'if_supported', allowed_types: ['eu_vat'] };
+    // Note: `tax_id_collection` is a Checkout Session parameter, not a
+    // PaymentIntent one — the Stripe API rejects it on PI update with 400
+    // "Received unknown parameter". Tax IDs are collected on the customer
+    // directly via applyCheckoutBillingDetails / ensureStripeCustomer.
     await this.getStripe().paymentIntents.update(paymentIntentId, update);
   }
 
@@ -1239,8 +1241,9 @@ export class StripeService {
       receipt_email: customerEmail,
       description: SK_INVOICE_CREDIT_LINE_DESCRIPTION,
       payment_method_types: buildSkCardPaymentIntentTypes(),
-      // @ts-expect-error SDK 22.x types lag behind API 2026-05-27; tax_id_collection is supported
-      tax_id_collection: { enabled: true, required: 'if_supported', allowed_types: ['eu_vat'] },
+      // `tax_id_collection` is not a valid PaymentIntent parameter (Checkout
+      // Session only) — Stripe rejects it with 400. Tax IDs are collected on
+      // the customer via applyCheckoutBillingDetails / ensureStripeCustomer.
     });
     const secret = pi.client_secret?.trim();
     if (!secret) {
