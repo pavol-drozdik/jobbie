@@ -17,7 +17,7 @@
             autocomplete="organization"
           >
         </div>
-        <div class="grid gap-3 sm:grid-cols-3">
+        <div class="grid gap-3 sm:grid-cols-2">
           <div :class="fieldRowClass">
             <label :class="fieldLabelClass">
               {{ S.companyIdIco }}
@@ -40,17 +40,25 @@
               autocomplete="off"
             >
           </div>
-          <div :class="fieldRowClass">
-            <label :class="fieldLabelClass">
-              {{ S.vatIdIcDph }}
-            </label>
-            <input
-              v-model="vatId"
-              type="text"
-              :class="fieldInputClass"
-              autocomplete="off"
-            >
-          </div>
+        </div>
+        <label class="flex is-clickable items-center gap-3 text-sm font-medium leading-snug text-black/70">
+          <input
+            v-model="vatPayer"
+            type="checkbox"
+            class="size-4 shrink-0 rounded border-black/20 text-marketing-green focus:ring-marketing-green"
+          >
+          <span>{{ S.vatPayer }}</span>
+        </label>
+        <div v-show="vatPayer" :class="fieldRowClass">
+          <label :class="fieldLabelClass">
+            {{ S.vatIdIcDph }}
+          </label>
+          <input
+            v-model="vatId"
+            type="text"
+            :class="fieldInputClass"
+            autocomplete="off"
+          >
         </div>
       </div>
 
@@ -252,6 +260,7 @@ const accountPurchaserType = computed((): CheckoutPurchaserType =>
 const companyName = ref('')
 const registrationNumber = ref('')
 const taxIdDic = ref('')
+const vatPayer = ref(false)
 const vatId = ref('')
 const addressLine1 = ref('')
 const addressCity = ref('')
@@ -289,7 +298,9 @@ function applyBillingPrefill(): void {
   companyName.value = p.company_name?.trim() ?? ''
   registrationNumber.value = p.registration_number?.trim() ?? ''
   taxIdDic.value = p.tax_id?.trim() ?? ''
-  vatId.value = p.vat_id?.trim() ?? ''
+  const storedVatId = p.vat_id?.trim() ?? ''
+  vatId.value = storedVatId
+  if (storedVatId) vatPayer.value = true
 }
 
 function mountPaymentOnElements(generation: number): boolean {
@@ -578,6 +589,10 @@ watch(
     void mountDeferredCheckoutElements()
   },
 )
+
+watch(vatPayer, (checked) => {
+  if (!checked) vatId.value = ''
+})
 
 watch(
   accountPurchaserType,

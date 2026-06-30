@@ -174,7 +174,7 @@
   registeredOffice: 'Sídlo firmy / adresa',
   companyIdIco: 'IČO',
   taxIdDic: 'DIČ',
-  vatPayer: 'Som platca DPH',
+  vatPayer: 'Som platiteľ DPH',
   vatIdIcDph: 'IČ DPH',
   bio: 'Bio',
   education: 'Vzdelanie',
