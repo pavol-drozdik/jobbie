@@ -360,19 +360,6 @@ export default defineNuxtConfig({
      * Disable link crawling so we do not prerender every route as HTML on Windows
      * (that path once produced the same broken dev-only asset URLs).
      */
-    /**
-     * CF Pages preset defaults to `inlineDynamicImports: false` which generates separate
-     * chunk files for each page. Wrangler/CF Pages only follows static imports when bundling
-     * `_worker.js/`, so the dynamic chunk references are never included — at runtime
-     * `import('./chunk-blog-slug.js')` resolves to null and Vue Router throws
-     * "Couldn't resolve component". Setting true inlines all pages into a single
-     * `index.js` and eliminates runtime dynamic imports entirely.
-     */
-    rollupConfig: {
-      output: {
-        inlineDynamicImports: true,
-      },
-    },
     prerender: {
       crawlLinks: false,
       routes: allowIndexing
