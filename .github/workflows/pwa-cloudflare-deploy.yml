@@ -126,7 +126,8 @@ jobs:
           fi
           npx wrangler@3 pages deploy dist \
             --project-name="${{ steps.cf.outputs.project }}" \
-            ${BRANCH_ARG}
+            ${BRANCH_ARG} \
+            --no-bundle
 
       - name: Purge Cloudflare zone cache
         shell: bash

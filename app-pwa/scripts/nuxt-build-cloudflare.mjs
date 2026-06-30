@@ -15,7 +15,7 @@
  *     produces a pre-bundled single file that Wrangler deploys without re-bundling
  */
 import { spawnSync } from 'node:child_process'
-import { existsSync, readdirSync, renameSync, rmSync } from 'node:fs'
+import { copyFileSync, existsSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -74,14 +74,13 @@ if (esbuildResult.status !== 0) {
   process.exit(esbuildResult.status ?? 1)
 }
 
-// Replace index.js with the bundled output and remove leftover chunk files
-renameSync(outFile, entryFile)
+// Convert _worker.js/ directory → _worker.js file so Wrangler deploys
+// the pre-bundled ESM as-is without its own esbuild re-bundling pass.
+const distDir = path.join(appRoot, 'dist')
+const workerFile = path.join(distDir, '_worker.js')
 
-for (const file of readdirSync(workerDir)) {
-  if (file !== 'index.js') {
-    rmSync(path.join(workerDir, file), { recursive: true, force: true })
-    console.log(`[post-build] Removed: ${file}`)
-  }
-}
+// Copy bundled output to dist/_worker.js (file), then delete the directory.
+copyFileSync(outFile, workerFile)
+rmSync(workerDir, { recursive: true, force: true })
 
-console.log('[post-build] Worker bundle ready.')
+console.log('[post-build] Worker bundle ready as dist/_worker.js (single file).')
