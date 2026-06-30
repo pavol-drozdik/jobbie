@@ -11,19 +11,32 @@ export default defineEventHandler(async (event) => {
   let listStatus: number = 0
   let listError = ''
   let firstSlug = ''
+  let listShape: unknown = null
   try {
-    const list = await $fetch<{ slug?: string; items?: { slug: string }[] }>(
+    const list = await $fetch<unknown>(
       `${apiBase}/api/blog`,
       { timeout: 6000, ignoreResponseError: true },
     )
     listStatus = 200
-    // handle common list response shapes
+    // Expose top-level shape so we can see the real structure
     if (Array.isArray(list)) {
+      listShape = { type: 'array', length: list.length, firstItemKeys: Object.keys((list[0] as Record<string, unknown>) ?? {}) }
       firstSlug = (list[0] as { slug?: string })?.slug ?? ''
-    } else if (Array.isArray((list as { items?: { slug: string }[] }).items)) {
-      firstSlug = (list as { items: { slug: string }[] }).items[0]?.slug ?? ''
-    } else if ((list as { slug?: string }).slug) {
-      firstSlug = (list as { slug: string }).slug
+    } else if (list && typeof list === 'object') {
+      listShape = { type: 'object', keys: Object.keys(list as Record<string, unknown>) }
+      const obj = list as Record<string, unknown>
+      // try common shapes
+      if (Array.isArray(obj.data)) {
+        firstSlug = (obj.data[0] as { slug?: string })?.slug ?? ''
+      } else if (Array.isArray(obj.items)) {
+        firstSlug = (obj.items[0] as { slug?: string })?.slug ?? ''
+      } else if (Array.isArray(obj.posts)) {
+        firstSlug = (obj.posts[0] as { slug?: string })?.slug ?? ''
+      } else if (Array.isArray(obj.results)) {
+        firstSlug = (obj.results[0] as { slug?: string })?.slug ?? ''
+      } else if (typeof obj.slug === 'string') {
+        firstSlug = obj.slug
+      }
     }
   } catch (e: unknown) {
     const err = e as { statusCode?: number; status?: number; message?: string }
@@ -60,6 +73,7 @@ export default defineEventHandler(async (event) => {
     blogList: {
       status: listStatus,
       error: listError || null,
+      shape: listShape,
       firstSlugFound: firstSlug || null,
     },
     blogPost: querySlug
