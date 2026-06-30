@@ -15,7 +15,7 @@
  *     produces a pre-bundled single file that Wrangler deploys without re-bundling
  */
 import { spawnSync } from 'node:child_process'
-import { copyFileSync, existsSync, rmSync } from 'node:fs'
+import { existsSync, renameSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -76,11 +76,14 @@ if (esbuildResult.status !== 0) {
 
 // Convert _worker.js/ directory → _worker.js file so Wrangler deploys
 // the pre-bundled ESM as-is without its own esbuild re-bundling pass.
+// Must stage via a temp file: can't write to dist/_worker.js while the
+// directory with the same name still exists.
 const distDir = path.join(appRoot, 'dist')
 const workerFile = path.join(distDir, '_worker.js')
+const tempFile = path.join(distDir, '_worker.js.tmp')
 
-// Copy bundled output to dist/_worker.js (file), then delete the directory.
-copyFileSync(outFile, workerFile)
-rmSync(workerDir, { recursive: true, force: true })
+renameSync(outFile, tempFile)          // move bundle out of the directory
+rmSync(workerDir, { recursive: true, force: true })  // delete the directory
+renameSync(tempFile, workerFile)       // rename temp → dist/_worker.js (file)
 
 console.log('[post-build] Worker bundle ready as dist/_worker.js (single file).')
