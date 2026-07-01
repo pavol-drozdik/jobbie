@@ -702,11 +702,24 @@ export class StripeService {
         payment_intent: pi.id,
       });
     } catch (err) {
-      this.logger.warn(
-        `attachPayment failed for PI ${pi.id} on invoice ${finalized.id}, trying paid_out_of_band: ${String(err)}`,
-      );
-      await stripe.invoices.pay(finalized.id, { paid_out_of_band: true });
-      paid = await stripe.invoices.retrieve(finalized.id);
+      // attachPayment can surface a 400 even after it has reconciled the
+      // succeeded PaymentIntent and flipped the invoice to `paid` (and a
+      // concurrent confirm-credits/webhook retry may have paid it too).
+      // Re-read before falling back so we don't call pay() on an already-paid
+      // invoice — Stripe rejects that with 400 "Invoice is already paid".
+      const current = await stripe.invoices.retrieve(finalized.id);
+      if (current.status === 'paid') {
+        this.logger.warn(
+          `attachPayment errored but invoice ${finalized.id} is already paid for PI ${pi.id}: ${String(err)}`,
+        );
+        paid = current;
+      } else {
+        this.logger.warn(
+          `attachPayment failed for PI ${pi.id} on invoice ${finalized.id}, trying paid_out_of_band: ${String(err)}`,
+        );
+        await stripe.invoices.pay(finalized.id, { paid_out_of_band: true });
+        paid = await stripe.invoices.retrieve(finalized.id);
+      }
     }
 
     if (paid.status !== 'paid') {
