@@ -91,6 +91,23 @@ export type SubscriptionCancelFeedbackInput = {
   reason_detail?: string | null;
 };
 
+/** Options for {@link StripeService.createAndFinalizeSkInvoice}. */
+type CreateAndFinalizeSkInvoiceOptions = {
+  omitPaymentSettings?: boolean;
+  /**
+   * Base for Stripe idempotency keys (the PaymentIntent id). Collapses
+   * concurrent/retried invoice creations for the same payment into one invoice.
+   */
+  idempotencyKey?: string;
+  /** Line item attached directly to the created invoice (not the pending pool). */
+  lineItem?: {
+    currency: string;
+    quantity: number;
+    unit_amount_decimal: string;
+    description: string;
+  };
+};
+
 export type PaymentMethodSummaryDto = {
   brand: string;
   last4: string;
@@ -368,12 +385,16 @@ export class StripeService {
     description: string,
     productType: SkInvoiceProductType,
     subscriptionPeriod?: { start: number; end: number } | null,
-    options?: { omitPaymentSettings?: boolean },
+    options?: CreateAndFinalizeSkInvoiceOptions,
   ): InvoiceCreateParams {
     const params: InvoiceCreateParams = {
       customer: customerId,
       collection_method: 'charge_automatically',
-      pending_invoice_items_behavior: 'include',
+      // `exclude`: the credit line item is attached directly to this invoice
+      // (see createAndFinalizeSkInvoice), so we must NOT sweep customer-level
+      // pending items — a concurrent invoice for the same customer could
+      // otherwise pull in another run's item and double the amount.
+      pending_invoice_items_behavior: 'exclude',
       auto_advance: false,
       description,
       metadata,
@@ -602,10 +623,24 @@ export class StripeService {
         }
         return null;
       }
-      const invoiceId = await this.createPaidSkInvoiceForCreditPayment(pi, merged);
-      if (invoiceId) {
-        this.dispatchPaidInvoiceEmail(invoiceId);
-        return invoiceId;
+      try {
+        const invoiceId = await this.createPaidSkInvoiceForCreditPayment(
+          pi,
+          merged,
+        );
+        if (invoiceId) {
+          this.dispatchPaidInvoiceEmail(invoiceId);
+          return invoiceId;
+        }
+      } catch (err) {
+        // Concurrent confirm-credits/webhook runs for the same PI can collide on
+        // a Stripe idempotency key or on finalize ("Invoice is already
+        // finalized"). Swallow and retry: the winning run persists invoice_id on
+        // the PI, so the next attempt short-circuits via the guard in
+        // createPaidSkInvoiceForCreditPayment.
+        this.logger.warn(
+          `ensureCreditPaymentInvoice attempt ${attempt} for PI ${paymentIntentId} failed, retrying: ${String(err)}`,
+        );
       }
       if (attempt < maxAttempts - 1) {
         await this.delayMs(750);
@@ -653,8 +688,13 @@ export class StripeService {
     };
     const description = SK_INVOICE_CREDIT_LINE_DESCRIPTION;
 
-    await this.voidOpenCustomerInvoices(customerId, (inv) =>
-      this.isCreditPackOpenInvoice(inv),
+    // Never void/delete the invoice being built for THIS PI — a concurrent
+    // confirm-credits/webhook run for the same payment must not clobber it.
+    await this.voidOpenCustomerInvoices(
+      customerId,
+      (inv) =>
+        this.isCreditPackOpenInvoice(inv) &&
+        inv.metadata?.payment_intent_id !== pi.id,
     );
 
     const drafts = await stripe.invoices.list({
@@ -663,7 +703,10 @@ export class StripeService {
       limit: 20,
     });
     for (const inv of drafts.data) {
-      if (!getInvoiceSubscriptionId(inv)) {
+      if (
+        !getInvoiceSubscriptionId(inv) &&
+        inv.metadata?.payment_intent_id !== pi.id
+      ) {
         await stripe.invoices.del(inv.id);
       }
     }
@@ -677,15 +720,9 @@ export class StripeService {
       return null;
     }
 
-    await stripe.invoiceItems.create({
-      customer: customerId,
-      currency: (pi.currency ?? 'eur').toLowerCase(),
-      description: lineItem.description,
-      metadata: invoiceMetadata,
-      quantity: lineItem.quantity,
-      unit_amount_decimal: lineItem.unit_amount_decimal,
-    } as unknown as InvoiceItemCreateParams);
-
+    // idempotencyKey derived from the PI collapses concurrent/retried runs to a
+    // single invoice + single line item (the line item is attached to this
+    // invoice, not the customer pending pool).
     const finalized = await this.createAndFinalizeSkInvoice(
       customerId,
       billing,
@@ -693,7 +730,16 @@ export class StripeService {
       description,
       'credits',
       null,
-      { omitPaymentSettings: true },
+      {
+        omitPaymentSettings: true,
+        idempotencyKey: pi.id,
+        lineItem: {
+          currency: (pi.currency ?? 'eur').toLowerCase(),
+          quantity: lineItem.quantity,
+          unit_amount_decimal: lineItem.unit_amount_decimal,
+          description: lineItem.description,
+        },
+      },
     );
 
     let paid: Invoice;
@@ -750,7 +796,7 @@ export class StripeService {
     description: string,
     productType: SkInvoiceProductType,
     subscriptionPeriod?: { start: number; end: number } | null,
-    options?: { omitPaymentSettings?: boolean },
+    options?: CreateAndFinalizeSkInvoiceOptions,
   ): Promise<Invoice> {
     const stripe = this.getStripe();
     const base = this.buildSkInvoiceCreateParams(
@@ -762,11 +808,42 @@ export class StripeService {
       subscriptionPeriod,
       options,
     );
-    try {
-      const invoice = await stripe.invoices.create(base);
-      return await stripe.invoices.finalizeInvoice(invoice.id, {
+    const idempotencyKey = options?.idempotencyKey;
+    // Create the invoice, attach the line item to THAT invoice, then finalize.
+    // Keying create + item by the PaymentIntent makes concurrent/retried runs
+    // reuse the same invoice and item instead of producing duplicates.
+    const buildAndFinalize = async (
+      params: InvoiceCreateParams,
+      idemSuffix: string,
+    ): Promise<Invoice> => {
+      const invoice = await stripe.invoices.create(
+        params,
+        idempotencyKey
+          ? { idempotencyKey: `${idempotencyKey}:inv${idemSuffix}` }
+          : undefined,
+      );
+      if (options?.lineItem) {
+        await stripe.invoiceItems.create(
+          {
+            customer: customerId,
+            invoice: invoice.id,
+            currency: options.lineItem.currency,
+            description: options.lineItem.description,
+            metadata,
+            quantity: options.lineItem.quantity,
+            unit_amount_decimal: options.lineItem.unit_amount_decimal,
+          } as unknown as InvoiceItemCreateParams,
+          idempotencyKey
+            ? { idempotencyKey: `${idempotencyKey}:item${idemSuffix}` }
+            : undefined,
+        );
+      }
+      return stripe.invoices.finalizeInvoice(invoice.id, {
         expand: ['payments.data.payment.payment_intent'],
       });
+    };
+    try {
+      return await buildAndFinalize(base, '');
     } catch (err) {
       if (!base.automatic_tax?.enabled) {
         throw err;
@@ -775,10 +852,7 @@ export class StripeService {
         `Stripe automatic_tax invoice create failed, retrying without tax: ${String(err)}`,
       );
       const { automatic_tax: _removed, ...withoutTax } = base;
-      const invoice = await stripe.invoices.create(withoutTax);
-      return await stripe.invoices.finalizeInvoice(invoice.id, {
-        expand: ['payments.data.payment.payment_intent'],
-      });
+      return buildAndFinalize(withoutTax, '-notax');
     }
   }
 
