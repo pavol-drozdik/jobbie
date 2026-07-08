@@ -13,10 +13,10 @@
           <h1
             class="mb-5 mt-0 max-w-[720px] font-dmSans text-[34px] min-[380px]:text-[42px] min-[520px]:text-[46px] font-extrabold leading-[1.08] tracking-[-0.03em] text-[#1a1a1a] marketing:mb-6 marketing:text-[68px] marketing:leading-[1.05] marketingXl:text-[72px] marketingXl:tracking-[-0.04em]"
           >
-            Nájdi prácu,<br>
-            ktorá ti
+            Nájdi brigádu<br>
+            za pár
             <span class="relative inline-block whitespace-nowrap text-marketing-green">
-              sadne.
+              klikov.
               <svg
                 class="pointer-events-none absolute -bottom-1 left-0 h-3 w-full min-w-[5.5rem] text-marketing-green marketing:-bottom-1.5 marketing:h-4"
                 viewBox="0 0 200 16"
@@ -37,7 +37,7 @@
           <p
             class="m-0 max-w-[640px] font-dmSans text-[17px] font-medium leading-[1.5] text-[#52635a] marketing:text-[19px] marketing:leading-[1.45]"
           >
-            Spájame uchádzačov s overenými firmami po celom Slovensku — rýchlo, jednoducho a úplne zadarmo.
+            Spojíme ťa s firmami aj ľuďmi, ktorí potrebujú pomôcť — rýchlo, jednoducho a zadarmo.
           </p>
           <form
             class="mt-7 flex w-full max-w-[640px] flex-row items-stretch overflow-hidden rounded-[999px] bg-white p-1 shadow-[0_12px_40px_rgba(14,28,20,0.1)] marketing:mt-8 marketing:p-1.5"
