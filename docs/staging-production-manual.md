@@ -887,6 +887,46 @@ sudo docker compose up -d --scale backend=1
 
 Plain `docker compose up -d backend` **without** `--scale` can collapse back to **one** container — prefer `deploy_backend.sh` or always pass `--scale`.
 
+#### Automatic scale on this VPS (optional)
+
+When **`REDIS_URL`** is set and you want replicas to follow load without manual `BACKEND_SCALE` edits, enable the **backend autoscale timer** on the VPS. It runs every 5 minutes, probes host CPU/RAM, measures local `/health` latency through Caddy, and computes **max replicas from VPS size** (reserved RAM/CPU for Typesense + OS, ~1 GB per Nest replica).
+
+1. In `/srv/nestjs-typesense/.env`:
+
+```bash
+BACKEND_AUTOSCALE_ENABLED=1
+# BACKEND_SCALE starts at 1; autoscale adjusts it and persists to .env
+```
+
+2. Install timer (once per server):
+
+```bash
+sudo chmod +x /srv/nestjs-typesense/scripts/autoscale_backend.sh
+sudo chmod +x /srv/nestjs-typesense/scripts/scale_backend.sh
+sudo cp /srv/nestjs-typesense/systemd/jobbie-backend-autoscale.service /etc/systemd/system/
+sudo cp /srv/nestjs-typesense/systemd/jobbie-backend-autoscale.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now jobbie-backend-autoscale.timer
+sudo cp /srv/nestjs-typesense/ops/logrotate/jobbie-backend-autoscale /etc/logrotate.d/jobbie-backend-autoscale
+```
+
+3. Dry-run (prints decision without scaling):
+
+```bash
+sudo /srv/nestjs-typesense/scripts/autoscale_backend.sh --dry-run
+tail -20 /var/lib/jobbie/autoscale-backend.log
+```
+
+**Scale up** when CPU **or** latency is high (defaults: load ≥ 70%, health ≥ 800 ms), RAM has headroom, Typesense is not pegged, and running count &lt; computed max.
+
+**Scale down** when CPU **and** latency are both low (defaults: load ≤ 35%, health ≤ 250 ms). **15 min cooldown** between changes.
+
+`deploy_backend.sh` holds a deploy lock so autoscale does not fight image rollouts. Manual scale: `sudo bash scripts/scale_backend.sh 2`.
+
+Tune thresholds via `AUTOSCALE_*` keys in `.env` (see `websupport-vps-deployment/.env.example`).
+
+**Admin UI (super_admin):** JOBBIE Admin → Infra → **Nest inštancie** — per-replica CPU/RAM, add/remove one replica, restart one container. Requires `scripts/scale_backend.sh`, `restart_backend_instance.sh`, and `read_backend_capacity.sh` on the VPS.
+
 #### When this is not enough
 
 - **Typesense** pegged → more RAM, tune search, or separate search host — not more Nest.

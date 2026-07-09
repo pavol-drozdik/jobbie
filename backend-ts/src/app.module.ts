@@ -29,6 +29,7 @@ import { LocationsModule } from './locations/locations.module';
 import { SavedModule } from './saved/saved.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
 import { PricingInquiriesModule } from './pricing-inquiries/pricing-inquiries.module';
+import { ContractWithdrawalsModule } from './contract-withdrawals/contract-withdrawals.module';
 import { BlogModule } from './blog/blog.module';
 import { SeoModule } from './seo/seo.module';
 import { CvModule } from './cv/cv.module';
@@ -102,6 +103,7 @@ function throttlerSkipIf(context: ExecutionContext): boolean {
     SavedModule,
     NewsletterModule,
     PricingInquiriesModule,
+    ContractWithdrawalsModule,
     BlogModule,
     SeoModule,
     CvModule,

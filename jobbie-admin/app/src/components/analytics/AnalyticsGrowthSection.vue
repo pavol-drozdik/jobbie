@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import Column from 'primevue/column'
+import DataTable from 'primevue/datatable'
 import type { AdminAnalyticsSummary } from '../../types/analytics'
 import { useAdminChart } from '../../composables/useAdminChart'
 
@@ -42,9 +44,9 @@ watch([ts, cohort], renderCharts)
 
 <template>
   <div class="analytics-grid-2">
-    <section class="section-card">
-      <h2 class="section-title">Rast (denný)</h2>
-      <p v-if="ts.length === 0" class="muted">
+    <section class="admin-section-card">
+      <h2 class="admin-section-title">Rast (denný)</h2>
+      <p v-if="ts.length === 0" class="m-0 text-sm text-slate-500">
         Časové rady nie sú k dispozícii. Spustite migráciu
         <code>20260530120000_admin_analytics_extended.sql</code>.
       </p>
@@ -52,37 +54,30 @@ watch([ts, cohort], renderCharts)
         <canvas ref="growthCanvas" />
       </div>
     </section>
-    <section class="section-card">
-      <h2 class="section-title">Kohorty (týždenné)</h2>
+    <section class="admin-section-card">
+      <h2 class="admin-section-title">Kohorty (týždenné)</h2>
       <div v-if="cohort.length" class="chart-box chart-box--sm">
         <canvas ref="cohortCanvas" />
       </div>
-      <div class="table-wrap" style="margin-top: 1rem">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Týždeň</th>
-              <th>Signupy</th>
-              <th>Apply 30d</th>
-              <th>Retencia</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="row in summary.cohort_weekly" :key="row.week_start">
-              <td>{{ row.week_start }}</td>
-              <td>{{ row.signups }}</td>
-              <td>{{ row.applied_within_30d }}</td>
-              <td>
-                {{
-                  row.retention_apply_pct != null
-                    ? `${row.retention_apply_pct} %`
-                    : '—'
-                }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        :value="summary.cohort_weekly"
+        size="small"
+        striped-rows
+        class="mt-4 text-sm"
+      >
+        <Column field="week_start" header="Týždeň" />
+        <Column field="signups" header="Signupy" />
+        <Column field="applied_within_30d" header="Apply 30d" />
+        <Column header="Retencia">
+          <template #body="{ data: row }">
+            {{
+              row.retention_apply_pct != null
+                ? `${row.retention_apply_pct} %`
+                : '—'
+            }}
+          </template>
+        </Column>
+      </DataTable>
     </section>
   </div>
 </template>

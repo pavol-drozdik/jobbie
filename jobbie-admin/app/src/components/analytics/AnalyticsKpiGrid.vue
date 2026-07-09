@@ -32,7 +32,6 @@ const cards = computed(() => {
   const f = props.summary.funnel
   const pf = prior.value?.funnel
   const r = props.summary.revenue
-  const pr = prior.value?.revenue
   const c = props.summary.churn
   const pc = prior.value?.churn
   return [
@@ -50,30 +49,35 @@ const cards = computed(() => {
 </script>
 
 <template>
-  <div class="kpi-grid">
-    <div v-for="(card, i) in cards" :key="i" class="kpi-card">
-      <span class="kpi-label">{{ card.label }}</span>
-      <span class="kpi-value">{{ card.value }}</span>
-      <span v-if="card.change" class="kpi-change" :class="{ 'kpi-change--up': card.change.startsWith('+'), 'kpi-change--down': card.change.startsWith('-') }">
-        {{ card.change }} vs predch. obdobie
+  <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div
+      v-for="(card, i) in cards"
+      :key="i"
+      class="admin-section-card flex flex-col gap-1.5 !py-4"
+    >
+      <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        {{ card.label }}
       </span>
-      <span class="kpi-hint">{{ card.hint }}</span>
+      <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <span class="text-2xl font-bold tabular-nums leading-none text-slate-900">
+          {{ card.value }}
+        </span>
+        <span
+          v-if="card.change"
+          class="text-xs font-semibold"
+          :class="
+            card.change.startsWith('+')
+              ? 'text-primary-700'
+              : card.change.startsWith('-')
+                ? 'text-red-600'
+                : 'text-slate-500'
+          "
+        >
+          {{ card.change }}
+        </span>
+      </div>
+      <p v-if="card.change" class="m-0 text-xs text-slate-400">vs predch. obdobie</p>
+      <p class="m-0 text-xs text-slate-500">{{ card.hint }}</p>
     </div>
   </div>
 </template>
-
-<style scoped>
-.kpi-change {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--ink3);
-}
-
-.kpi-change--up {
-  color: var(--g700);
-}
-
-.kpi-change--down {
-  color: var(--danger);
-}
-</style>

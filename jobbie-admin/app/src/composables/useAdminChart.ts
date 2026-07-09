@@ -29,8 +29,9 @@ Chart.register(
 )
 
 const CHART_GREEN = '#22c55e'
-const CHART_GREEN_LIGHT = 'rgba(34, 197, 94, 0.15)'
-const CHART_INK3 = '#8a9e8f'
+const CHART_GREEN_LIGHT = 'rgba(34, 197, 94, 0.12)'
+const CHART_MUTED = '#94a3b8'
+const CHART_INK = '#475569'
 
 export function useAdminChart() {
   const instances: Chart[] = []
@@ -82,11 +83,11 @@ export function useAdminChart() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { position: 'bottom', labels: { color: CHART_INK3, boxWidth: 12 } },
+          legend: { position: 'bottom', labels: { color: CHART_MUTED, boxWidth: 12 } },
         },
         scales: {
-          x: { grid: { display: false }, ticks: { color: CHART_INK3, maxRotation: 45 } },
-          y: { beginAtZero: true, ticks: { color: CHART_INK3, precision: 0 } },
+          x: { grid: { display: false }, ticks: { color: CHART_MUTED, maxRotation: 45 } },
+          y: { beginAtZero: true, ticks: { color: CHART_MUTED, precision: 0 } },
         },
       },
     })
@@ -120,15 +121,16 @@ export function useAdminChart() {
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: { position: 'bottom', labels: { color: CHART_INK3, boxWidth: 12 } },
+          legend: { position: 'bottom', labels: { color: CHART_MUTED, boxWidth: 12 } },
         },
         scales: {
-          x: { grid: { display: false }, ticks: { color: CHART_INK3, maxTicksLimit: 12 } },
+          x: { grid: { color: '#e2e8f0' }, ticks: { color: CHART_MUTED, maxTicksLimit: 12 } },
           y: {
             beginAtZero: true,
             max: options.yMax,
+            grid: { color: '#e2e8f0' },
             ticks: {
-              color: CHART_INK3,
+              color: CHART_MUTED,
               precision: 0,
               callback: options.yTickSuffix
                 ? (value) => `${value}${options.yTickSuffix}`
@@ -166,8 +168,8 @@ export function useAdminChart() {
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          x: { beginAtZero: true, ticks: { color: CHART_INK3, precision: 0 } },
-          y: { grid: { display: false }, ticks: { color: '#3d5444' } },
+          x: { beginAtZero: true, ticks: { color: CHART_MUTED, precision: 0 }, grid: { color: '#e2e8f0' } },
+          y: { grid: { display: false }, ticks: { color: CHART_INK } },
         },
       },
     })

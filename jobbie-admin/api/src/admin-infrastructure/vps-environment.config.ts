@@ -12,6 +12,7 @@ export type VpsEnvironmentConfig = {
   healthUrl: string | null;
   metricsUrl: string | null;
   metricsBearerToken: string | null;
+  infraHistoryPath: string;
 };
 
 export type VpsConfiguredFlags = {
@@ -29,6 +30,8 @@ function readEnv(name: string): string | null {
   return v || null;
 }
 
+const DEFAULT_INFRA_HISTORY_PATH = '/var/lib/jobbie/infra-metrics.jsonl';
+
 function buildOne(
   id: VpsEnvironmentId,
   label: string,
@@ -38,6 +41,8 @@ function buildOne(
   const user = readEnv(envKey(prefix, 'SSH_USER'));
   const keyPath = readEnv(envKey(prefix, 'SSH_KEY_PATH'));
   const privateKey = readEnv(envKey(prefix, 'SSH_PRIVATE_KEY'));
+  const infraHistoryPath =
+    readEnv(envKey(prefix, 'INFRA_HISTORY_PATH')) ?? DEFAULT_INFRA_HISTORY_PATH;
 
   const sshConfigured =
     Boolean(host && user && (keyPath || privateKey));
@@ -56,6 +61,7 @@ function buildOne(
     healthUrl: readEnv(envKey(prefix, 'HEALTH_URL')),
     metricsUrl: readEnv(envKey(prefix, 'METRICS_URL')),
     metricsBearerToken: readEnv(envKey(prefix, 'METRICS_BEARER_TOKEN')),
+    infraHistoryPath,
   };
 }
 

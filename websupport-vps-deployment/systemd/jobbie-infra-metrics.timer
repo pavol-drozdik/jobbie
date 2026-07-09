@@ -1,0 +1,11 @@
+[Unit]
+Description=JOBBIE VPS infra metrics sampler every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Persistent=true
+Unit=jobbie-infra-metrics.service
+
+[Install]
+WantedBy=timers.target

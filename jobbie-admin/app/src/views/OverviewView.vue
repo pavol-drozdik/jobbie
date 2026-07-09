@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import Button from 'primevue/button'
+import Column from 'primevue/column'
+import DataTable from 'primevue/datatable'
+import Message from 'primevue/message'
+import Skeleton from 'primevue/skeleton'
 import { adminApi } from '../composables/adminApi'
 import type { AdminOverview } from '../types/overview'
+import AdminPageHeader from '../components/layout/AdminPageHeader.vue'
 import { formatAuditTime, shortId } from '../utils/audit-format'
 import { fmtNum } from '../utils/analytics-format'
 
@@ -10,6 +16,14 @@ const router = useRouter()
 const loading = ref(true)
 const error = ref<string | null>(null)
 const data = ref<AdminOverview | null>(null)
+
+const quickLinks = [
+  { label: 'Moderácia', to: '/moderation' },
+  { label: 'Audit', to: '/audit' },
+  { label: 'Analytics · Web', to: { path: '/analytics', hash: '#external' } },
+  { label: 'Účty', to: '/users' },
+  { label: 'Podpora', to: '/support' },
+]
 
 async function load() {
   loading.value = true
@@ -27,115 +41,106 @@ onMounted(() => void load())
 </script>
 
 <template>
-  <div class="overview-page">
-    <header>
-      <h1 class="page-title">Prehľad</h1>
-      <p class="page-subtitle">Operačný dashboard platformy</p>
-    </header>
+  <div class="admin-page">
+    <AdminPageHeader title="Prehľad" subtitle="Operačný dashboard platformy" />
 
-    <p v-if="error" class="error card">{{ error }}</p>
-    <p v-else-if="loading" class="muted">Načítavam…</p>
+    <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
+
+    <div v-else-if="loading" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <Skeleton v-for="i in 4" :key="i" height="7rem" class="!rounded-xl" />
+    </div>
 
     <template v-else-if="data">
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <span class="kpi-label">Otvorené nahlásenia</span>
-          <span class="kpi-value">{{ fmtNum(data.open_reports_count) }}</span>
-          <RouterLink to="/moderation" class="kpi-link">Moderácia →</RouterLink>
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="admin-section-card">
+          <p class="m-0 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Otvorené nahlásenia
+          </p>
+          <p class="m-0 mt-2 text-3xl font-bold text-slate-900">
+            {{ fmtNum(data.open_reports_count) }}
+          </p>
+          <RouterLink to="/moderation" class="mt-2 inline-block text-sm text-primary-600 hover:underline">
+            Moderácia →
+          </RouterLink>
         </div>
-        <div class="kpi-card">
-          <span class="kpi-label">Registrácie dnes</span>
-          <span class="kpi-value">{{ fmtNum(data.kpis.signups_today) }}</span>
-          <span class="kpi-hint">7 dní: {{ fmtNum(data.kpis.signups_7d) }}</span>
+        <div class="admin-section-card">
+          <p class="m-0 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Registrácie dnes
+          </p>
+          <p class="m-0 mt-2 text-3xl font-bold text-slate-900">
+            {{ fmtNum(data.kpis.signups_today) }}
+          </p>
+          <p class="m-0 mt-1 text-xs text-slate-500">7 dní: {{ fmtNum(data.kpis.signups_7d) }}</p>
         </div>
-        <div class="kpi-card">
-          <span class="kpi-label">Publikované ponuky dnes</span>
-          <span class="kpi-value">{{ fmtNum(data.kpis.jobs_published_today) }}</span>
-          <span class="kpi-hint">7 dní: {{ fmtNum(data.kpis.jobs_published_7d) }}</span>
+        <div class="admin-section-card">
+          <p class="m-0 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Publikované ponuky dnes
+          </p>
+          <p class="m-0 mt-2 text-3xl font-bold text-slate-900">
+            {{ fmtNum(data.kpis.jobs_published_today) }}
+          </p>
+          <p class="m-0 mt-1 text-xs text-slate-500">7 dní: {{ fmtNum(data.kpis.jobs_published_7d) }}</p>
         </div>
-        <div class="kpi-card">
-          <span class="kpi-label">Zlyhané platby (7 dní)</span>
-          <span class="kpi-value">{{ fmtNum(data.failed_payments_count) }}</span>
+        <div class="admin-section-card">
+          <p class="m-0 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Zlyhané platby (7 dní)
+          </p>
+          <p class="m-0 mt-2 text-3xl font-bold text-slate-900">
+            {{ fmtNum(data.failed_payments_count) }}
+          </p>
         </div>
       </div>
 
-      <section class="section-card quick-links">
-        <h2 class="section-title">Rýchle odkazy</h2>
-        <div class="quick-links-grid">
-          <button type="button" class="btn btn-ghost" @click="router.push('/moderation')">
-            Moderácia
-          </button>
-          <button type="button" class="btn btn-ghost" @click="router.push('/audit')">
-            Audit
-          </button>
-          <button
-            type="button"
-            class="btn btn-ghost"
-            @click="router.push({ path: '/analytics', hash: '#external' })"
-          >
-            Analytics · Web
-          </button>
-          <button type="button" class="btn btn-ghost" @click="router.push('/users')">
-            Účty
-          </button>
-          <button type="button" class="btn btn-ghost" @click="router.push('/support')">
-            Podpora
-          </button>
+      <section class="admin-section-card">
+        <h2 class="admin-section-title">Rýchle odkazy</h2>
+        <div class="flex flex-wrap gap-2">
+          <Button
+            v-for="link in quickLinks"
+            :key="link.label"
+            :label="link.label"
+            severity="secondary"
+            size="small"
+            @click="router.push(link.to)"
+          />
         </div>
       </section>
 
-      <section class="section-card">
-        <h2 class="section-title">Posledné audit udalosti</h2>
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Čas</th>
-                <th>Typ</th>
-                <th>Actor</th>
-                <th>Subjekt</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="e in data.recent_audit_events" :key="e.id">
-                <td>{{ formatAuditTime(e.occurred_at) }}</td>
-                <td>{{ e.event_type }}</td>
-                <td>{{ e.actor_label ?? shortId(e.actor_user_id) }}</td>
-                <td>
-                  <span v-if="e.subject_type">{{ e.subject_type }}</span>
-                  <span v-if="e.subject_id" class="mono">{{ shortId(e.subject_id) }}</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p v-if="data.recent_audit_events.length === 0" class="muted">Žiadne udalosti.</p>
-        <button type="button" class="btn btn-ghost btn-sm" style="margin-top: 0.75rem" @click="router.push('/audit')">
-          Celý audit log →
-        </button>
+      <section class="admin-section-card">
+        <h2 class="admin-section-title">Posledné audit udalosti</h2>
+        <DataTable
+          v-if="data.recent_audit_events.length > 0"
+          :value="data.recent_audit_events"
+          size="small"
+          striped-rows
+          class="text-sm"
+        >
+          <Column field="occurred_at" header="Čas">
+            <template #body="{ data: row }">
+              {{ formatAuditTime(row.occurred_at) }}
+            </template>
+          </Column>
+          <Column field="event_type" header="Typ" />
+          <Column header="Actor">
+            <template #body="{ data: row }">
+              {{ row.actor_label ?? shortId(row.actor_user_id) }}
+            </template>
+          </Column>
+          <Column header="Subjekt">
+            <template #body="{ data: row }">
+              <span v-if="row.subject_type">{{ row.subject_type }} </span>
+              <span v-if="row.subject_id" class="mono">{{ shortId(row.subject_id) }}</span>
+            </template>
+          </Column>
+        </DataTable>
+        <p v-else class="m-0 text-sm text-slate-500">Žiadne udalosti.</p>
+        <Button
+          label="Celý audit log →"
+          severity="secondary"
+          size="small"
+          class="mt-3"
+          @click="router.push('/audit')"
+        />
       </section>
     </template>
   </div>
 </template>
-
-<style scoped>
-.overview-page {
-  max-width: 1100px;
-}
-
-.quick-links {
-  margin-top: 1.25rem;
-}
-
-.quick-links-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.kpi-link {
-  font-size: 0.8rem;
-  margin-top: 0.35rem;
-  display: inline-block;
-}
-</style>

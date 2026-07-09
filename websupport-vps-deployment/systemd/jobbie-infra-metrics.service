@@ -1,0 +1,11 @@
+[Unit]
+Description=JOBBIE VPS infra metrics sample (CPU/RAM JSONL)
+After=network-online.target
+
+[Service]
+Type=oneshot
+Environment=JOBBIE_INFRA_METRICS_PATH=/var/lib/jobbie/infra-metrics.jsonl
+ExecStart=/srv/nestjs-typesense/scripts/record_infra_sample.sh
+User=root
+Group=root
+NoNewPrivileges=true

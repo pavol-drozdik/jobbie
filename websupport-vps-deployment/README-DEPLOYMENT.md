@@ -356,6 +356,29 @@ cd /srv/nestjs-typesense
 sudo docker compose up -d --scale backend=2
 ```
 
+### Automatic backend scale (same VPS)
+
+Optional **CPU + RAM + latency** autoscaling for Nest replicas. Computes max replicas from VPS RAM/CPU (reserves ~2.8 GB + ~1.5 cores for Typesense/OS; ~1 GB per Nest). Requires `REDIS_URL` in `.env.backend` before scale &gt; 1.
+
+```bash
+# .env
+BACKEND_AUTOSCALE_ENABLED=1
+
+sudo chmod +x scripts/autoscale_backend.sh scripts/scale_backend.sh
+sudo cp systemd/jobbie-backend-autoscale.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now jobbie-backend-autoscale.timer
+sudo scripts/autoscale_backend.sh --dry-run
+```
+
+Logs: `/var/lib/jobbie/autoscale-backend.log`. Full runbook: [docs/staging-production-manual.md](../docs/staging-production-manual.md) §17.
+
+**Admin Infra panel** can list Nest replicas and scale/restart via SSH (`super_admin` only). After deploy, ensure these scripts are executable on the VPS:
+
+```bash
+sudo chmod +x /srv/nestjs-typesense/scripts/restart_backend_instance.sh
+sudo chmod +x /srv/nestjs-typesense/scripts/read_backend_capacity.sh
+```
+
 ## Deploy Backend Update
 
 **Preferred:** push a `backend-v*` tag or run **backend-ghcr** in GitHub Actions (staging auto-deploy when secrets are set).
@@ -489,6 +512,30 @@ curl -fsSL https://get.netdata.cloud/kickstart.sh | sudo bash -s -- --non-intera
 ```
 
 After enabling `httpcheck`, wait ~90 s, then `sudo netdatacli reload-health` so alarms attach to the new charts. Use `sudo docker compose` for stack commands if your user is not in the `docker` group.
+
+## JOBBIE Admin infra history sampler (optional)
+
+The desktop **Infra** charts can show continuous CPU/RAM history (1 h / 24 h / 2 weeks / 1 month) even when the admin app is closed. Install a lightweight sampler on **each** VPS (staging + production) that appends one JSON line every 5 minutes to `/var/lib/jobbie/infra-metrics.jsonl`.
+
+**One-time install** (on the VPS, after `/srv/nestjs-typesense` is deployed):
+
+```bash
+sudo chmod +x /srv/nestjs-typesense/scripts/record_infra_sample.sh
+sudo cp /srv/nestjs-typesense/systemd/jobbie-infra-metrics.service /etc/systemd/system/
+sudo cp /srv/nestjs-typesense/systemd/jobbie-infra-metrics.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now jobbie-infra-metrics.timer
+sudo cp /srv/nestjs-typesense/ops/logrotate/jobbie-infra-metrics /etc/logrotate.d/jobbie-infra-metrics
+```
+
+Verify:
+
+```bash
+systemctl status jobbie-infra-metrics.timer
+tail -3 /var/lib/jobbie/infra-metrics.jsonl
+```
+
+The admin API reads this file over SSH (`VPS_*_INFRA_HISTORY_PATH`, default `/var/lib/jobbie/infra-metrics.jsonl`). See [`docs/admin-desktop.md`](../docs/admin-desktop.md).
 
 ## Security Notes
 

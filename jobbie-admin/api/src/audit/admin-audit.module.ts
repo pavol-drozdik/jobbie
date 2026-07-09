@@ -8,6 +8,8 @@ import { AdminModerationService } from './admin-moderation.service';
 import { AdminUsersController } from '../auth/admin-users.controller';
 import { AdminUsersService } from '../auth/admin-users.service';
 import { AdminBillingService } from '../admin-billing/admin-billing.service';
+import { AdminRegistrationPromoController } from '../admin-billing/admin-registration-promo.controller';
+import { AdminRegistrationPromoService } from '../admin-billing/admin-registration-promo.service';
 import { AdminDataExportService } from '../admin-data-export/admin-data-export.service';
 import { AdminAccountCloseService } from '../admin-account/admin-account-close.service';
 
@@ -17,12 +19,14 @@ import { AdminAccountCloseService } from '../admin-account/admin-account-close.s
     AdminAuditController,
     AdminModerationController,
     AdminUsersController,
+    AdminRegistrationPromoController,
   ],
   providers: [
     AuditService,
     AdminModerationService,
     AdminUsersService,
     AdminBillingService,
+    AdminRegistrationPromoService,
     AdminDataExportService,
     AdminAccountCloseService,
   ],

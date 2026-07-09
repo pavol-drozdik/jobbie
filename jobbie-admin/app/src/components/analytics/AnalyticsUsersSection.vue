@@ -6,9 +6,11 @@ defineProps<{ summary: AdminAnalyticsSummary }>()
 </script>
 
 <template>
-  <section class="section-card">
-    <h2 class="section-title">Používatelia</h2>
-    <p v-if="!summary.users_breakdown" class="muted">Rozpad používateľov nie je k dispozícii.</p>
+  <section class="admin-section-card">
+    <h2 class="admin-section-title">Používatelia</h2>
+    <p v-if="!summary.users_breakdown" class="m-0 text-sm text-slate-500">
+      Rozpad používateľov nie je k dispozícii.
+    </p>
     <div v-else class="analytics-grid-3">
       <div class="detail-block">
         <h3 class="detail-block-title">Registrácie v období</h3>
@@ -24,10 +26,10 @@ defineProps<{ summary: AdminAnalyticsSummary }>()
       </div>
       <div class="detail-block">
         <h3 class="detail-block-title">Aktivita</h3>
-        <p class="kpi-value" style="font-size: 1.35rem">
+        <p class="m-0 text-xl font-bold text-slate-900">
           {{ fmtNum(summary.users_breakdown.active_users_distinct) }}
         </p>
-        <p class="muted">unikátnych užívateľov v API logoch (vzorkované)</p>
+        <p class="m-0 text-sm text-slate-500">unikátnych užívateľov v API logoch (vzorkované)</p>
       </div>
       <div class="detail-block">
         <h3 class="detail-block-title">Účty</h3>

@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import Button from 'primevue/button'
+import Column from 'primevue/column'
+import DataTable from 'primevue/datatable'
+import Message from 'primevue/message'
+import ProgressSpinner from 'primevue/progressspinner'
 import { adminApi } from '../../composables/adminApi'
 import type { ExternalAnalyticsSummary } from '../../types/analytics-external'
 import { fmtNum, fmtPct } from '../../utils/analytics-format'
@@ -105,55 +110,60 @@ watch(
 </script>
 
 <template>
-  <section class="section-card">
-    <h2 class="section-title">Web &amp; marketing</h2>
+  <section class="admin-section-card">
+    <h2 class="admin-section-title">Web &amp; marketing</h2>
     <p class="ops-note">
       Externé zdroje (voliteľné) — credentials v <code>jobbie-admin/api/.env</code>. Platformové KPI
       sú v sekcii vyššie.
     </p>
 
-    <ul v-if="warnings.length || crossCheckWarnings.length" class="external-warnings">
+    <ul
+      v-if="warnings.length || crossCheckWarnings.length"
+      class="m-3 list-disc pl-5 text-sm text-amber-700"
+    >
       <li v-for="(w, i) in warnings" :key="`api-${i}`">{{ w }}</li>
       <li v-for="(w, i) in crossCheckWarnings" :key="`xcheck-${i}`">{{ w }}</li>
     </ul>
-    <div class="external-test-row">
-      <button
-        type="button"
-        class="btn btn-ghost btn-sm"
-        :disabled="testing"
+
+    <div class="mt-3 flex flex-wrap items-center gap-2">
+      <Button
+        :label="testing ? 'Testujem…' : 'Test pripojenia'"
+        severity="secondary"
+        size="small"
+        :loading="testing"
         @click="testConnections"
-      >
-        {{ testing ? 'Testujem…' : 'Test pripojenia' }}
-      </button>
-      <span v-if="testResult" class="external-test-result">{{ testResult }}</span>
+      />
+      <span v-if="testResult" class="text-xs text-slate-600">{{ testResult }}</span>
     </div>
 
-    <p v-if="loading && !external" class="muted">Načítavam externé analytiky…</p>
+    <div v-if="loading && !external" class="flex justify-center py-8">
+      <ProgressSpinner />
+    </div>
 
-    <div v-else class="external-grid">
+    <div v-else class="mt-4 grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
       <!-- PostHog -->
-      <article class="external-card">
-        <header class="external-card-head">
-          <h3>PostHog</h3>
+      <article class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <header class="mb-3 flex items-start justify-between gap-2">
+          <h3 class="m-0 text-base font-semibold text-slate-900">PostHog</h3>
           <a
             v-if="external?.dashboard_links.posthog"
             :href="external.dashboard_links.posthog"
             target="_blank"
             rel="noopener noreferrer"
-            class="external-link"
+            class="whitespace-nowrap text-xs text-primary-600 hover:underline"
           >
             Otvoriť dashboard
           </a>
         </header>
         <template v-if="external?.configured.posthog && external.posthog">
-          <div class="external-kpis">
+          <div class="flex flex-wrap gap-4">
             <div>
-              <span class="external-kpi-label">Používatelia</span>
-              <strong>{{ fmtNum(external.posthog.users) }}</strong>
+              <span class="block text-xs text-slate-500">Používatelia</span>
+              <strong class="text-lg">{{ fmtNum(external.posthog.users) }}</strong>
             </div>
             <div>
-              <span class="external-kpi-label">Pageviews</span>
-              <strong>{{ fmtNum(external.posthog.pageviews) }}</strong>
+              <span class="block text-xs text-slate-500">Pageviews</span>
+              <strong class="text-lg">{{ fmtNum(external.posthog.pageviews) }}</strong>
             </div>
           </div>
           <div
@@ -163,257 +173,159 @@ watch(
             <canvas ref="posthogCanvas" />
           </div>
         </template>
-        <p v-else-if="external?.errors.posthog" class="external-error">
+        <Message v-else-if="external?.errors.posthog" severity="error" :closable="false">
           {{ external.errors.posthog }}
-        </p>
-        <p v-else class="muted external-unconfigured">
+        </Message>
+        <p v-else class="m-0 text-sm text-slate-500">
           Nenakonfigurované — {{ envHints.posthog }}
         </p>
       </article>
 
       <!-- GA4 -->
-      <article class="external-card">
-        <header class="external-card-head">
-          <h3>Google Analytics 4</h3>
+      <article class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <header class="mb-3 flex items-start justify-between gap-2">
+          <h3 class="m-0 text-base font-semibold text-slate-900">Google Analytics 4</h3>
           <a
             v-if="external?.dashboard_links.ga4"
             :href="external.dashboard_links.ga4"
             target="_blank"
             rel="noopener noreferrer"
-            class="external-link"
+            class="whitespace-nowrap text-xs text-primary-600 hover:underline"
           >
             Otvoriť dashboard
           </a>
         </header>
         <template v-if="external?.configured.ga4 && external.ga4">
-          <div class="external-kpis">
+          <div class="flex flex-wrap gap-4">
             <div>
-              <span class="external-kpi-label">Active users</span>
-              <strong>{{ fmtNum(external.ga4.active_users) }}</strong>
+              <span class="block text-xs text-slate-500">Active users</span>
+              <strong class="text-lg">{{ fmtNum(external.ga4.active_users) }}</strong>
             </div>
             <div>
-              <span class="external-kpi-label">Sessions</span>
-              <strong>{{ fmtNum(external.ga4.sessions) }}</strong>
+              <span class="block text-xs text-slate-500">Sessions</span>
+              <strong class="text-lg">{{ fmtNum(external.ga4.sessions) }}</strong>
             </div>
             <div>
-              <span class="external-kpi-label">Page views</span>
-              <strong>{{ fmtNum(external.ga4.page_views) }}</strong>
+              <span class="block text-xs text-slate-500">Page views</span>
+              <strong class="text-lg">{{ fmtNum(external.ga4.page_views) }}</strong>
             </div>
             <div>
-              <span class="external-kpi-label">Engagement</span>
-              <strong>{{ fmtPct(external.ga4.engagement_rate) }}</strong>
+              <span class="block text-xs text-slate-500">Engagement</span>
+              <strong class="text-lg">{{ fmtPct(external.ga4.engagement_rate) }}</strong>
             </div>
           </div>
         </template>
-        <p v-else-if="external?.errors.ga4" class="external-error">{{ external.errors.ga4 }}</p>
-        <p v-else class="muted external-unconfigured">
+        <Message v-else-if="external?.errors.ga4" severity="error" :closable="false">
+          {{ external.errors.ga4 }}
+        </Message>
+        <p v-else class="m-0 text-sm text-slate-500">
           Nenakonfigurované — {{ envHints.ga4 }}
         </p>
       </article>
 
       <!-- Clarity -->
-      <article class="external-card">
-        <header class="external-card-head">
-          <h3>Microsoft Clarity</h3>
+      <article class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <header class="mb-3 flex items-start justify-between gap-2">
+          <h3 class="m-0 text-base font-semibold text-slate-900">Microsoft Clarity</h3>
           <a
             v-if="external?.dashboard_links.clarity"
             :href="external.dashboard_links.clarity"
             target="_blank"
             rel="noopener noreferrer"
-            class="external-link"
+            class="whitespace-nowrap text-xs text-primary-600 hover:underline"
           >
             Otvoriť dashboard
           </a>
         </header>
         <template v-if="external?.configured.clarity && external.clarity">
-          <p class="external-meta">
+          <p class="m-0 mb-2 text-sm text-slate-600">
             API okno: posledných {{ external.clarity.api_days_covered }}
             {{ external.clarity.api_days_covered === 1 ? 'deň' : 'dni' }}
           </p>
-          <div class="external-kpis">
+          <div class="flex flex-wrap gap-4">
             <div>
-              <span class="external-kpi-label">Sessions</span>
-              <strong>{{ fmtNum(external.clarity.sessions) }}</strong>
+              <span class="block text-xs text-slate-500">Sessions</span>
+              <strong class="text-lg">{{ fmtNum(external.clarity.sessions) }}</strong>
             </div>
             <div v-if="external.clarity.engagement_seconds != null">
-              <span class="external-kpi-label">Engagement (s)</span>
-              <strong>{{ fmtNum(Math.round(external.clarity.engagement_seconds)) }}</strong>
+              <span class="block text-xs text-slate-500">Engagement (s)</span>
+              <strong class="text-lg">{{ fmtNum(Math.round(external.clarity.engagement_seconds)) }}</strong>
             </div>
             <div v-if="external.clarity.rage_clicks != null">
-              <span class="external-kpi-label">Rage clicks</span>
-              <strong>{{ fmtNum(external.clarity.rage_clicks) }}</strong>
+              <span class="block text-xs text-slate-500">Rage clicks</span>
+              <strong class="text-lg">{{ fmtNum(external.clarity.rage_clicks) }}</strong>
             </div>
           </div>
         </template>
-        <p v-else-if="external?.errors.clarity" class="external-error">
+        <Message v-else-if="external?.errors.clarity" severity="error" :closable="false">
           {{ external.errors.clarity }}
-        </p>
-        <p v-else class="muted external-unconfigured">
+        </Message>
+        <p v-else class="m-0 text-sm text-slate-500">
           Nenakonfigurované — {{ envHints.clarity }}
         </p>
       </article>
 
       <!-- GSC -->
-      <article class="external-card external-card--wide">
-        <header class="external-card-head">
-          <h3>Google Search Console</h3>
+      <article class="col-span-full rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <header class="mb-3 flex items-start justify-between gap-2">
+          <h3 class="m-0 text-base font-semibold text-slate-900">Google Search Console</h3>
           <a
             v-if="external?.dashboard_links.gsc"
             :href="external.dashboard_links.gsc"
             target="_blank"
             rel="noopener noreferrer"
-            class="external-link"
+            class="whitespace-nowrap text-xs text-primary-600 hover:underline"
           >
             Otvoriť dashboard
           </a>
         </header>
         <template v-if="external?.configured.gsc && external.gsc">
-          <div class="external-kpis">
+          <div class="flex flex-wrap gap-4">
             <div>
-              <span class="external-kpi-label">Clicks</span>
-              <strong>{{ fmtNum(external.gsc.clicks) }}</strong>
+              <span class="block text-xs text-slate-500">Clicks</span>
+              <strong class="text-lg">{{ fmtNum(external.gsc.clicks) }}</strong>
             </div>
             <div>
-              <span class="external-kpi-label">Impressions</span>
-              <strong>{{ fmtNum(external.gsc.impressions) }}</strong>
+              <span class="block text-xs text-slate-500">Impressions</span>
+              <strong class="text-lg">{{ fmtNum(external.gsc.impressions) }}</strong>
             </div>
             <div>
-              <span class="external-kpi-label">CTR</span>
-              <strong>{{ fmtPct(external.gsc.ctr) }}</strong>
+              <span class="block text-xs text-slate-500">CTR</span>
+              <strong class="text-lg">{{ fmtPct(external.gsc.ctr) }}</strong>
             </div>
             <div>
-              <span class="external-kpi-label">Position</span>
-              <strong>{{
+              <span class="block text-xs text-slate-500">Position</span>
+              <strong class="text-lg">{{
                 external.gsc.position != null ? external.gsc.position.toFixed(1) : '—'
               }}</strong>
             </div>
           </div>
-          <div v-if="external.gsc.top_queries.length" class="table-wrap" style="margin-top: 0.75rem">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Dotaz</th>
-                  <th>Clicks</th>
-                  <th>Impressions</th>
-                  <th>CTR</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="row in external.gsc.top_queries" :key="row.query">
-                  <td>{{ row.query }}</td>
-                  <td>{{ fmtNum(row.clicks) }}</td>
-                  <td>{{ fmtNum(row.impressions) }}</td>
-                  <td>{{ fmtPct(row.ctr) }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            v-if="external.gsc.top_queries.length"
+            :value="external.gsc.top_queries"
+            size="small"
+            striped-rows
+            class="mt-3 text-sm"
+          >
+            <Column field="query" header="Dotaz" />
+            <Column header="Clicks">
+              <template #body="{ data: row }">{{ fmtNum(row.clicks) }}</template>
+            </Column>
+            <Column header="Impressions">
+              <template #body="{ data: row }">{{ fmtNum(row.impressions) }}</template>
+            </Column>
+            <Column header="CTR">
+              <template #body="{ data: row }">{{ fmtPct(row.ctr) }}</template>
+            </Column>
+          </DataTable>
         </template>
-        <p v-else-if="external?.errors.gsc" class="external-error">{{ external.errors.gsc }}</p>
-        <p v-else class="muted external-unconfigured">
+        <Message v-else-if="external?.errors.gsc" severity="error" :closable="false">
+          {{ external.errors.gsc }}
+        </Message>
+        <p v-else class="m-0 text-sm text-slate-500">
           Nenakonfigurované — {{ envHints.gsc }}
         </p>
       </article>
     </div>
   </section>
 </template>
-
-<style scoped>
-.external-warnings {
-  margin: 0.75rem 0 0;
-  padding-left: 1.25rem;
-  color: var(--warning);
-  font-size: 0.9rem;
-}
-
-.external-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.external-card {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 1rem;
-  background: var(--sand);
-}
-
-.external-card--wide {
-  grid-column: 1 / -1;
-}
-
-.external-card-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.external-card-head h3 {
-  margin: 0;
-  font-size: 1rem;
-}
-
-.external-link {
-  font-size: 0.8rem;
-  white-space: nowrap;
-}
-
-.external-kpis {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem 1.5rem;
-}
-
-.external-kpi-label {
-  display: block;
-  font-size: 0.75rem;
-  color: var(--ink3);
-  margin-bottom: 0.15rem;
-}
-
-.external-kpis strong {
-  font-size: 1.15rem;
-}
-
-.external-error {
-  color: var(--danger);
-  font-size: 0.85rem;
-  margin: 0;
-}
-
-.external-unconfigured {
-  font-size: 0.85rem;
-  margin: 0;
-}
-
-.external-meta {
-  font-size: 0.8rem;
-  color: var(--ink2);
-  margin: 0 0 0.5rem;
-}
-
-.external-divergence {
-  list-style: none;
-  padding: 0.65rem 0.75rem;
-  background: #fef3c7;
-  border-radius: 8px;
-  color: #92400e;
-}
-
-.external-test-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-}
-
-.external-test-result {
-  font-size: 0.8rem;
-  color: var(--ink2);
-}
-</style>

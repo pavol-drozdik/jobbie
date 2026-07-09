@@ -65,6 +65,7 @@ If GEO/SMTP settings match the working domain and it still times out, use Resend
 | `PUBLIC_API_URL` | Recommended when API ≠ PWA host | Pause link: `{PUBLIC_API_URL}/api/public/job-alerts/pause?token=…` (GET → redirects to `/ponuky-na-email/pozastavene`) |
 | `NOTIFICATION_PREFERENCE_TOKEN_SECRET` | Required for pause/unsubscribe in job alert emails | Signs tokens for footer actions; if unset, digest footers fall back to non-token URLs |
 | `PRICING_INQUIRY_TO` | No (defaults to `ahoj@jobbie.sk`) | Inbox for `/cennik` addon contact form (`POST /api/pricing-inquiries`) |
+| `CONTRACT_WITHDRAWAL_TO` | No (defaults to `podpora@jobbie.sk`) | Inbox for `/odstupenie-od-zmluvy` withdrawal form (`POST /api/contract-withdrawals`) |
 | `SMTP_VERIFY_ON_BOOT` | No | When `true`, Nest logs SMTP `verify()` result on startup (dev troubleshooting) |
 
 If `SMTP_HOST` or `SMTP_FROM` is missing, `EmailService.sendHtmlEmail` returns `false` and crons skip dispatch (`canRunDispatch` / `canRunAlerts`).
@@ -107,6 +108,7 @@ SMTP_PASS=
 SMTP_FROM=Jobbie Dev <dev@localhost>
 SMTP_VERIFY_ON_BOOT=true
 PRICING_INQUIRY_TO=you@example.com
+CONTRACT_WITHDRAWAL_TO=you@example.com
 ```
 
 Run [Mailpit](https://github.com/axllent/mailpit) (e.g. `mailpit` or Docker on port 1025) and open its web UI (default `http://localhost:8025`). Production relays (e.g. Websupport) may reject mail from residential IPs — use Mailpit locally instead of debugging against production SMTP.
@@ -119,3 +121,4 @@ Run [Mailpit](https://github.com/axllent/mailpit) (e.g. `mailpit` or Docker on p
 - [`NotificationJobsService`](../backend-ts/src/notifications/notification-jobs.service.ts) — weekly digest / re-engagement
 - [`EmployerApplicantsService`](../backend-ts/src/applications/employer-applicants.service.ts) — auto-reply to applicants
 - [`PricingInquiriesService`](../backend-ts/src/pricing-inquiries/pricing-inquiries.service.ts) — `/cennik` doplnkové služby contact form → `PRICING_INQUIRY_TO`
+- [`ContractWithdrawalsService`](../backend-ts/src/contract-withdrawals/contract-withdrawals.service.ts) — `/odstupenie-od-zmluvy` withdrawal form → `CONTRACT_WITHDRAWAL_TO` + submitter confirmation (`contract-withdrawal-email.template.ts`)

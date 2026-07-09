@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
+import Message from 'primevue/message'
+import AdminPageHeader from '../components/layout/AdminPageHeader.vue'
 
 const router = useRouter()
 const uuid = ref('')
@@ -21,66 +25,41 @@ function open() {
 </script>
 
 <template>
-  <div class="support-hub">
-    <header>
-      <h1 class="page-title">Podpora</h1>
-      <p class="page-subtitle">Vyhľadávanie podľa UUID — používateľ, ponuka alebo inzerát</p>
-    </header>
+  <div class="admin-page max-w-2xl">
+    <AdminPageHeader
+      title="Podpora"
+      subtitle="Vyhľadávanie podľa UUID — používateľ, ponuka alebo inzerát"
+    />
 
-    <section class="section-card">
-      <label class="field-label" for="support-uuid">UUID</label>
-      <div class="support-search-row">
-        <input
+    <section class="admin-section-card">
+      <label for="support-uuid" class="mb-1 block text-sm font-medium text-slate-700">
+        UUID
+      </label>
+      <div class="flex flex-wrap gap-2">
+        <InputText
           id="support-uuid"
           v-model="uuid"
-          class="field-input mono"
+          class="min-w-0 flex-1 font-mono"
           placeholder="00000000-0000-0000-0000-000000000000"
           @keydown.enter="open()"
         />
-        <button type="button" class="btn btn-primary" @click="open()">Otvoriť používateľa</button>
+        <Button icon="pi pi-user" label="Otvoriť používateľa" @click="open()" />
       </div>
-      <p v-if="hint" class="error">{{ hint }}</p>
-      <p class="muted support-hint">
+      <Message v-if="hint" severity="error" :closable="false" class="mt-3">{{ hint }}</Message>
+      <p class="m-0 mt-3 text-sm text-slate-500">
         Pre ponuku alebo firemný inzerát použite priame odkazy z moderácie alebo zadajte UUID do URL:
         <code>/support/jobs/:id</code>,
         <code>/support/company-ads/:id</code>.
       </p>
     </section>
 
-    <section class="section-card quick-links">
-      <h2 class="section-title">Rýchle odkazy</h2>
-      <div class="quick-links-grid">
-        <RouterLink to="/users" class="btn btn-ghost">Účty</RouterLink>
-        <RouterLink to="/moderation" class="btn btn-ghost">Moderácia</RouterLink>
-        <RouterLink to="/audit" class="btn btn-ghost">Audit</RouterLink>
+    <section class="admin-section-card">
+      <h2 class="admin-section-title">Rýchle odkazy</h2>
+      <div class="flex flex-wrap gap-2">
+        <Button label="Účty" severity="secondary" size="small" @click="router.push('/users')" />
+        <Button label="Moderácia" severity="secondary" size="small" @click="router.push('/moderation')" />
+        <Button label="Audit" severity="secondary" size="small" @click="router.push('/audit')" />
       </div>
     </section>
   </div>
 </template>
-
-<style scoped>
-.support-hub {
-  max-width: 720px;
-}
-
-.support-search-row {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.35rem;
-}
-
-.support-search-row .field-input {
-  flex: 1;
-}
-
-.support-hint {
-  margin-top: 0.75rem;
-  font-size: 0.875rem;
-}
-
-.quick-links-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-</style>

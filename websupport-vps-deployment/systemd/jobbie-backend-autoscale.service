@@ -1,0 +1,11 @@
+[Unit]
+Description=JOBBIE Nest backend autoscale (CPU/RAM/latency)
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/nestjs-typesense
+ExecStart=/srv/nestjs-typesense/scripts/autoscale_backend.sh
+User=root
+Group=root
+NoNewPrivileges=true

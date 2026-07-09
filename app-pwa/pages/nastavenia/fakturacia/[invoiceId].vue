@@ -30,7 +30,7 @@ import type { InvoiceDetail } from '~/types/invoice-detail'
 import { S } from '~/utils/strings'
 import { parseApiErrorMessage } from '~/utils/api-errors'
 
-definePageMeta({ layout: 'app', middleware: ['auth'] })
+definePageMeta({ layout: 'app', middleware: ['auth', 'billing-access'] })
 
 const route = useRoute()
 const requestURL = useRequestURL()

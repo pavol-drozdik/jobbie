@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import Button from 'primevue/button'
+import Column from 'primevue/column'
+import DataTable from 'primevue/datatable'
+import InputText from 'primevue/inputtext'
+import Message from 'primevue/message'
+import ProgressSpinner from 'primevue/progressspinner'
+import SelectButton from 'primevue/selectbutton'
+import Tag from 'primevue/tag'
 import { adminApi } from '../composables/adminApi'
+import AdminPageHeader from '../components/layout/AdminPageHeader.vue'
 
 type BlogRow = {
   id: string
@@ -29,6 +38,12 @@ const categoryLabels: Record<string, string> = {
   firmy: 'Firmy',
   novinky: 'Novinky',
 }
+
+const statusFilterOptions = [
+  { label: 'Všetky', value: 'all' as const },
+  { label: 'Koncepty', value: 'draft' as const },
+  { label: 'Publikované', value: 'published' as const },
+]
 
 const filteredItems = computed(() => {
   const q = search.value.trim().toLowerCase()
@@ -87,83 +102,72 @@ function edit(id: string) {
 </script>
 
 <template>
-  <div>
-    <div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem">
-      <div>
-        <h1 class="page-title">Blog</h1>
-        <p class="page-subtitle">
-          Marketingové články na <strong>/blog</strong> v PWA.
-        </p>
+  <div class="admin-page">
+    <AdminPageHeader title="Blog" subtitle="Marketingové články na /blog v PWA.">
+      <template #actions>
+        <Button label="Nový článok" @click="router.push({ name: 'blog-new' })" />
+      </template>
+    </AdminPageHeader>
+
+    <section class="admin-section-card">
+      <div class="flex flex-wrap items-center gap-3">
+        <InputText
+          v-model="search"
+          type="search"
+          class="min-w-48 flex-1 max-w-xs"
+          placeholder="Hľadať podľa nadpisu alebo slugu…"
+        />
+        <SelectButton
+          v-model="statusFilter"
+          :options="statusFilterOptions"
+          option-label="label"
+          option-value="value"
+        />
       </div>
-      <button type="button" class="btn btn-primary" @click="router.push({ name: 'blog-new' })">
-        Nový článok
-      </button>
+    </section>
+
+    <Message v-if="message" severity="error" :closable="false">{{ message }}</Message>
+
+    <div v-if="loading" class="flex justify-center py-12">
+      <ProgressSpinner />
     </div>
 
-    <div class="card" style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center">
-      <input
-        v-model="search"
-        type="search"
-        class="field-input"
-        placeholder="Hľadať podľa nadpisu alebo slugu…"
-        style="max-width: 280px; flex: 1; min-width: 180px"
-      >
-      <div style="display: flex; gap: 0.35rem">
-        <button
-          v-for="s in ['all', 'draft', 'published'] as const"
-          :key="s"
-          type="button"
-          class="btn"
-          :class="statusFilter === s ? 'btn-primary' : 'btn-ghost'"
-          @click="statusFilter = s"
-        >
-          {{ s === 'all' ? 'Všetky' : s === 'draft' ? 'Koncepty' : 'Publikované' }}
-        </button>
-      </div>
-    </div>
+    <section v-else-if="filteredItems.length" class="admin-section-card !p-0">
+      <DataTable :value="filteredItems" size="small" striped-rows class="text-sm">
+        <Column header="Článok">
+          <template #body="{ data: row }">
+            <strong>{{ row.title }}</strong>
+            <div class="mt-0.5 font-mono text-xs text-slate-500">/blog/{{ row.slug }}</div>
+            <Tag v-if="row.is_featured" value="Featured" severity="success" class="mt-1" />
+          </template>
+        </Column>
+        <Column header="Kategória">
+          <template #body="{ data: row }">
+            {{ categoryLabels[row.category] ?? row.category }}
+          </template>
+        </Column>
+        <Column header="Stav">
+          <template #body="{ data: row }">
+            <Tag
+              :value="row.status === 'published' ? 'Publikovaný' : 'Koncept'"
+              :severity="row.status === 'published' ? 'success' : 'secondary'"
+            />
+          </template>
+        </Column>
+        <Column header="Publikované">
+          <template #body="{ data: row }">{{ formatDate(row.published_at) }}</template>
+        </Column>
+        <Column header="Upravené">
+          <template #body="{ data: row }">{{ formatDate(row.updated_at) }}</template>
+        </Column>
+        <Column>
+          <template #body="{ data: row }">
+            <Button label="Upraviť" severity="secondary" text size="small" @click="edit(row.id)" />
+          </template>
+        </Column>
+      </DataTable>
+    </section>
 
-    <p v-if="message" class="error">{{ message }}</p>
-    <p v-if="loading" style="color: var(--ink3)">Načítavam…</p>
-
-    <div v-else-if="filteredItems.length" class="card" style="padding: 0; overflow: hidden">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Článok</th>
-            <th>Kategória</th>
-            <th>Stav</th>
-            <th>Publikované</th>
-            <th>Upravené</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="row in filteredItems" :key="row.id">
-            <td>
-              <strong>{{ row.title }}</strong>
-              <div style="color: var(--ink3); font-family: ui-monospace, monospace; font-size: 0.75rem">
-                /blog/{{ row.slug }}
-              </div>
-              <span v-if="row.is_featured" class="badge badge-published" style="margin-top: 0.35rem">Featured</span>
-            </td>
-            <td>{{ categoryLabels[row.category] ?? row.category }}</td>
-            <td>
-              <span
-                class="badge"
-                :class="row.status === 'published' ? 'badge-published' : 'badge-draft'"
-              >
-                {{ row.status === 'published' ? 'Publikovaný' : 'Koncept' }}
-              </span>
-            </td>
-            <td>{{ formatDate(row.published_at) }}</td>
-            <td>{{ formatDate(row.updated_at) }}</td>
-            <td>
-              <button type="button" class="btn btn-ghost" @click="edit(row.id)">Upraviť</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <p v-else class="card" style="color: var(--ink3); margin: 0">Žiadne články.</p>
+    <p v-else class="m-0 text-sm text-slate-500">Žiadne články.</p>
   </div>
 </template>

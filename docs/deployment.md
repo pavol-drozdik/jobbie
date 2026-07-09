@@ -260,7 +260,7 @@ Without Redis, crons still run alerts **inline**.
 - Nest: stateless; JWT/cookie auth needs no sticky sessions for HTTP.
 - Socket.IO: use Redis adapter or sticky sessions on load balancer.
 - Health check: `GET /health` (no `Origin` header required; bypasses CORS).
-- **One VPS, multiple Nest containers:** step-by-step in [staging-production-manual.md](./staging-production-manual.md) §17 (*Scale Nest API on one VPS*) — `REDIS_URL`, `BACKEND_SCALE`, `docker compose up -d --scale backend=N`.
+- **One VPS, multiple Nest containers:** step-by-step in [staging-production-manual.md](./staging-production-manual.md) §17 (*Scale Nest API on one VPS*) — `REDIS_URL`, `BACKEND_SCALE`, `docker compose up -d --scale backend=N`. Optional **autoscale** on the same host: `BACKEND_AUTOSCALE_ENABLED=1` + `jobbie-backend-autoscale.timer` (CPU/RAM/latency).
 
 ### Docker / sharp
 

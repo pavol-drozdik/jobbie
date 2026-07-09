@@ -1,8 +1,15 @@
 <script setup lang="ts">
+import Button from 'primevue/button'
+import Column from 'primevue/column'
+import DataTable from 'primevue/datatable'
+import InputText from 'primevue/inputtext'
+import Message from 'primevue/message'
+import ProgressSpinner from 'primevue/progressspinner'
 import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { adminApi } from '../composables/adminApi'
 import { useConfirm } from '../composables/useConfirm'
+import AdminPageHeader from '../components/layout/AdminPageHeader.vue'
 import type { AdminUserDetail, AdminUserListItem } from '../types/users'
 import { fmtNum } from '../utils/analytics-format'
 import { shortId } from '../utils/audit-format'
@@ -105,154 +112,106 @@ watch(
 </script>
 
 <template>
-  <div class="users-page">
-    <header>
-      <h1 class="page-title">Účty</h1>
-      <p class="page-subtitle">Vyhľadávanie podľa e-mailu, mena alebo UUID</p>
-    </header>
+  <div class="admin-page">
+    <AdminPageHeader
+      title="Účty"
+      subtitle="Vyhľadávanie podľa e-mailu, mena alebo UUID"
+    />
 
-    <section class="section-card">
-      <label class="field-label" for="user-search">Hľadať</label>
-      <div class="users-search-row">
-        <input
+    <section class="admin-section-card">
+      <label for="user-search" class="mb-2 block text-sm font-medium text-slate-700">Hľadať</label>
+      <div class="flex flex-wrap gap-2">
+        <InputText
           id="user-search"
           v-model="query"
-          class="field-input"
           placeholder="email, meno, UUID…"
+          class="min-w-0 flex-1"
           @keydown.enter="runSearch()"
         />
-        <button type="button" class="btn btn-primary" :disabled="searching" @click="runSearch()">
-          {{ searching ? 'Hľadám…' : 'Hľadať' }}
-        </button>
+        <Button
+          :label="searching ? 'Hľadám…' : 'Hľadať'"
+          :loading="searching"
+          @click="runSearch()"
+        />
       </div>
-      <p v-if="searchError" class="error">{{ searchError }}</p>
+      <Message v-if="searchError" severity="error" :closable="false" class="mt-3">
+        {{ searchError }}
+      </Message>
     </section>
 
-    <div class="users-layout">
-      <section class="section-card users-results">
-        <h2 class="section-title">Výsledky</h2>
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Meno / firma</th>
-                <th>E-mail</th>
-                <th>Stav</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="u in results"
-                :key="u.id"
-                class="users-row"
-                :class="{ 'users-row--active': selectedId === u.id }"
-                @click="selectUser(u.id)"
-              >
-                <td>{{ u.company_name || u.display_name || shortId(u.id) }}</td>
-                <td class="mono">{{ u.email ?? '—' }}</td>
-                <td>{{ u.account_status ?? '—' }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p v-if="!searching && results.length === 0" class="muted">Žiadne výsledky.</p>
+    <div class="grid gap-4 lg:grid-cols-2">
+      <section class="admin-section-card">
+        <h2 class="admin-section-title">Výsledky</h2>
+        <DataTable
+          :value="results"
+          size="small"
+          striped-rows
+          selection-mode="single"
+          :selection="results.find((u) => u.id === selectedId) ?? null"
+          data-key="id"
+          class="text-sm"
+          @row-select="(e) => selectUser((e.data as AdminUserListItem).id)"
+        >
+          <Column header="Meno / firma">
+            <template #body="{ data: row }">
+              {{ row.company_name || row.display_name || shortId(row.id) }}
+            </template>
+          </Column>
+          <Column header="E-mail">
+            <template #body="{ data: row }">
+              <span class="mono">{{ row.email ?? '—' }}</span>
+            </template>
+          </Column>
+          <Column field="account_status" header="Stav" />
+        </DataTable>
+        <p v-if="!searching && results.length === 0" class="m-0 mt-2 text-sm text-slate-500">
+          Žiadne výsledky.
+        </p>
       </section>
 
-      <section v-if="selectedId" class="section-card users-detail">
-        <h2 class="section-title">Detail</h2>
-        <p v-if="detailLoading" class="muted">Načítavam detail…</p>
+      <section v-if="selectedId" class="admin-section-card">
+        <h2 class="admin-section-title">Detail</h2>
+        <div v-if="detailLoading" class="flex justify-center py-8">
+          <ProgressSpinner />
+        </div>
         <template v-else-if="detail">
-          <dl class="users-dl">
-            <dt class="field-label">ID</dt>
-            <dd class="mono">{{ detail.id }}</dd>
-            <dt class="field-label">E-mail</dt>
-            <dd>{{ detail.email ?? '—' }}</dd>
-            <dt class="field-label">Meno</dt>
-            <dd>{{ detail.display_name ?? '—' }}</dd>
-            <dt class="field-label">Firma</dt>
-            <dd>{{ detail.company_name ?? '—' }}</dd>
-            <dt class="field-label">Rola / stav</dt>
-            <dd>{{ detail.app_role ?? '—' }} · {{ detail.account_status ?? '—' }}</dd>
-            <dt class="field-label">Kredity</dt>
-            <dd>{{ fmtNum(detail.credits) }}</dd>
-            <dt class="field-label">Registrácia</dt>
-            <dd>{{ detail.created_at }}</dd>
-            <dt class="field-label">Posledné prihlásenie</dt>
-            <dd>{{ detail.last_sign_in_at ?? '—' }}</dd>
+          <dl class="mb-4 grid grid-cols-[120px_1fr] gap-x-3 gap-y-2 text-sm">
+            <dt class="font-medium text-slate-600">ID</dt>
+            <dd class="mono m-0">{{ detail.id }}</dd>
+            <dt class="font-medium text-slate-600">E-mail</dt>
+            <dd class="m-0">{{ detail.email ?? '—' }}</dd>
+            <dt class="font-medium text-slate-600">Meno</dt>
+            <dd class="m-0">{{ detail.display_name ?? '—' }}</dd>
+            <dt class="font-medium text-slate-600">Firma</dt>
+            <dd class="m-0">{{ detail.company_name ?? '—' }}</dd>
+            <dt class="font-medium text-slate-600">Rola / stav</dt>
+            <dd class="m-0">{{ detail.app_role ?? '—' }} · {{ detail.account_status ?? '—' }}</dd>
+            <dt class="font-medium text-slate-600">Kredity</dt>
+            <dd class="m-0">{{ fmtNum(detail.credits) }}</dd>
+            <dt class="font-medium text-slate-600">Registrácia</dt>
+            <dd class="m-0">{{ detail.created_at }}</dd>
+            <dt class="font-medium text-slate-600">Posledné prihlásenie</dt>
+            <dd class="m-0">{{ detail.last_sign_in_at ?? '—' }}</dd>
           </dl>
-          <label class="field-label" for="suspend-reason">Dôvod pozastavenia</label>
-          <input id="suspend-reason" v-model="suspendReason" class="field-input" />
-          <div class="users-actions">
-            <button type="button" class="btn btn-primary" @click="suspendUser">Pozastaviť</button>
-            <button type="button" class="btn btn-ghost" @click="unsuspendUser">Obnoviť</button>
-            <button type="button" class="btn btn-ghost" @click="openInAudit">Zobraziť v audite</button>
-            <RouterLink
-              :to="{ name: 'support-user', params: { id: selectedId } }"
-              class="btn btn-ghost"
-            >
-              Podpora (billing / GDPR)
-            </RouterLink>
+          <label for="suspend-reason-users" class="mb-2 block text-sm font-medium text-slate-700">
+            Dôvod pozastavenia
+          </label>
+          <InputText id="suspend-reason-users" v-model="suspendReason" class="mb-4 w-full" />
+          <div class="flex flex-wrap gap-2">
+            <Button label="Pozastaviť" severity="danger" @click="suspendUser" />
+            <Button label="Obnoviť" severity="secondary" @click="unsuspendUser" />
+            <Button label="Zobraziť v audite" severity="secondary" @click="openInAudit" />
+            <Button
+              label="Podpora (billing / GDPR)"
+              severity="secondary"
+              @click="router.push({ name: 'support-user', params: { id: selectedId } })"
+            />
           </div>
-          <p v-if="actionMessage" class="users-action-msg">{{ actionMessage }}</p>
+          <Message v-if="actionMessage" severity="info" :closable="false" class="mt-3">
+            {{ actionMessage }}
+          </Message>
         </template>
       </section>
     </div>
   </div>
 </template>
-
-<style scoped>
-.users-page {
-  max-width: 1200px;
-}
-
-.users-search-row {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.35rem;
-}
-
-.users-search-row .field-input {
-  flex: 1;
-}
-
-.users-layout {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-@media (max-width: 900px) {
-  .users-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-.users-row {
-  cursor: pointer;
-}
-
-.users-row--active td {
-  background: var(--g50);
-}
-
-.users-dl {
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 0.35rem 0.75rem;
-  margin: 0 0 1rem;
-  font-size: 0.875rem;
-}
-
-.users-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.users-action-msg {
-  margin-top: 0.75rem;
-  font-size: 0.875rem;
-  color: var(--g700);
-}
-</style>

@@ -255,7 +255,18 @@ app.whenReady().then(async () => {
 })
 
 app.on('window-all-closed', () => {
-  if (apiProcess) apiProcess.kill()
+  if (apiProcess) {
+    apiProcess.kill('SIGTERM')
+    setTimeout(() => {
+      if (apiProcess && !apiProcess.killed) {
+        apiProcess.kill()
+      }
+      if (process.platform !== 'darwin') {
+        app.quit()
+      }
+    }, 500)
+    return
+  }
   if (process.platform !== 'darwin') app.quit()
 })
 

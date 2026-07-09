@@ -1,10 +1,17 @@
 <script setup lang="ts">
+import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
+import Message from 'primevue/message'
+import ProgressSpinner from 'primevue/progressspinner'
+import Select from 'primevue/select'
+import Tag from 'primevue/tag'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { adminApi, type ApiResult } from '../composables/adminApi'
 import { useAdminAuth } from '../composables/adminAuth'
 import { useConfirm } from '../composables/useConfirm'
 import { useModerationCount } from '../composables/useModerationCount'
+import AdminPageHeader from '../components/layout/AdminPageHeader.vue'
 import type { ContentReportItem } from '../types/moderation'
 import { REPORT_RESOLUTION_CODES } from '../types/moderation'
 import { formatAdminApiError } from '../utils/format-admin-api-error'
@@ -23,6 +30,11 @@ const needsReLogin = ref(false)
 const actionLoading = ref<string | null>(null)
 const resolutionCode = ref<string>('other')
 const suspendReason = ref('')
+
+const resolutionOptions = REPORT_RESOLUTION_CODES.map((code) => ({
+  label: code,
+  value: code,
+}))
 
 function applyApiError(status: number, body: string): void {
   const { message, hints } = formatAdminApiError(status, body)
@@ -199,100 +211,110 @@ onMounted(() => void load())
 </script>
 
 <template>
-  <div class="moderation-page">
-    <header>
-      <h1 class="page-title">Moderácia</h1>
-      <p class="page-subtitle">
-        Otvorené nahlásenia — najstaršie prvé. Skryť obsah ≠ pozastavenie účtu (pozri Účty).
-      </p>
-    </header>
+  <div class="admin-page max-w-4xl">
+    <AdminPageHeader
+      title="Moderácia"
+      subtitle="Otvorené nahlásenia — najstaršie prvé. Skryť obsah ≠ pozastavenie účtu (pozri Účty)."
+    />
 
-    <section class="section-card moderation-toolbar">
-      <label class="field-label" for="resolution">Kód riešenia</label>
-      <select id="resolution" v-model="resolutionCode" class="field-input">
-        <option v-for="code in REPORT_RESOLUTION_CODES" :key="code" :value="code">
-          {{ code }}
-        </option>
-      </select>
-      <label
+    <section class="admin-section-card space-y-3">
+      <div class="flex flex-col gap-2">
+        <label for="resolution" class="text-sm font-medium text-slate-700">Kód riešenia</label>
+        <Select
+          id="resolution"
+          v-model="resolutionCode"
+          :options="resolutionOptions"
+          option-label="label"
+          option-value="value"
+          class="w-full max-w-xs"
+        />
+      </div>
+      <div
         v-if="reports.some((r) => r.target_type === 'company_profile')"
-        class="field-label"
-        for="suspend-reason"
-        style="margin-top: 0.75rem"
+        class="flex flex-col gap-2"
       >
-        Dôvod pozastavenia (voliteľné, profil firmy)
-      </label>
-      <input
-        v-if="reports.some((r) => r.target_type === 'company_profile')"
-        id="suspend-reason"
-        v-model="suspendReason"
-        class="field-input"
-        placeholder="Porušenie pravidiel…"
-      />
+        <label for="suspend-reason" class="text-sm font-medium text-slate-700">
+          Dôvod pozastavenia (voliteľné, profil firmy)
+        </label>
+        <InputText
+          id="suspend-reason"
+          v-model="suspendReason"
+          placeholder="Porušenie pravidiel…"
+          class="w-full"
+        />
+      </div>
     </section>
 
-    <div v-if="needsReLogin" class="section-card moderation-relogin">
-      <p>Citlivé akcie vyžadujú čerstvé prihlásenie.</p>
-      <button type="button" class="btn btn-primary btn-sm" @click="goReLogin">
-        Odhlásiť a prihlásiť znova
-      </button>
+    <Message v-if="needsReLogin" severity="warn" :closable="false">
+      <div class="space-y-2">
+        <p class="m-0">Citlivé akcie vyžadujú čerstvé prihlásenie.</p>
+        <Button label="Odhlásiť a prihlásiť znova" size="small" @click="goReLogin" />
+      </div>
+    </Message>
+
+    <Message v-if="loadError" severity="error" :closable="false">{{ loadError }}</Message>
+    <Message v-if="actionError" severity="error" :closable="false">{{ actionError }}</Message>
+    <Message v-if="actionSuccess" severity="success" :closable="false">{{ actionSuccess }}</Message>
+
+    <div v-if="loading" class="flex justify-center py-12">
+      <ProgressSpinner />
     </div>
 
-    <p v-if="loadError" class="error card">{{ loadError }}</p>
-    <p v-if="actionError" class="error card">{{ actionError }}</p>
-    <p v-if="actionSuccess" class="success card">{{ actionSuccess }}</p>
-    <p v-else-if="loading" class="muted">Načítavam…</p>
-
-    <div v-else class="moderation-list">
+    <div v-else class="space-y-4">
       <article
         v-for="r in reports"
         :key="r.id"
-        class="section-card moderation-card"
-        :class="{ 'moderation-card--escalated': r.escalated }"
+        class="admin-section-card"
+        :class="r.escalated ? 'border-red-300 ring-1 ring-red-200' : ''"
       >
-        <div class="moderation-card-head">
-          <span class="badge">{{ r.target_type }}</span>
-          <span v-if="r.escalated" class="sla-badge" title="Viac ako 24 hodín"> &gt;24h </span>
-          <span v-if="r.claimed_by" class="badge badge-muted">claim</span>
-          <span class="mono moderation-id">{{ r.target_id }}</span>
+        <div class="mb-2 flex flex-wrap items-center gap-2">
+          <Tag :value="r.target_type" severity="secondary" />
+          <Tag v-if="r.escalated" value=">24h" severity="danger" />
+          <Tag v-if="r.claimed_by" value="claim" severity="info" />
+          <span class="mono text-slate-500">{{ r.target_id }}</span>
         </div>
-        <h3 class="moderation-preview-title">
+        <h3 class="m-0 text-base font-semibold text-slate-900">
           {{ r.preview_title || 'Bez názvu' }}
         </h3>
-        <p v-if="r.preview_subtitle" class="moderation-preview-sub">
+        <p v-if="r.preview_subtitle" class="m-0 mt-1 text-sm text-slate-600">
           {{ r.preview_subtitle }}
         </p>
-        <p class="moderation-reason">{{ r.reason }}</p>
-        <p class="muted moderation-meta">
+        <p class="m-0 mt-2 text-sm text-slate-800">{{ r.reason }}</p>
+        <p class="m-0 mt-2 text-xs text-slate-500">
           {{ r.created_at }} · {{ r.age_hours }}h
           <span v-if="r.reporter_user_id">
             · reporter
-            <RouterLink :to="{ name: 'support-user', params: { id: r.reporter_user_id } }">
+            <RouterLink
+              :to="{ name: 'support-user', params: { id: r.reporter_user_id } }"
+              class="text-primary-600 hover:underline"
+            >
               {{ r.reporter_user_id }}
             </RouterLink>
           </span>
         </p>
-        <div class="moderation-actions">
-          <button
-            type="button"
-            class="btn btn-ghost btn-sm"
+        <div class="mt-3 flex flex-wrap gap-2">
+          <Button
+            label="Claim"
+            size="small"
+            severity="secondary"
+            :loading="actionLoading === `claim-${r.id}`"
             :disabled="!!actionLoading"
             @click="claim(r.id)"
-          >
-            {{ actionLoading === `claim-${r.id}` ? '…' : 'Claim' }}
-          </button>
-          <button
-            type="button"
-            class="btn btn-ghost btn-sm"
+          />
+          <Button
+            label="Zamietnuť"
+            size="small"
+            severity="secondary"
+            :loading="actionLoading === `dismiss-${r.id}`"
             :disabled="!!actionLoading"
             @click="dismiss(r.id)"
-          >
-            {{ actionLoading === `dismiss-${r.id}` ? '…' : 'Zamietnuť' }}
-          </button>
-          <button
+          />
+          <Button
             v-if="canHide(r.target_type)"
-            type="button"
-            class="btn btn-ghost btn-sm"
+            label="Skryť obsah"
+            size="small"
+            severity="secondary"
+            :loading="actionLoading === `hide-${r.id}`"
             :disabled="!!actionLoading"
             :title="
               r.target_type === 'company_profile'
@@ -300,140 +322,44 @@ onMounted(() => void load())
                 : undefined
             "
             @click="hideContent(r.id, r.target_type)"
-          >
-            {{ actionLoading === `hide-${r.id}` ? '…' : 'Skryť obsah' }}
-          </button>
-          <button
+          />
+          <Button
             v-if="r.target_type === 'company_profile'"
-            type="button"
-            class="btn btn-ghost btn-sm btn-danger-outline"
+            label="Pozastaviť účet"
+            size="small"
+            severity="danger"
+            outlined
+            :loading="actionLoading === `suspend-${r.target_id}`"
             :disabled="!!actionLoading"
             @click="suspendAccount(r.target_id)"
-          >
-            {{ actionLoading === `suspend-${r.target_id}` ? '…' : 'Pozastaviť účet' }}
-          </button>
-          <button
+          />
+          <Button
             v-if="
               r.target_type === 'job_offer' ||
               r.target_type === 'company_profile' ||
               r.target_type === 'company_ad'
             "
-            type="button"
-            class="btn btn-ghost btn-sm"
+            label="Podpora"
+            size="small"
+            severity="secondary"
             @click="openSupportTarget(r)"
-          >
-            Podpora
-          </button>
-          <button type="button" class="btn btn-ghost btn-sm" @click="copyUuid(r.target_id)">
-            Kopírovať UUID
-          </button>
-          <button
+          />
+          <Button
+            label="Kopírovať UUID"
+            size="small"
+            severity="secondary"
+            text
+            @click="copyUuid(r.target_id)"
+          />
+          <Button
             v-if="r.public_url"
-            type="button"
-            class="btn btn-primary btn-sm"
+            label="Otvoriť"
+            size="small"
             @click="openPublic(r.public_url)"
-          >
-            Otvoriť
-          </button>
+          />
         </div>
       </article>
-      <p v-if="reports.length === 0" class="muted">Žiadne otvorené nahlásenia.</p>
+      <p v-if="reports.length === 0" class="text-sm text-slate-500">Žiadne otvorené nahlásenia.</p>
     </div>
   </div>
 </template>
-
-<style scoped>
-.moderation-page {
-  max-width: 900px;
-}
-
-.moderation-toolbar {
-  margin-bottom: 1rem;
-}
-
-.moderation-relogin {
-  margin-bottom: 1rem;
-  background: #fef3c7;
-  border-color: #f59e0b;
-}
-
-.moderation-relogin p {
-  margin: 0 0 0.5rem;
-  font-size: 0.875rem;
-}
-
-.success.card {
-  background: #ecfdf5;
-  border-color: #10b981;
-  color: #065f46;
-}
-
-.moderation-list {
-  display: grid;
-  gap: 1rem;
-}
-
-.moderation-card--escalated {
-  border-color: var(--danger);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent);
-}
-
-.sla-badge {
-  background: var(--danger);
-  color: #fff;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 0.1rem 0.35rem;
-  border-radius: 4px;
-}
-
-.badge-muted {
-  background: var(--g200);
-  color: var(--g700);
-}
-
-.moderation-card-head {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.35rem;
-  flex-wrap: wrap;
-}
-
-.moderation-id {
-  font-size: 0.75rem;
-  color: var(--ink3);
-}
-
-.moderation-preview-title {
-  margin: 0 0 0.25rem;
-  font-size: 1rem;
-}
-
-.moderation-preview-sub {
-  margin: 0 0 0.5rem;
-  font-size: 0.85rem;
-  color: var(--ink2);
-}
-
-.moderation-reason {
-  margin: 0.5rem 0;
-  font-size: 0.9rem;
-}
-
-.moderation-meta {
-  font-size: 0.75rem;
-}
-
-.moderation-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-top: 0.75rem;
-}
-
-.btn-danger-outline {
-  color: var(--danger);
-  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
-}
-</style>

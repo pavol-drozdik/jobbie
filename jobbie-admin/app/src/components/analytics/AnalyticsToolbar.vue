@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
+import Message from 'primevue/message'
+import Select from 'primevue/select'
+import SelectButton from 'primevue/selectbutton'
 import type { AnalyticsPreset } from '../../utils/analytics-format'
 
 type SavedPreset = {
@@ -35,132 +40,128 @@ const emit = defineEmits<{
   applySaved: [preset: SavedPreset]
   exportCsv: []
 }>()
+
+const presetOptions = [
+  { label: '7 dní', value: '7d' as const },
+  { label: '30 dní', value: '30d' as const },
+  { label: '90 dní', value: '90d' as const },
+  { label: 'Vlastné', value: 'custom' as const },
+]
+
+const cohortOptions = [
+  { label: '4', value: 4 },
+  { label: '8', value: 8 },
+  { label: '12', value: 12 },
+  { label: '24', value: 24 },
+]
+
+const searchDayOptions = [
+  { label: '7', value: 7 },
+  { label: '14', value: 14 },
+  { label: '30', value: 30 },
+  { label: '90', value: 90 },
+]
 </script>
 
 <template>
-  <div class="analytics-toolbar card">
+  <div class="admin-section-card analytics-toolbar">
     <div class="analytics-toolbar-row">
-      <label class="field-label">Obdobie</label>
-      <div class="analytics-presets">
-        <button
-          type="button"
-          class="btn btn-sm"
-          :class="{ 'btn-primary': preset === '7d' }"
-          @click="emit('update:preset', '7d')"
-        >
-          7 dní
-        </button>
-        <button
-          type="button"
-          class="btn btn-sm"
-          :class="{ 'btn-primary': preset === '30d' }"
-          @click="emit('update:preset', '30d')"
-        >
-          30 dní
-        </button>
-        <button
-          type="button"
-          class="btn btn-sm"
-          :class="{ 'btn-primary': preset === '90d' }"
-          @click="emit('update:preset', '90d')"
-        >
-          90 dní
-        </button>
-        <button
-          type="button"
-          class="btn btn-sm"
-          :class="{ 'btn-primary': preset === 'custom' }"
-          @click="emit('update:preset', 'custom')"
-        >
-          Vlastné
-        </button>
-      </div>
+      <span class="text-sm font-medium text-slate-700">Obdobie</span>
+      <SelectButton
+        :model-value="preset"
+        :options="presetOptions"
+        option-label="label"
+        option-value="value"
+        size="small"
+        @update:model-value="emit('update:preset', $event)"
+      />
     </div>
+
     <div v-if="preset === 'custom'" class="analytics-toolbar-row analytics-custom-range">
-      <div class="audit-filter-field">
-        <label class="field-label" for="analytics-from">Od</label>
+      <div class="flex min-w-36 flex-col gap-1">
+        <label for="analytics-from" class="text-xs font-medium text-slate-500">Od</label>
         <input
           id="analytics-from"
           type="date"
-          class="field-input"
+          class="rounded-md border border-slate-200 px-3 py-2 text-sm"
           :value="customFrom"
           @input="emit('update:customFrom', ($event.target as HTMLInputElement).value)"
-        />
+        >
       </div>
-      <div class="audit-filter-field">
-        <label class="field-label" for="analytics-to">Do</label>
+      <div class="flex min-w-36 flex-col gap-1">
+        <label for="analytics-to" class="text-xs font-medium text-slate-500">Do</label>
         <input
           id="analytics-to"
           type="date"
-          class="field-input"
+          class="rounded-md border border-slate-200 px-3 py-2 text-sm"
           :value="customTo"
           @input="emit('update:customTo', ($event.target as HTMLInputElement).value)"
+        >
+      </div>
+      <Button label="Použiť" size="small" :disabled="loading" @click="emit('applyCustom')" />
+      <Message v-if="rangeError" severity="error" :closable="false" class="w-full">{{ rangeError }}</Message>
+    </div>
+
+    <div class="analytics-toolbar-row">
+      <div class="flex items-center gap-2">
+        <label for="cohort-weeks" class="text-sm font-medium text-slate-700">Kohorty (týždne)</label>
+        <Select
+          id="cohort-weeks"
+          :model-value="cohortWeeks"
+          :options="cohortOptions"
+          option-label="label"
+          option-value="value"
+          class="w-20"
+          @update:model-value="emit('update:cohortWeeks', $event)"
         />
       </div>
-      <button type="button" class="btn btn-primary btn-sm" :disabled="loading" @click="emit('applyCustom')">
-        Použiť
-      </button>
-      <p v-if="rangeError" class="analytics-range-error">{{ rangeError }}</p>
-    </div>
-    <div class="analytics-toolbar-row">
-      <label class="field-label" for="cohort-weeks">Kohorty (týždne)</label>
-      <select
-        id="cohort-weeks"
-        class="field-input analytics-select"
-        :value="cohortWeeks"
-        @change="emit('update:cohortWeeks', Number(($event.target as HTMLSelectElement).value))"
-      >
-        <option :value="4">4</option>
-        <option :value="8">8</option>
-        <option :value="12">12</option>
-        <option :value="24">24</option>
-      </select>
-      <label class="field-label" for="search-days">Vyhľadávanie (dni)</label>
-      <select
-        id="search-days"
-        class="field-input analytics-select"
-        :value="searchDays"
-        @change="emit('update:searchDays', Number(($event.target as HTMLSelectElement).value))"
-      >
-        <option :value="7">7</option>
-        <option :value="14">14</option>
-        <option :value="30">30</option>
-        <option :value="90">90</option>
-      </select>
-      <button type="button" class="btn btn-primary btn-sm" :disabled="loading" @click="emit('refresh')">
-        {{ loading ? 'Načítavam…' : 'Obnoviť' }}
-      </button>
-      <span v-if="lastLoaded" class="analytics-meta">Aktualizované {{ lastLoaded }}</span>
-      <button
-        type="button"
-        class="btn btn-ghost btn-sm"
+      <div class="flex items-center gap-2">
+        <label for="search-days" class="text-sm font-medium text-slate-700">Vyhľadávanie (dni)</label>
+        <Select
+          id="search-days"
+          :model-value="searchDays"
+          :options="searchDayOptions"
+          option-label="label"
+          option-value="value"
+          class="w-20"
+          @update:model-value="emit('update:searchDays', $event)"
+        />
+      </div>
+      <Button
+        :label="loading ? 'Načítavam…' : 'Obnoviť'"
+        size="small"
+        :loading="loading"
+        @click="emit('refresh')"
+      />
+      <span v-if="lastLoaded" class="text-xs text-slate-500">Aktualizované {{ lastLoaded }}</span>
+      <Button
+        label="Export CSV"
+        severity="secondary"
+        size="small"
         :disabled="!canExport"
         @click="emit('exportCsv')"
-      >
-        Export CSV
-      </button>
-    </div>
-    <div class="analytics-toolbar-row analytics-saved-row">
-      <label class="field-label" for="saved-preset-name">Uložený filter</label>
-      <input
-        id="saved-preset-name"
-        class="field-input"
-        :value="savedPresetName"
-        placeholder="Názov presetu"
-        @input="emit('update:savedPresetName', ($event.target as HTMLInputElement).value)"
       />
-      <button type="button" class="btn btn-ghost btn-sm" @click="emit('savePreset')">
-        Uložiť
-      </button>
-      <button
+    </div>
+
+    <div class="analytics-toolbar-row analytics-saved-row">
+      <label for="saved-preset-name" class="text-sm font-medium text-slate-700">Uložený filter</label>
+      <InputText
+        id="saved-preset-name"
+        class="max-w-40"
+        :model-value="savedPresetName"
+        placeholder="Názov presetu"
+        @update:model-value="emit('update:savedPresetName', $event ?? '')"
+      />
+      <Button label="Uložiť" severity="secondary" size="small" @click="emit('savePreset')" />
+      <Button
         v-for="p in savedPresets"
         :key="p.name"
-        type="button"
-        class="btn btn-sm btn-ghost"
+        :label="p.name"
+        severity="secondary"
+        size="small"
+        outlined
         @click="emit('applySaved', p)"
-      >
-        {{ p.name }}
-      </button>
+      />
     </div>
   </div>
 </template>
@@ -172,20 +173,9 @@ const emit = defineEmits<{
   gap: 0.75rem;
 }
 
-.analytics-range-error {
-  width: 100%;
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--danger);
-}
-
 .analytics-saved-row {
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 0.5rem;
-}
-
-.analytics-saved-row .field-input {
-  max-width: 160px;
 }
 </style>

@@ -1,5 +1,6 @@
-/**
+import { canPurchaseBilling } from '~/utils/billing-eligibility'
 
+/**
  * UI-only permission hints. Backend must enforce all authorization.
 
  */
@@ -26,7 +27,7 @@ export type CanAction =
 
 export function useCan() {
 
-  const { user, isCustomer, isProvider } = useAuth()
+  const { user, profile, isCustomer, isProvider } = useAuth()
 
 
 
@@ -58,7 +59,7 @@ export function useCan() {
 
       case 'credits.buy':
 
-        return isCustomer.value || isProvider.value
+        return canPurchaseBilling(profile.value)
 
       default:
 

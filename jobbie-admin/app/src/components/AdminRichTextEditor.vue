@@ -287,14 +287,14 @@ onBeforeUnmount(() => {
   float: left;
   height: 0;
   pointer-events: none;
-  color: var(--ink3);
+  color: #94a3b8;
 }
 .rich-editor-content .ProseMirror ul,
 .rich-editor-content .ProseMirror ol {
   padding-left: 1.35rem;
 }
 .rich-editor-content .ProseMirror a {
-  color: var(--g600);
+  color: #16a34a;
   text-decoration: underline;
 }
 .rich-editor-content .ProseMirror img.blog-inline-image {
@@ -308,14 +308,14 @@ onBeforeUnmount(() => {
   margin: 1rem 0;
   padding: 0.85rem 1rem;
   border-radius: 10px;
-  background: var(--g100);
+  background: #f1f5f9;
   font-size: 0.875rem;
   overflow-x: auto;
 }
 .rich-editor-content .ProseMirror hr {
   margin: 1.25rem 0;
   border: none;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid #e2e8f0;
 }
 .rich-editor-image-input {
   position: absolute;
@@ -328,11 +328,11 @@ onBeforeUnmount(() => {
   margin: 0;
   padding: 0.45rem 0.85rem;
   font-size: 0.8rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid #e2e8f0;
 }
 .rich-editor-status--info {
-  color: var(--g600);
-  background: var(--g50);
+  color: #16a34a;
+  background: #f0fdf4;
 }
 .rich-editor-status--error {
   color: #b42318;

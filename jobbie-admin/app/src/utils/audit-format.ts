@@ -36,6 +36,20 @@ export function payloadPreview(payload: Record<string, unknown>, max = 80): stri
   return `${s.slice(0, max)}…`
 }
 
+export type AuditTagSeverity = 'secondary' | 'info' | 'warn' | 'success' | 'danger' | 'contrast'
+
+export function eventTypeTagSeverity(eventType: string): AuditTagSeverity {
+  if (eventType.startsWith('auth.')) return 'info'
+  if (eventType.startsWith('credits.')) return 'warn'
+  if (eventType.startsWith('company_ad.')) return 'info'
+  if (eventType.startsWith('job_offer.')) return 'success'
+  if (eventType.startsWith('blog.')) return 'contrast'
+  if (eventType.startsWith('storage.')) return 'secondary'
+  if (eventType.startsWith('account.')) return 'danger'
+  return 'secondary'
+}
+
+/** @deprecated Use eventTypeTagSeverity with PrimeVue Tag */
 export function eventTypeBadgeClass(eventType: string): string {
   if (eventType.startsWith('auth.')) return 'badge-auth'
   if (eventType.startsWith('credits.')) return 'badge-credits'

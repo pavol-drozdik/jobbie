@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import Button from 'primevue/button'
+import Column from 'primevue/column'
+import DataTable from 'primevue/datatable'
+import Message from 'primevue/message'
+import ProgressSpinner from 'primevue/progressspinner'
+import Tag from 'primevue/tag'
 import { onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { adminApi, adminApiDownload } from '../composables/adminApi'
@@ -13,13 +19,14 @@ import {
 import type { AuditChainVerifyResult, AuditEventItem, AuditEventsResponse } from '../types/audit'
 import {
   auditPresetToRange,
-  eventTypeBadgeClass,
+  eventTypeTagSeverity,
   formatAuditTime,
   formatDateRangeLabel,
   payloadPreview,
   shortId,
 } from '../utils/audit-format'
 import AuditToolbar from '../components/audit/AuditToolbar.vue'
+import AdminPageHeader from '../components/layout/AdminPageHeader.vue'
 
 const { recentLoginMinutes } = useAdminRecentLogin()
 
@@ -44,7 +51,7 @@ const exportError = ref<string | null>(null)
 
 const events = ref<AuditEventItem[]>([])
 const nextCursor = ref<string | null>(null)
-const expandedId = ref<string | null>(null)
+const expandedRows = ref<AuditEventItem[]>([])
 const eventTypeOptions = ref<string[]>([])
 
 const chainLoading = ref(false)
@@ -111,6 +118,7 @@ async function fetchPage(append: boolean) {
     error.value = null
     events.value = []
     nextCursor.value = null
+    expandedRows.value = []
   }
   try {
     const query = filterQuery()
@@ -134,7 +142,6 @@ async function fetchPage(append: boolean) {
 }
 
 function refresh() {
-  expandedId.value = null
   chainResult.value = null
   chainError.value = null
   void fetchPage(false)
@@ -175,10 +182,6 @@ async function verifyChain() {
   chainLoading.value = false
 }
 
-function toggleExpand(id: string) {
-  expandedId.value = expandedId.value === id ? null : id
-}
-
 watch(
   [preset, eventTypeFilter, actorUserIdFilter, subjectIdFilter, limit],
   () => {
@@ -201,17 +204,15 @@ void loadEventTypes()
 </script>
 
 <template>
-  <div class="audit-page">
-    <header class="audit-header">
-      <div>
-        <h1 class="page-title">Audit log</h1>
-        <p v-if="dateLabel" class="page-subtitle">{{ dateLabel }}</p>
-      </div>
-      <p class="page-subtitle audit-count">
-        Zobrazených {{ events.length }} udalostí
-        <span v-if="nextCursor"> · ďalšie dostupné</span>
-      </p>
-    </header>
+  <div class="admin-page">
+    <AdminPageHeader
+      title="Audit log"
+      :subtitle="
+        dateLabel
+          ? `${dateLabel} · Zobrazených ${events.length} udalostí${nextCursor ? ' · ďalšie dostupné' : ''}`
+          : undefined
+      "
+    />
 
     <AuditToolbar
       :preset="preset"
@@ -232,149 +233,151 @@ void loadEventTypes()
       @export-jsonl="exportFile('jsonl')"
     />
 
-    <p v-if="exportError" class="error card" style="margin-top: 1rem">{{ exportError }}</p>
-    <p v-if="error" class="error card" style="margin-top: 1rem">
-      {{ error }}
-      <button type="button" class="btn btn-sm" style="margin-top: 0.5rem" @click="refresh">
-        Skúsiť znova
-      </button>
-    </p>
+    <Message v-if="exportError" severity="error" :closable="false">{{ exportError }}</Message>
 
-    <div v-else-if="loading && events.length === 0" class="muted" style="margin-top: 1.5rem">
-      Načítavam…
+    <Message v-if="error" severity="error" :closable="false">
+      <div class="space-y-2">
+        <p class="m-0">{{ error }}</p>
+        <Button label="Skúsiť znova" size="small" severity="secondary" @click="refresh" />
+      </div>
+    </Message>
+
+    <div v-else-if="loading && events.length === 0" class="flex justify-center py-12">
+      <ProgressSpinner />
     </div>
 
-    <section v-else class="section-card audit-table-wrap">
-      <div class="table-wrap">
-        <table class="data-table audit-table">
-          <thead>
-            <tr>
-              <th>Čas</th>
-              <th>Typ</th>
-              <th>Actor</th>
-              <th>Subjekt</th>
-              <th>IP</th>
-              <th>Detail</th>
-              <th>Akcie</th>
-            </tr>
-          </thead>
-          <tbody>
-            <template v-for="e in events" :key="e.id">
-              <tr
-                class="audit-row"
-                :class="{ 'audit-row--expanded': expandedId === e.id }"
-              >
-                <td class="audit-time">{{ formatAuditTime(e.occurred_at) }}</td>
-                <td>
-                  <span class="badge" :class="eventTypeBadgeClass(e.event_type)">
-                    {{ e.event_type }}
-                  </span>
-                </td>
-                <td class="audit-actor">
-                  <span class="audit-actor-label">{{ e.actor_label ?? '—' }}</span>
-                  <span v-if="e.actor_user_id" class="mono audit-actor-id">{{
-                    shortId(e.actor_user_id)
-                  }}</span>
-                </td>
-                <td class="audit-subject">
-                  <span v-if="e.subject_type">{{ e.subject_type }}</span>
-                  <span v-else class="muted">—</span>
-                  <span v-if="e.subject_id" class="mono">{{ shortId(e.subject_id) }}</span>
-                </td>
-                <td class="mono audit-ip">{{ e.actor_ip ?? '—' }}</td>
-                <td class="audit-payload-preview" @click="toggleExpand(e.id)">
-                  {{ payloadPreview(e.payload) }}
-                </td>
-                <td class="audit-row-actions" @click.stop>
-                  <button
-                    v-if="e.actor_user_id"
-                    type="button"
-                    class="btn btn-ghost btn-sm"
-                    title="Filter actor"
-                    @click="filterByActor(e.actor_user_id)"
-                  >
-                    Actor
-                  </button>
-                  <button
-                    v-if="e.subject_id"
-                    type="button"
-                    class="btn btn-ghost btn-sm"
-                    title="Filter subject"
-                    @click="filterBySubject(e.subject_id)"
-                  >
-                    Subjekt
-                  </button>
-                  <button
-                    v-if="auditSubjectPublicUrl(e.subject_type, e.subject_id)"
-                    type="button"
-                    class="btn btn-ghost btn-sm"
-                    @click="openSubjectLink(e)"
-                  >
-                    Odkaz
-                  </button>
-                  <button type="button" class="btn btn-ghost btn-sm" @click="toggleExpand(e.id)">
-                    Detail
-                  </button>
-                </td>
-              </tr>
-              <tr v-if="expandedId === e.id" class="audit-detail-row">
-                <td colspan="7">
-                  <div class="audit-detail">
-                    <div><strong>ID:</strong> <span class="mono">{{ e.id }}</span></div>
-                    <div v-if="e.session_id">
-                      <strong>Session:</strong> <span class="mono">{{ e.session_id }}</span>
-                    </div>
-                    <div v-if="e.device_id">
-                      <strong>Device:</strong> <span class="mono">{{ e.device_id }}</span>
-                    </div>
-                    <div v-if="e.actor_user_agent">
-                      <strong>User-Agent:</strong> {{ e.actor_user_agent }}
-                    </div>
-                    <div>
-                      <strong>Row hash:</strong>
-                      <span class="mono audit-hash">{{ e.row_hash }}</span>
-                    </div>
-                    <pre class="audit-payload-json">{{ JSON.stringify(e.payload, null, 2) }}</pre>
-                  </div>
-                </td>
-              </tr>
-            </template>
-          </tbody>
-        </table>
-      </div>
-      <p v-if="events.length === 0 && !loading" class="muted" style="padding: 1rem 0 0">
+    <section v-else class="admin-section-card">
+      <DataTable
+        v-model:expanded-rows="expandedRows"
+        :value="events"
+        data-key="id"
+        size="small"
+        striped-rows
+        class="text-sm"
+      >
+        <Column expander style="width: 3rem" />
+        <Column header="Čas">
+          <template #body="{ data: row }">
+            <span class="whitespace-nowrap text-xs">{{ formatAuditTime(row.occurred_at) }}</span>
+          </template>
+        </Column>
+        <Column header="Typ">
+          <template #body="{ data: row }">
+            <Tag :value="row.event_type" :severity="eventTypeTagSeverity(row.event_type)" />
+          </template>
+        </Column>
+        <Column header="Actor">
+          <template #body="{ data: row }">
+            <span class="block text-sm font-medium">{{ row.actor_label ?? '—' }}</span>
+            <span v-if="row.actor_user_id" class="mono text-slate-500">
+              {{ shortId(row.actor_user_id) }}
+            </span>
+          </template>
+        </Column>
+        <Column header="Subjekt">
+          <template #body="{ data: row }">
+            <span v-if="row.subject_type">{{ row.subject_type }}</span>
+            <span v-else class="text-slate-400">—</span>
+            <span v-if="row.subject_id" class="mono block">{{ shortId(row.subject_id) }}</span>
+          </template>
+        </Column>
+        <Column header="IP">
+          <template #body="{ data: row }">
+            <span class="mono text-xs">{{ row.actor_ip ?? '—' }}</span>
+          </template>
+        </Column>
+        <Column header="Detail">
+          <template #body="{ data: row }">
+            <span class="block max-w-[200px] truncate text-xs text-slate-600">
+              {{ payloadPreview(row.payload) }}
+            </span>
+          </template>
+        </Column>
+        <Column header="Akcie">
+          <template #body="{ data: row }">
+            <div class="flex flex-wrap gap-1">
+              <Button
+                v-if="row.actor_user_id"
+                label="Actor"
+                size="small"
+                severity="secondary"
+                text
+                @click="filterByActor(row.actor_user_id)"
+              />
+              <Button
+                v-if="row.subject_id"
+                label="Subjekt"
+                size="small"
+                severity="secondary"
+                text
+                @click="filterBySubject(row.subject_id)"
+              />
+              <Button
+                v-if="auditSubjectPublicUrl(row.subject_type, row.subject_id)"
+                label="Odkaz"
+                size="small"
+                severity="secondary"
+                text
+                @click="openSubjectLink(row)"
+              />
+            </div>
+          </template>
+        </Column>
+        <template #expansion="{ data: row }">
+          <div class="space-y-1 bg-slate-50 p-4 text-xs text-slate-700">
+            <div><strong>ID:</strong> <span class="mono">{{ row.id }}</span></div>
+            <div v-if="row.session_id">
+              <strong>Session:</strong> <span class="mono">{{ row.session_id }}</span>
+            </div>
+            <div v-if="row.device_id">
+              <strong>Device:</strong> <span class="mono">{{ row.device_id }}</span>
+            </div>
+            <div v-if="row.actor_user_agent">
+              <strong>User-Agent:</strong> {{ row.actor_user_agent }}
+            </div>
+            <div>
+              <strong>Row hash:</strong>
+              <span class="mono break-all">{{ row.row_hash }}</span>
+            </div>
+            <pre class="mt-2 max-h-60 overflow-auto rounded-lg border border-slate-200 bg-white p-3 text-[0.7rem]">{{ JSON.stringify(row.payload, null, 2) }}</pre>
+          </div>
+        </template>
+      </DataTable>
+
+      <p v-if="events.length === 0 && !loading" class="m-0 mt-3 text-sm text-slate-500">
         Žiadne udalosti pre zvolené filtre.
       </p>
-      <div v-if="nextCursor" class="audit-load-more">
-        <button
-          type="button"
-          class="btn btn-ghost"
-          :disabled="loadingMore"
+
+      <div v-if="nextCursor" class="mt-4 text-center">
+        <Button
+          :label="loadingMore ? 'Načítavam…' : 'Načítať ďalšie'"
+          severity="secondary"
+          :loading="loadingMore"
           @click="fetchPage(true)"
-        >
-          {{ loadingMore ? 'Načítavam…' : 'Načítať ďalšie' }}
-        </button>
+        />
       </div>
     </section>
 
-    <section class="section-card audit-chain-section">
-      <h2 class="section-title">Integrita reťazca</h2>
-      <p class="muted audit-chain-hint">
+    <section class="admin-section-card">
+      <h2 class="admin-section-title">Integrita reťazca</h2>
+      <p class="m-0 mb-3 text-sm text-slate-500">
         Overí HMAC reťazec audit záznamov v zvolenom období (max. 50 000 riadkov).
       </p>
-      <button
-        type="button"
-        class="btn btn-ghost btn-sm"
-        :disabled="chainLoading"
+      <Button
+        :label="chainLoading ? 'Overujem…' : 'Overiť reťazec'"
+        size="small"
+        severity="secondary"
+        :loading="chainLoading"
         @click="verifyChain"
-      >
-        {{ chainLoading ? 'Overujem…' : 'Overiť reťazec' }}
-      </button>
-      <p v-if="chainError" class="error" style="margin-top: 0.75rem">{{ chainError }}</p>
-      <div
+      />
+      <Message v-if="chainError" severity="error" :closable="false" class="mt-3">
+        {{ chainError }}
+      </Message>
+      <Message
         v-else-if="chainResult"
-        class="audit-chain-result"
-        :class="chainResult.valid ? 'audit-chain-result--ok' : 'audit-chain-result--fail'"
+        :severity="chainResult.valid ? 'success' : 'error'"
+        :closable="false"
+        class="mt-3"
       >
         <template v-if="chainResult.valid">
           Reťazec je v poriadku ({{ chainResult.checked }} záznamov).
@@ -383,143 +386,7 @@ void loadEventTypes()
           Porušenie reťazca po {{ chainResult.checked }} záznamoch:
           {{ chainResult.detail ?? 'neznáma chyba' }}
         </template>
-      </div>
+      </Message>
     </section>
   </div>
 </template>
-
-<style scoped>
-.audit-page {
-  max-width: 1280px;
-}
-
-.audit-header {
-  margin-bottom: 1rem;
-}
-
-.audit-count {
-  margin-top: 0.35rem;
-}
-
-.audit-table-wrap {
-  margin-top: 1.25rem;
-}
-
-.audit-row {
-  cursor: pointer;
-}
-
-.audit-row:hover td {
-  background: var(--g50);
-}
-
-.audit-time {
-  white-space: nowrap;
-  font-size: 0.8rem;
-}
-
-.audit-actor {
-  max-width: 160px;
-}
-
-.audit-actor-label {
-  display: block;
-  font-weight: 600;
-  font-size: 0.85rem;
-}
-
-.audit-actor-id {
-  font-size: 0.7rem;
-  color: var(--ink3);
-}
-
-.audit-subject {
-  font-size: 0.8rem;
-  max-width: 140px;
-}
-
-.audit-ip {
-  font-size: 0.75rem;
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.audit-payload-preview {
-  font-size: 0.75rem;
-  color: var(--ink2);
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.audit-detail-row td {
-  background: var(--g50);
-  padding: 0 !important;
-}
-
-.audit-detail {
-  padding: 1rem 1.25rem;
-  font-size: 0.8rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.audit-payload-json {
-  margin: 0.5rem 0 0;
-  padding: 0.75rem;
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 0.72rem;
-  overflow-x: auto;
-  max-height: 240px;
-}
-
-.audit-hash {
-  word-break: break-all;
-  font-size: 0.7rem;
-}
-
-.audit-load-more {
-  margin-top: 1rem;
-  text-align: center;
-}
-
-.audit-chain-section {
-  margin-top: 1.25rem;
-}
-
-.audit-chain-hint {
-  margin: 0 0 0.75rem;
-  font-size: 0.85rem;
-}
-
-.audit-chain-result {
-  margin-top: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-radius: 10px;
-  font-size: 0.875rem;
-}
-
-.audit-chain-result--ok {
-  background: var(--g50);
-  color: var(--g700);
-  border: 1px solid var(--g100);
-}
-
-.audit-chain-result--fail {
-  background: #fef2f2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
-}
-
-.audit-row-actions {
-  white-space: nowrap;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.2rem;
-}
-</style>

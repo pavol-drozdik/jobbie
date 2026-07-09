@@ -29,6 +29,9 @@ function makeController(
     {
       sendPaidInvoiceEmailIfNeeded: jest.fn().mockResolvedValue({ sent: false }),
     } as unknown as import('./billing-invoice-email.service').BillingInvoiceEmailService,
+    {
+      assertBillingPurchaseAccessForUser: jest.fn().mockResolvedValue(undefined),
+    } as unknown as import('../billing/billing-purchase-authorization.service').BillingPurchaseAuthorizationService,
   );
 }
 

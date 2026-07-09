@@ -3,6 +3,7 @@ import {
   hasPlusOrProAccessFromAccount,
   type BillingAccountSnapshot,
 } from '~/utils/billing-account-access'
+import { canPurchaseBilling } from '~/utils/billing-eligibility'
 
 export type BillingAccount = BillingAccountSnapshot & {
   planNameSk?: string
@@ -11,7 +12,7 @@ export type BillingAccount = BillingAccountSnapshot & {
 
 /** Session-cached billing account from GET /api/billing/account */
 export function useBillingAccount() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const { api } = useApi()
 
   const account = useState<BillingAccount | null>('billing-account-v1', () => null)
@@ -22,7 +23,7 @@ export function useBillingAccount() {
   const hasPlusOrProAccess = computed(() => hasPlusOrProAccessFromAccount(account.value))
 
   async function load(force = false): Promise<void> {
-    if (!user.value) {
+    if (!user.value || !canPurchaseBilling(profile.value)) {
       account.value = null
       loaded.value = true
       return

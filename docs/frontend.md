@@ -148,6 +148,8 @@ New screens: prefer `form-field-ui.ts` or `useSettingsFormStyles()` over inline 
 
 **Pricing (`/cennik`):** public page (`pages/cennik.vue`), `max-w-[1400px]`, green gradient hero with tab toggle (kredity | plány | doplnkové služby) and logged-in credit balance card; **Kredity** tab: `PricingCreditsUsageSection` (4 payable wizard actions + plan-tier costs from `GET /api/billing/config` → `planTierCreditCosts`, user plan from `GET /api/billing/account`) then `PricingCreditPacksGrid` white list panel; plans as one four-column white panel + `PricingCvCompareTable` (monthly credits, active offers, CV limits, and plan-tier publish/top costs); **Doplnkové služby** tab only (`PricingAddonServicesGrid` + split `PricingContactSection` → `POST /api/pricing-inquiries`). Job post wizard uses the same tier matrix for publish cost. Deep links: `?tab=credits` | `?tab=plans` | `?tab=addons`.
 
+**Contract withdrawal (`/odstupenie-od-zmluvy`):** public auth-style split page (`AuthMarketingSplitShell`, `ContractWithdrawalForm`); footer link next to obchodné podmienky; submits via `POST /api/contract-withdrawals` (`useContractWithdrawal`). Prefills name/e-mail when logged in.
+
 **Legacy URLs:** `/app`, `/app/profile`, `/app/chat`, `/app/messages`, `/app/find`, `/app/add`, `/app/firmy/*`, `/app/profile/zivotopis/*`, `/app/zaujemcovia/*` redirect (301) via `server/middleware/legacy-app-routes.ts` and `middleware/legacy-app-routes.global.ts` using `utils/app-routes.ts`.
 
 **Firmy wizard:** four steps — základ, lokalita, cenník/kontakt/galéria, publikovanie. Simplified fields only (no profile type, services block, street/PSČ, business IDs in UI).

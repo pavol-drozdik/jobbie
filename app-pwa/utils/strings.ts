@@ -160,6 +160,10 @@
   registerTermsAgreeAnd: 'a',
   registerTermsAgreePrivacyLabel: 'zásadami ochrany osobných údajov',
   termsRequired: 'Pre registráciu je potrebný súhlas s podmienkami a zásadami ochrany osobných údajov.',
+  registrationPromoCodeLabel: 'Promo kód (voliteľné)',
+  registrationPromoCodePlaceholder: 'LAUNCH20',
+  registrationPromoCodeHint: 'Platí pre nové účty pri aktivnej promo akcii.',
+  registrationPromoGrantedBanner: 'Na váš účet bolo pripísaných {credits} kreditov z promo kódu.',
   experience: 'Skúsenosti',
   registrationNumber: 'IČO / registračné číslo',
   website: 'Web',
@@ -484,6 +488,7 @@
   footerMadeBy: 'Vytvorilo',
   footerLinkPrivacyShort: 'Ochrana súkromia',
   footerLinkTermsShort: 'Obchodné podmienky',
+  footerLinkContractWithdrawal: 'Odstúpenie od zmluvy',
   footerCookieSettings: 'Spravovať cookies',
   cookieBannerTitle: 'Ahoj, používame súbory cookie',
   cookieBannerDescription:
@@ -720,6 +725,46 @@
     'Nepodarilo sa odoslať dopyt. Skúste neskôr alebo napíšte na ahoj@jobbie.sk.',
   pricingContactErrorApiUnreachable:
     'Server nie je dostupný. Skúste neskôr alebo napíšte na ahoj@jobbie.sk.',
+  contractWithdrawalPanelTitle: 'Odstúpenie\nod zmluvy',
+  contractWithdrawalPanelSubtitle:
+    'Spotrebitelia môžu odstúpiť od zmluvy do 14 dní od jej uzavretia, ak služba ešte nebola poskytnutá.',
+  contractWithdrawalHeading: 'Odstúpenie',
+  contractWithdrawalHeadingAccent: 'od zmluvy',
+  contractWithdrawalSubtitle:
+    'Vyplňte formulár a my vašu žiadosť spracujeme v súlade s obchodnými podmienkami.',
+  contractWithdrawalName: 'Meno a priezvisko',
+  contractWithdrawalEmail: 'E-mail',
+  contractWithdrawalProduct: 'Produkt',
+  contractWithdrawalProductPlaceholder: 'Vyberte produkt',
+  contractWithdrawalProductSubscription: 'Predplatné',
+  contractWithdrawalProductCredits: 'Kredity',
+  contractWithdrawalInvoiceNumber: 'Číslo faktúry',
+  contractWithdrawalPurchaseDate: 'Dátum nákupu',
+  contractWithdrawalReason: 'Dôvod odstúpenia (nepovinné)',
+  contractWithdrawalReasonPlaceholder: 'Vyberte dôvod',
+  contractWithdrawalReasonChangedMind: 'Rozmyslel/a som si nákup',
+  contractWithdrawalReasonNoLongerNeeded: 'Službu už nepotrebujem',
+  contractWithdrawalReasonOther: 'Iné',
+  contractWithdrawalReasonOtherDetail: 'Upresnite dôvod',
+  contractWithdrawalReasonOtherPlaceholder: 'Napíšte dôvod odstúpenia…',
+  contractWithdrawalErrorReasonOther: 'Pri voľbe „Iné“ uveďte dôvod odstúpenia.',
+  contractWithdrawalAck:
+    'Týmto oznamujem, že odstupujem od zmluvy uzatvorenej na diaľku.',
+  contractWithdrawalSubmit: 'Odoslať žiadosť',
+  contractWithdrawalSuccess:
+    'Ďakujeme. Vašu žiadosť sme prijali a potvrdenie s údajmi sme odoslali na váš e-mail.',
+  contractWithdrawalErrorName: 'Zadajte meno a priezvisko.',
+  contractWithdrawalErrorEmail: 'Zadajte platný e-mail.',
+  contractWithdrawalErrorProduct: 'Vyberte produkt.',
+  contractWithdrawalErrorInvoice: 'Zadajte číslo faktúry.',
+  contractWithdrawalErrorPurchaseDate: 'Zadajte dátum nákupu.',
+  contractWithdrawalErrorAck: 'Potvrďte odstúpenie od zmluvy.',
+  contractWithdrawalErrorSubmit:
+    'Nepodarilo sa odoslať žiadosť. Skúste to znova alebo napíšte na podpora@jobbie.sk.',
+  contractWithdrawalErrorApiUnreachable:
+    'Nepodarilo sa spojiť so serverom. Skúste to znova o chvíľu.',
+  contractWithdrawalErrorApiUnreachableDev:
+    'Skontrolujte, či beží backend (npm run dev v backend-ts).',
   pricingContactErrorApiUnreachableDev:
     'Spustite Nest API (backend-ts, port 8000).',
   pricingCvCompareTitle: 'Porovnanie plánov',
@@ -1355,6 +1400,8 @@
     'Reklamy medzi profesionálmi a súvisiace štatistiky vyžadujú rolu „Ponúkam svoje služby“. Zapnite ju v sekcii nižšie.',
   dashboardRoleDeniedWorker:
     'Životopisy a e-mailové ponuky vyžadujú rolu „Hľadám prácu, brigádu alebo fušku“. Zapnite ju v sekcii nižšie.',
+  dashboardRoleDeniedBilling:
+    'Kredity a predplatné vyžadujú rolu „Poskytujem prácu“ alebo „Ponúkam svoje služby“. Zapnite ju v sekcii nižšie.',
   dashboardRoleDeniedCompany:
     'Pracovné ponuky, správa uchádzačov a databáza životopisov vyžadujú rolu „Poskytujem prácu“. Zapnite ju v sekcii nižšie.',
   dashboardCustomerAvgApplicants: 'Priemerne prihlásení na ponuku',

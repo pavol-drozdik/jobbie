@@ -17,6 +17,8 @@ type StoredPoint = VpsMetricsHistoryPoint & {
   load_1: number;
 };
 
+export type { StoredPoint };
+
 type HistoryStore = Partial<Record<'staging' | 'production', StoredPoint[]>>;
 
 const RANGE_MS: Record<InfraMetricsRange, number> = {
@@ -107,12 +109,41 @@ export class VpsMetricsHistoryService implements OnModuleInit, OnModuleDestroy {
     range: InfraMetricsRange,
     now = new Date(),
   ): VpsMetricsHistoryPoint[] {
-    const series = this.store[envId] ?? [];
+    return this.getMergedHistory(envId, range, [], now).points;
+  }
+
+  getLocalStoredSeries(envId: 'staging' | 'production'): StoredPoint[] {
+    return [...(this.store[envId] ?? [])];
+  }
+
+  getMergedHistory(
+    envId: 'staging' | 'production',
+    range: InfraMetricsRange,
+    remotePoints: StoredPoint[],
+    now = new Date(),
+  ): {
+    points: VpsMetricsHistoryPoint[];
+    history_source: InfraHistorySource;
+  } {
     const since = now.getTime() - RANGE_MS[range];
-    const inRange = series.filter((p) => new Date(p.t).getTime() >= since);
-    return downsample(inRange, BUCKET_MS[range], MAX_POINTS).map(
+    const localSeries = this.store[envId] ?? [];
+    const localInRange = localSeries.filter(
+      (p) => new Date(p.t).getTime() >= since,
+    );
+    const remoteInRange = remotePoints.filter(
+      (p) => new Date(p.t).getTime() >= since,
+    );
+    const merged = mergeHistorySeries(remoteInRange, localInRange);
+    const points = downsample(merged, BUCKET_MS[range], MAX_POINTS).map(
       ({ load_1: _load1, ...rest }) => rest,
     );
+    return {
+      points,
+      history_source: resolveHistorySource(
+        remoteInRange.length,
+        localInRange.length,
+      ),
+    };
   }
 
   private pruneSeries(series: StoredPoint[]): StoredPoint[] {
@@ -167,6 +198,56 @@ export class VpsMetricsHistoryService implements OnModuleInit, OnModuleDestroy {
       // Best-effort local cache; dashboard still works without persistence.
     }
   }
+}
+
+export type InfraHistorySource = 'vps' | 'local' | 'mixed';
+
+export function parseInfraHistoryJsonl(text: string): StoredPoint[] {
+  const points: StoredPoint[] = [];
+  for (const line of text.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      continue;
+    }
+    try {
+      const row = JSON.parse(trimmed) as StoredPoint;
+      if (isStoredPoint(row)) {
+        points.push(sanitizeStoredPoint(row));
+      }
+    } catch {
+      // skip malformed lines
+    }
+  }
+  return points;
+}
+
+export function mergeHistorySeries(
+  remote: StoredPoint[],
+  local: StoredPoint[],
+): StoredPoint[] {
+  const byTime = new Map<string, StoredPoint>();
+  for (const point of local) {
+    byTime.set(point.t, point);
+  }
+  for (const point of remote) {
+    byTime.set(point.t, point);
+  }
+  return [...byTime.values()].sort(
+    (a, b) => new Date(a.t).getTime() - new Date(b.t).getTime(),
+  );
+}
+
+export function resolveHistorySource(
+  remoteCount: number,
+  localCount: number,
+): InfraHistorySource {
+  if (remoteCount === 0) {
+    return 'local';
+  }
+  if (localCount === 0) {
+    return 'vps';
+  }
+  return 'mixed';
 }
 
 function isStoredPoint(value: unknown): value is StoredPoint {

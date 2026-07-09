@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { useConfirm as usePrimeConfirm } from 'primevue/useconfirm'
 
 type ConfirmOptions = {
   title?: string
@@ -8,31 +8,25 @@ type ConfirmOptions = {
   danger?: boolean
 }
 
-const open = ref(false)
-const options = ref<ConfirmOptions | null>(null)
-let resolveFn: ((value: boolean) => void) | null = null
-
 export function useConfirm() {
+  const primeConfirm = usePrimeConfirm()
+
   function confirm(opts: ConfirmOptions): Promise<boolean> {
-    options.value = opts
-    open.value = true
     return new Promise((resolve) => {
-      resolveFn = resolve
+      primeConfirm.require({
+        message: opts.message,
+        header: opts.title ?? 'Potvrdenie',
+        icon: opts.danger ? 'pi pi-exclamation-triangle' : 'pi pi-question-circle',
+        acceptLabel: opts.confirmLabel ?? 'Potvrdiť',
+        rejectLabel: opts.cancelLabel ?? 'Zrušiť',
+        acceptClass: opts.danger ? 'p-button-danger' : undefined,
+        rejectClass: 'p-button-secondary p-button-text',
+        accept: () => resolve(true),
+        reject: () => resolve(false),
+        onHide: () => resolve(false),
+      })
     })
   }
 
-  function settle(value: boolean) {
-    open.value = false
-    options.value = null
-    resolveFn?.(value)
-    resolveFn = null
-  }
-
-  return {
-    open,
-    options,
-    confirm,
-    accept: () => settle(true),
-    cancel: () => settle(false),
-  }
+  return { confirm }
 }

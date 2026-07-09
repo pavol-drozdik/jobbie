@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
+import Button from 'primevue/button'
+import Message from 'primevue/message'
+import ProgressSpinner from 'primevue/progressspinner'
+import ToggleButton from 'primevue/togglebutton'
 import { adminApi } from '../composables/adminApi'
 import type { AdminInfrastructure } from '../types/infrastructure'
+import AdminPageHeader from '../components/layout/AdminPageHeader.vue'
 import VpsEnvironmentCard from '../components/infrastructure/VpsEnvironmentCard.vue'
 
 const AUTO_REFRESH_MS = 60_000
@@ -42,9 +47,9 @@ function stopAutoRefresh() {
   }
 }
 
-function toggleAutoRefresh() {
-  autoRefresh.value = !autoRefresh.value
-  if (autoRefresh.value) startAutoRefresh()
+function onAutoRefreshChange(value: boolean) {
+  autoRefresh.value = value
+  if (value) startAutoRefresh()
   else stopAutoRefresh()
 }
 
@@ -59,93 +64,44 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="infra-page">
-    <header class="infra-page__header">
-      <div>
-        <h1 class="page-title">Infra</h1>
-        <p class="page-subtitle">Prevádzka VPS — staging a production</p>
-      </div>
-      <div class="infra-page__actions">
-        <label class="infra-auto">
-          <input
-            type="checkbox"
-            :checked="autoRefresh"
-            @change="toggleAutoRefresh"
-          />
-          Auto 60s
-        </label>
-        <button
-          type="button"
-          class="btn btn-primary"
-          :disabled="loading"
+  <div class="admin-page">
+    <AdminPageHeader title="Infra" subtitle="Prevádzka VPS — staging a production">
+      <template #actions>
+        <ToggleButton
+          :model-value="autoRefresh"
+          on-label="Auto 60s"
+          off-label="Auto 60s"
+          on-icon="pi pi-check"
+          off-icon="pi pi-times"
+          size="small"
+          @update:model-value="onAutoRefreshChange"
+        />
+        <Button
+          label="Obnoviť"
+          :loading="loading"
+          size="small"
           @click="load()"
-        >
-          {{ loading ? 'Načítavam…' : 'Obnoviť' }}
-        </button>
-      </div>
-    </header>
+        />
+      </template>
+    </AdminPageHeader>
 
-    <p v-if="lastUpdated" class="muted infra-updated">
+    <p v-if="lastUpdated" class="m-0 text-sm text-slate-500">
       Posledná aktualizácia: {{ lastUpdated }}
     </p>
 
-    <p v-if="error" class="error card">{{ error }}</p>
-    <p v-else-if="loading && !data" class="muted">Načítavam metriky VPS…</p>
+    <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
 
-    <div v-if="data" class="infra-grid">
+    <div v-else-if="loading && !data" class="flex justify-center py-12">
+      <ProgressSpinner />
+    </div>
+
+    <div v-if="data" class="grid gap-5 lg:grid-cols-2">
       <VpsEnvironmentCard
         v-for="env in data.environments"
         :key="env.id"
         :env="env"
+        @changed="load"
       />
     </div>
   </div>
 </template>
-
-<style scoped>
-.infra-page {
-  max-width: 1200px;
-}
-
-.infra-page__header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
-}
-
-.infra-page__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.infra-auto {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.85rem;
-  color: var(--ink2);
-  cursor: pointer;
-}
-
-.infra-updated {
-  font-size: 0.85rem;
-  margin: 0 0 1rem;
-}
-
-.infra-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.25rem;
-}
-
-@media (max-width: 900px) {
-  .infra-grid {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

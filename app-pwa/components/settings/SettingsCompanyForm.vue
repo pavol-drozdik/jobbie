@@ -11,7 +11,7 @@
     <form v-else class="flex flex-col gap-0" @submit.prevent="handleSave">
       <p v-if="saveError" class="mb-4 text-sm text-red-600" role="alert">{{ saveError }}</p>
 
-      <div class="mb-4">
+      <div v-if="hasBillingWalletAccess" class="mb-4">
         <NuxtLink
           to="/nastavenia/fakturacia"
           class="font-dmSans text-sm text-black/50 hover:text-marketing-green hover:underline"
@@ -155,6 +155,7 @@ const emit = defineEmits<{
 }>()
 
 const { user, session } = useAuth()
+const { hasBillingWalletAccess } = useBillingAccess()
 const { loading, loadError, profile, load, patch, isValidUrl } = useSettingsProfile()
 const { api } = useApi()
 

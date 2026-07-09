@@ -10,6 +10,7 @@ Map of major JOBBIE features to PWA routes and backend modules. Privacy rules fo
 | `customer_role` | „Poskytujem prácu“ | Job posts, applicants, CV database (`customer-only` middleware, Nest `ProfileActivityAuthorizationService`) |
 | `worker_role` | „Hľadám malé práce“ | CV builder, job email alerts (`worker-only`) |
 | `provider_role` | „Chcem aby ma klienti našli“ | Company/service ads (`provider-only`) |
+| Billing wallet / checkout | `customer_role` **or** `provider_role` | Credits, subscriptions, `/nastavenia/kredity`, `/nastavenia/fakturacia`, `/platba` — worker-only accounts are excluded (account type `company` vs `individual` does not bypass this) |
 
 Users can enable multiple activity roles. PWA toggles: **Nastavenia → Profil** → „Čo chcete robiť?“ (`SettingsRolesSection`). Nav filtering: `app-pwa/utils/account-nav-access.ts`.
 

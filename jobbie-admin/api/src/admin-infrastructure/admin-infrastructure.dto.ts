@@ -79,6 +79,8 @@ export type AdminInfrastructureDto = {
 
 export type InfraMetricsRangeDto = '1h' | '24h' | '2w' | '1m';
 
+export type InfraHistorySourceDto = 'vps' | 'local' | 'mixed';
+
 export type VpsMetricsHistoryPointDto = {
   t: string;
   load_pct: number;
@@ -95,4 +97,27 @@ export type VpsMetricsHistoryDto = {
   coverage_from: string | null;
   /** ISO timestamp of newest returned sample. */
   coverage_to: string | null;
+  /** Where chart data came from: VPS JSONL, local session cache, or both. */
+  history_source?: InfraHistorySourceDto;
+};
+
+export type VpsBackendInstanceDto = {
+  name: string;
+  container_id: string | null;
+  status: string | null;
+  health: string | null;
+  cpu_percent: number | null;
+  mem_usage: string | null;
+  mem_percent: number | null;
+};
+
+export type VpsBackendsSummaryDto = {
+  env_id: 'staging' | 'production';
+  scale: number;
+  max_replicas: number;
+  autoscale_enabled: boolean;
+  redis_configured: boolean;
+  deploy_lock: boolean;
+  mutations_allowed: boolean;
+  instances: VpsBackendInstanceDto[];
 };

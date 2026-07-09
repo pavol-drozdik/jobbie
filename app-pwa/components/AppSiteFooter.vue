@@ -209,6 +209,12 @@
             {{ S.footerLinkTermsShort }}
           </NuxtLink>
           <NuxtLink
+            :to="ROUTES.contractWithdrawal"
+            class="font-dmSans text-[14.5px] font-normal text-marketing-abBottom no-underline transition-colors hover:text-marketing-abGreen focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marketing-green/40"
+          >
+            {{ S.footerLinkContractWithdrawal }}
+          </NuxtLink>
+          <NuxtLink
             :to="ROUTES.pricing"
             class="font-dmSans text-[14.5px] font-normal text-marketing-abBottom no-underline transition-colors hover:text-marketing-abGreen focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marketing-green/40"
           >

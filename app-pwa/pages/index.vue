@@ -1,5 +1,12 @@
 ﻿<template>
   <div>
+    <div
+      v-if="promoCreditsBanner"
+      class="mx-auto mb-6 max-w-3xl rounded-2xl border border-marketing-green/30 bg-marketing-mint px-4 py-3 text-center text-sm font-semibold text-black"
+      role="status"
+    >
+      {{ promoCreditsBanner }}
+    </div>
     <HomeHeroSection />
     <section class="mt-[72px] flex w-full flex-col items-center marketing:mt-[120px] marketingXl:mt-[140px]">
       <div class="flex w-full flex-col items-center gap-10">
@@ -361,6 +368,31 @@ import { normalizeSiteUrl } from '~/utils/seo-config'
 import { buildJobsAlternateFeeds } from '~/utils/seo-feed-links'
 import { buildFaqPageJsonLd } from '~/utils/seo-json-ld'
 definePageMeta({ layout: 'app' })
+
+const route = useRoute()
+const router = useRouter()
+const promoCreditsBanner = ref<string | null>(null)
+
+function readPromoCreditsFromQuery(): void {
+  const raw = route.query.promo_credits
+  const value = Array.isArray(raw) ? raw[0] : raw
+  const credits = Number.parseInt(String(value ?? ''), 10)
+  if (!Number.isFinite(credits) || credits < 1) {
+    promoCreditsBanner.value = null
+    return
+  }
+  promoCreditsBanner.value = S.registrationPromoGrantedBanner.replace(
+    '{credits}',
+    String(credits),
+  )
+  const nextQuery = { ...route.query }
+  delete nextQuery.promo_credits
+  void router.replace({ path: route.path, query: nextQuery })
+}
+
+onMounted(() => {
+  readPromoCreditsFromQuery()
+})
 
 const runtimeConfig = useRuntimeConfig()
 const siteUrl = computed(() =>

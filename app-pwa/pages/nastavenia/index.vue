@@ -48,12 +48,14 @@
         icon="id-card"
       />
       <SettingsDashboardCard
+        v-if="hasBillingWalletAccess"
         to="/nastavenia/fakturacia"
         :title="S.settingsCardFakturacia"
         :description="S.settingsCardFakturaciaDesc"
         icon="currency"
       />
       <SettingsDashboardCard
+        v-if="hasBillingWalletAccess"
         to="/nastavenia/kredity"
         :title="S.settingsCardKredity"
         :description="S.settingsCardKredityDesc"
@@ -85,6 +87,7 @@ definePageMeta({
 })
 
 const { user } = useAuth()
+const { hasBillingWalletAccess } = useBillingAccess()
 
 useHead({ title: () => S.settingsTitle })
 </script>

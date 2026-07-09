@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import Button from 'primevue/button'
+import Message from 'primevue/message'
+import ProgressSpinner from 'primevue/progressspinner'
 import { adminApi } from '../composables/adminApi'
 import { useConfirm } from '../composables/useConfirm'
 import type { AdminCompanyAdDetail } from '../types/support'
 import { fmtNum } from '../utils/analytics-format'
+import AdminPageHeader from '../components/layout/AdminPageHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -46,69 +50,60 @@ onMounted(() => void load())
 </script>
 
 <template>
-  <div class="support-detail">
-    <header>
-      <button type="button" class="btn btn-ghost btn-sm" @click="router.push('/support')">
-        ← Podpora
-      </button>
-      <h1 class="page-title">Firemný inzerát</h1>
-      <p class="page-subtitle mono">{{ id }}</p>
-    </header>
+  <div class="admin-page">
+    <Button
+      label="← Podpora"
+      severity="secondary"
+      text
+      size="small"
+      class="mb-2"
+      @click="router.push('/support')"
+    />
 
-    <p v-if="error" class="error card">{{ error }}</p>
-    <p v-else-if="loading" class="muted">Načítavam…</p>
+    <AdminPageHeader title="Firemný inzerát" :subtitle="id" />
 
-    <section v-else-if="ad" class="section-card">
-      <h2>{{ ad.title || 'Bez názvu' }}</h2>
-      <dl class="detail-dl">
-        <dt>Stav</dt>
-        <dd>{{ ad.status ?? '—' }}</dd>
-        <dt>Vlastník</dt>
-        <dd>
+    <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
+
+    <div v-else-if="loading" class="flex justify-center py-12">
+      <ProgressSpinner />
+    </div>
+
+    <section v-else-if="ad" class="admin-section-card">
+      <h2 class="m-0 mb-4 text-lg font-semibold text-slate-900">{{ ad.title || 'Bez názvu' }}</h2>
+      <dl class="grid grid-cols-[140px_1fr] gap-x-3 gap-y-1.5 text-sm">
+        <dt class="text-slate-500">Stav</dt>
+        <dd class="m-0">{{ ad.status ?? '—' }}</dd>
+        <dt class="text-slate-500">Vlastník</dt>
+        <dd class="m-0">
           <RouterLink
             v-if="ad.owner_id"
             :to="{ name: 'support-user', params: { id: ad.owner_id } }"
+            class="text-primary-600 hover:underline"
           >
             {{ ad.owner_id }}
           </RouterLink>
           <span v-else>—</span>
         </dd>
-        <dt>Lokalita</dt>
-        <dd>{{ [ad.city, ad.region].filter(Boolean).join(', ') || '—' }}</dd>
-        <dt>Kredity</dt>
-        <dd>{{ fmtNum(ad.credits_spent) }}</dd>
-        <dt>Vytvorené</dt>
-        <dd>{{ ad.created_at }}</dd>
+        <dt class="text-slate-500">Lokalita</dt>
+        <dd class="m-0">{{ [ad.city, ad.region].filter(Boolean).join(', ') || '—' }}</dd>
+        <dt class="text-slate-500">Kredity</dt>
+        <dd class="m-0">{{ fmtNum(ad.credits_spent) }}</dd>
+        <dt class="text-slate-500">Vytvorené</dt>
+        <dd class="m-0">{{ ad.created_at }}</dd>
       </dl>
-      <div class="detail-actions">
-        <a
+      <div class="mt-4 flex flex-wrap gap-2">
+        <Button
           v-if="ad.public_url"
+          label="Verejná URL"
+          severity="secondary"
+          as="a"
           :href="ad.public_url"
-          class="btn btn-ghost"
           target="_blank"
           rel="noopener noreferrer"
-        >
-          Verejná URL
-        </a>
-        <button type="button" class="btn btn-primary" @click="unpublish">Skryť</button>
+        />
+        <Button label="Skryť" @click="unpublish" />
       </div>
-      <p v-if="message" class="muted">{{ message }}</p>
+      <p v-if="message" class="m-0 mt-3 text-sm text-slate-500">{{ message }}</p>
     </section>
   </div>
 </template>
-
-<style scoped>
-.detail-dl {
-  display: grid;
-  grid-template-columns: 140px 1fr;
-  gap: 0.35rem 0.75rem;
-  font-size: 0.875rem;
-  margin: 1rem 0;
-}
-
-.detail-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-</style>

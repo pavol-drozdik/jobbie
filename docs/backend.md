@@ -80,6 +80,8 @@ Prefix: `/api/{controller}` unless noted.
 | `dashboard/*` | Customer/provider analytics (`analytics.controller`) |
 | `locations` | SK municipalities (`GET/POST sk-municipalities`); `GET/POST sk-cv-skills` (CV znalosti catalog); `GET sk-companies` (RPO write-through cache); `GET sk-schools` (education institutions — Typesense fuzzy search when configured, else `search_sk_education_institutions` RPC) |
 | `subscribe` | Newsletter |
+| `pricing-inquiries` | Public `/cennik` addon contact form (`@Public()`, throttled) |
+| `contract-withdrawals` | Public consumer withdrawal form (`@Public()`, throttled) |
 | `blog` | Public blog list + post by slug (`@Public()`, keyset pagination) |
 | `storage` | Signed uploads (`uploads/init`, `finalize`) |
 | `cv` | CV resources, `POST :cvId/photo` |
