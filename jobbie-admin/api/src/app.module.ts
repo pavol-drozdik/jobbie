@@ -12,6 +12,7 @@ import { AdminStorageModule } from './admin-storage/admin-storage.module';
 import { AdminOverviewModule } from './admin-overview/admin-overview.module';
 import { AdminContentModule } from './admin-content/admin-content.module';
 import { AdminConsentModule } from './admin-consent/admin-consent.module';
+import { AdminContractWithdrawalsModule } from './admin-contract-withdrawals/admin-contract-withdrawals.module';
 import { AdminInfrastructureModule } from './admin-infrastructure/admin-infrastructure.module';
 import { HealthController } from './health.controller';
 
@@ -37,6 +38,7 @@ import { HealthController } from './health.controller';
     AdminOverviewModule,
     AdminContentModule,
     AdminConsentModule,
+    AdminContractWithdrawalsModule,
     AdminInfrastructureModule,
   ],
   controllers: [HealthController],

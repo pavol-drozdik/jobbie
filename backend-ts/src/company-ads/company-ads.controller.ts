@@ -103,6 +103,7 @@ import {
 import { companyAdViewerFromUser } from './public-response.mapper';
 import { CompanyAdsListService } from './company-ads-list.service';
 import { CompanyAdOpenChatService } from './company-ad-open-chat.service';
+import { PromoCampaignService } from '../promotions/promo-campaign.service';
 import type { CompanyAdOpenChatResponseDto } from './company-ad-open-chat.service';
 import { IndexNowService } from '../seo/indexnow.service';
 
@@ -169,7 +170,12 @@ export class CompanyAdsController {
     private topPromotion: ListingTopPromotionService,
     private indexNow: IndexNowService,
     private companyAdOpenChat: CompanyAdOpenChatService,
+    private promoCampaigns: PromoCampaignService,
   ) {}
+
+  private triggerFirstPublishPromo(userId: string): void {
+    void this.promoCampaigns.tryAutoGrantOnFirstPublish(userId);
+  }
 
   private notifyAdPublishedIfActive(ad: { id: string; status?: string | null }): void {
     if (ad.status === 'active') {
@@ -609,6 +615,7 @@ export class CompanyAdsController {
           );
         }
         adRow = published as AdRow;
+        this.triggerFirstPublishPromo(user.id);
       } catch (e) {
         await this.credits.reverseSpendByRef(
           user.id,

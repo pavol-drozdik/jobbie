@@ -40,6 +40,25 @@ export function useCheckoutCredits(options: { packSlug: string; returnPath: stri
   const error = ref<string | null>(null)
   const clientSecret = ref<string | null>(null)
   const billingPrefill = ref<ProfileBillingPrefill | null>(null)
+  const packSlugRef = computed(() => packSlug)
+  const route = useRoute()
+  const initialPromoCode = computed(() => {
+    const raw = route.query.promo
+    return typeof raw === 'string' ? raw.trim() : ''
+  })
+  const {
+    promoCode,
+    promoPreview,
+    promoError,
+    validating: promoValidating,
+    promoCheckoutAvailable,
+    displayCents,
+    resolvedPromoCodeForCheckout,
+  } = useCheckoutPromo({
+    context: 'credit_checkout',
+    targetSlug: packSlugRef,
+    initialPromoCode,
+  })
 
   const stripeReturnUrl = computed(() => {
     const path = ROUTES.checkoutResultUrl({
@@ -111,11 +130,19 @@ export function useCheckoutCredits(options: { packSlug: string; returnPath: stri
       error.value = gate.message
       return null
     }
-    const body: { price_id: string; billing?: CheckoutBillingPayload } = {
+    const body: {
+      price_id: string
+      billing?: CheckoutBillingPayload
+      promo_code?: string
+    } = {
       price_id: p.price_id,
     }
     if (billing) {
       body.billing = billing
+    }
+    const promo = resolvedPromoCodeForCheckout()
+    if (promo) {
+      body.promo_code = promo
     }
     const res = await api<{
       client_secret: string
@@ -172,6 +199,11 @@ export function useCheckoutCredits(options: { packSlug: string; returnPath: stri
     }
   }
 
+  const checkoutAmountCents = computed(() => {
+    if (displayCents.value != null) return displayCents.value
+    return pack.value?.unit_amount ?? 0
+  })
+
   return {
     pack,
     loading,
@@ -179,6 +211,12 @@ export function useCheckoutCredits(options: { packSlug: string; returnPath: stri
     clientSecret,
     billingPrefill,
     stripeReturnUrl,
+    promoCode,
+    promoPreview,
+    promoError,
+    promoValidating,
+    promoCheckoutAvailable,
+    checkoutAmountCents,
     formatPrice,
     navigateToCheckoutResult,
     createPaymentIntent,

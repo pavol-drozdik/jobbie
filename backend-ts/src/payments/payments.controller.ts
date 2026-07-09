@@ -265,6 +265,7 @@ export class PaymentsController {
       pack.credits,
       user.email,
       body.billing,
+      { promoCode: body.promo_code, packSlug: pack.slug },
     );
   }
 
@@ -353,6 +354,7 @@ export class PaymentsController {
       stripePriceId,
       user.email,
       body.billing,
+      { promoCode: body.promo_code, planSlug: p.slug },
     );
   }
 

@@ -8,8 +8,6 @@ import { AuthModule } from '../auth/auth.module';
 import { PaymentsModule } from '../payments/payments.module';
 
 import { BillingController } from './billing.controller';
-import { RegistrationPromoController } from './registration-promo.controller';
-import { RegistrationPromoService } from './registration-promo.service';
 
 import { BillingCatalogService } from './billing-catalog.service';
 import { BillingPurchaseAuthorizationService } from './billing-purchase-authorization.service';
@@ -32,7 +30,7 @@ import { SubscriptionTrialService } from './subscription-trial.service';
     forwardRef(() => PaymentsModule),
   ],
 
-  controllers: [BillingController, RegistrationPromoController],
+  controllers: [BillingController],
 
   providers: [
 
@@ -49,8 +47,6 @@ import { SubscriptionTrialService } from './subscription-trial.service';
     CvDatabaseQuotaService,
 
     SubscriptionTrialService,
-
-    RegistrationPromoService,
 
   ],
 

@@ -4,6 +4,14 @@ export type RegistrationPromoRedeemResult = {
   reason?: string
 }
 
+export type PromoAvailability = {
+  active?: boolean
+  registration?: boolean
+  credit_checkout?: boolean
+  subscription_checkout?: boolean
+  registration_pool_mode?: boolean
+}
+
 const PENDING_REGISTRATION_PROMO_KEY = 'jobbie:pending-registration-promo'
 
 export function markPendingRegistrationPromo(code?: string | null): void {
@@ -33,21 +41,31 @@ function consumePendingRegistrationPromo(): 'skip' | 'metadata' | string {
 
 export function useRegistrationPromo() {
   const promoCode = useState<string>('reg-promo-code', () => '')
-  const promoActive = useState<boolean | null>('reg-promo-active', () => null)
+  const promoRegistrationAvailable = useState<boolean | null>(
+    'reg-promo-registration-available',
+    () => null,
+  )
+  const registrationPoolMode = useState<boolean>(
+    'reg-promo-registration-pool-mode',
+    () => false,
+  )
   const grantedCredits = useState<number | null>('reg-promo-granted', () => null)
 
   const { api } = useApi()
 
   async function loadPromoActive(): Promise<boolean> {
     try {
-      const res = await api<{ active?: boolean }>('/api/promotions/registration/status', {
+      const res = await api<PromoAvailability>('/api/promotions/active', {
         skipSessionExpiry: true,
       })
-      const active = res.status === 200 && res.data?.active === true
-      promoActive.value = active
-      return active
+      const registration =
+        res.status === 200 && res.data?.registration === true
+      promoRegistrationAvailable.value = registration
+      registrationPoolMode.value = res.data?.registration_pool_mode === true
+      return registration
     } catch {
-      promoActive.value = false
+      promoRegistrationAvailable.value = false
+      registrationPoolMode.value = false
       return false
     }
   }
@@ -55,9 +73,9 @@ export function useRegistrationPromo() {
   async function validatePromoCode(code: string): Promise<boolean> {
     const trimmed = code.trim()
     if (!trimmed) return false
-    const res = await api<{ valid?: boolean }>('/api/promotions/registration/validate', {
+    const res = await api<{ valid?: boolean }>('/api/promotions/validate', {
       method: 'POST',
-      body: { code: trimmed },
+      body: { code: trimmed, context: 'signup' },
       skipSessionExpiry: true,
     })
     return res.status === 200 && res.data?.valid === true
@@ -68,7 +86,11 @@ export function useRegistrationPromo() {
     options?: { useMetadataFallback?: boolean },
   ): Promise<RegistrationPromoRedeemResult | null> {
     const trimmed = (codeOverride ?? promoCode.value).trim()
-    const body: { code?: string; use_metadata_fallback?: boolean } = {}
+    const body: {
+      code?: string
+      context: 'signup'
+      use_metadata_fallback?: boolean
+    } = { context: 'signup' }
     if (trimmed) {
       body.code = trimmed
     } else if (options?.useMetadataFallback) {
@@ -76,13 +98,10 @@ export function useRegistrationPromo() {
     } else {
       return null
     }
-    const res = await api<RegistrationPromoRedeemResult>(
-      '/api/promotions/registration/redeem',
-      {
-        method: 'POST',
-        body,
-      },
-    )
+    const res = await api<RegistrationPromoRedeemResult>('/api/promotions/redeem', {
+      method: 'POST',
+      body,
+    })
     if (res.status !== 200 || !res.data) {
       return null
     }
@@ -90,6 +109,20 @@ export function useRegistrationPromo() {
       grantedCredits.value = res.data.credits_granted
     }
     return res.data
+  }
+
+  async function redeemRegistrationPromoIfSignupEligible(
+    codeOverride?: string | null,
+    options?: { useMetadataFallback?: boolean },
+  ): Promise<RegistrationPromoRedeemResult | null> {
+    const trimmed = (codeOverride ?? promoCode.value).trim()
+    if (options?.useMetadataFallback) {
+      return redeemRegistrationPromo(undefined, { useMetadataFallback: true })
+    }
+    if (!trimmed) return null
+    const validForSignup = await validatePromoCode(trimmed)
+    if (!validForSignup) return null
+    return redeemRegistrationPromo(trimmed)
   }
 
   function clearGrantedCreditsBanner(): void {
@@ -103,18 +136,24 @@ export function useRegistrationPromo() {
       return null
     }
     if (pending === 'metadata') {
-      return redeemRegistrationPromo(undefined, { useMetadataFallback: true })
+      return redeemRegistrationPromoIfSignupEligible(undefined, {
+        useMetadataFallback: true,
+      })
     }
-    return redeemRegistrationPromo(pending)
+    return redeemRegistrationPromoIfSignupEligible(pending)
   }
 
   return {
     promoCode,
-    promoActive,
+    promoRegistrationAvailable,
+    registrationPoolMode,
+    /** @deprecated use promoRegistrationAvailable */
+    promoActive: promoRegistrationAvailable,
     grantedCredits,
     loadPromoActive,
     validatePromoCode,
     redeemRegistrationPromo,
+    redeemRegistrationPromoIfSignupEligible,
     tryRedeemPendingRegistrationPromo,
     markPendingRegistrationPromo,
     clearGrantedCreditsBanner,

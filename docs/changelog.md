@@ -1,4 +1,48 @@
-﻿## 2026-07-09 — Admin Infra Nest instance controls
+﻿## 2026-07-12 — Promo campaign builder Phase 5
+
+- **Database:** `require_no_published_offer`; partial unique index on redemptions (retry after `cancelled`); RPC `release_promo_campaign_redemption`; pending-redemption index for cron.
+- **backend-ts:** Release pending on PI cancel + stale cron; subscription/amount_off validate preview; safe public validate `reasons`; pool-aware `GET /api/promotions/active`.
+- **jobbie-admin:** Pool disable/enable, list pool stats, redemption `pool_code`, archive Stripe coupon delete, export audit; simulator `prior_published_offer`.
+- **app-pwa:** Checkout promo reason messages, amount-off UI, `?promo=` deep links, registration pool hint.
+- **docs/payments-credits.md** — Phase 5 section.
+
+## 2026-07-09 — Contract withdrawal admin queue
+
+Added:
+- **Database:** `contract_withdrawals` table (status `pending` / `approved` / `rejected`, form snapshot, admin status metadata).
+- **backend-ts:** `POST /api/contract-withdrawals` persists row before e-mails; audit `subjectId` = withdrawal UUID.
+- **jobbie-admin:** `GET/PATCH /api/admin/contract-withdrawals`; **Odstúpenie od zmluvy** screen with per-row status dropdown.
+
+Docs:
+- **docs/admin-desktop.md**, **docs/database.md**.
+
+## 2026-07-11 — Promo campaign builder Phase 4
+
+- **Database:** `code_mode` (`shared` / `unique_pool`), `subscription_discount_duration_months`, table `promo_campaign_codes`, `pool_code_id` on redemptions; RPC `claim_promo_campaign_redemption` extended with `p_pool_code_id` and `archived_at` check.
+- **backend-ts:** `resolveCodeEntry` for shared vs pool codes; repeating Stripe coupon sync; eligibility reasons `pool_code_invalid` / `pool_code_exhausted`.
+- **jobbie-admin:** pool generate/list/export API; UI for code mode, repeating months, pool management, simulator pool flag; `influencer_pool` preset.
+- **docs/payments-credits.md** — Phase 4 section.
+
+## 2026-07-10 — Promo campaign builder Phase 3 + ops
+
+Added:
+- **Database:** `eligible_profile_role`, `require_no_prior_subscription`, `discount_kind`, `reward_amount_cents`, `archived_at` on `promo_campaigns`; `amount_applied_cents` on redemptions.
+- **backend-ts:** Profile role and first-subscription eligibility; fixed amount off for credit checkout and Stripe coupons; archived campaigns excluded from redemption.
+- **jobbie-admin:** Account-type filter, discount kind (percent / fixed), archive/restore, redemption list per campaign, simulator fields for role and prior subscription.
+
+Docs:
+- **docs/payments-credits.md**.
+
+## 2026-07-09 — Promo campaign builder Phase 1+2
+
+Added:
+- **jobbie-admin:** Campaign presets, live summary/warnings sidebar, list chips, clone-to-form, eligibility simulator panel on **Promo kódy**.
+- **jobbie-admin API:** `POST /admin/promo-campaigns/simulate` — draft or saved campaign + scenario; `admin-promo-campaign.simulate.ts` mirrors backend eligibility rules.
+
+Docs:
+- **docs/payments-credits.md** — admin builder section.
+
+## 2026-07-09 — Admin Infra Nest instance controls
 
 Added:
 - **jobbie-admin:** Infra **Nest inštancie** panel — per-replica docker stats; super_admin can add/remove one replica or restart a container (SSH).
@@ -63,6 +107,24 @@ Security:
 
 Docs:
 - **docs/payments-credits.md**, **docs/features.md** — activity-role billing policy.
+
+## 2026-07-09 — Contextual promo code UX
+
+Changed:
+- **backend-ts:** `GET /api/promotions/active` returns `registration`, `credit_checkout`, and `subscription_checkout` flags.
+- **app-pwa:** Promo field at registration only when free-credit campaigns need a code; checkout promo only when discount campaigns exist; signup redeem runs only when code validates for `signup` context.
+- **jobbie-admin:** Reward-type-guided campaign creator (when to grant free credits; checkout-only messaging for discounts).
+
+## 2026-07-09 — Unified promo campaigns
+
+Added:
+- **Database:** `promo_campaigns`, `promo_campaign_redemptions`, RPC `claim_promo_campaign_redemption`; migrates legacy `registration_promo_*` data; drops old tables.
+- **backend-ts:** `PromotionsModule` — validate/redeem APIs, checkout discounts (PI amount + Stripe coupons), first-publish auto-grant; removes registration-only promo module.
+- **app-pwa:** Promo code field on credit/subscription checkout with debounced validate + price preview; registration flows use unified `/api/promotions/*`.
+- **jobbie-admin:** Full campaign creator on **Promo kódy** (`GET/POST/PATCH /admin/promo-campaigns`).
+
+Docs:
+- **docs/payments-credits.md** — promo campaigns section (replaces registration-only promo).
 
 ## 2026-07-08 — Registration promo codes
 

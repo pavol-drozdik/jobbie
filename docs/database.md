@@ -100,6 +100,7 @@ Deep conventions: [database-schema-conventions.md](./database-schema-conventions
 |-------|---------|
 | `audit_events`, `audit_chain_state` | HMAC-chained audit log |
 | `consent_events` | GDPR consent history (service insert) |
+| `contract_withdrawals` | Consumer withdrawal form submissions (`pending` / `approved` / `rejected`; Nest insert, admin update via service_role) |
 | `content_reports` | User abuse reports (`target_type`: `job_offer`, `company_profile`, `company_ad`, `banner_ad`, `company_review`, `chat_message`; service_role only) |
 
 ## Relationships (simplified)

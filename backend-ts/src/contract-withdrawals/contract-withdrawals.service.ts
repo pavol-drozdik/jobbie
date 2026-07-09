@@ -14,6 +14,7 @@ import {
 } from '../email/contract-withdrawal-email.template';
 import { EmailService } from '../email/email.service';
 import { escapeHtml } from '../email/transactional-email.template';
+import { SupabaseService } from '../supabase/supabase.service';
 import { ContractWithdrawalDto } from './contract-withdrawal.dto';
 
 const PRODUCT_LABELS: Record<string, string> = {
@@ -35,6 +36,7 @@ export class ContractWithdrawalsService {
     private readonly config: ConfigService,
     private readonly email: EmailService,
     private readonly audit: AuditService,
+    private readonly supabase: SupabaseService,
   ) {}
 
   async submit(dto: ContractWithdrawalDto): Promise<{ ok: true }> {
@@ -59,12 +61,42 @@ export class ContractWithdrawalsService {
       : null;
     const reasonOther = dto.reason_other?.trim() ?? '';
     const submittedAt = new Date();
+    const submittedAtIso = submittedAt.toISOString();
     const submittedAtLabel = formatContractWithdrawalSubmittedAt(submittedAt);
     const purchaseDateLabel = formatContractWithdrawalPurchaseDate(purchaseDate);
     const appOrigin = resolvePublicAppOrigin(this.config);
 
+    const { data: inserted, error: insertError } = await this.supabase
+      .getClient()
+      .from('contract_withdrawals')
+      .insert({
+        status: 'pending',
+        name: name.slice(0, 200),
+        email: emailNorm,
+        product: dto.product,
+        invoice_number: invoiceNumber.slice(0, 80),
+        purchase_date: purchaseDate,
+        reason: dto.reason ?? null,
+        reason_other: reasonOther ? reasonOther.slice(0, 500) : null,
+        submitted_at: submittedAtIso,
+      })
+      .select('id')
+      .single();
+
+    if (insertError || !inserted?.id) {
+      this.logger.warn(
+        `contract_withdrawals insert failed: ${insertError?.message ?? 'no row'}`,
+      );
+      throw new ServiceUnavailableException(
+        'Nepodarilo sa uložiť žiadosť. Skúste neskôr alebo napíšte na podpora@jobbie.sk.',
+      );
+    }
+
+    const withdrawalId = inserted.id as string;
+
     const supportHtml = `
       <h2>Odstúpenie od zmluvy</h2>
+      <p><strong>ID žiadosti:</strong> ${escapeHtml(withdrawalId)}</p>
       <p><strong>Meno:</strong> ${escapeHtml(name)}</p>
       <p><strong>E-mail:</strong> ${escapeHtml(emailNorm)}</p>
       <p><strong>Produkt:</strong> ${escapeHtml(productLabel)}</p>
@@ -136,7 +168,7 @@ export class ContractWithdrawalsService {
       deviceId: null,
       eventType: 'contract.withdrawal.received',
       subjectType: 'contract_withdrawal',
-      subjectId: dto.product,
+      subjectId: withdrawalId,
       payload: {
         product: dto.product,
         ...(dto.reason ? { reason: dto.reason } : {}),

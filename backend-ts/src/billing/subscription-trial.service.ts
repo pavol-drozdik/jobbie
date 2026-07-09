@@ -151,6 +151,53 @@ export class SubscriptionTrialService {
   }
 
   /**
+   * True when the user has consumed a paid/trial subscription before.
+   */
+  async hasPriorPaidSubscription(
+    userId: string,
+    stripe: StripeClient | null,
+  ): Promise<boolean> {
+    if (!stripe) {
+      return this.hasPriorPaidSubscriptionDbOnly(userId);
+    }
+    const eligible = await this.isUserEligibleForSubscriptionTrial(userId, stripe);
+    return !eligible;
+  }
+
+  private async hasPriorPaidSubscriptionDbOnly(userId: string): Promise<boolean> {
+    const supabase = this.supabase.getClient();
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('subscription_trial_used_at')
+      .eq('id', userId)
+      .maybeSingle();
+    if (
+      (profile as { subscription_trial_used_at?: string | null } | null)
+        ?.subscription_trial_used_at
+    ) {
+      return true;
+    }
+    const { data: subRow } = await supabase
+      .from('user_subscriptions')
+      .select(
+        'stripe_subscription_id, subscription_plans(price_monthly_cents)',
+      )
+      .eq('user_id', userId)
+      .maybeSingle();
+    const row = subRow as {
+      stripe_subscription_id?: string | null;
+      subscription_plans?: { price_monthly_cents?: number };
+    } | null;
+    if (row?.stripe_subscription_id?.trim()) {
+      return true;
+    }
+    if ((row?.subscription_plans?.price_monthly_cents ?? 0) > 0) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * Trial days to apply on subscribe when eligible; 0 when not.
    * Caller must set `trial_end: 'now'` when this returns 0 but the Price has a default trial.
    */

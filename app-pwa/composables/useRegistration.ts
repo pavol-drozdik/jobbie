@@ -66,7 +66,9 @@ export function buildRegistrationSignUpMeta(
     meta.provider_role = roleData.provider_role ? 'true' : 'false'
   }
   if (creds.promoCode?.trim()) {
-    meta.registration_promo_code = creds.promoCode.trim()
+    const code = creds.promoCode.trim()
+    meta.promo_code = code
+    meta.registration_promo_code = code
   }
   return meta
 }

@@ -41,6 +41,7 @@ import {
   type SubscriptionCreateParams,
 } from './stripe-types';
 import { CreditsService } from '../billing/credits.service';
+import { PromoCampaignService } from '../promotions/promo-campaign.service';
 import { isPublicSubscriptionPlanSlug } from '../billing/public-pricing-catalog';
 import { SubscriptionTrialService } from '../billing/subscription-trial.service';
 import { SkRpoLookupService } from '../registry/sk-rpo-lookup.service';
@@ -184,6 +185,7 @@ export class StripeService {
     private subscriptionTrial: SubscriptionTrialService,
     private skRpoLookup: SkRpoLookupService,
     private billingInvoiceEmail: BillingInvoiceEmailService,
+    private promoCampaigns: PromoCampaignService,
   ) {
     const key = this.config.get<string>('STRIPE_SECRET_KEY');
     if (key) {
@@ -1267,6 +1269,7 @@ export class StripeService {
     creditsAmount: number,
     email: string,
     billing?: CheckoutBillingDetailsInput | null,
+    options?: { promoCode?: string; packSlug?: string },
   ): Promise<{ client_secret: string; amount?: number; currency?: string }> {
     const customerEmail = email?.trim();
     if (!customerEmail) {
@@ -1280,6 +1283,29 @@ export class StripeService {
     const currency = price.currency ?? 'eur';
     if (amount < 1) {
       throw new ServiceUnavailableException('Invalid price amount');
+    }
+
+    let chargeAmount = amount;
+    let promoMeta: Record<string, string> = {};
+    if (options?.promoCode?.trim() && options.packSlug) {
+      const promo = await this.promoCampaigns.prepareCheckoutPromo(
+        userId,
+        'credit_checkout',
+        options.promoCode,
+        { packSlug: options.packSlug, originalCents: amount },
+      );
+      if (promo.discountedCents != null) {
+        chargeAmount = promo.discountedCents;
+        promoMeta = {
+          promo_campaign_id: promo.campaign.id,
+          promo_redemption_id: promo.redemptionId,
+          promo_original_amount_cents: String(amount),
+          promo_discount_percent: String(promo.campaign.reward_percent ?? 0),
+        };
+      }
+    }
+    if (chargeAmount < 1) {
+      throw new BadRequestException('Zľavnená suma musí byť aspoň 1 cent.');
     }
 
     const profileCtx = await this.loadProfileBillingContext(userId);
@@ -1313,15 +1339,18 @@ export class StripeService {
       this.isCreditPackOpenInvoice(inv),
     );
 
-    const metadata = this.creditCheckoutMetadata(
-      userId,
-      priceId,
-      creditsAmount,
-      effectiveBilling,
-    );
+    const metadata = {
+      ...this.creditCheckoutMetadata(
+        userId,
+        priceId,
+        creditsAmount,
+        effectiveBilling,
+      ),
+      ...promoMeta,
+    };
 
     const pi = await stripe.paymentIntents.create({
-      amount,
+      amount: chargeAmount,
       currency,
       customer: customerId,
       metadata,
@@ -1336,6 +1365,17 @@ export class StripeService {
     if (!secret) {
       throw new ServiceUnavailableException(
         'Nepodarilo sa vytvoriť platobný formulár pre kredity.',
+      );
+    }
+    const promoRedemptionId = promoMeta.promo_redemption_id;
+    if (promoRedemptionId) {
+      await this.promoCampaigns.attachPaymentIntentToRedemption(
+        promoRedemptionId,
+        pi.id,
+        {
+          percent_applied: Number(promoMeta.promo_discount_percent) || undefined,
+          target_slug: options?.packSlug,
+        },
       );
     }
     return this.paymentIntentResponseFromStripe(pi, secret);
@@ -1906,6 +1946,7 @@ export class StripeService {
     stripePriceId: string,
     email: string,
     billing?: CheckoutBillingDetailsInput | null,
+    options?: { promoCode?: string; planSlug?: string },
   ): Promise<{ client_secret: string; amount?: number; currency?: string }> {
     const customerEmail = email?.trim();
     if (!customerEmail) {
@@ -1983,6 +2024,24 @@ export class StripeService {
         type: 'subscription',
       },
     };
+    let promoRedemptionId: string | undefined;
+    if (options?.promoCode?.trim() && options.planSlug) {
+      const promo = await this.promoCampaigns.prepareCheckoutPromo(
+        userId,
+        'subscription_checkout',
+        options.promoCode,
+        { planSlug: options.planSlug },
+      );
+      if (promo.stripeCouponId) {
+        subscriptionParams.discounts = [{ coupon: promo.stripeCouponId }];
+        subscriptionParams.metadata = {
+          ...subscriptionParams.metadata,
+          promo_campaign_id: promo.campaign.id,
+          promo_redemption_id: promo.redemptionId,
+        };
+        promoRedemptionId = promo.redemptionId;
+      }
+    }
     const trialPeriodDays = await this.applyStripePriceTrialToSubscriptionCreate(
       subscriptionParams,
       userId,
@@ -2040,12 +2099,27 @@ export class StripeService {
       });
     }
     if (pi?.id) {
-      await this.attachInvoicePaymentIntentExtras(pi.id, customerEmail, {
+      const piExtras: Record<string, string> = {
         user_id: userId,
         plan_id: planId,
         type: 'subscription',
         stripe_subscription_id: subscription.id,
-      });
+      };
+      if (promoRedemptionId) {
+        const subMeta = subscriptionParams.metadata as Record<string, string> | undefined;
+        if (subMeta?.promo_campaign_id) {
+          piExtras.promo_campaign_id = subMeta.promo_campaign_id;
+        }
+        piExtras.promo_redemption_id = promoRedemptionId;
+      }
+      await this.attachInvoicePaymentIntentExtras(pi.id, customerEmail, piExtras);
+    }
+    if (promoRedemptionId) {
+      await this.supabaseService
+        .getClient()
+        .from('promo_campaign_redemptions')
+        .update({ stripe_subscription_id: subscription.id })
+        .eq('id', promoRedemptionId);
     }
     return this.paymentIntentResponseFromStripe(pi, clientSecret, {
       intent_type: intentType,
@@ -2119,6 +2193,13 @@ export class StripeService {
     if (fullSub.status === 'trialing') {
       await this.subscriptionTrial.markSubscriptionTrialUsed(userId);
     }
+    const promoRedemptionId = meta.promo_redemption_id?.trim();
+    if (promoRedemptionId) {
+      await this.promoCampaigns.completeRedemption(promoRedemptionId, {
+        stripe_subscription_id: fullSub.id,
+        percent_applied: Number(meta.promo_discount_percent) || undefined,
+      });
+    }
     return { applied: true, reason: 'ok' };
   }
 
@@ -2161,6 +2242,12 @@ export class StripeService {
     if (sub.status === 'trialing') {
       await this.subscriptionTrial.markSubscriptionTrialUsed(userId);
     }
+    const promoRedemptionId = meta.promo_redemption_id?.trim();
+    if (promoRedemptionId) {
+      await this.promoCampaigns.completeRedemption(promoRedemptionId, {
+        stripe_subscription_id: sub.id,
+      });
+    }
     return { applied: true, reason: 'ok' };
   }
 
@@ -2173,6 +2260,18 @@ export class StripeService {
   ): Promise<boolean> {
     const amount = paymentIntentAmountCents(pi);
     if (amount < 1) return false;
+    const metadata = (pi.metadata ?? {}) as Record<string, string>;
+    const promoRedemptionId = metadata.promo_redemption_id?.trim();
+    const originalAmount = Number(metadata.promo_original_amount_cents ?? 0);
+    if (promoRedemptionId && originalAmount > 0 && metadata.user_id) {
+      return this.promoCampaigns.validateDiscountedCreditPayment(
+        pi.id,
+        metadata.user_id,
+        expectedCredits,
+        amount,
+        originalAmount,
+      );
+    }
     const packs = await this.listCreditPacks();
     const priceId =
       typeof pi.metadata?.price_id === 'string'
@@ -2227,6 +2326,15 @@ export class StripeService {
     paymentIntentId: string,
   ): Promise<void> {
     await this.voidOpenInvoiceForPaymentIntent(paymentIntentId);
+    try {
+      await this.promoCampaigns.releasePromoRedemptionByPaymentIntent(
+        paymentIntentId,
+      );
+    } catch (err) {
+      this.logger.warn(
+        `releasePromoRedemptionByPaymentIntent failed for ${paymentIntentId}: ${String(err)}`,
+      );
+    }
   }
 
   /**
@@ -2413,6 +2521,13 @@ export class StripeService {
     await this.ensureCreditPaymentInvoice(pi.id, {
       assertUserId: merged.user_id,
     });
+    const promoRedemptionId = merged.promo_redemption_id?.trim();
+    if (promoRedemptionId) {
+      await this.promoCampaigns.completeRedemption(promoRedemptionId, {
+        payment_intent_id: pi.id,
+        percent_applied: Number(merged.promo_discount_percent) || undefined,
+      });
+    }
     return { applied: true, reason: 'ok' };
   }
 

@@ -2,6 +2,7 @@ import { ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuditService } from '../audit/audit.service';
 import { EmailService } from '../email/email.service';
+import { SupabaseService } from '../supabase/supabase.service';
 import { ContractWithdrawalsService } from './contract-withdrawals.service';
 import type { ContractWithdrawalDto } from './contract-withdrawal.dto';
 
@@ -20,6 +21,7 @@ describe('ContractWithdrawalsService', () => {
   function buildService(opts: {
     smtpConfigured: boolean;
     sendOk: boolean;
+    insertOk?: boolean;
   }): {
     svc: ContractWithdrawalsService;
     sendHtmlEmail: jest.Mock;
@@ -39,13 +41,27 @@ describe('ContractWithdrawalsService', () => {
     const audit = {
       recordAuditEvent: jest.fn().mockResolvedValue(undefined),
     } as unknown as AuditService;
+
+    const insertOk = opts.insertOk !== false;
+    const single = jest.fn().mockResolvedValue(
+      insertOk
+        ? { data: { id: 'withdrawal-uuid-1' }, error: null }
+        : { data: null, error: { message: 'insert failed' } },
+    );
+    const select = jest.fn().mockReturnValue({ single });
+    const insert = jest.fn().mockReturnValue({ select });
+    const from = jest.fn().mockReturnValue({ insert });
+    const supabase = {
+      getClient: jest.fn().mockReturnValue({ from }),
+    } as unknown as SupabaseService;
+
     return {
-      svc: new ContractWithdrawalsService(config, email, audit),
+      svc: new ContractWithdrawalsService(config, email, audit, supabase),
       sendHtmlEmail,
     };
   }
 
-  it('returns ok when support and user emails send', async () => {
+  it('returns ok when row is inserted and emails send', async () => {
     const { svc, sendHtmlEmail } = buildService({
       smtpConfigured: true,
       sendOk: true,
@@ -63,6 +79,18 @@ describe('ContractWithdrawalsService', () => {
     await expect(svc.submit(dto)).rejects.toBeInstanceOf(
       ServiceUnavailableException,
     );
+  });
+
+  it('throws when insert fails', async () => {
+    const { svc, sendHtmlEmail } = buildService({
+      smtpConfigured: true,
+      sendOk: true,
+      insertOk: false,
+    });
+    await expect(svc.submit(dto)).rejects.toBeInstanceOf(
+      ServiceUnavailableException,
+    );
+    expect(sendHtmlEmail).not.toHaveBeenCalled();
   });
 
   it('throws when sendHtmlEmail fails', async () => {

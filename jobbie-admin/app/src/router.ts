@@ -65,6 +65,12 @@ export const router = createRouter({
       meta: { requiresAuth: true, title: 'Cookie súhlas' },
     },
     {
+      path: '/contract-withdrawals',
+      name: 'contract-withdrawals',
+      component: () => import('./views/ContractWithdrawalsView.vue'),
+      meta: { requiresAuth: true, title: 'Odstúpenie od zmluvy' },
+    },
+    {
       path: '/moderation',
       name: 'moderation',
       component: () => import('./views/ModerationView.vue'),

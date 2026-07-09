@@ -182,25 +182,43 @@ Details: [database.md](./database.md#credit-ledger-rpcs).
 
 
 
-## Registration promo codes
+## Promo campaigns
 
+Unified promo campaigns in Postgres (`promo_campaigns`, `promo_campaign_redemptions`). Default seed after migration: code **`LAUNCH20`**, **20** free credits, **50** max redemptions, **`enabled = false`** until turned on in admin.
 
+Each campaign defines one reward type:
 
-Limited signup campaigns in Postgres (`registration_promo_campaigns`, `registration_promo_redemptions`). Default seed: code **`LAUNCH20`**, **20** credits, **50** max redemptions, **`enabled = false`** until turned on in admin or SQL.
+| `reward_type` | Effect |
+|---------------|--------|
+| `free_credits` | `CreditsService.grant` on signup or first publish |
+| `credit_pack_discount` | Reduced PaymentIntent amount at credit checkout |
+| `subscription_discount` | Stripe Coupon on `subscriptions.create` (`once`, `forever`, or `repeating` with `duration_in_months`) |
 
-
+Eligibility flags combine with **AND**: `require_new_account` (+ `new_account_max_hours`), `require_first_publish` (at least one non-draft job or company ad), `require_no_published_offer` (checkout discounts only — user must have **no** published job or company ad), `require_promo_code`. One active redemption per user per campaign (partial unique index excludes `cancelled` rows so checkout abandon can retry); cap via RPC `claim_promo_campaign_redemption` (`FOR UPDATE`).
 
 | API | Auth | Purpose |
 |-----|------|---------|
-| `GET /api/promotions/registration/status` | Public | `{ active: boolean }` — any enabled campaign with remaining slots |
-| `POST /api/promotions/registration/validate` | Public | `{ valid: boolean }` — does not reveal remaining count |
-| `POST /api/promotions/registration/redeem` | Session | Claims slot + `grant_credits` (`source = free_grant`, `ref_type = registration_promo`) |
+| `GET /api/promotions/active` | Public | `{ active, registration, credit_checkout, subscription_checkout, registration_pool_mode? }` — pool-aware availability |
+| `POST /api/promotions/validate` | Optional session | `{ valid, preview?, reasons? }` — checkout preview (`percent_off`, `amount_off_cents`, `duration_label` for subscriptions); `reasons` whitelisted only (no cap leakage) |
+| `POST /api/promotions/redeem` | Session | Free-credit claim for `signup` / `first_publish` contexts |
 
-Rules enforced server-side: campaign enabled, optional `starts_at`/`ends_at`, cap via RPC `claim_registration_promo_redemption` (`FOR UPDATE`), one redemption per user, account age ≤ **48 h** from `profiles.created_at`. Client sends code only; credit amount comes from DB.
+Credit checkout: optional `promo_code` on `POST /api/payments/create-payment-intent-credits`; PI amount discounted server-side; fulfillment validates discounted amount against redemption row.
 
+Subscription checkout: optional `promo_code` on `POST /api/payments/create-payment-intent-subscription`; Stripe coupon applied on subscription create.
 
+First publish: after job/ad activate, `PromoCampaignService.tryAutoGrantOnFirstPublish` auto-grants eligible `free_credits` campaigns.
 
-**Admin (desktop):** `jobbie-admin` → **Promo kódy** — `GET/PATCH /admin/registration-promo/campaigns/:id` (`billing` scope, recent login on PATCH).
+**Where users enter codes:** free-credit campaigns collect the promo code at **registration** (stored in auth metadata for first-publish rewards); discount campaigns collect the code at **credit or subscription checkout** only. PWA shows each input only when the matching `GET /api/promotions/active` flag is true.
+
+**Admin (desktop):** `jobbie-admin` → **Promo kódy** — `GET/POST/PATCH /admin/promo-campaigns`, `GET …/catalog`, `POST …/simulate` (`billing` scope, recent login on mutations).
+
+**Campaign builder (Phase 1+2):** preset templates (signup credits, first-listing bonus, pack sale, new-user subscription), live **Súhrn kampane** sidebar with eligibility warnings, list row chips (reward / code location / timing), **Duplikovať** to prefilled create form, and **Simulátor** — `POST /admin/promo-campaigns/simulate` with draft or saved campaign + scenario (`context`, `code`, `account_age_hours`, `has_published`, optional `pack_slug` / `plan_slug`). Simulator logic mirrors `PromoCampaignService` eligibility in `admin-promo-campaign.simulate.ts` (no main API hop for unsaved drafts).
+
+**Campaign builder (Phase 3 + ops):** additional campaign fields — `eligible_profile_role` (`both` / `company` / `individual`), `require_no_prior_subscription` (subscription checkout), `discount_kind` (`percent` | `amount_off`) with `reward_amount_cents` for fixed credit-pack or subscription discounts. Admin: **Archivovať** / **Obnoviť** (`archived_at`, excluded from public redemption), **Uplatnenia** list per campaign (`GET /admin/promo-campaigns/:id/redemptions`), `GET /admin/promo-campaigns?include_archived=1`.
+
+**Campaign builder (Phase 4):** `subscription_discount_duration: repeating` with `subscription_discount_duration_months` (1–36) synced to Stripe coupons (`duration_in_months`). **Unique code pools** (`code_mode: unique_pool`): `promo_campaign_codes` table; campaign `code` is admin label only; users redeem generated pool codes. RPC `claim_promo_campaign_redemption` accepts optional `p_pool_code_id`, rejects archived campaigns. Admin pool ops: `POST /admin/promo-campaigns/:id/codes/generate`, `GET …/codes`, `GET …/codes/export` (CSV: code, status, redeemed_at). Simulator: `pool_code_available` scenario flag; reason codes `pool_code_invalid`, `pool_code_exhausted`.
+
+**Campaign builder (Phase 5):** **Abandoned checkout release** — RPC `release_promo_campaign_redemption` cancels `pending` redemptions (Stripe `payment_intent.canceled` + hourly stale-pending cron); pool codes revert to `available`. **`require_no_published_offer`** for credit/subscription checkout. **Validate** returns safe `reasons[]` (e.g. `prior_published_offer`, `pack_not_eligible` — never `exhausted` with counts). **PWA:** `?promo=CODE` on registration and `/platba`; amount-off badge and subscription preview with `duration_label`; pool registration hint when `registration_pool_mode`. **Admin:** `PATCH …/codes/:codeId` disable/enable pool rows; list `pool_available` / `pool_redeemed`; redemptions show `pool_code`; archive deletes Stripe coupon; pool CSV export audited.
 
 
 
@@ -241,7 +259,7 @@ Credits, subscriptions, and the credit wallet require **`customer_role` or `prov
 | Layer | Enforcement |
 |-------|-------------|
 | PWA | `canPurchaseBilling()` / `billing-access` middleware; wallet UI hidden in profile and settings |
-| API | `BillingPurchaseAuthorizationService.assertBillingPurchaseAccessForUser` on `GET/PATCH /api/billing/account`, ledger, payments, `GET /api/plans/me`, registration promo redeem |
+| API | `BillingPurchaseAuthorizationService.assertBillingPurchaseAccessForUser` on `GET/PATCH /api/billing/account`, ledger, payments, `GET /api/plans/me`, promo redeem |
 
 Public catalog (`GET /api/billing/config`, `GET /api/plans`, `GET /api/payments/credit-packs`) and `/cennik` remain readable without billing access.
 
