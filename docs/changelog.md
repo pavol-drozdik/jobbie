@@ -1,4 +1,81 @@
-﻿## 2026-06-29 — Hard refresh 500 on dynamic routes
+﻿## 2026-07-09 — Admin Infra Nest instance controls
+
+Added:
+- **jobbie-admin:** Infra **Nest inštancie** panel — per-replica docker stats; super_admin can add/remove one replica or restart a container (SSH).
+- **jobbie-admin API:** `GET/POST /admin/infrastructure/:envId/backends/*` with `@RequireRecentLogin()` + `SuperAdminGuard`; audit `admin.infra.backend_scaled` / `admin.infra.backend_restarted`.
+- **websupport-vps-deployment:** `restart_backend_instance.sh`, `read_backend_capacity.sh`.
+
+Docs:
+- **docs/admin-desktop.md**, **docs/staging-production-manual.md** §17, **websupport-vps-deployment/README-DEPLOYMENT.md**.
+
+## 2026-07-09 — VPS Nest backend autoscale (same host)
+
+Added:
+- **websupport-vps-deployment:** `autoscale_backend.sh` + `scale_backend.sh` — adjust `BACKEND_SCALE` from host CPU, RAM, and local `/health` latency; dynamic max replicas from VPS size.
+- **systemd** `jobbie-backend-autoscale.timer` (every 5 min, off until `BACKEND_AUTOSCALE_ENABLED=1`).
+- **deploy_backend.sh** deploy lock so autoscale does not run during image rollouts.
+
+Docs:
+- **docs/staging-production-manual.md** §17, **websupport-vps-deployment/README-DEPLOYMENT.md**, **.env.example** (`BACKEND_AUTOSCALE_ENABLED`, `AUTOSCALE_*`).
+
+## 2026-07-09 — VPS-backed infra metrics history
+
+Added:
+- **websupport-vps-deployment:** `record_infra_sample.sh`, `jobbie-infra-metrics` systemd timer/service, logrotate config — appends CPU/RAM samples to `/var/lib/jobbie/infra-metrics.jsonl` every 5 min on each VPS.
+- **jobbie-admin API:** `VpsRemoteHistoryService` reads remote JSONL over SSH; merges with local session cache; `GET /admin/infrastructure/:envId/history` returns `history_source` (`vps` | `local` | `mixed`).
+
+Changed:
+- **jobbie-admin:** Infra history chart hints for local-only vs mixed sources; deploy doc link when VPS sampler is missing.
+- **jobbie-admin Electron:** SIGTERM + 500 ms grace before killing Nest API so local history JSON flushes on quit.
+
+Docs:
+- **docs/admin-desktop.md**, **websupport-vps-deployment/README-DEPLOYMENT.md**, **jobbie-admin/api/.env.example** (`VPS_*_INFRA_HISTORY_PATH`).
+
+## 2026-07-09 — Admin desktop UI redesign
+
+Changed:
+- **jobbie-admin:** Full frontend redesign — Tailwind CSS v4 + PrimeVue 4 (slate/zinc professional theme, green primary accent); collapsible grouped sidebar with icons; `AdminShell` layout components; all 17 views migrated to PrimeVue tables/forms/dialogs; legacy `styles.css` removed.
+
+Docs:
+- **docs/admin-desktop.md** — UI stack section.
+
+## 2026-07-09 — Contract withdrawal form
+
+Added:
+- **app-pwa:** Footer link **Odstúpenie od zmluvy**; public page `/odstupenie-od-zmluvy` with auth-style split layout (`AuthMarketingSplitShell`, `ContractWithdrawalForm`).
+- **backend-ts:** `POST /api/contract-withdrawals` — rate-limited public form; emails support at `podpora@jobbie.sk` (env `CONTRACT_WITHDRAWAL_TO`).
+
+Changed:
+- **app-pwa / backend-ts:** When withdrawal reason is **Iné**, a required free-text field is shown and included in the support e-mail.
+- **backend-ts:** Submitter receives a branded confirmation e-mail (`contract-withdrawal-email.template.ts`) with form summary and submission timestamp.
+
+Docs:
+- **docs/frontend.md**, **docs/backend.md**, **docs/email-smtp.md**.
+
+## 2026-07-08 — Billing gated by activity role
+
+Changed:
+- **app-pwa:** Credit wallet, fakturácia, and checkout hidden/blocked for worker-only accounts; `billing-access` middleware; `canPurchaseBilling()` requires `customer_role` or `provider_role` (no company account-type bypass).
+- **backend-ts:** `BillingPurchaseAuthorizationService` enforces the same on billing account/ledger, payments, `GET /api/plans/me`, and registration promo redeem.
+
+Security:
+- Worker-only users cannot call wallet or purchase APIs directly (403).
+
+Docs:
+- **docs/payments-credits.md**, **docs/features.md** — activity-role billing policy.
+
+## 2026-07-08 — Registration promo codes
+
+Added:
+- **Database:** `registration_promo_campaigns`, `registration_promo_redemptions`, RPC `claim_registration_promo_redemption` (atomic cap); seed campaign `LAUNCH20` (20 credits, max 50, disabled by default).
+- **backend-ts:** `GET /api/promotions/registration/status`, `POST …/validate`, `POST …/redeem` — credits via `CreditsService.grant` (`free_grant`, idempotent `registration_promo` ledger ref).
+- **app-pwa:** Optional promo field on registration wizard; redeem after signup/login (email-confirm path via sessionStorage + auth metadata).
+- **jobbie-admin:** `GET/PATCH /admin/registration-promo/campaigns` + **Promo kódy** screen (toggle, credits, max redemptions).
+
+Docs:
+- **docs/payments-credits.md** — registration promo section.
+
+## 2026-06-29 — Hard refresh 500 on dynamic routes
 
 Fixed:
 - **app-pwa:** `0.chunk-reload.client.ts` — reload once on Vue Router `Couldn't resolve component` (stale `_nuxt` lazy chunks after deploy / CDN HTML lag); `router.onError` + `unhandledrejection` handlers complement Nuxt `emitRouteChunkError: 'automatic-immediate'`.

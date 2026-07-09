@@ -26,7 +26,7 @@
 
           <div
 
-            v-if="accountCredits !== null"
+            v-if="accountCredits !== null && hasBillingWalletAccess"
 
             class="mt-6 inline-flex min-w-[min(100%,200px)] flex-col items-center rounded-2xl bg-white/95 px-6 py-3 shadow-[0px_4px_16px_rgba(0,0,0,0.1)]"
 
@@ -191,6 +191,7 @@ import JaSegmentedToggle from '~/components/ui/JaSegmentedToggle.vue'
 import type { PricingAddonServiceId } from '~/utils/pricing-addon-services'
 import { parsePlanTierCreditCostsFromConfig } from '~/utils/plan-tier-credit-costs'
 import { creditWordLabel } from '~/utils/sk-plural'
+import { canPurchaseBilling } from '~/utils/billing-eligibility'
 
 
 
@@ -224,9 +225,11 @@ const returnPath = '/cennik'
 
 const { user, isEmployer } = usePricingCheckout(returnPath)
 
+const { hasBillingWalletAccess } = useBillingAccess()
+
 const { api } = useApi()
 
-const { session } = useAuth()
+const { session, profile } = useAuth()
 
 const { plans: catalogPlansState, load: loadCatalogPlans } = usePlans()
 const { config: billingCatalogConfig, load: loadBillingCatalog } = useCatalogBilling()
@@ -272,7 +275,7 @@ const planTierCreditCosts = computed(() =>
 
 async function loadAccountCredits(): Promise<void> {
 
-  if (!session.value?.access_token) {
+  if (!session.value?.access_token || !canPurchaseBilling(profile.value)) {
 
     accountCredits.value = null
     accountPlanSlug.value = null
@@ -340,7 +343,11 @@ async function scrollToPricingContact(serviceId?: PricingAddonServiceId): Promis
 
 watch(
 
-  () => session.value?.access_token,
+  () => [
+    session.value?.access_token,
+    profile.value?.customer_role,
+    profile.value?.provider_role,
+  ],
 
   () => {
 

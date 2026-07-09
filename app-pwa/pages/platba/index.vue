@@ -31,20 +31,9 @@ import { S } from '~/utils/strings'
 import { ROUTES } from '~/utils/app-routes'
 import { resolveSafeInternalPath } from '~/utils/safe-navigation'
 
-definePageMeta({ layout: 'app', middleware: ['auth'] })
+definePageMeta({ layout: 'app', middleware: ['auth', 'billing-access'] })
 
 const route = useRoute()
-const { user, isEmployer } = usePricingCheckout(ROUTES.pricing)
-
-watch(
-  () => user.value,
-  (u) => {
-    if (u && !isEmployer.value) {
-      void navigateTo(ROUTES.pricing)
-    }
-  },
-  { immediate: true },
-)
 
 const returnPath = computed(() => {
   const raw = route.query.return

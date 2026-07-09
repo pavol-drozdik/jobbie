@@ -1,0 +1,10 @@
+# Install: sudo cp ops/logrotate/jobbie-infra-metrics /etc/logrotate.d/jobbie-infra-metrics
+/var/lib/jobbie/infra-metrics.jsonl {
+  weekly
+  rotate 6
+  compress
+  delaycompress
+  missingok
+  notifempty
+  copytruncate
+}

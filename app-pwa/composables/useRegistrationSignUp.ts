@@ -1,4 +1,5 @@
 import type { RegistrationCredentials, RegistrationPreferences } from '~/composables/useRegistration'
+import { markPendingRegistrationPromo } from '~/composables/useRegistrationPromo'
 import { validateIndividualRegistrationBirthDate } from '~/utils/age-eligibility'
 import { isApiUnreachableStatus } from '~/utils/api-fetch'
 import { ROUTES } from '~/utils/app-routes'
@@ -150,6 +151,7 @@ export function useRegistrationSignUp() {
       }
 
       if (!token) {
+        markPendingRegistrationPromo(effectiveCredentials.promoCode)
         return { ok: true, needsEmailConfirmation: true }
       }
 
@@ -190,8 +192,19 @@ export function useRegistrationSignUp() {
           }
         }
       }
+      const { redeemRegistrationPromo } = useRegistrationPromo()
+      const promoResult = await redeemRegistrationPromo(
+        effectiveCredentials.promoCode ?? undefined,
+      )
       clear()
-      await navigateTo(ROUTES.home, { replace: true })
+      const homeQuery: Record<string, string> = {}
+      if (promoResult?.ok && promoResult.credits_granted != null) {
+        homeQuery.promo_credits = String(promoResult.credits_granted)
+      }
+      await navigateTo(
+        homeQuery.promo_credits ? { path: ROUTES.home, query: homeQuery } : ROUTES.home,
+        { replace: true },
+      )
       return { ok: true, needsEmailConfirmation: false }
     } catch {
       const msg = 'Pri registrácii sa vyskytla chyba.'

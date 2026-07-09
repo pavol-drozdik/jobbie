@@ -1,0 +1,11 @@
+[Unit]
+Description=JOBBIE Nest backend autoscale every 5 minutes
+
+[Timer]
+OnBootSec=4min
+OnUnitActiveSec=5min
+Persistent=true
+Unit=jobbie-backend-autoscale.service
+
+[Install]
+WantedBy=timers.target

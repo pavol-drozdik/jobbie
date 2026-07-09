@@ -13,6 +13,14 @@ set -euo pipefail
 DEPLOY_ROOT="${DEPLOY_ROOT:-/srv/nestjs-typesense}"
 BACKEND_VERSION="${BACKEND_VERSION:?BACKEND_VERSION is required}"
 GHCR_IMAGE="${GHCR_IMAGE:?GHCR_IMAGE is required}"
+DEPLOY_LOCK="${JOBBIE_DEPLOY_LOCK:-/var/lib/jobbie/backend-deploy.lock}"
+
+mkdir -p "$(dirname "${DEPLOY_LOCK}")"
+touch "${DEPLOY_LOCK}"
+cleanup_deploy_lock() {
+  rm -f "${DEPLOY_LOCK}"
+}
+trap cleanup_deploy_lock EXIT
 
 docker_cmd() {
   if docker info >/dev/null 2>&1; then

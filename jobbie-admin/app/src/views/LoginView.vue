@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import Button from 'primevue/button'
+import Card from 'primevue/card'
+import InputText from 'primevue/inputtext'
+import Message from 'primevue/message'
+import Password from 'primevue/password'
 import { useAdminAuth } from '../composables/adminAuth'
 import { adminApi } from '../composables/adminApi'
 import { formatAdminApiError } from '../utils/format-admin-api-error'
@@ -76,45 +81,67 @@ async function submitLogin() {
 </script>
 
 <template>
-  <div class="card" style="max-width: 420px; margin: 2rem auto">
-    <h1 style="margin: 0 0 0.5rem; font-size: 1.25rem">JOBBIE Admin — prihlásenie</h1>
-    <p style="color: var(--ink3); font-size: 0.875rem; margin: 0 0 1rem">
-      Lokálna desktop aplikácia. Vyžaduje <code>app_role = admin</code>.
-    </p>
-    <p v-if="configHint" class="error" style="font-size: 0.875rem; margin: 0 0 1rem">
-      {{ configHint }}
-    </p>
-    <label style="display: block; font-size: 0.875rem; font-weight: 600">E-mail</label>
-    <input
-      v-model="email"
-      type="email"
-      class="card"
-      style="width: 100%; margin: 0.25rem 0 0.75rem; padding: 0.5rem"
-    />
-    <label style="display: block; font-size: 0.875rem; font-weight: 600">Heslo</label>
-    <input
-      v-model="password"
-      type="password"
-      class="card"
-      style="width: 100%; margin: 0.25rem 0 0.75rem; padding: 0.5rem"
-      @keyup.enter="submitLogin"
-    />
-    <AdminTurnstileWidget
-      v-if="showTurnstile"
-      ref="turnstileRef"
-      v-model="captchaToken"
-    />
-    <button
-      type="button"
-      class="btn btn-primary"
-      :disabled="loading"
-      @click="submitLogin"
-    >
-      Prihlásiť
-    </button>
-    <p v-if="authError" class="error" style="margin-top: 0.75rem">{{ authError }}</p>
-    <p v-if="isDev" style="color: var(--ink3); font-size: 0.75rem; margin-top: 0.5rem">
-      Supabase CAPTCHA: nastavte <code>VITE_TURNSTILE_SITE_KEY</code> v <code>app/.env</code>.
-    </p>
+  <div class="flex min-h-screen items-center justify-center bg-slate-100 p-6">
+    <Card class="w-full max-w-md shadow-md">
+      <template #title>
+        <div class="text-lg font-bold text-slate-900">JOBBIE Admin</div>
+      </template>
+      <template #subtitle>
+        Lokálna desktop aplikácia. Vyžaduje <code>app_role = admin</code>.
+      </template>
+      <template #content>
+        <div class="space-y-4">
+          <Message v-if="configHint" severity="error" :closable="false">
+            {{ configHint }}
+          </Message>
+
+          <div class="flex flex-col gap-2">
+            <label for="login-email" class="text-sm font-medium text-slate-700">E-mail</label>
+            <InputText
+              id="login-email"
+              v-model="email"
+              type="email"
+              class="w-full"
+              autocomplete="username"
+            />
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <label for="login-password" class="text-sm font-medium text-slate-700">Heslo</label>
+            <Password
+              id="login-password"
+              v-model="password"
+              class="w-full"
+              input-class="w-full"
+              :feedback="false"
+              toggle-mask
+              autocomplete="current-password"
+              @keyup.enter="submitLogin"
+            />
+          </div>
+
+          <AdminTurnstileWidget
+            v-if="showTurnstile"
+            ref="turnstileRef"
+            v-model="captchaToken"
+          />
+
+          <Button
+            label="Prihlásiť"
+            class="w-full"
+            :loading="loading"
+            @click="submitLogin"
+          />
+
+          <Message v-if="authError" severity="error" :closable="false">
+            {{ authError }}
+          </Message>
+
+          <p v-if="isDev" class="m-0 text-xs text-slate-500">
+            Supabase CAPTCHA: nastavte <code>VITE_TURNSTILE_SITE_KEY</code> v <code>app/.env</code>.
+          </p>
+        </div>
+      </template>
+    </Card>
   </div>
 </template>

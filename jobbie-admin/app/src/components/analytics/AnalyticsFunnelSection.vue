@@ -57,18 +57,18 @@ watch(() => props.summary.funnel, renderChart)
 </script>
 
 <template>
-  <section class="section-card">
-    <h2 class="section-title">Funnel</h2>
-    <p v-if="!summary.funnel" class="muted">Žiadne dáta funnelu.</p>
+  <section class="admin-section-card">
+    <h2 class="admin-section-title">Funnel</h2>
+    <p v-if="!summary.funnel" class="m-0 text-sm text-slate-500">Žiadne dáta funnelu.</p>
     <template v-else>
       <div class="funnel-steps">
-        <div v-for="(s, i) in steps" :key="s.key" class="funnel-step">
+        <div v-for="(s, i) in steps" :key="s.key" class="funnel-step flex flex-col gap-1">
           <div class="funnel-step-head">
             <span class="funnel-step-num">{{ i + 1 }}</span>
             <span class="funnel-step-label">{{ s.label }}</span>
           </div>
-          <span class="funnel-step-count">{{ fmtNum(s.count) }}</span>
-          <span v-if="s.pct != null" class="funnel-step-pct">Konverzia: {{ fmtPct(s.pct) }}</span>
+          <span class="funnel-step-count block">{{ fmtNum(s.count) }}</span>
+          <span v-if="s.pct != null" class="funnel-step-pct block">Konverzia: {{ fmtPct(s.pct) }}</span>
         </div>
       </div>
       <div class="chart-box chart-box--sm">

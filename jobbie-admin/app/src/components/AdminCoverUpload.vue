@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import Button from 'primevue/button'
+import Message from 'primevue/message'
 import { uploadBlogCover, validateBlogCoverFile } from '../composables/useAdminStorageUpload'
 
 const model = defineModel<string>({ default: '' })
 
 const uploading = ref(false)
 const error = ref<string | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
 
 async function onFileChange(ev: Event) {
   const input = ev.target as HTMLInputElement
@@ -28,6 +31,10 @@ async function onFileChange(ev: Event) {
 function clearCover() {
   model.value = ''
 }
+
+function triggerUpload() {
+  fileInput.value?.click()
+}
 </script>
 
 <template>
@@ -40,28 +47,34 @@ function clearCover() {
     >
     <div
       v-else
-      class="cover-upload-preview"
-      style="display: flex; align-items: center; justify-content: center; color: var(--ink3); font-size: 0.875rem"
+      class="cover-upload-preview flex items-center justify-center text-sm text-slate-500"
     >
       Žiadna titulná fotka
     </div>
-    <div style="display: flex; flex-wrap: gap: 0.5rem; margin-top: 0.65rem">
-      <label class="btn btn-primary" style="cursor: pointer">
-        {{ uploading ? 'Nahrávam…' : model ? 'Nahradiť fotku' : 'Nahrať fotku' }}
-        <input
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
-          style="display: none"
-          :disabled="uploading"
-          @change="onFileChange"
-        >
-      </label>
-      <button v-if="model" type="button" class="btn btn-ghost" :disabled="uploading" @click="clearCover">
-        Odstrániť
-      </button>
+    <input
+      ref="fileInput"
+      type="file"
+      accept="image/jpeg,image/png,image/webp,image/gif"
+      class="hidden"
+      :disabled="uploading"
+      @change="onFileChange"
+    >
+    <div class="mt-3 flex flex-wrap gap-2">
+      <Button
+        :label="uploading ? 'Nahrávam…' : model ? 'Nahradiť fotku' : 'Nahrať fotku'"
+        :loading="uploading"
+        @click="triggerUpload"
+      />
+      <Button
+        v-if="model"
+        label="Odstrániť"
+        severity="secondary"
+        :disabled="uploading"
+        @click="clearCover"
+      />
     </div>
-    <p v-if="error" class="error" style="margin: 0.5rem 0 0">{{ error }}</p>
-    <p style="margin: 0.35rem 0 0; font-size: 0.75rem; color: var(--ink3)">
+    <Message v-if="error" severity="error" :closable="false" class="mt-2">{{ error }}</Message>
+    <p class="m-0 mt-1 text-xs text-slate-500">
       JPG, PNG, WebP alebo GIF, max 5 MB. Odporúčaný pomer strán 4:3.
     </p>
   </div>

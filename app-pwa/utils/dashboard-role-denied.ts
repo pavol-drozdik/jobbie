@@ -1,6 +1,6 @@
 import { S } from '~/utils/strings'
 
-export type SettingsProfilDeniedKey = 'customer' | 'provider' | 'worker' | 'company'
+export type SettingsProfilDeniedKey = 'customer' | 'provider' | 'worker' | 'company' | 'billing'
 
 /** @deprecated Use {@link SettingsProfilDeniedKey} */
 export type DashboardDeniedRole = Exclude<SettingsProfilDeniedKey, 'company'>
@@ -16,6 +16,7 @@ const ALLOWED_KEYS: SettingsProfilDeniedKey[] = [
   'provider',
   'worker',
   'company',
+  'billing',
 ]
 
 export function parseSettingsProfilDeniedKey(
@@ -44,6 +45,9 @@ export function resolveDashboardDeniedMessage(
   }
   if (key === 'worker') {
     return S.dashboardRoleDeniedWorker
+  }
+  if (key === 'billing') {
+    return S.dashboardRoleDeniedBilling
   }
   if (key === 'company') {
     return S.dashboardRoleDeniedCompany

@@ -78,6 +78,8 @@ export type AdminInfrastructure = {
 
 export type InfraMetricsRange = '1h' | '24h' | '2w' | '1m'
 
+export type InfraHistorySource = 'vps' | 'local' | 'mixed'
+
 export type VpsMetricsHistoryPoint = {
   t: string
   load_pct: number
@@ -92,4 +94,26 @@ export type VpsMetricsHistory = {
   points: VpsMetricsHistoryPoint[]
   coverage_from: string | null
   coverage_to: string | null
+  history_source?: InfraHistorySource
+}
+
+export type VpsBackendInstance = {
+  name: string
+  container_id: string | null
+  status: string | null
+  health: string | null
+  cpu_percent: number | null
+  mem_usage: string | null
+  mem_percent: number | null
+}
+
+export type VpsBackendsSummary = {
+  env_id: 'staging' | 'production'
+  scale: number
+  max_replicas: number
+  autoscale_enabled: boolean
+  redis_configured: boolean
+  deploy_lock: boolean
+  mutations_allowed: boolean
+  instances: VpsBackendInstance[]
 }

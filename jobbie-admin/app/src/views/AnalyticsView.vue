@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import Button from 'primevue/button'
+import Message from 'primevue/message'
+import ProgressSpinner from 'primevue/progressspinner'
 import { adminApi } from '../composables/adminApi'
 import type { AdminAnalyticsSummary } from '../types/analytics'
 import type { ExternalAnalyticsSummary } from '../types/analytics-external'
@@ -11,6 +14,7 @@ import {
   type AnalyticsPreset,
 } from '../utils/analytics-format'
 import { exportAnalyticsSummaryCsv } from '../utils/analytics-export'
+import AdminPageHeader from '../components/layout/AdminPageHeader.vue'
 import AnalyticsToolbar from '../components/analytics/AnalyticsToolbar.vue'
 import AnalyticsKpiGrid from '../components/analytics/AnalyticsKpiGrid.vue'
 import AnalyticsFunnelSection from '../components/analytics/AnalyticsFunnelSection.vue'
@@ -167,13 +171,8 @@ watch(
 </script>
 
 <template>
-  <div class="analytics-page">
-    <header class="analytics-header">
-      <div>
-        <h1 class="page-title">Analytics</h1>
-        <p v-if="dateLabel" class="page-subtitle">{{ dateLabel }}</p>
-      </div>
-    </header>
+  <div class="admin-page">
+    <AdminPageHeader title="Analytics" :subtitle="dateLabel || undefined" />
 
     <AnalyticsToolbar
       :preset="preset"
@@ -200,52 +199,36 @@ watch(
       @export-csv="exportCsv()"
     />
 
-    <p v-if="loadError" class="error card" style="margin-top: 1rem">
+    <Message v-if="loadError" severity="error" :closable="false" class="mt-4">
       {{ loadError }}
-      <button type="button" class="btn btn-sm" style="margin-top: 0.5rem" @click="load()">
-        Skúsiť znova
-      </button>
-    </p>
+      <div class="mt-2">
+        <Button label="Skúsiť znova" size="small" severity="secondary" @click="load()" />
+      </div>
+    </Message>
 
-    <p v-else-if="loading && !payload" class="muted" style="margin-top: 1.5rem">Načítavam…</p>
+    <div v-else-if="loading && !payload" class="flex justify-center py-12">
+      <ProgressSpinner />
+    </div>
 
     <template v-else-if="payload">
       <AnalyticsKpiGrid
         :summary="payload"
         :prior-summary="priorPayload"
-        class="analytics-block"
+        class="mt-5"
       />
       <AnalyticsExternalSection
         id="external"
         :external="externalPayload"
         :loading="externalLoading"
-        class="analytics-block"
+        class="mt-5"
       />
-      <AnalyticsFunnelSection :summary="payload" class="analytics-block" />
-      <AnalyticsGrowthSection :summary="payload" class="analytics-block" />
-      <AnalyticsRevenueSection :summary="payload" class="analytics-block" />
-      <AnalyticsMarketplaceSection :summary="payload" class="analytics-block" />
-      <AnalyticsUsersSection :summary="payload" class="analytics-block" />
-      <AnalyticsSearchSection :summary="payload" class="analytics-block" />
-      <AnalyticsOpsSection :summary="payload" class="analytics-block" />
+      <AnalyticsFunnelSection :summary="payload" class="mt-5" />
+      <AnalyticsGrowthSection :summary="payload" class="mt-5" />
+      <AnalyticsRevenueSection :summary="payload" class="mt-5" />
+      <AnalyticsMarketplaceSection :summary="payload" class="mt-5" />
+      <AnalyticsUsersSection :summary="payload" class="mt-5" />
+      <AnalyticsSearchSection :summary="payload" class="mt-5" />
+      <AnalyticsOpsSection :summary="payload" class="mt-5" />
     </template>
   </div>
 </template>
-
-<style scoped>
-.analytics-page {
-  max-width: 1280px;
-}
-
-.analytics-header {
-  margin-bottom: 1rem;
-}
-
-.analytics-block {
-  margin-top: 1.25rem;
-}
-
-.analytics-block :deep(.section-card) {
-  margin-top: 0;
-}
-</style>

@@ -16,7 +16,7 @@ import {
   stripStripeReturnQueryFromBrowserUrl,
 } from '~/utils/stripe-return-query'
 
-definePageMeta({ layout: 'app', middleware: ['auth'] })
+definePageMeta({ layout: 'app', middleware: ['auth', 'billing-access'] })
 
 const route = useRoute()
 const { flash, error } = useSettingsFeedback()

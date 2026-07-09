@@ -14,7 +14,28 @@ const stagingOnly: VpsEnvironmentConfig = {
   healthUrl: 'https://staging.test/health',
   metricsUrl: 'https://staging.test/metrics',
   metricsBearerToken: 'token',
+  infraHistoryPath: '/var/lib/jobbie/infra-metrics.jsonl',
 };
+
+function makeService(overrides: {
+  sshMetrics?: object;
+  httpMetrics?: object;
+  metricsHistory?: object;
+  remoteHistory?: object;
+  backendOps?: object;
+  adminRole?: object;
+  audit?: object;
+} = {}) {
+  return new AdminInfrastructureService(
+    (overrides.sshMetrics ?? {}) as never,
+    (overrides.httpMetrics ?? {}) as never,
+    (overrides.metricsHistory ?? {}) as never,
+    (overrides.remoteHistory ?? { fetchHistory: jest.fn() }) as never,
+    (overrides.backendOps ?? { getBackendsSummary: jest.fn() }) as never,
+    (overrides.adminRole ?? { isSuperAdmin: jest.fn().mockResolvedValue(false) }) as never,
+    (overrides.audit ?? { recordAuditEvent: jest.fn() }) as never,
+  );
+}
 
 describe('AdminInfrastructureService', () => {
   afterEach(() => {
@@ -49,12 +70,16 @@ describe('AdminInfrastructureService', () => {
       recordSample: jest.fn(),
       getHistory: jest.fn().mockReturnValue([]),
     };
+    const remoteHistory = {
+      fetchHistory: jest.fn().mockResolvedValue([]),
+    };
 
-    const service = new AdminInfrastructureService(
-      sshMetrics as never,
-      httpMetrics as never,
-      metricsHistory as never,
-    );
+    const service = makeService({
+      sshMetrics,
+      httpMetrics,
+      metricsHistory,
+      remoteHistory,
+    });
 
     const result = await service.getInfrastructure();
 
@@ -84,12 +109,16 @@ describe('AdminInfrastructureService', () => {
       recordSample: jest.fn(),
       getHistory: jest.fn().mockReturnValue([]),
     };
+    const remoteHistory = {
+      fetchHistory: jest.fn().mockResolvedValue([]),
+    };
 
-    const service = new AdminInfrastructureService(
-      sshMetrics as never,
-      httpMetrics as never,
-      metricsHistory as never,
-    );
+    const service = makeService({
+      sshMetrics,
+      httpMetrics,
+      metricsHistory,
+      remoteHistory,
+    });
 
     const result = await service.getInfrastructure();
     const env = result.environments[0];
@@ -98,5 +127,43 @@ describe('AdminInfrastructureService', () => {
     expect(env.app_metrics).toBeNull();
     expect(env.errors.ssh).toBe('SSH refused');
     expect(env.errors.metrics).toBe('401');
+  });
+
+  it('fetches remote history and returns history_source', async () => {
+    jest.spyOn(vpsConfig, 'getVpsEnvironmentConfigs').mockReturnValue([stagingOnly]);
+
+    const remoteHistory = {
+      fetchHistory: jest.fn().mockResolvedValue([
+        {
+          t: '2026-07-09T12:00:00.000Z',
+          load_1: 0.2,
+          load_pct: 5,
+          mem_pct: 10,
+        },
+      ]),
+    };
+    const metricsHistory = {
+      getMergedHistory: jest.fn().mockReturnValue({
+        points: [
+          {
+            t: '2026-07-09T12:00:00.000Z',
+            load_pct: 5,
+            mem_pct: 10,
+          },
+        ],
+        history_source: 'vps',
+      }),
+    };
+
+    const service = makeService({
+      remoteHistory,
+      metricsHistory,
+    });
+
+    const result = await service.getMetricsHistory('staging', '24h');
+
+    expect(remoteHistory.fetchHistory).toHaveBeenCalledWith(stagingOnly, '24h');
+    expect(result.history_source).toBe('vps');
+    expect(result.coverage_from).toBe('2026-07-09T12:00:00.000Z');
   });
 });

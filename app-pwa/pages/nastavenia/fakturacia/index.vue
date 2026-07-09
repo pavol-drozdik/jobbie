@@ -13,7 +13,7 @@
 <script setup lang="ts">
 import { S } from '~/utils/strings'
 
-definePageMeta({ layout: 'app', middleware: ['auth'] })
+definePageMeta({ layout: 'app', middleware: ['auth', 'billing-access'] })
 
 const { flash, error } = useSettingsFeedback()
 

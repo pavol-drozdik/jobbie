@@ -468,6 +468,22 @@
               <AppCheckbox v-model="newsletterSubscribe" class="mt-1" />
               <span class="text-sm font-medium text-black/70">{{ S.jobAlertsNewsletterLabel }}</span>
             </label>
+            <div v-if="promoActive" class="flex flex-col gap-1.5">
+              <label :class="fieldLabelClass">{{ S.registrationPromoCodeLabel }}</label>
+              <div class="relative flex items-center">
+                <input
+                  v-model="promoCode"
+                  type="text"
+                  autocomplete="off"
+                  :placeholder="S.registrationPromoCodePlaceholder"
+                  :class="inputWithTrailingIconClass"
+                />
+                <i
+                  class="fa-solid fa-ticket pointer-events-none absolute right-[18px] text-[15px] text-black/30"
+                />
+              </div>
+              <p class="m-0 text-xs font-medium text-black/45">{{ S.registrationPromoCodeHint }}</p>
+            </div>
             <AuthTurnstileWidget
               v-if="turnstileSiteKey"
               ref="signupTurnstileRef"
@@ -556,6 +572,7 @@ import {
 import { validatePassword } from '~/utils/validate-password'
 import type { AccountType } from '~/composables/useRegistration'
 import { saveOAuthSignupPending } from '~/utils/oauth-signup-pending'
+import { markPendingRegistrationPromo } from '~/composables/useRegistrationPromo'
 import { setAuthRememberMePreference } from '~/utils/supabase-auth-storage'
 import { useAuthCaptcha } from '~/composables/useAuthCaptcha'
 
@@ -568,6 +585,7 @@ const config = useRuntimeConfig().public
 const supabase = useSupabase()
 const { setCredentials, setRoles, getMetaForSignUp } = useRegistration()
 const { doSignUp, saving } = useRegistrationSignUp()
+const { promoCode, promoActive, loadPromoActive } = useRegistrationPromo()
 const { submit: submitNewsletter } = useNewsletterSubscribe()
 const { turnstileEnabled, captchaRequiredMessage, supabaseCaptchaOptions } = useAuthCaptcha()
 
@@ -770,6 +788,7 @@ async function oauthGoogle(): Promise<void> {
         birthDate: accountType.value === 'individual' ? birthDate.value.trim() : undefined,
         companyProfileUsername:
           accountType.value === 'company' ? companyProfileUsername.value.trim() : undefined,
+        promoCode: promoCode.value.trim() || undefined,
       },
       {
         customer_role: customerRole.value,
@@ -781,6 +800,9 @@ async function oauthGoogle(): Promise<void> {
       meta: oauthMeta,
       newsletterSubscribe: newsletterSubscribe.value,
     })
+    if (promoCode.value.trim()) {
+      markPendingRegistrationPromo(promoCode.value)
+    }
     setAuthRememberMePreference(true)
     const { error: e } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -871,7 +893,11 @@ async function submitRegister(): Promise<void> {
     birthDate: accountType.value === 'individual' ? birthDate.value.trim() : undefined,
     companyProfileUsername:
       accountType.value === 'company' ? companyProfileUsername.value.trim() : undefined,
+    promoCode: promoCode.value.trim() || undefined,
   })
+  if (promoCode.value.trim()) {
+    markPendingRegistrationPromo(promoCode.value)
+  }
   setRoles({
     customer_role: customerRole.value,
     worker_role: workerRole.value,
@@ -910,6 +936,7 @@ function readAuthSignupFailedMessage(): string | null {
 }
 
 onMounted(() => {
+  void loadPromoActive()
   const message = readAuthSignupFailedMessage()
   if (message) {
     submitError.value = message

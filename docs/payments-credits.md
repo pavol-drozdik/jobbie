@@ -182,6 +182,28 @@ Details: [database.md](./database.md#credit-ledger-rpcs).
 
 
 
+## Registration promo codes
+
+
+
+Limited signup campaigns in Postgres (`registration_promo_campaigns`, `registration_promo_redemptions`). Default seed: code **`LAUNCH20`**, **20** credits, **50** max redemptions, **`enabled = false`** until turned on in admin or SQL.
+
+
+
+| API | Auth | Purpose |
+|-----|------|---------|
+| `GET /api/promotions/registration/status` | Public | `{ active: boolean }` — any enabled campaign with remaining slots |
+| `POST /api/promotions/registration/validate` | Public | `{ valid: boolean }` — does not reveal remaining count |
+| `POST /api/promotions/registration/redeem` | Session | Claims slot + `grant_credits` (`source = free_grant`, `ref_type = registration_promo`) |
+
+Rules enforced server-side: campaign enabled, optional `starts_at`/`ends_at`, cap via RPC `claim_registration_promo_redemption` (`FOR UPDATE`), one redemption per user, account age ≤ **48 h** from `profiles.created_at`. Client sends code only; credit amount comes from DB.
+
+
+
+**Admin (desktop):** `jobbie-admin` → **Promo kódy** — `GET/PATCH /admin/registration-promo/campaigns/:id` (`billing` scope, recent login on PATCH).
+
+
+
 ## Purchase flow (one-off credits)
 
 
@@ -211,6 +233,17 @@ Implementation: [`stripe.service.ts`](../backend-ts/src/payments/stripe.service.
 **Never** grant credits from PWA payment success callbacks.
 
 
+
+## Activity-role purchase policy
+
+Credits, subscriptions, and the credit wallet require **`customer_role` or `provider_role`** on `profiles` (alone or combined with `worker_role`). Users with **only** `worker_role` cannot open the wallet, view balance via billing APIs, or complete checkout — regardless of `profiles.role` (`company` vs `individual`).
+
+| Layer | Enforcement |
+|-------|-------------|
+| PWA | `canPurchaseBilling()` / `billing-access` middleware; wallet UI hidden in profile and settings |
+| API | `BillingPurchaseAuthorizationService.assertBillingPurchaseAccessForUser` on `GET/PATCH /api/billing/account`, ledger, payments, `GET /api/plans/me`, registration promo redeem |
+
+Public catalog (`GET /api/billing/config`, `GET /api/plans`, `GET /api/payments/credit-packs`) and `/cennik` remain readable without billing access.
 
 ## SK-only purchase policy
 

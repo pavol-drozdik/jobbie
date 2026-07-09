@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import Button from 'primevue/button'
+import Card from 'primevue/card'
+import InputText from 'primevue/inputtext'
+import Message from 'primevue/message'
+import Select from 'primevue/select'
+import Textarea from 'primevue/textarea'
+import ToggleButton from 'primevue/togglebutton'
 import { adminApi } from '../composables/adminApi'
 import { useConfirm } from '../composables/useConfirm'
 import AdminRichTextEditor from '../components/AdminRichTextEditor.vue'
@@ -37,6 +44,11 @@ const categories = [
   { value: 'brigady', label: 'Brigády' },
   { value: 'firmy', label: 'Firmy' },
   { value: 'novinky', label: 'Novinky' },
+]
+
+const statusOptions = [
+  { label: 'Koncept', value: 'draft' as const },
+  { label: 'Publikovaný', value: 'published' as const },
 ]
 
 function buildBody() {
@@ -209,150 +221,164 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
-    <button type="button" class="btn btn-ghost" style="margin-bottom: 0.75rem" @click="router.push({ name: 'blog' })">
-      ← Späť na zoznam
-    </button>
-    <h1 class="page-title" style="margin-bottom: 1rem">
+  <div class="admin-page">
+    <Button
+      label="← Späť na zoznam"
+      severity="secondary"
+      text
+      size="small"
+      class="mb-2"
+      @click="router.push({ name: 'blog' })"
+    />
+
+    <h1 class="m-0 mb-4 text-2xl font-bold text-slate-900">
       {{ isNew ? 'Nový článok' : 'Upraviť článok' }}
     </h1>
 
     <div class="blog-edit-layout">
-      <div class="card" style="display: flex; flex-direction: column; gap: 1rem">
-        <div>
-          <label class="field-label">Nadpis *</label>
-          <input v-model="title" class="field-input" maxlength="300" />
-        </div>
+      <Card class="shadow-sm">
+        <template #content>
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-slate-700">Nadpis *</label>
+              <InputText v-model="title" class="w-full" maxlength="300" />
+            </div>
 
-        <div>
-          <label class="field-label">Perex</label>
-          <p style="margin: 0 0 0.5rem; font-size: 0.75rem; color: var(--ink3)">
-            Krátky úvodný text pod nadpisom na stránke článku. Ak necháte prázdne, použije sa SEO popis alebo úryvok z tela.
-          </p>
-          <textarea v-model="excerpt" class="field-textarea" maxlength="500" rows="3" />
-        </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-slate-700">Perex</label>
+              <p class="m-0 text-xs text-slate-500">
+                Krátky úvodný text pod nadpisom na stránke článku. Ak necháte prázdne, použije sa SEO popis alebo úryvok z tela.
+              </p>
+              <Textarea v-model="excerpt" class="w-full" maxlength="500" rows="3" />
+            </div>
 
-        <div>
-          <label class="field-label">Telo článku *</label>
-          <p style="margin: 0 0 0.5rem; font-size: 0.75rem; color: var(--ink3)">
-            Nadpisy H2 sa zobrazia v obsahu článku (TOC). Citát slúži pre tipy.
-          </p>
-          <AdminRichTextEditor v-model="bodyHtml" :disabled="saving" />
-        </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-slate-700">Telo článku *</label>
+              <p class="m-0 text-xs text-slate-500">
+                Nadpisy H2 sa zobrazia v obsahu článku (TOC). Citát slúži pre tipy.
+              </p>
+              <AdminRichTextEditor v-model="bodyHtml" :disabled="saving" />
+            </div>
 
-        <div>
-          <label class="field-label">Titulná fotka</label>
-          <p style="margin: 0 0 0.5rem; font-size: 0.75rem; color: var(--ink3)">
-            Voliteľná. Ak ju nenahrajete, na webe sa použije prvý obrázok z tela článku.
-          </p>
-          <AdminCoverUpload v-model="coverImageUrl" />
-        </div>
-      </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-slate-700">Titulná fotka</label>
+              <p class="m-0 text-xs text-slate-500">
+                Voliteľná. Ak ju nenahrajete, na webe sa použije prvý obrázok z tela článku.
+              </p>
+              <AdminCoverUpload v-model="coverImageUrl" />
+            </div>
+          </div>
+        </template>
+      </Card>
 
-      <aside style="display: flex; flex-direction: column; gap: 1rem">
-        <div class="card" style="display: flex; flex-direction: column; gap: 0.75rem">
-          <div>
-            <label class="field-label">Slug</label>
-            <input
-              v-model="slug"
-              class="field-input"
-              maxlength="120"
-              placeholder="auto z nadpisu"
-              style="font-family: ui-monospace, monospace; font-size: 0.85rem"
-            />
-            <p v-if="slugError" class="error" style="margin: 0.35rem 0 0; font-size: 0.8rem">
-              {{ slugError }}
-            </p>
-            <button
-              type="button"
-              class="btn btn-ghost btn-sm"
-              style="margin-top: 0.35rem"
-              @click="openPreview"
-            >
-              Náhľad na webe
-            </button>
-          </div>
-          <div>
-            <label class="field-label">Kategória</label>
-            <select v-model="category" class="field-select">
-              <option v-for="c in categories" :key="c.value" :value="c.value">{{ c.label }}</option>
-            </select>
-          </div>
-          <div>
-            <label class="field-label">Stav</label>
-            <select v-model="status" class="field-select">
-              <option value="draft">Koncept</option>
-              <option value="published">Publikovaný</option>
-            </select>
-          </div>
-          <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; font-weight: 600">
-            <input v-model="isFeatured" type="checkbox" />
-            Zvýrazniť na archive
-          </label>
-          <div>
-            <label class="field-label">Čas čítania (min)</label>
-            <input
-              v-model.number="readingTimeMinutes"
-              type="number"
-              min="1"
-              max="120"
-              class="field-input"
-              placeholder="auto"
-              style="max-width: 8rem"
-            />
-          </div>
-        </div>
+      <aside class="flex flex-col gap-4">
+        <Card class="shadow-sm">
+          <template #content>
+            <div class="flex flex-col gap-3">
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-slate-700">Slug</label>
+                <InputText v-model="slug" class="w-full font-mono text-sm" maxlength="120" placeholder="auto z nadpisu" />
+                <Message v-if="slugError" severity="error" :closable="false" class="mt-1">{{ slugError }}</Message>
+                <Button
+                  label="Náhľad na webe"
+                  severity="secondary"
+                  text
+                  size="small"
+                  class="mt-1 self-start"
+                  @click="openPreview"
+                />
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-slate-700">Kategória</label>
+                <Select
+                  v-model="category"
+                  :options="categories"
+                  option-label="label"
+                  option-value="value"
+                  class="w-full"
+                />
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-slate-700">Stav</label>
+                <Select
+                  v-model="status"
+                  :options="statusOptions"
+                  option-label="label"
+                  option-value="value"
+                  class="w-full"
+                />
+              </div>
+              <div class="flex items-center gap-2">
+                <ToggleButton
+                  v-model="isFeatured"
+                  on-label="Zvýrazniť na archive"
+                  off-label="Bez zvýraznenia"
+                />
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-slate-700">Čas čítania (min)</label>
+                <InputText
+                  :model-value="readingTimeMinutes === '' ? '' : String(readingTimeMinutes)"
+                  type="number"
+                  class="max-w-32"
+                  min="1"
+                  max="120"
+                  placeholder="auto"
+                  @update:model-value="readingTimeMinutes = $event === '' || $event == null ? '' : Number($event)"
+                />
+              </div>
+            </div>
+          </template>
+        </Card>
 
-        <div class="card" style="display: flex; flex-direction: column; gap: 0.75rem">
-          <div>
-            <label class="field-label">SEO nadpis</label>
-            <input v-model="seoTitle" class="field-input" maxlength="200" />
-          </div>
-          <div>
-            <label class="field-label">SEO popis</label>
-            <textarea v-model="seoDescription" class="field-textarea" maxlength="400" rows="3" />
-          </div>
-        </div>
+        <Card class="shadow-sm">
+          <template #content>
+            <div class="flex flex-col gap-3">
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-slate-700">SEO nadpis</label>
+                <InputText v-model="seoTitle" class="w-full" maxlength="200" />
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-slate-700">SEO popis</label>
+                <Textarea v-model="seoDescription" class="w-full" maxlength="400" rows="3" />
+              </div>
+            </div>
+          </template>
+        </Card>
 
-        <p style="margin: 0; font-size: 0.8125rem; line-height: 1.45; color: var(--ink3)">
-          <strong>Uložiť</strong> uloží koncept (alebo publikuje, ak je stav „Publikovaný“).
-          Na webe sa článok zobrazí až po <strong>Publikovať</strong> alebo po uložení so stavom Publikovaný.
+        <p class="m-0 text-sm leading-relaxed text-slate-500">
+          <strong class="text-slate-700">Uložiť</strong> uloží koncept (alebo publikuje, ak je stav „Publikovaný“).
+          Na webe sa článok zobrazí až po <strong class="text-slate-700">Publikovať</strong> alebo po uložení so stavom Publikovaný.
         </p>
 
-        <div class="card" style="display: flex; flex-wrap: gap: 0.5rem">
-          <button type="button" class="btn btn-primary" :disabled="saving" @click="save">
-            {{ saving ? 'Ukladám…' : 'Uložiť' }}
-          </button>
-          <button
+        <div class="flex flex-wrap gap-2">
+          <Button :label="saving ? 'Ukladám…' : 'Uložiť'" :loading="saving" @click="save" />
+          <Button
             v-if="postId && status !== 'published'"
-            type="button"
-            class="btn btn-ghost"
+            label="Publikovať"
+            severity="secondary"
             :disabled="saving"
             @click="publish"
-          >
-            Publikovať
-          </button>
-          <button
+          />
+          <Button
             v-if="postId && status === 'published'"
-            type="button"
-            class="btn btn-ghost"
+            label="Zrušiť publikovanie"
+            severity="secondary"
             :disabled="saving"
             @click="unpublish"
-          >
-            Zrušiť publikovanie
-          </button>
-          <button
+          />
+          <Button
             v-if="postId"
-            type="button"
-            class="btn btn-danger"
+            label="Zmazať"
+            severity="danger"
             :disabled="saving"
             @click="removePost"
-          >
-            Zmazať
-          </button>
+          />
         </div>
 
-        <p v-if="message" :class="error ? 'error' : 'success'" style="margin: 0">{{ message }}</p>
+        <Message v-if="message" :severity="error ? 'error' : 'success'" :closable="false">
+          {{ message }}
+        </Message>
       </aside>
     </div>
   </div>

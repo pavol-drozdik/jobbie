@@ -80,6 +80,27 @@ const coverageHint = computed(() => {
   return `Dostupná história: ~${days} dní — dlhšie obdobie sa naplní postupne pri obnovách.`
 })
 
+const DEPLOY_DOC_URL =
+  'https://github.com/Pr3vestTheDuck/jobbie/blob/main/websupport-vps-deployment/README-DEPLOYMENT.md#jobbie-admin-infra-history-sampler-optional'
+
+const historySourceHint = computed(() => {
+  const source = history.value?.history_source
+  if (source === 'mixed') {
+    return 'Kombinovaná história (VPS + aktuálna relácia).'
+  }
+  if (source === 'local') {
+    return null
+  }
+  return null
+})
+
+const localOnlyHint = computed(() => {
+  if (history.value?.history_source !== 'local') {
+    return null
+  }
+  return 'História len z tejto relácie admin aplikácie. Nasadením VPS sampleru získate kontinuálnu históriu.'
+})
+
 function clampPct(n: number): number {
   return Math.min(100, Math.max(0, n))
 }
@@ -205,16 +226,20 @@ watch(() => props.currentCpuPerCore, () => {
 </script>
 
 <template>
-  <div class="infra-section">
-    <div class="infra-history__header">
-      <h3 class="infra-section__title">História zaťaženia</h3>
-      <div class="infra-range-tabs" role="tablist" aria-label="Časové obdobie">
+  <div>
+    <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+      <h3 class="m-0 text-sm font-semibold text-slate-800">História zaťaženia</h3>
+      <div class="flex flex-wrap gap-1" role="tablist" aria-label="Časové obdobie">
         <button
           v-for="item in ranges"
           :key="item.id"
           type="button"
-          class="infra-range-tab"
-          :class="{ 'infra-range-tab--active': range === item.id }"
+          class="rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors"
+          :class="
+            range === item.id
+              ? 'border-primary-300 bg-primary-50 text-primary-800'
+              : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+          "
           role="tab"
           :aria-selected="range === item.id"
           @click="range = item.id"
@@ -224,16 +249,33 @@ watch(() => props.currentCpuPerCore, () => {
       </div>
     </div>
 
-    <p v-if="!enabled" class="muted infra-hint">
+    <p v-if="!enabled" class="m-0 text-sm text-slate-500">
       Grafy sa zobrazia po úspešnom SSH načítaní host metrík.
     </p>
-    <p v-else-if="loading && !history" class="muted infra-hint">Načítavam históriu…</p>
-    <p v-else-if="error" class="infra-error">{{ error }}</p>
+    <p v-else-if="loading && !history" class="m-0 text-sm text-slate-500">Načítavam históriu…</p>
+    <p v-else-if="error" class="m-0 text-sm text-red-600">{{ error }}</p>
     <template v-else>
-      <p v-if="coverageHint" class="muted infra-hint">{{ coverageHint }}</p>
+      <p
+        v-if="localOnlyHint"
+        class="m-0 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+      >
+        {{ localOnlyHint }}
+        <a
+          :href="DEPLOY_DOC_URL"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="ml-1 font-semibold text-amber-950 underline"
+        >
+          Návod na nasadenie
+        </a>
+      </p>
+      <p v-else-if="historySourceHint" class="m-0 text-sm text-slate-500">
+        {{ historySourceHint }}
+      </p>
+      <p v-if="coverageHint" class="m-0 text-sm text-slate-500">{{ coverageHint }}</p>
       <p
         v-if="points.length === 0 && !hasLiveCores"
-        class="muted infra-hint"
+        class="m-0 text-sm text-slate-500"
       >
         Zatiaľ žiadne dáta. História sa ukladá pri obnove (max. každé 4 min) a na pozadí každých
         5 min, kým beží admin API.
@@ -241,23 +283,23 @@ watch(() => props.currentCpuPerCore, () => {
 
       <div
         v-if="points.length > 0 || hasLiveCores"
-        class="infra-charts"
+        class="mt-2 flex flex-col gap-5"
       >
-        <div v-if="points.length > 0" class="infra-chart-block">
-          <h4 class="infra-chart-block__title">CPU a RAM</h4>
+        <div v-if="points.length > 0">
+          <h4 class="m-0 mb-1 text-sm font-semibold text-slate-700">CPU a RAM</h4>
           <div class="chart-box chart-box--sm">
             <canvas ref="overviewCanvasRef" />
           </div>
         </div>
 
-        <div v-if="hasCoreHistory || hasLiveCores" class="infra-chart-block">
-          <h4 class="infra-chart-block__title">Jadrá CPU</h4>
-          <p v-if="!hasCoreHistory && hasLiveCores" class="muted infra-chart-block__hint">
+        <div v-if="hasCoreHistory || hasLiveCores">
+          <h4 class="m-0 mb-1 text-sm font-semibold text-slate-700">Jadrá CPU</h4>
+          <p v-if="!hasCoreHistory && hasLiveCores" class="m-0 mb-1 text-xs text-slate-500">
             Okamžitá vzorka — časový graf sa naplní po ďalších obnoveniach.
           </p>
           <p
             v-else-if="!hasCoreHistory && !hasLiveCores"
-            class="muted infra-chart-block__hint"
+            class="m-0 mb-1 text-xs text-slate-500"
           >
             Per-core dáta zatiaľ nie sú k dispozícii.
           </p>
@@ -272,61 +314,3 @@ watch(() => props.currentCpuPerCore, () => {
     </template>
   </div>
 </template>
-
-<style scoped>
-.infra-history__header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.35rem;
-}
-
-.infra-range-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-}
-
-.infra-range-tab {
-  border: 1px solid var(--border);
-  background: #fff;
-  color: var(--ink2);
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.2rem 0.55rem;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.infra-range-tab--active {
-  background: var(--g100);
-  border-color: var(--g300);
-  color: var(--g700);
-}
-
-.infra-hint {
-  margin: 0;
-  font-size: 0.85rem;
-}
-
-.infra-charts {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  margin-top: 0.5rem;
-}
-
-.infra-chart-block__title {
-  margin: 0 0 0.35rem;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--ink2);
-}
-
-.infra-chart-block__hint {
-  margin: 0 0 0.35rem;
-  font-size: 0.8rem;
-}
-</style>

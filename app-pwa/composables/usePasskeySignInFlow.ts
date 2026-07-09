@@ -82,7 +82,14 @@ export function usePasskeySignInFlow() {
       setAuthLoginBootstrap(false)
       return { outcome: 'failed', error }
     }
-    const nav = await navigateTo(target, { replace: true })
+    const { tryRedeemPendingRegistrationPromo } = useRegistrationPromo()
+    const promoResult = await tryRedeemPendingRegistrationPromo()
+    let targetWithPromo = target
+    if (promoResult?.ok && promoResult.credits_granted != null) {
+      const sep = target.includes('?') ? '&' : '?'
+      targetWithPromo = `${target}${sep}promo_credits=${promoResult.credits_granted}`
+    }
+    const nav = await navigateTo(targetWithPromo, { replace: true })
     if (nav === false && import.meta.client) {
       window.location.assign(target)
     }

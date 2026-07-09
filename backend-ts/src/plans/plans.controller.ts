@@ -15,6 +15,7 @@ import {
   filterPublicSubscriptionPlans,
 } from '../billing/public-pricing-catalog';
 import { SubscriptionTrialService } from '../billing/subscription-trial.service';
+import { BillingPurchaseAuthorizationService } from '../billing/billing-purchase-authorization.service';
 import { StripeService } from '../payments/stripe.service';
 import { resolveSubscriptionStripePriceId } from '../payments/stripe-catalog-prices';
 
@@ -26,6 +27,7 @@ export class PlansController {
     private readonly config: ConfigService,
     private readonly subscriptionTrial: SubscriptionTrialService,
     private readonly stripeService: StripeService,
+    private readonly billingPurchaseAuth: BillingPurchaseAuthorizationService,
   ) {}
 
   /** Public: pricing table can load before the client session is ready. */
@@ -84,6 +86,7 @@ export class PlansController {
   async getMySubscription(
     @CurrentUserDecorator() user: CurrentUser,
   ): Promise<MySubscriptionResponseDto | null> {
+    await this.billingPurchaseAuth.assertBillingPurchaseAccessForUser(user.id);
     const { data: subData } = await this.supabase
       .getClient()
       .from('user_subscriptions')

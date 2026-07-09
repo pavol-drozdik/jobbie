@@ -3,6 +3,9 @@ import {
   clampLoadPct,
   downsample,
   maxCorePct,
+  mergeHistorySeries,
+  parseInfraHistoryJsonl,
+  resolveHistorySource,
   VpsMetricsHistoryService,
 } from './vps-metrics-history.service';
 
@@ -220,5 +223,108 @@ describe('downsample', () => {
     const out = downsample(points, 60_000, 10);
     expect(out.length).toBeLessThanOrEqual(10);
     expect(out[0].load_pct).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('parseInfraHistoryJsonl', () => {
+  it('parses valid JSONL lines and skips malformed rows', () => {
+    const text = [
+      '{"t":"2026-07-09T12:00:00.000Z","load_1":0.42,"load_pct":10.5,"mem_pct":25.3}',
+      'not-json',
+      '{"t":"2026-07-09T12:05:00.000Z","load_1":0.5,"load_pct":12.5,"mem_pct":30}',
+      '{"t":"bad","load_pct":1}',
+    ].join('\n');
+    const points = parseInfraHistoryJsonl(text);
+    expect(points).toHaveLength(2);
+    expect(points[0].load_pct).toBe(10.5);
+    expect(points[1].mem_pct).toBe(30);
+  });
+});
+
+describe('mergeHistorySeries', () => {
+  const remote = [
+    {
+      t: '2026-07-09T12:00:00.000Z',
+      load_1: 0.4,
+      load_pct: 10,
+      mem_pct: 20,
+    },
+    {
+      t: '2026-07-09T12:10:00.000Z',
+      load_1: 0.8,
+      load_pct: 20,
+      mem_pct: 30,
+    },
+  ];
+  const local = [
+    {
+      t: '2026-07-09T12:00:00.000Z',
+      load_1: 0.5,
+      load_pct: 99,
+      mem_pct: 99,
+    },
+    {
+      t: '2026-07-09T12:05:00.000Z',
+      load_1: 0.6,
+      load_pct: 15,
+      mem_pct: 25,
+    },
+  ];
+
+  it('prefers remote samples on duplicate timestamps', () => {
+    const merged = mergeHistorySeries(remote, local);
+    expect(merged).toHaveLength(3);
+    expect(merged[0].load_pct).toBe(10);
+    expect(merged[1].load_pct).toBe(15);
+    expect(merged[2].load_pct).toBe(20);
+  });
+});
+
+describe('resolveHistorySource', () => {
+  it('returns local when remote is empty', () => {
+    expect(resolveHistorySource(0, 3)).toBe('local');
+  });
+
+  it('returns vps when local is empty', () => {
+    expect(resolveHistorySource(5, 0)).toBe('vps');
+  });
+
+  it('returns mixed when both have samples', () => {
+    expect(resolveHistorySource(2, 1)).toBe('mixed');
+  });
+});
+
+describe('VpsMetricsHistoryService merged history', () => {
+  it('merges remote points with local session data', () => {
+    const service = new VpsMetricsHistoryService();
+    const host = {
+      hostname: 'vps',
+      uptime_seconds: 100,
+      cpu_count: 4,
+      load_1: 0.4,
+      load_5: 0.3,
+      load_15: 0.2,
+      memory_total_bytes: 1000,
+      memory_available_bytes: 500,
+      memory_used_bytes: 500,
+      disk_root: null,
+      disk_typesense: null,
+      containers: [],
+      compose_ps: [],
+    };
+    const now = new Date('2026-07-09T13:00:00.000Z');
+    service.recordSample('staging', host, now);
+
+    const remote = [
+      {
+        t: '2026-07-09T12:00:00.000Z',
+        load_1: 0.2,
+        load_pct: 5,
+        mem_pct: 10,
+      },
+    ];
+    const merged = service.getMergedHistory('staging', '24h', remote, now);
+    expect(merged.history_source).toBe('mixed');
+    expect(merged.points.length).toBeGreaterThanOrEqual(2);
   });
 });

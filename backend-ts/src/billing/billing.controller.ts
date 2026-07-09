@@ -21,6 +21,7 @@ import { ConfigService } from '@nestjs/config';
 import { getBillingInvoiceSupplier } from '../payments/stripe-invoice-sk';
 import { hasPlusOrProAccessFromRow } from './plan-tier-access';
 import { SubscriptionTrialService } from './subscription-trial.service';
+import { BillingPurchaseAuthorizationService } from './billing-purchase-authorization.service';
 
 @Controller('billing')
 export class BillingController {
@@ -33,6 +34,7 @@ export class BillingController {
     private readonly stripe: StripeService,
     private readonly config: ConfigService,
     private readonly subscriptionTrial: SubscriptionTrialService,
+    private readonly billingPurchaseAuth: BillingPurchaseAuthorizationService,
   ) {}
 
   @Get('config')
@@ -49,6 +51,7 @@ export class BillingController {
   /** Auth: GlobalAuthGuard (BFF cookies + Bearer). */
   @Get('account')
   async getAccount(@CurrentUserDecorator() user: CurrentUser) {
+    await this.billingPurchaseAuth.assertBillingPurchaseAccessForUser(user.id);
     await this.stripe.reconcileUserSubscription(user.id);
 
     const balance = await this.credits.getBalance(user.id);
@@ -120,6 +123,7 @@ export class BillingController {
     @Query('limit') limitRaw?: string,
     @Query('cursor') cursor?: string,
   ) {
+    await this.billingPurchaseAuth.assertBillingPurchaseAccessForUser(user.id);
     const allowed = ['all', 'purchases', 'spending', 'grants', 'adjustments'] as const;
     const f = allowed.includes(filter as (typeof allowed)[number])
       ? (filter as (typeof allowed)[number])
@@ -151,6 +155,7 @@ export class BillingController {
       registration_number?: string | null;
     },
   ) {
+    await this.billingPurchaseAuth.assertBillingPurchaseAccessForUser(user.id);
     const update: Record<string, unknown> = {};
     if (body.billing_details && typeof body.billing_details === 'object') {
       const { data: row } = await this.supabase

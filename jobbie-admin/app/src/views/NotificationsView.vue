@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
+import Message from 'primevue/message'
+import Select from 'primevue/select'
+import Textarea from 'primevue/textarea'
 import { adminApi } from '../composables/adminApi'
 import { useConfirm } from '../composables/useConfirm'
+import AdminPageHeader from '../components/layout/AdminPageHeader.vue'
 
 type Audience = 'all' | 'company' | 'individual'
 
@@ -16,6 +22,12 @@ const message = ref<string | null>(null)
 const error = ref(false)
 
 const { confirm } = useConfirm()
+
+const audienceOptions = [
+  { label: 'Všetci', value: 'all' as const },
+  { label: 'Firmy', value: 'company' as const },
+  { label: 'Fyzické osoby', value: 'individual' as const },
+]
 
 async function refreshCount() {
   counting.value = true
@@ -76,73 +88,61 @@ async function sendBroadcast() {
 </script>
 
 <template>
-  <div class="notifications-page">
-    <header>
-      <h1 class="page-title">Hromadné upozornenia</h1>
-      <p class="page-subtitle">
-        In-app notifikácia <code>admin_broadcast</code>. Vyžaduje nedávne prihlásenie.
-      </p>
-    </header>
+  <div class="admin-page max-w-xl">
+    <AdminPageHeader
+      title="Hromadné upozornenia"
+      subtitle="In-app notifikácia admin_broadcast. Vyžaduje nedávne prihlásenie."
+    />
 
-    <section class="section-card">
-      <label class="field-label" for="audience">Cieľová skupina</label>
-      <select id="audience" v-model="audience" class="field-input analytics-select">
-        <option value="all">Všetci</option>
-        <option value="company">Firmy</option>
-        <option value="individual">Fyzické osoby</option>
-      </select>
-      <p class="muted recipient-hint">
-        <template v-if="counting">Počítam príjemcov…</template>
-        <template v-else-if="recipientCount != null">
-          Odhad príjemcov: <strong>{{ recipientCount.toLocaleString('sk-SK') }}</strong>
-        </template>
-      </p>
+    <section class="admin-section-card space-y-4">
+      <div class="flex flex-col gap-1">
+        <label for="audience" class="text-sm font-medium text-slate-700">Cieľová skupina</label>
+        <Select
+          id="audience"
+          v-model="audience"
+          :options="audienceOptions"
+          option-label="label"
+          option-value="value"
+          class="w-full"
+        />
+        <p class="m-0 text-sm text-slate-500">
+          <template v-if="counting">Počítam príjemcov…</template>
+          <template v-else-if="recipientCount != null">
+            Odhad príjemcov: <strong>{{ recipientCount.toLocaleString('sk-SK') }}</strong>
+          </template>
+        </p>
+      </div>
 
-      <label class="field-label" for="broadcast-title">Nadpis</label>
-      <input id="broadcast-title" v-model="title" class="field-input" maxlength="200" />
+      <div class="flex flex-col gap-1">
+        <label for="broadcast-title" class="text-sm font-medium text-slate-700">Nadpis</label>
+        <InputText id="broadcast-title" v-model="title" class="w-full" maxlength="200" />
+      </div>
 
-      <label class="field-label" for="broadcast-body">Text (voliteľný)</label>
-      <textarea id="broadcast-body" v-model="body" class="field-input" rows="4" maxlength="2000" />
+      <div class="flex flex-col gap-1">
+        <label for="broadcast-body" class="text-sm font-medium text-slate-700">Text (voliteľný)</label>
+        <Textarea id="broadcast-body" v-model="body" class="w-full" rows="4" maxlength="2000" />
+      </div>
 
-      <label class="field-label" for="broadcast-link">Odkaz v aplikácii</label>
-      <input
-        id="broadcast-link"
-        v-model="linkPath"
-        class="field-input mono"
-        maxlength="500"
-        placeholder="/pracovne-ponuky"
+      <div class="flex flex-col gap-1">
+        <label for="broadcast-link" class="text-sm font-medium text-slate-700">Odkaz v aplikácii</label>
+        <InputText
+          id="broadcast-link"
+          v-model="linkPath"
+          class="w-full font-mono"
+          maxlength="500"
+          placeholder="/pracovne-ponuky"
+        />
+      </div>
+
+      <Button
+        :label="sending ? 'Odosielam…' : 'Odoslať'"
+        :loading="sending"
+        @click="sendBroadcast"
       />
 
-      <button type="button" class="btn btn-primary" :disabled="sending" @click="sendBroadcast">
-        {{ sending ? 'Odosielam…' : 'Odoslať' }}
-      </button>
-      <p v-if="message" class="action-msg" :class="{ 'action-msg--err': error }">{{ message }}</p>
+      <Message v-if="message" :severity="error ? 'error' : 'success'" :closable="false">
+        {{ message }}
+      </Message>
     </section>
   </div>
 </template>
-
-<style scoped>
-.notifications-page {
-  max-width: 560px;
-}
-
-.section-card label.field-label {
-  display: block;
-  margin-top: 0.75rem;
-}
-
-.recipient-hint {
-  margin: 0.35rem 0 0;
-  font-size: 0.85rem;
-}
-
-.action-msg {
-  margin-top: 0.75rem;
-  font-size: 0.875rem;
-  color: var(--g700);
-}
-
-.action-msg--err {
-  color: var(--danger);
-}
-</style>

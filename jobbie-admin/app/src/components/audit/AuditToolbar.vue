@@ -1,10 +1,9 @@
 <script setup lang="ts">
-const EVENT_PREFIX_CHIPS = [
-  { label: 'auth.*', prefix: 'auth.' },
-  { label: 'credits.*', prefix: 'credits.' },
-  { label: 'account.*', prefix: 'account.' },
-  { label: 'blog.*', prefix: 'blog.' },
-] as const
+import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
+import Select from 'primevue/select'
+import SelectButton from 'primevue/selectbutton'
+import { EVENT_PREFIX_CHIPS } from './audit-toolbar-config'
 
 defineProps<{
   preset: string
@@ -28,157 +27,130 @@ const emit = defineEmits<{
   exportJsonl: []
 }>()
 
+const presetOptions = [
+  { label: '7 dní', value: '7d' },
+  { label: '30 dní', value: '30d' },
+  { label: '90 dní', value: '90d' },
+]
+
+const limitOptions = [
+  { label: '50', value: 50 },
+  { label: '100', value: 100 },
+  { label: '200', value: 200 },
+]
+
 function applyPrefix(prefix: string) {
   emit('update:eventType', prefix)
 }
 </script>
 
 <template>
-  <div class="analytics-toolbar card">
-    <div class="analytics-toolbar-row">
-      <label class="field-label">Obdobie</label>
-      <div class="analytics-presets">
-        <button
-          type="button"
-          class="btn btn-sm"
-          :class="{ 'btn-primary': preset === '7d' }"
-          @click="emit('update:preset', '7d')"
-        >
-          7 dní
-        </button>
-        <button
-          type="button"
-          class="btn btn-sm"
-          :class="{ 'btn-primary': preset === '30d' }"
-          @click="emit('update:preset', '30d')"
-        >
-          30 dní
-        </button>
-        <button
-          type="button"
-          class="btn btn-sm"
-          :class="{ 'btn-primary': preset === '90d' }"
-          @click="emit('update:preset', '90d')"
-        >
-          90 dní
-        </button>
-      </div>
+  <div class="admin-section-card space-y-4">
+    <div class="flex flex-col gap-2">
+      <span class="text-sm font-medium text-slate-700">Obdobie</span>
+      <SelectButton
+        :model-value="preset"
+        :options="presetOptions"
+        option-label="label"
+        option-value="value"
+        size="small"
+        @update:model-value="emit('update:preset', $event as string)"
+      />
     </div>
-    <div class="analytics-toolbar-row audit-prefix-chips">
-      <span class="field-label">Rýchle filtre</span>
-      <button
+
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="text-sm font-medium text-slate-700">Rýchle filtre</span>
+      <Button
         v-for="chip in EVENT_PREFIX_CHIPS"
         :key="chip.prefix"
-        type="button"
-        class="btn btn-sm"
-        :class="{ 'btn-primary': eventType === chip.prefix }"
+        :label="chip.label"
+        size="small"
+        :severity="eventType === chip.prefix ? 'primary' : 'secondary'"
         @click="applyPrefix(chip.prefix)"
-      >
-        {{ chip.label }}
-      </button>
-      <button
+      />
+      <Button
         v-if="eventType"
-        type="button"
-        class="btn btn-sm btn-ghost"
+        label="Zrušiť typ"
+        size="small"
+        severity="secondary"
+        text
         @click="emit('update:eventType', '')"
-      >
-        Zrušiť typ
-      </button>
+      />
     </div>
-    <div class="analytics-toolbar-row audit-filters-row">
-      <div class="audit-filter-field">
-        <label class="field-label" for="audit-event-type">Typ udalosti</label>
-        <input
+
+    <div class="flex flex-wrap items-end gap-3">
+      <div class="min-w-[140px] flex-1">
+        <label for="audit-event-type" class="mb-1 block text-sm font-medium text-slate-700">
+          Typ udalosti
+        </label>
+        <InputText
           id="audit-event-type"
           list="audit-event-type-list"
-          class="field-input"
-          :value="eventType"
+          :model-value="eventType"
           placeholder="všetky"
-          @input="emit('update:eventType', ($event.target as HTMLInputElement).value)"
+          class="w-full"
+          @update:model-value="emit('update:eventType', $event ?? '')"
         />
         <datalist id="audit-event-type-list">
           <option v-for="t in eventTypeOptions" :key="t" :value="t" />
         </datalist>
       </div>
-      <div class="audit-filter-field">
-        <label class="field-label" for="audit-actor">Actor (UUID)</label>
-        <input
+      <div class="min-w-[140px] flex-1">
+        <label for="audit-actor" class="mb-1 block text-sm font-medium text-slate-700">
+          Actor (UUID)
+        </label>
+        <InputText
           id="audit-actor"
-          class="field-input"
-          :value="actorUserId"
+          :model-value="actorUserId"
           placeholder="voliteľné"
-          @input="emit('update:actorUserId', ($event.target as HTMLInputElement).value)"
+          class="w-full"
+          @update:model-value="emit('update:actorUserId', $event ?? '')"
         />
       </div>
-      <div class="audit-filter-field">
-        <label class="field-label" for="audit-subject">Subject ID</label>
-        <input
+      <div class="min-w-[140px] flex-1">
+        <label for="audit-subject" class="mb-1 block text-sm font-medium text-slate-700">
+          Subject ID
+        </label>
+        <InputText
           id="audit-subject"
-          class="field-input"
-          :value="subjectId"
+          :model-value="subjectId"
           placeholder="voliteľné"
-          @input="emit('update:subjectId', ($event.target as HTMLInputElement).value)"
+          class="w-full"
+          @update:model-value="emit('update:subjectId', $event ?? '')"
         />
       </div>
-      <div class="audit-filter-field audit-filter-field--narrow">
-        <label class="field-label" for="audit-limit">Limit</label>
-        <select
+      <div class="w-24">
+        <label for="audit-limit" class="mb-1 block text-sm font-medium text-slate-700">Limit</label>
+        <Select
           id="audit-limit"
-          class="field-input analytics-select"
-          :value="limit"
-          @change="emit('update:limit', Number(($event.target as HTMLSelectElement).value))"
-        >
-          <option :value="50">50</option>
-          <option :value="100">100</option>
-          <option :value="200">200</option>
-        </select>
+          :model-value="limit"
+          :options="limitOptions"
+          option-label="label"
+          option-value="value"
+          class="w-full"
+          @update:model-value="emit('update:limit', $event as number)"
+        />
       </div>
-      <button
-        type="button"
-        class="btn btn-primary btn-sm"
-        :disabled="loading"
+      <Button
+        :label="loading ? 'Načítavam…' : 'Obnoviť'"
+        size="small"
+        :loading="loading"
         @click="emit('refresh')"
-      >
-        {{ loading ? 'Načítavam…' : 'Obnoviť' }}
-      </button>
-      <button
-        type="button"
-        class="btn btn-ghost btn-sm"
-        :disabled="exporting"
+      />
+      <Button
+        :label="exporting ? 'Export…' : 'Export CSV'"
+        size="small"
+        severity="secondary"
+        :loading="exporting"
         @click="emit('exportCsv')"
-      >
-        {{ exporting ? 'Export…' : 'Export CSV' }}
-      </button>
-      <button
-        type="button"
-        class="btn btn-ghost btn-sm"
-        :disabled="exporting"
+      />
+      <Button
+        label="Export JSONL"
+        size="small"
+        severity="secondary"
+        :loading="exporting"
         @click="emit('exportJsonl')"
-      >
-        Export JSONL
-      </button>
+      />
     </div>
   </div>
 </template>
-
-<style scoped>
-.audit-prefix-chips {
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-}
-
-.audit-filters-row {
-  align-items: flex-end;
-}
-
-.audit-filter-field {
-  flex: 1;
-  min-width: 140px;
-}
-
-.audit-filter-field--narrow {
-  flex: 0 0 auto;
-  min-width: 5rem;
-}
-</style>

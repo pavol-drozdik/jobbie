@@ -16,6 +16,8 @@ export type RegistrationCredentials = {
   birthDate?: string
   /** Company profile handle — stored in auth metadata. */
   companyProfileUsername?: string
+  /** Optional signup promo code (stored in auth metadata for email-confirm path). */
+  promoCode?: string
 }
 
 export type RegistrationRoles = {
@@ -62,6 +64,9 @@ export function buildRegistrationSignUpMeta(
     meta.customer_role = roleData.customer_role ? 'true' : 'false'
     meta.worker_role = roleData.worker_role ? 'true' : 'false'
     meta.provider_role = roleData.provider_role ? 'true' : 'false'
+  }
+  if (creds.promoCode?.trim()) {
+    meta.registration_promo_code = creds.promoCode.trim()
   }
   return meta
 }

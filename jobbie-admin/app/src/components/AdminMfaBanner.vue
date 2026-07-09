@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import Message from 'primevue/message'
 import { useAdminAuth } from '../composables/adminAuth'
 import { useAdminRecentLogin } from '../composables/useAdminRecentLogin'
 
@@ -69,18 +70,12 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-if="show" class="mfa-banner" role="status">
+  <Message
+    v-if="show"
+    severity="warn"
+    :closable="false"
+    class="!rounded-none !border-x-0 !border-t-0"
+  >
     {{ message }}
-  </div>
+  </Message>
 </template>
-
-<style scoped>
-.mfa-banner {
-  background: #fef3c7;
-  border-bottom: 1px solid #f59e0b;
-  color: #78350f;
-  padding: 0.6rem 1rem;
-  font-size: 0.85rem;
-  line-height: 1.4;
-}
-</style>

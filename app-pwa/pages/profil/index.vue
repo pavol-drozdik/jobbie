@@ -187,9 +187,8 @@
         <div class="mt-6 w-full border-t border-black/[0.07] pt-3.5 max-lg:mt-4 max-lg:flex-[1_1_100%]">
 
           <div
-
+            v-if="hasBillingWalletAccess"
             class="flex items-center justify-between px-3.5 py-2.5 font-dmSans text-[15px] font-medium text-black/50"
-
           >
 
             <span>{{ S.profileCoinsLabel }}</span>
@@ -385,6 +384,7 @@ const pPageTitle = 'm-0 font-dmSans text-[34px] font-extrabold leading-none text
 
 
 const { user, profile, session, signOut } = useAuth()
+const { hasBillingWalletAccess } = useBillingAccess()
 
 const showProfileStatsNav = computed(() => hasProfileStatsAccess(profile.value))
 

@@ -377,6 +377,7 @@ export default defineNuxtConfig({
             '/cennik',
             '/vseobecne-podmienky',
             '/ochrana-osobnych-udajov',
+            '/odstupenie-od-zmluvy',
           ]
         : [],
     },

@@ -6,8 +6,8 @@ defineProps<{ summary: AdminAnalyticsSummary }>()
 </script>
 
 <template>
-  <section class="section-card">
-    <h2 class="section-title">Tržby a predplatné</h2>
+  <section class="admin-section-card">
+    <h2 class="admin-section-title">Tržby a predplatné</h2>
     <div class="analytics-grid-3">
       <div v-if="summary.revenue" class="detail-block">
         <h3 class="detail-block-title">Aktuálny MRR</h3>
@@ -43,12 +43,14 @@ defineProps<{ summary: AdminAnalyticsSummary }>()
       </div>
       <div v-if="summary.churn" class="detail-block">
         <h3 class="detail-block-title">Churn</h3>
-        <p class="kpi-value" style="font-size: 1.5rem">
+        <p class="m-0 text-2xl font-bold text-slate-900">
           {{ fmtNum(summary.churn.canceled_subscriptions_in_period) }}
         </p>
-        <p class="muted">zrušených predplatných v období</p>
+        <p class="m-0 text-sm text-slate-500">zrušených predplatných v období</p>
       </div>
     </div>
-    <p v-if="!summary.revenue && !summary.revenue_period" class="muted">Žiadne dáta o tržbách.</p>
+    <p v-if="!summary.revenue && !summary.revenue_period" class="m-0 text-sm text-slate-500">
+      Žiadne dáta o tržbách.
+    </p>
   </section>
 </template>

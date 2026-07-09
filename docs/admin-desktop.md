@@ -2,6 +2,10 @@
 
 Platform admin tools were removed from the public PWA (`app-pwa`) and main API (`backend-ts`). They live in [`jobbie-admin/`](../jobbie-admin/) as a **local Electron** application.
 
+## UI stack
+
+The desktop shell (`jobbie-admin/app/`) uses **Vue 3 + Vite**, **Tailwind CSS v4**, and **PrimeVue 4** (Aura preset with slate surfaces and JOBBIE green primary accent). Layout: collapsible grouped sidebar, top bar with API health + runbook drawer, wide content area (`max-w-screen-2xl`). Shared primitives: `AdminPageHeader`, PrimeVue `DataTable`, `Message`, `ConfirmDialog` (via `useConfirm()`).
+
 ## Why separate
 
 - Admin UI is not linked from the consumer PWA.
@@ -43,6 +47,10 @@ App icons: `jobbie-admin/build/icon.{svg,icns,ico}` (regenerate with `npm run ic
 | GET | `/api/admin/overview` |
 | GET | `/api/admin/infrastructure` |
 | GET | `/api/admin/infrastructure/:envId/history?range=1h\|24h\|2w\|1m` |
+| GET | `/api/admin/infrastructure/:envId/backends` |
+| POST | `/api/admin/infrastructure/:envId/backends/scale-up` (super_admin, recent login) |
+| POST | `/api/admin/infrastructure/:envId/backends/scale-down` (super_admin, recent login) |
+| POST | `/api/admin/infrastructure/:envId/backends/:containerName/restart` (super_admin, recent login) |
 | GET | `/api/admin/analytics/summary` |
 | GET | `/api/admin/analytics/external` |
 | GET | `/api/admin/analytics/external/test` |
@@ -89,7 +97,9 @@ User-facing content reports remain on the main API: `POST /api/reports`. Public 
 
 **Prehľad** (`/overview`): open reports count, signups/jobs KPIs (today + 7d), failed Stripe webhooks (7d), last five **your** audit events, quick links.
 
-**Infra** (`/infrastructure`): staging and production VPS — API health latency, host CPU load / RAM / disk (SSH), Docker container stats, optional Nest Prometheus gauges (`GET /metrics` with bearer), **CPU/RAM history charts** (1 h / 24 h / 2 weeks / 1 month; local JSON store, background sample every 5 min). Requires `VPS_STAGING_*` and `VPS_PRODUCTION_*` in `jobbie-admin/api/.env` (SSH host/user/key from GitHub deploy secrets; `METRICS_BEARER_TOKEN` from each VPS `.env.backend`). Throttled to 6 requests/min. Auto-refresh 60s in UI.
+**Infra** (`/infrastructure`): staging and production VPS — API health latency, host CPU load / RAM / disk (SSH), Docker container stats, optional Nest Prometheus gauges (`GET /metrics` with bearer), **CPU/RAM history charts** (1 h / 24 h / 2 weeks / 1 month). History merges **VPS JSONL** (systemd sampler on each server, read over SSH) with a **local session cache** while the admin API runs. Response includes `history_source`: `vps` | `local` | `mixed`. **Nest inštancie** panel lists each `backend` replica (docker stats) with **super_admin** controls to add/remove one replica or restart a single container (SSH → `scale_backend.sh` / `restart_backend_instance.sh`; audited). Requires `VPS_STAGING_*` and `VPS_PRODUCTION_*` in `jobbie-admin/api/.env` (SSH host/user/key from GitHub deploy secrets; `METRICS_BEARER_TOKEN` from each VPS `.env.backend`). Throttled to 6 requests/min. Auto-refresh 60s in UI.
+
+**Infra metrics history (VPS sampler):** On each staging/production VPS, enable `jobbie-infra-metrics.timer` (see [`websupport-vps-deployment/README-DEPLOYMENT.md`](../websupport-vps-deployment/README-DEPLOYMENT.md#jobbie-admin-infra-history-sampler-optional)) so `/var/lib/jobbie/infra-metrics.jsonl` is appended every 5 minutes. The admin API reads it via SSH (`VPS_*_INFRA_HISTORY_PATH`, default `/var/lib/jobbie/infra-metrics.jsonl`). Without the sampler, charts only cover the current admin session (`history_source: local`). Electron sends SIGTERM on quit so the local JSON cache can flush (~500 ms).
 
 **Podpora** (`/support`): UUID hub; job/ad detail with unpublish + public URL; user detail with billing, applications, chat rooms, grant credits, GDPR export, account close.
 

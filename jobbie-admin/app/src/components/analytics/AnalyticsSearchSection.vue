@@ -32,8 +32,8 @@ watch(search, renderChart)
 </script>
 
 <template>
-  <section class="section-card">
-    <h2 class="section-title">Vyhľadávanie pracovných ponúk</h2>
+  <section class="admin-section-card">
+    <h2 class="admin-section-title">Vyhľadávanie pracovných ponúk</h2>
     <template v-if="search">
       <div class="search-summary">
         <span><strong>{{ fmtNum(search.total_searches) }}</strong> vyhľadávaní</span>
@@ -46,7 +46,7 @@ watch(search, renderChart)
       <div v-if="search.daily.length" class="chart-box chart-box--sm">
         <canvas ref="searchCanvas" />
       </div>
-      <div class="analytics-grid-2" style="margin-top: 1rem">
+      <div class="analytics-grid-2 mt-4">
         <div>
           <h3 class="detail-block-title">Top dotazy</h3>
           <ul v-if="search.top_queries.length" class="query-list">
@@ -55,7 +55,7 @@ watch(search, renderChart)
               <span class="query-count">{{ q.count }}</span>
             </li>
           </ul>
-          <p v-else class="muted">
+          <p v-else class="m-0 text-sm text-slate-500">
             Zatiaľ žiadne záznamy — otvorte <strong>Nájsť prácu</strong> na webe a vyhľadávajte
             (volá sa <code>GET /api/search</code>). Po oprave logovania spustite backend znova.
           </p>
@@ -68,10 +68,10 @@ watch(search, renderChart)
               <span class="query-count">{{ q.count }}</span>
             </li>
           </ul>
-          <p v-else class="muted">Žiadne dotazy s nulovým výsledkom.</p>
+          <p v-else class="m-0 text-sm text-slate-500">Žiadne dotazy s nulovým výsledkom.</p>
         </div>
       </div>
     </template>
-    <p v-else class="muted">Vyhľadávacie štatistiky sa nepodarilo načítať.</p>
+    <p v-else class="m-0 text-sm text-slate-500">Vyhľadávacie štatistiky sa nepodarilo načítať.</p>
   </section>
 </template>

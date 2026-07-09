@@ -52,6 +52,7 @@ import {
 } from './payments.dto';
 import { isPublicSubscriptionPlanSlug } from '../billing/public-pricing-catalog';
 import { SubscriptionTrialService } from '../billing/subscription-trial.service';
+import { BillingPurchaseAuthorizationService } from '../billing/billing-purchase-authorization.service';
 import { resolveSubscriptionStripePriceId } from './stripe-catalog-prices';
 
 const CREDITS_CATALOG_UNAVAILABLE =
@@ -73,7 +74,12 @@ export class PaymentsController {
     private subscriptionCredits: SubscriptionCreditsService,
     private subscriptionTrial: SubscriptionTrialService,
     private billingInvoiceEmail: BillingInvoiceEmailService,
+    private billingPurchaseAuth: BillingPurchaseAuthorizationService,
   ) {}
+
+  private async assertBillingPurchaseAccess(user: CurrentUser): Promise<void> {
+    await this.billingPurchaseAuth.assertBillingPurchaseAccessForUser(user.id);
+  }
 
   /** Non-blocking user notifications after Stripe DB work commits. */
   private deferWebhookNotification(
@@ -94,6 +100,7 @@ export class PaymentsController {
 
   @Get('payment-method')
   async getPaymentMethod(@CurrentUserDecorator() user: CurrentUser) {
+    await this.assertBillingPurchaseAccess(user);
     return this.stripe.getPaymentMethodForUser(user.id);
   }
 
@@ -102,6 +109,7 @@ export class PaymentsController {
   async createPaymentMethodSetup(
     @CurrentUserDecorator() user: CurrentUser,
   ): Promise<{ client_secret: string }> {
+    await this.assertBillingPurchaseAccess(user);
     const linked = await this.stripe.resolveStripeCustomerId(user.id);
     if (!linked && !user.email?.trim()) {
       throw new BadRequestException(
@@ -120,6 +128,7 @@ export class PaymentsController {
     @CurrentUserDecorator() user: CurrentUser,
     @Body() body: ConfirmPaymentMethodDto,
   ) {
+    await this.assertBillingPurchaseAccess(user);
     return this.stripe.setDefaultPaymentMethodFromSetupIntent(
       user.id,
       body.setup_intent_id,
@@ -128,6 +137,7 @@ export class PaymentsController {
 
   @Get('invoices')
   async listInvoices(@CurrentUserDecorator() user: CurrentUser) {
+    await this.assertBillingPurchaseAccess(user);
     const customerId = await this.stripe.resolveStripeCustomerId(user.id);
     if (!customerId) {
       return { invoices: [], stripe_customer_linked: false };
@@ -142,6 +152,7 @@ export class PaymentsController {
     @CurrentUserDecorator() user: CurrentUser,
     @Param('invoiceId') invoiceId: string,
   ) {
+    await this.assertBillingPurchaseAccess(user);
     return this.stripe.getCustomerInvoiceDetail(user.id, invoiceId);
   }
 
@@ -155,6 +166,7 @@ export class PaymentsController {
     cancel_at_period_end?: boolean;
     current_period_end?: string | null;
   }> {
+    await this.assertBillingPurchaseAccess(user);
     const { data: sub } = await this.supabase
       .getClient()
       .from('user_subscriptions')
@@ -193,6 +205,7 @@ export class PaymentsController {
     cancel_at_period_end?: boolean;
     current_period_end?: string | null;
   }> {
+    await this.assertBillingPurchaseAccess(user);
     const { data: sub } = await this.supabase
       .getClient()
       .from('user_subscriptions')
@@ -218,6 +231,7 @@ export class PaymentsController {
     @CurrentUserDecorator() user: CurrentUser,
     @Query('plan_id') planId: string,
   ): Promise<SubscriptionCheckoutPreviewDto> {
+    await this.assertBillingPurchaseAccess(user);
     const id = planId?.trim();
     if (!id) {
       throw new BadRequestException('Chýba identifikátor plánu.');
@@ -231,6 +245,7 @@ export class PaymentsController {
     @CurrentUserDecorator() user: CurrentUser,
     @Body() body: CreatePaymentIntentCreditsDto,
   ): Promise<PaymentIntentResponseDto> {
+    await this.assertBillingPurchaseAccess(user);
     const packs = await this.stripe.listCreditPacks();
     if (packs.length === 0) {
       throw new ServiceUnavailableException(CREDITS_CATALOG_UNAVAILABLE);
@@ -259,6 +274,7 @@ export class PaymentsController {
     @CurrentUserDecorator() user: CurrentUser,
     @Body() body: ConfirmCreditsPurchaseDto,
   ): Promise<{ ok: boolean; invoice_id?: string }> {
+    await this.assertBillingPurchaseAccess(user);
     const id = body.payment_intent_id?.trim();
     if (!id || !id.startsWith('pi_')) {
       throw new BadRequestException('Neplatný identifikátor platby.');
@@ -299,6 +315,7 @@ export class PaymentsController {
     @CurrentUserDecorator() user: CurrentUser,
     @Body() body: CreatePaymentIntentSubscriptionDto,
   ): Promise<PaymentIntentResponseDto> {
+    await this.assertBillingPurchaseAccess(user);
     const { data: plan, error } = await this.supabase
       .getClient()
       .from('subscription_plans')
@@ -344,6 +361,7 @@ export class PaymentsController {
     @CurrentUserDecorator() user: CurrentUser,
     @Body() body: ConfirmSubscriptionPurchaseDto,
   ): Promise<{ ok: boolean }> {
+    await this.assertBillingPurchaseAccess(user);
     const piId = body.payment_intent_id?.trim();
     const setupId = body.setup_intent_id?.trim();
     if (!piId && !setupId) {
@@ -460,6 +478,7 @@ export class PaymentsController {
     @CurrentUserDecorator() user: CurrentUser,
     @Body() body: ActivateFreePlanDto,
   ): Promise<{ ok: boolean }> {
+    await this.assertBillingPurchaseAccess(user);
     await this.stripe.activateFreeSubscriptionPlan(
       user.id,
       body.plan_id,

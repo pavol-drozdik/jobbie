@@ -1,0 +1,209 @@
+@import 'tailwindcss';
+@import 'primeicons/primeicons.css';
+
+@theme {
+  --font-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --color-primary-50: #f0fdf4;
+  --color-primary-100: #dcfce7;
+  --color-primary-200: #bbf7d0;
+  --color-primary-300: #86efac;
+  --color-primary-400: #4ade80;
+  --color-primary-500: #22c55e;
+  --color-primary-600: #16a34a;
+  --color-primary-700: #15803d;
+  --color-primary-800: #166534;
+  --color-primary-900: #14532d;
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    color: var(--p-surface-900, #0f172a);
+    background: #f8fafc;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.85em;
+  }
+}
+
+@layer components {
+  .admin-page {
+    @apply mx-auto w-full max-w-screen-2xl space-y-6 px-0 py-0;
+  }
+
+  .admin-section-card {
+    @apply rounded-xl border border-slate-200 bg-white p-5 shadow-sm;
+  }
+
+  .admin-section-title {
+    @apply m-0 mb-4 text-base font-semibold text-slate-900;
+  }
+
+  .mono {
+    @apply font-mono text-xs text-slate-600;
+  }
+
+  .table-wrap {
+    @apply overflow-x-auto rounded-lg border border-slate-200;
+  }
+
+  .chart-box {
+    @apply relative mt-2 h-64;
+  }
+
+  .chart-box--sm {
+    @apply h-52;
+  }
+}
+
+/* TipTap rich text editor */
+.rich-editor {
+  @apply overflow-hidden rounded-lg border border-slate-200 bg-slate-50;
+}
+
+.rich-editor-toolbar {
+  @apply flex flex-wrap items-center gap-1 border-b border-slate-200 bg-white p-2;
+}
+
+.rich-editor-toolbar select {
+  @apply rounded-md border border-slate-200 px-2 py-1.5 text-xs;
+}
+
+.toolbar-btn {
+  @apply inline-flex h-8 min-w-8 items-center justify-center rounded-md border-0 bg-transparent px-1.5 text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-50;
+}
+
+.toolbar-btn-active {
+  @apply bg-primary-500 text-white hover:bg-primary-600 hover:text-white;
+}
+
+.toolbar-divider {
+  @apply mx-0.5 h-5 w-px shrink-0 bg-slate-200;
+}
+
+.rich-editor-content .ProseMirror {
+  @apply min-h-80 px-4 py-4 text-base leading-relaxed outline-none;
+}
+
+.rich-editor-content .ProseMirror h2 {
+  @apply mb-1 mt-5 text-xl font-bold;
+}
+
+.rich-editor-content .ProseMirror blockquote {
+  @apply my-4 rounded-r-lg border-l-4 border-primary-500 bg-slate-50 py-3 pl-4;
+}
+
+.cover-upload-preview {
+  @apply aspect-[4/3] w-full max-w-72 rounded-lg bg-slate-100 object-cover;
+}
+
+.blog-edit-layout {
+  @apply grid items-start gap-5 lg:grid-cols-[1fr_300px];
+}
+
+.analytics-toolbar {
+  @apply flex flex-col gap-4;
+}
+
+.analytics-toolbar-row {
+  @apply flex flex-wrap items-center gap-3;
+}
+
+.analytics-presets {
+  @apply flex flex-wrap gap-2;
+}
+
+.analytics-grid-2 {
+  @apply grid gap-5 lg:grid-cols-2;
+}
+
+.analytics-grid-3 {
+  @apply grid gap-4 lg:grid-cols-3;
+}
+
+.funnel-steps {
+  @apply mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+}
+
+.funnel-step {
+  @apply rounded-lg border border-slate-200 bg-slate-50 p-4;
+}
+
+.funnel-step-head {
+  @apply mb-1 flex items-center gap-2;
+}
+
+.funnel-step-num {
+  @apply flex h-6 w-6 items-center justify-center rounded-full bg-primary-500 text-xs font-bold text-white;
+}
+
+.funnel-step-label {
+  @apply text-sm font-medium text-slate-700;
+}
+
+.funnel-step-count {
+  @apply text-xl font-bold text-slate-900;
+}
+
+.funnel-step-pct {
+  @apply text-xs text-slate-500;
+}
+
+.detail-block-title {
+  @apply m-0 mb-2 text-sm font-semibold text-slate-700;
+}
+
+.detail-list {
+  @apply m-0 list-none p-0;
+}
+
+.detail-list li {
+  @apply flex justify-between gap-4 border-b border-slate-100 py-1.5 text-sm last:border-b-0;
+}
+
+.search-summary {
+  @apply flex flex-wrap gap-6 text-sm text-slate-600;
+}
+
+.query-list {
+  @apply m-0 list-none p-0;
+}
+
+.query-list li {
+  @apply flex justify-between gap-3 border-b border-slate-100 py-1.5 text-sm last:border-b-0;
+}
+
+.query-text {
+  @apply min-w-0 flex-1 truncate;
+}
+
+.query-count {
+  @apply shrink-0 font-semibold text-primary-600;
+}
+
+.ops-note {
+  @apply mb-3 text-xs leading-relaxed text-slate-500;
+}
+
+.ops-note code {
+  @apply rounded bg-slate-100 px-1 py-0.5 text-[0.7rem];
+}

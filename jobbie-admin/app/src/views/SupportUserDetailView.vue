@@ -1,6 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import Button from 'primevue/button'
+import Column from 'primevue/column'
+import DataTable from 'primevue/datatable'
+import InputText from 'primevue/inputtext'
+import Message from 'primevue/message'
+import ProgressSpinner from 'primevue/progressspinner'
+import Tab from 'primevue/tab'
+import TabList from 'primevue/tablist'
+import TabPanel from 'primevue/tabpanel'
+import TabPanels from 'primevue/tabpanels'
+import Tabs from 'primevue/tabs'
 import { adminApi } from '../composables/adminApi'
 import { useAdminAuth } from '../composables/adminAuth'
 import { useConfirm } from '../composables/useConfirm'
@@ -8,6 +19,7 @@ import type { CookieConsentLogItem, CookieConsentLogResponse } from '../types/co
 import type { AdminUserDetail } from '../types/users'
 import type { ApplicationListItem, ChatRoomListItem, UserBillingSnapshot } from '../types/support'
 import { fmtNum } from '../utils/analytics-format'
+import AdminPageHeader from '../components/layout/AdminPageHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -71,11 +83,12 @@ async function loadChat() {
   chatRooms.value = res.ok ? (res.data?.items ?? []) : []
 }
 
-async function switchTab(next: typeof tab.value) {
-  tab.value = next
-  if (next === 'billing' && !billing.value) await loadBilling()
-  if (next === 'applications' && applications.value.length === 0) await loadApplications()
-  if (next === 'chat' && chatRooms.value.length === 0) await loadChat()
+async function switchTab(next: string | number) {
+  const key = String(next) as typeof tab.value
+  tab.value = key
+  if (key === 'billing' && !billing.value) await loadBilling()
+  if (key === 'applications' && applications.value.length === 0) await loadApplications()
+  if (key === 'chat' && chatRooms.value.length === 0) await loadChat()
 }
 
 async function grantCredits() {
@@ -146,241 +159,178 @@ onMounted(() => void loadProfile())
 </script>
 
 <template>
-  <div class="support-user">
-    <header>
-      <button type="button" class="btn btn-ghost btn-sm" @click="router.push('/support')">
-        ← Podpora
-      </button>
-      <h1 class="page-title">Používateľ</h1>
-      <p class="page-subtitle mono">{{ id }}</p>
-    </header>
+  <div class="admin-page">
+    <Button
+      label="← Podpora"
+      severity="secondary"
+      text
+      size="small"
+      class="mb-2"
+      @click="router.push('/support')"
+    />
 
-    <nav class="tab-bar">
-      <button
-        type="button"
-        class="tab"
-        :class="{ 'tab--active': tab === 'profile' }"
-        @click="switchTab('profile')"
-      >
-        Profil
-      </button>
-      <button
-        type="button"
-        class="tab"
-        :class="{ 'tab--active': tab === 'billing' }"
-        @click="switchTab('billing')"
-      >
-        Billing
-      </button>
-      <button
-        type="button"
-        class="tab"
-        :class="{ 'tab--active': tab === 'applications' }"
-        @click="switchTab('applications')"
-      >
-        Prihlášky
-      </button>
-      <button
-        type="button"
-        class="tab"
-        :class="{ 'tab--active': tab === 'chat' }"
-        @click="switchTab('chat')"
-      >
-        Chat
-      </button>
-    </nav>
+    <AdminPageHeader title="Používateľ" :subtitle="id" />
 
-    <p v-if="error" class="error card">{{ error }}</p>
-    <p v-else-if="loading" class="muted">Načítavam…</p>
+    <Tabs :value="tab" @update:value="switchTab">
+      <TabList>
+        <Tab value="profile">Profil</Tab>
+        <Tab value="billing">Billing</Tab>
+        <Tab value="applications">Prihlášky</Tab>
+        <Tab value="chat">Chat</Tab>
+      </TabList>
+      <TabPanels>
+        <TabPanel value="profile">
+          <Message v-if="error" severity="error" :closable="false" class="mt-4">{{ error }}</Message>
 
-    <section v-else-if="tab === 'profile' && detail" class="section-card">
-      <dl class="detail-dl">
-        <dt>E-mail</dt>
-        <dd>{{ detail.email ?? '—' }}</dd>
-        <dt>Meno</dt>
-        <dd>{{ detail.display_name ?? detail.company_name ?? '—' }}</dd>
-        <dt>Stav</dt>
-        <dd>{{ detail.account_status ?? '—' }}</dd>
-        <dt>Kredity</dt>
-        <dd>{{ fmtNum(detail.credits) }}</dd>
-      </dl>
-      <div class="grant-row">
-        <input v-model.number="grantAmount" type="number" min="1" max="500" class="field-input" />
-        <input v-model="grantReason" class="field-input" placeholder="Dôvod grantu" />
-        <button type="button" class="btn btn-primary" @click="grantCredits">Grant kreditov</button>
-      </div>
-      <div class="danger-zone">
-        <button type="button" class="btn btn-ghost" @click="exportData">Export GDPR (ZIP)</button>
-        <input v-model="closePhrase" class="field-input" placeholder='Fráza "ZMAZAT UCET"' />
-        <button type="button" class="btn btn-primary" @click="closeAccount">Zavrieť účet</button>
-      </div>
-      <p v-if="message" class="muted">{{ message }}</p>
+          <div v-else-if="loading" class="flex justify-center py-12">
+            <ProgressSpinner />
+          </div>
 
-      <div class="cookie-consent-block">
-        <h2 class="section-title">Cookie súhlas</h2>
-        <p v-if="cookieConsentLoading" class="muted">Načítavam históriu…</p>
-        <p v-else-if="cookieConsentLog.length === 0" class="muted">Žiadne záznamy cookie súhlasu.</p>
-        <div v-else class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Čas</th>
-                <th>Akcia</th>
-                <th>Analytika</th>
-                <th>Marketing</th>
-                <th>Personalizácia</th>
-                <th>Zdroj</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in cookieConsentLog" :key="row.id">
-                <td class="mono">{{ row.recorded_at }}</td>
-                <td>{{ row.action }}</td>
-                <td>{{ row.analytics ? 'áno' : 'nie' }}</td>
-                <td>{{ row.marketing ? 'áno' : 'nie' }}</td>
-                <td>{{ row.personalization ? 'áno' : 'nie' }}</td>
-                <td>{{ row.source ?? '—' }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <button type="button" class="btn btn-ghost btn-sm" @click="router.push({ path: '/consent-log', query: { user_id: id } })">
-          Otvoriť celý audit cookie súhlasu
-        </button>
-      </div>
-    </section>
+          <section v-else-if="detail" class="admin-section-card mt-4">
+            <dl class="grid grid-cols-[120px_1fr] gap-x-3 gap-y-1.5 text-sm">
+              <dt class="text-slate-500">E-mail</dt>
+              <dd class="m-0">{{ detail.email ?? '—' }}</dd>
+              <dt class="text-slate-500">Meno</dt>
+              <dd class="m-0">{{ detail.display_name ?? detail.company_name ?? '—' }}</dd>
+              <dt class="text-slate-500">Stav</dt>
+              <dd class="m-0">{{ detail.account_status ?? '—' }}</dd>
+              <dt class="text-slate-500">Kredity</dt>
+              <dd class="m-0">{{ fmtNum(detail.credits) }}</dd>
+            </dl>
+            <div class="mt-4 flex flex-wrap items-center gap-2">
+              <InputText
+                :model-value="String(grantAmount)"
+                type="number"
+                class="w-24"
+                @update:model-value="grantAmount = Number($event) || 0"
+              />
+              <InputText v-model="grantReason" class="min-w-48 flex-1" placeholder="Dôvod grantu" />
+              <Button label="Grant kreditov" @click="grantCredits" />
+            </div>
+            <div class="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-4">
+              <Button label="Export GDPR (ZIP)" severity="secondary" @click="exportData" />
+              <InputText v-model="closePhrase" class="min-w-48 flex-1" placeholder='Fráza "ZMAZAT UCET"' />
+              <Button label="Zavrieť účet" severity="danger" @click="closeAccount" />
+            </div>
+            <p v-if="message" class="m-0 mt-3 text-sm text-slate-500">{{ message }}</p>
 
-    <section v-else-if="tab === 'billing'" class="section-card">
-      <p v-if="!billing" class="muted">Načítavam billing…</p>
-      <template v-else>
-        <p class="muted">
-          Zlyhané webhooky (7 dní): {{ billing.stripe.failed_webhooks_7d }} · Chýbajúce fulfillmenty:
-          {{ billing.stripe.missing_fulfillments.length }}
-        </p>
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Dátum</th>
-                <th>Delta</th>
-                <th>Dôvod</th>
-                <th>Typ</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in billing.ledger.items" :key="String(row.id)">
-                <td>{{ String(row.created_at ?? '') }}</td>
-                <td>{{ row.delta }}</td>
-                <td>{{ row.reason }}</td>
-                <td>{{ row.transaction_type ?? '—' }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </template>
-    </section>
+            <div class="mt-6 border-t border-slate-200 pt-4">
+              <h2 class="admin-section-title">Cookie súhlas</h2>
+              <div v-if="cookieConsentLoading" class="flex justify-center py-6">
+                <ProgressSpinner />
+              </div>
+              <p v-else-if="cookieConsentLog.length === 0" class="m-0 text-sm text-slate-500">
+                Žiadne záznamy cookie súhlasu.
+              </p>
+              <DataTable
+                v-else
+                :value="cookieConsentLog"
+                size="small"
+                striped-rows
+                class="text-sm"
+              >
+                <Column field="recorded_at" header="Čas">
+                  <template #body="{ data: row }">
+                    <span class="mono">{{ row.recorded_at }}</span>
+                  </template>
+                </Column>
+                <Column field="action" header="Akcia" />
+                <Column header="Analytika">
+                  <template #body="{ data: row }">{{ row.analytics ? 'áno' : 'nie' }}</template>
+                </Column>
+                <Column header="Marketing">
+                  <template #body="{ data: row }">{{ row.marketing ? 'áno' : 'nie' }}</template>
+                </Column>
+                <Column header="Personalizácia">
+                  <template #body="{ data: row }">{{ row.personalization ? 'áno' : 'nie' }}</template>
+                </Column>
+                <Column field="source" header="Zdroj" />
+              </DataTable>
+              <Button
+                label="Otvoriť celý audit cookie súhlasu"
+                severity="secondary"
+                text
+                size="small"
+                class="mt-3"
+                @click="router.push({ path: '/consent-log', query: { user_id: id } })"
+              />
+            </div>
+          </section>
+        </TabPanel>
 
-    <section v-else-if="tab === 'applications'" class="section-card">
-      <div class="table-wrap">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Job</th>
-              <th>Stav</th>
-              <th>Vytvorené</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="a in applications" :key="a.id">
-              <td>
-                <RouterLink :to="{ name: 'support-job', params: { id: a.job_id } }">
-                  {{ a.job_id }}
-                </RouterLink>
-              </td>
-              <td>{{ a.status }}</td>
-              <td>{{ a.created_at }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p v-if="applications.length === 0" class="muted">Žiadne prihlášky.</p>
-    </section>
+        <TabPanel value="billing">
+          <section class="admin-section-card mt-4">
+            <p v-if="!billing" class="m-0 text-sm text-slate-500">Načítavam billing…</p>
+            <template v-else>
+              <p class="m-0 mb-4 text-sm text-slate-500">
+                Zlyhané webhooky (7 dní): {{ billing.stripe.failed_webhooks_7d }} · Chýbajúce fulfillmenty:
+                {{ billing.stripe.missing_fulfillments.length }}
+              </p>
+              <DataTable :value="billing.ledger.items" size="small" striped-rows class="text-sm">
+                <Column header="Dátum">
+                  <template #body="{ data: row }">{{ String(row.created_at ?? '') }}</template>
+                </Column>
+                <Column field="delta" header="Delta" />
+                <Column field="reason" header="Dôvod" />
+                <Column header="Typ">
+                  <template #body="{ data: row }">{{ row.transaction_type ?? '—' }}</template>
+                </Column>
+              </DataTable>
+            </template>
+          </section>
+        </TabPanel>
 
-    <section v-else-if="tab === 'chat'" class="section-card">
-      <div class="table-wrap">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Miestnosť</th>
-              <th>Posledná správa</th>
-              <th>Typ</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="r in chatRooms" :key="r.id">
-              <td class="mono">{{ r.id }}</td>
-              <td>{{ r.last_message_at ?? '—' }}</td>
-              <td>{{ r.last_message_type ?? '—' }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p v-if="chatRooms.length === 0" class="muted">Žiadne chat miestnosti.</p>
-    </section>
+        <TabPanel value="applications">
+          <section class="admin-section-card mt-4">
+            <DataTable
+              v-if="applications.length"
+              :value="applications"
+              size="small"
+              striped-rows
+              class="text-sm"
+            >
+              <Column header="Job">
+                <template #body="{ data: row }">
+                  <RouterLink
+                    :to="{ name: 'support-job', params: { id: row.job_id } }"
+                    class="text-primary-600 hover:underline"
+                  >
+                    {{ row.job_id }}
+                  </RouterLink>
+                </template>
+              </Column>
+              <Column field="status" header="Stav" />
+              <Column field="created_at" header="Vytvorené" />
+            </DataTable>
+            <p v-else class="m-0 text-sm text-slate-500">Žiadne prihlášky.</p>
+          </section>
+        </TabPanel>
+
+        <TabPanel value="chat">
+          <section class="admin-section-card mt-4">
+            <DataTable
+              v-if="chatRooms.length"
+              :value="chatRooms"
+              size="small"
+              striped-rows
+              class="text-sm"
+            >
+              <Column header="Miestnosť">
+                <template #body="{ data: row }">
+                  <span class="mono">{{ row.id }}</span>
+                </template>
+              </Column>
+              <Column header="Posledná správa">
+                <template #body="{ data: row }">{{ row.last_message_at ?? '—' }}</template>
+              </Column>
+              <Column header="Typ">
+                <template #body="{ data: row }">{{ row.last_message_type ?? '—' }}</template>
+              </Column>
+            </DataTable>
+            <p v-else class="m-0 text-sm text-slate-500">Žiadne chat miestnosti.</p>
+          </section>
+        </TabPanel>
+      </TabPanels>
+    </Tabs>
   </div>
 </template>
-
-<style scoped>
-.tab-bar {
-  display: flex;
-  gap: 0.35rem;
-  margin: 1rem 0;
-  flex-wrap: wrap;
-}
-
-.tab {
-  border: 1px solid var(--g200);
-  background: #fff;
-  padding: 0.35rem 0.75rem;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.tab--active {
-  background: var(--g100);
-  font-weight: 600;
-}
-
-.detail-dl {
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 0.35rem 0.75rem;
-  font-size: 0.875rem;
-}
-
-.grant-row,
-.danger-zone {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-
-.danger-zone {
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--g200);
-}
-
-.cookie-consent-block {
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--g200);
-}
-
-.section-title {
-  margin: 0 0 0.75rem;
-  font-size: 1rem;
-  font-weight: 600;
-}
-</style>
