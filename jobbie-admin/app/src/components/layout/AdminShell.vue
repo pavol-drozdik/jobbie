@@ -5,6 +5,8 @@ import AdminMfaBanner from '../AdminMfaBanner.vue'
 import AdminTopbar from './AdminTopbar.vue'
 import AdminStatusFooter from './AdminStatusFooter.vue'
 
+const isDev = import.meta.env.DEV
+
 defineProps<{
   apiReachable: boolean | null
   apiChecking: boolean
@@ -26,11 +28,16 @@ defineProps<{
       <div class="space-y-2 text-sm">
         <p class="m-0 font-semibold">Admin API nedostupné.</p>
         <p class="m-0">{{ apiMessage }}</p>
-        <p class="m-0 text-xs opacity-90">
+        <p v-if="isDev" class="m-0 text-xs opacity-90">
           Spustite API: <code>cd jobbie-admin</code> → <code>npm run dev:api</code>
           (alebo celý stack <code>npm run dev</code>). Skontrolujte
           <code>api/.env</code> a <code>app/.env</code>
           (<code>VITE_ADMIN_API_URL=http://127.0.0.1:3099</code>).
+        </p>
+        <p v-else class="m-0 text-xs opacity-90">
+          Lokálne API by sa malo spustiť automaticky. Reštartujte aplikáciu; pri pretrvávajúcom
+          probléme preinštalujte najnovší build. Očakávaná adresa:
+          <code>http://127.0.0.1:3099/health</code>.
         </p>
         <Button
           :label="apiChecking ? 'Kontrolujem…' : 'Skúsiť znova'"

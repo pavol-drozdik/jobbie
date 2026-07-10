@@ -12,6 +12,18 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { validateAdminApiEnv } from './validate-env';
 
+function isLocalAdminUiOrigin(origin: string | undefined): boolean {
+  if (!origin) return true;
+  if (origin === 'app://.' || origin.startsWith('app://')) return true;
+  try {
+    const { hostname, protocol } = new URL(origin);
+    if (protocol !== 'http:' && protocol !== 'https:') return false;
+    return hostname === '127.0.0.1' || hostname === 'localhost';
+  } catch {
+    return false;
+  }
+}
+
 async function bootstrap() {
   validateAdminApiEnv();
   const app = await NestFactory.create(AppModule);
@@ -21,11 +33,9 @@ async function bootstrap() {
     }),
   );
   app.enableCors({
-    origin: [
-      'http://127.0.0.1:5199',
-      'http://localhost:5199',
-      'app://.',
-    ],
+    origin: (origin, callback) => {
+      callback(null, isLocalAdminUiOrigin(origin));
+    },
     credentials: false,
   });
   app.useGlobalPipes(

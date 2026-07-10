@@ -52,8 +52,9 @@ export function parseAdminLoginApiError(
   if (status === 0) {
     return {
       code: 'api_unreachable',
-      message:
-        'Admin API nedostupné. Spustite npm run dev:api alebo npm run dev.',
+      message: import.meta.env.DEV
+        ? 'Admin API nedostupné. Spustite npm run dev:api alebo npm run dev.'
+        : 'Admin API nedostupné na http://127.0.0.1:3099. Reštartujte aplikáciu; ak problém pretrváva, preinštalujte build z GitHub Releases.',
     }
   }
   try {
