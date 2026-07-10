@@ -186,6 +186,7 @@ Build Mac `.dmg` and Windows `.exe` via CI and publish both to **GitHub Releases
 | `ADMIN_SUPABASE_ANON_KEY` | yes | `SUPABASE_ANON_KEY` |
 | `ADMIN_SUPABASE_JWT_SECRET` | yes | `SUPABASE_JWT_SECRET` |
 | `ADMIN_AUDIT_CHAIN_SECRET` | yes | `AUDIT_CHAIN_SECRET` |
+| `ADMIN_GITHUB_UPDATE_TOKEN` | yes (auto-update) | Fine-grained GitHub PAT — **Contents: Read-only** on this private repo (release downloads) |
 | `ADMIN_PWA_PUBLIC_URL` | no | `PWA_PUBLIC_URL` (default `https://jobbie.sk` if omitted) |
 
 Optional Infra / analytics secrets (`VPS_*`, PostHog, GA4, …) are passed through when set (reuse existing deploy secrets where names match).
@@ -197,7 +198,9 @@ Optional Infra / analytics secrets (`VPS_*`, PostHog, GA4, …) are passed throu
 
 Download from **Releases**: `JOBBIE-Admin-<version>.dmg` (Mac) and `JOBBIE-Admin-<version>-Setup.exe` (Windows).
 
-**Security:** installers contain the service role key. Only distribute to trusted operators; rotate keys if a build leaks.
+**Auto-update (private repo):** CI embeds `ADMIN_GITHUB_UPDATE_TOKEN` in `resources/github-update-token`. Packaged apps check GitHub Releases ~12s after launch; operators get a Slovak prompt to download and restart. macOS updates use the release `.zip` + `latest-mac.yml`; Windows uses the NSIS installer + `latest.yml`. Bump the workflow version input (or tag) on every release — CI syncs `package.json` before build.
+
+**Security:** installers contain the service role key and a read-only GitHub PAT. Only distribute to trusted operators; rotate Supabase keys and `ADMIN_GITHUB_UPDATE_TOKEN` if a build leaks.
 
 Workflow: [`.github/workflows/jobbie-admin-release.yml`](../.github/workflows/jobbie-admin-release.yml). Local: `npm run build:mac:release` / `npm run build:win:release` with the same env vars exported.
 

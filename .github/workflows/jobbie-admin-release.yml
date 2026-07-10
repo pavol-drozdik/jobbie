@@ -65,6 +65,11 @@ jobs:
       - name: Generate app icons
         run: npm run icons:generate
 
+      - name: Set release version
+        run: node scripts/set-package-version.cjs
+        env:
+          RELEASE_VERSION: ${{ needs.resolve-version.outputs.tag }}
+
       - name: Write packaged API env from secrets
         run: npm run env:packaged
         env:
@@ -94,6 +99,11 @@ jobs:
           VPS_PRODUCTION_METRICS_URL: ${{ secrets.VPS_PRODUCTION_METRICS_URL }}
           VPS_PRODUCTION_METRICS_BEARER_TOKEN: ${{ secrets.VPS_PRODUCTION_METRICS_BEARER_TOKEN }}
 
+      - name: Write GitHub update token for auto-updater
+        run: npm run update:token
+        env:
+          ADMIN_GITHUB_UPDATE_TOKEN: ${{ secrets.ADMIN_GITHUB_UPDATE_TOKEN }}
+
       - name: Build macOS DMG (unsigned, env bundled)
         if: matrix.platform == 'mac'
         run: npm run build:app:pack && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac
@@ -102,7 +112,7 @@ jobs:
 
       - name: Build Windows installer (unsigned, env bundled)
         if: matrix.platform == 'win'
-        run: npm run build:win:release
+        run: npm run build:app:pack && node scripts/win-build.cjs --unsigned
         env:
           CI: true
 
@@ -114,6 +124,7 @@ jobs:
           path: |
             jobbie-admin/release/JOBBIE-Admin-*.dmg
             jobbie-admin/release/JOBBIE-Admin-*.zip
+            jobbie-admin/release/latest-mac.yml
           if-no-files-found: error
 
       - name: Upload Windows artifact
@@ -121,7 +132,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jobbie-admin-win
-          path: jobbie-admin/release/JOBBIE-Admin-*-Setup.exe
+          path: |
+            jobbie-admin/release/JOBBIE-Admin-*-Setup.exe
+            jobbie-admin/release/latest.yml
+            jobbie-admin/release/*.blockmap
           if-no-files-found: error
 
   release:
@@ -159,7 +173,9 @@ jobs:
 
             Sign in with a Supabase account that has `profiles.app_role = admin`.
 
-            Rotate Supabase keys if an installer is shared beyond trusted operators.
+            **Auto-update:** installed apps check GitHub Releases on startup (~12s delay). macOS updates use the `.zip` artifact; Windows uses the NSIS installer. Requires `latest-mac.yml` / `latest.yml` on the release (CI uploads these).
+
+            Rotate Supabase keys if an installer is shared beyond trusted operators. Rotate `ADMIN_GITHUB_UPDATE_TOKEN` if an installer leaks (read-only PAT embedded for private release downloads).
           files: release-artifacts/**
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

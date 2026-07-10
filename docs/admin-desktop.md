@@ -26,7 +26,7 @@ Packaged installs: edit `%APPDATA%\jobbie-admin\.env` (Windows) or `~/Library/Ap
 
 | Platform | Command | Artifact |
 |----------|---------|----------|
-| CI (macOS + Windows) | `.github/workflows/jobbie-admin-release.yml` | GitHub Releases `.dmg`, `.zip`, `*-Setup.exe` + bundled `api.env` |
+| CI (macOS + Windows) | `.github/workflows/jobbie-admin-release.yml` | GitHub Releases `.dmg`, `.zip`, `*-Setup.exe`, `latest*.yml` + bundled `api.env` + auto-update PAT |
 | macOS local | `npm run build:mac` (on a Mac) | `jobbie-admin/release/JOBBIE-Admin-<version>.dmg` |
 | macOS local test | `npm run build:mac:unsigned` | template env only |
 | Windows local | `npm run build:win` (on Windows) | `jobbie-admin/release/JOBBIE-Admin-<version>-Setup.exe` |
@@ -37,6 +37,8 @@ App icons: `jobbie-admin/build/icon.{svg,icns,ico}` (regenerate with `npm run ic
 **Share with a friend (Mac):** use **GitHub Releases** (workflow `jobbie-admin-release`) for a pre-configured `.dmg`, or build locally on macOS. Right-click → Open once if Gatekeeper blocks an unsigned build.
 
 **Share with a friend (Windows):** same **GitHub Releases** workflow — download `JOBBIE-Admin-*-Setup.exe`. SmartScreen → More info → Run anyway if needed. Full steps: [jobbie-admin/README.md](../jobbie-admin/README.md#github-actions-desktop-release-macos--windows-pre-filled-env).
+
+**Auto-update:** `electron-updater` + private GitHub Releases (`ADMIN_GITHUB_UPDATE_TOKEN` read-only PAT baked at CI build). Coworkers on a CI-built installer get update prompts after you publish a newer release; one manual reinstall is needed for installs built before this feature.
 
 **Code signing (optional):** Apple **Developer ID Application** + notarization (Mac) or Windows **Authenticode** (`.pfx` + `CSC_LINK` / `CSC_KEY_PASSWORD` for electron-builder) reduces OS warnings for wider distribution.
 

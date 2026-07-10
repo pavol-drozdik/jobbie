@@ -1,4 +1,10 @@
-﻿## 2026-07-10 — Admin desktop GitHub release (macOS + Windows)
+﻿## 2026-07-10 — Admin desktop auto-update (private GitHub)
+
+- **jobbie-admin:** `electron-updater` — checks private GitHub Releases on startup; PAT from `resources/github-update-token`; `scripts/write-update-token.cjs`, `scripts/set-package-version.cjs`.
+- **CI:** `ADMIN_GITHUB_UPDATE_TOKEN` secret; sync `package.json` version to release tag; upload `latest.yml` / `latest-mac.yml` (+ blockmaps) to Releases.
+- **docs:** `jobbie-admin/README.md`, `docs/admin-desktop.md`.
+
+## 2026-07-10 — Admin desktop GitHub release (macOS + Windows)
 
 - **CI:** `.github/workflows/jobbie-admin-release.yml` — parallel macOS `.dmg` and Windows `Setup.exe` on GitHub Releases; bundled `api.env` from `ADMIN_*` secrets.
 - **jobbie-admin:** `npm run build:win:release` for local Windows release builds with secrets.
