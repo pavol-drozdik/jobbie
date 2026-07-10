@@ -1,4 +1,9 @@
-﻿## 2026-07-10 — Admin desktop app icon
+﻿## 2026-07-10 — Admin desktop Vite env in CI builds
+
+- **jobbie-admin:** `scripts/write-vite-env.cjs` bakes `VITE_ADMIN_API_URL` (default localhost), `VITE_SUPABASE_*`, Turnstile into `app/.env.production.local` during `build:app:pack`; login no longer errors when `VITE_ADMIN_API_URL` is unset (defaults to `127.0.0.1:3099`).
+- **CI:** maps `ADMIN_*` secrets into Vite env on macOS/Windows build steps.
+
+## 2026-07-10 — Admin desktop app icon
 
 - **jobbie-admin:** embed JOBBIE icon in Windows `.exe` (`win.sign: null` instead of `signAndEditExecutable: false`); bundle `build/icon.*` in `resources/icons/` for packaged window icon; root `build.icon` for electron-builder.
 

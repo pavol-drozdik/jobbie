@@ -110,12 +110,22 @@ jobs:
         env:
           CI: true
           CSC_IDENTITY_AUTO_DISCOVERY: false
+          ADMIN_SUPABASE_URL: ${{ secrets.ADMIN_SUPABASE_URL }}
+          ADMIN_SUPABASE_ANON_KEY: ${{ secrets.ADMIN_SUPABASE_ANON_KEY }}
+          ADMIN_VITE_ADMIN_API_URL: ${{ secrets.ADMIN_VITE_ADMIN_API_URL }}
+          ADMIN_TURNSTILE_SITE_KEY: ${{ secrets.ADMIN_TURNSTILE_SITE_KEY }}
+          VITE_ADMIN_API_URL: http://127.0.0.1:3099
 
       - name: Build Windows installer (unsigned, env bundled)
         if: matrix.platform == 'win'
         run: npm run build:app:pack && node scripts/win-build.cjs --unsigned
         env:
           CI: true
+          ADMIN_SUPABASE_URL: ${{ secrets.ADMIN_SUPABASE_URL }}
+          ADMIN_SUPABASE_ANON_KEY: ${{ secrets.ADMIN_SUPABASE_ANON_KEY }}
+          ADMIN_VITE_ADMIN_API_URL: ${{ secrets.ADMIN_VITE_ADMIN_API_URL }}
+          ADMIN_TURNSTILE_SITE_KEY: ${{ secrets.ADMIN_TURNSTILE_SITE_KEY }}
+          VITE_ADMIN_API_URL: http://127.0.0.1:3099
 
       - name: Upload macOS artifacts
         if: matrix.platform == 'mac'

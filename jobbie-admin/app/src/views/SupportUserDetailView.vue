@@ -14,6 +14,7 @@ import TabPanels from 'primevue/tabpanels'
 import Tabs from 'primevue/tabs'
 import { adminApi } from '../composables/adminApi'
 import { useAdminAuth } from '../composables/adminAuth'
+import { ADMIN_API_BASE_URL } from '../config/admin-api-url'
 import { useConfirm } from '../composables/useConfirm'
 import type { CookieConsentLogItem, CookieConsentLogResponse } from '../types/cookie-consent-log'
 import type { AdminUserDetail } from '../types/users'
@@ -120,8 +121,7 @@ async function exportData() {
   })
   if (!ok) return
   const token = getAccessToken()
-  const base =
-    import.meta.env.VITE_ADMIN_API_URL?.replace(/\/$/, '') || 'http://127.0.0.1:3099'
+  const base = ADMIN_API_BASE_URL
   const res = await fetch(`${base}/api/admin/users/${id.value}/export-data`, {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
