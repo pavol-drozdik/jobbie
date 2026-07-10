@@ -54,7 +54,7 @@ export function parseAdminLoginApiError(
       code: 'api_unreachable',
       message: import.meta.env.DEV
         ? 'Admin API nedostupné. Spustite npm run dev:api alebo npm run dev.'
-        : 'Admin API nedostupné na http://127.0.0.1:3099. Reštartujte aplikáciu; ak problém pretrváva, preinštalujte build z GitHub Releases.',
+        : 'Lokálne Admin API na porte 3099 neodpovedá. Reštartujte aplikáciu. Ak ste preinštalovali build, vymažte prázdny súbor %APPDATA%\\JOBBIE Admin\\.env (môže prepísať tajomstvá z inštalátora).',
     }
   }
   try {

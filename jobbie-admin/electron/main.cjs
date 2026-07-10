@@ -1,9 +1,10 @@
-const { app, BrowserWindow, dialog } = require('electron')
+const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const { spawn } = require('child_process')
 const { initAutoUpdater } = require('./auto-updater.cjs')
 const { createStaticUiServerWithFallback } = require('./static-ui-server.cjs')
+const { resolvePackagedApiEnv } = require('./resolve-api-env.cjs')
 
 const isDev = !app.isPackaged
 const API_PORT = process.env.ADMIN_API_PORT || '3099'
@@ -21,6 +22,27 @@ let uiStaticServer = null
 let apiBootstrapStarted = false
 
 const ADMIN_UI_PORT = Number(process.env.ADMIN_UI_PORT || '5198')
+const LOG_BUFFER_MAX = 8192
+
+/** @type {{ state: string, logTail: string, missingEnvKeys: string[], exitCode: number | null, envPath: string | null }} */
+let apiBootstrapStatus = {
+  state: 'idle',
+  logTail: '',
+  missingEnvKeys: [],
+  exitCode: null,
+  envPath: null,
+}
+
+function setApiBootstrapStatus(patch) {
+  apiBootstrapStatus = { ...apiBootstrapStatus, ...patch }
+}
+
+function appendApiLog(chunk) {
+  const text = typeof chunk === 'string' ? chunk : chunk.toString('utf8')
+  setApiBootstrapStatus({
+    logTail: (apiBootstrapStatus.logTail + text).slice(-LOG_BUFFER_MAX),
+  })
+}
 
 function apiRootDir() {
   if (isDev) {
@@ -43,33 +65,14 @@ function devEnvPath() {
   return path.join(apiRootDir(), '.env')
 }
 
-function packagedEnvCandidates() {
-  const exeDir = path.dirname(process.execPath)
-  const userDataEnv = path.join(app.getPath('userData'), '.env')
-  return [
-    path.join(exeDir, '.env'),
-    userDataEnv,
-    path.join(process.resourcesPath, 'api.env'),
-  ]
-}
-
 function packagedEnvExamplePath() {
   return path.join(process.resourcesPath, 'api.env.example')
-}
-
-function findExistingEnv(candidates) {
-  for (const candidate of candidates) {
-    if (candidate && fs.existsSync(candidate)) {
-      return candidate
-    }
-  }
-  return null
 }
 
 /**
  * Resolves the .env file for the Nest admin API.
  * Dev: jobbie-admin/api/.env
- * Packaged: next to executable, then userData/.env, then resources/api.env
+ * Packaged: merge resources/api.env + userData/.env + exeDir/.env → userData/api.runtime.env
  */
 function resolveEnvFile() {
   if (isDev) {
@@ -79,58 +82,99 @@ function resolveEnvFile() {
         `[admin] Missing ${envPath} — copy api/.env.example and fill Supabase credentials.`,
       )
     }
-    return envPath
+    return { envPath, missingKeys: [] }
   }
 
-  const existing = findExistingEnv(packagedEnvCandidates())
-  if (existing) {
-    return existing
-  }
+  const bundledPath = path.join(process.resourcesPath, 'api.env')
+  const userDataPath = app.getPath('userData')
+  const exeDir = path.dirname(process.execPath)
 
-  const userDataEnv = path.join(app.getPath('userData'), '.env')
-  const exampleSrc = packagedEnvExamplePath()
-  try {
-    fs.mkdirSync(path.dirname(userDataEnv), { recursive: true })
-    if (fs.existsSync(exampleSrc)) {
-      fs.copyFileSync(exampleSrc, userDataEnv)
-      console.log(`[admin] Created template env at ${userDataEnv}`)
-    } else {
-      fs.writeFileSync(
-        userDataEnv,
-        '# JOBBIE Admin API — fill Supabase credentials\nADMIN_API_PORT=3099\nSUPABASE_URL=\nSUPABASE_SERVICE_ROLE_KEY=\nSUPABASE_JWT_SECRET=\nAUDIT_CHAIN_SECRET=\n',
-        'utf8',
-      )
-      console.log(`[admin] Created empty env at ${userDataEnv}`)
+  if (!fs.existsSync(bundledPath)) {
+    const userDataEnv = path.join(userDataPath, '.env')
+    if (!fs.existsSync(userDataEnv)) {
+      const exampleSrc = packagedEnvExamplePath()
+      try {
+        fs.mkdirSync(userDataPath, { recursive: true })
+        if (fs.existsSync(exampleSrc)) {
+          fs.copyFileSync(exampleSrc, userDataEnv)
+          console.log(`[admin] Created template env at ${userDataEnv}`)
+        } else {
+          fs.writeFileSync(
+            userDataEnv,
+            '# JOBBIE Admin API — fill Supabase credentials\nADMIN_API_PORT=3099\nSUPABASE_URL=\nSUPABASE_SERVICE_ROLE_KEY=\nSUPABASE_ANON_KEY=\nSUPABASE_JWT_SECRET=\nAUDIT_CHAIN_SECRET=\n',
+            'utf8',
+          )
+          console.log(`[admin] Created empty env at ${userDataEnv}`)
+        }
+        const parent =
+          mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined
+        dialog.showMessageBox(parent, {
+          type: 'warning',
+          title: 'JOBBIE Admin — configuration',
+          message: 'Environment file required',
+          detail: `Edit the API environment file, then restart the app:\n\n${userDataEnv}\n\nCopy values from your main backend-ts .env (Supabase URL, service role, anon key, JWT secret, audit chain secret).`,
+        })
+      } catch (err) {
+        console.error('[admin] Failed to seed .env', err)
+        return { envPath: null, missingKeys: ['SUPABASE_URL'] }
+      }
     }
+  }
+
+  const resolved = resolvePackagedApiEnv({
+    isProduction: true,
+    resourcesPath: process.resourcesPath,
+    userDataPath,
+    exeDir,
+  })
+
+  if (resolved.missingKeys.length > 0) {
     const parent = mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined
     dialog.showMessageBox(parent, {
-      type: 'warning',
-      title: 'JOBBIE Admin — configuration',
-      message: 'Environment file required',
-      detail: `Edit the API environment file, then restart the app:\n\n${userDataEnv}\n\nCopy values from your main backend-ts .env (Supabase URL, service role, JWT secret, audit chain secret).`,
+      type: 'error',
+      title: 'JOBBIE Admin — incomplete configuration',
+      message: 'Admin API environment is incomplete',
+      detail: `Missing keys: ${resolved.missingKeys.join(', ')}\n\nBundled: ${resolved.bundledPath}\nOverride: ${resolved.userDataOverridePath}\n\nDelete an empty override at ${resolved.userDataOverridePath} if you use a GitHub Release build with bundled credentials, then restart.`,
     })
-    return userDataEnv
-  } catch (err) {
-    console.error('[admin] Failed to seed .env', err)
-    return null
+  }
+
+  return {
+    envPath: resolved.runtimePath,
+    missingKeys: resolved.missingKeys,
   }
 }
 
 function startApi() {
   const apiDir = apiRootDir()
-  const envPath = resolveEnvFile()
+  const { envPath, missingKeys } = resolveEnvFile()
+  setApiBootstrapStatus({
+    state: 'starting',
+    missingEnvKeys: missingKeys,
+    envPath,
+    exitCode: null,
+    logTail: '',
+  })
+
+  if (!envPath) {
+    setApiBootstrapStatus({ state: 'failed' })
+    return false
+  }
+
+  if (missingKeys.length > 0) {
+    setApiBootstrapStatus({ state: 'failed' })
+    return false
+  }
+
   const apiEnv = {
     ...process.env,
     NODE_ENV: isDev ? 'development' : 'production',
     ADMIN_API_PORT: API_PORT,
     PORT: API_PORT,
+    DOTENV_CONFIG_PATH: envPath,
     INFRA_METRICS_HISTORY_PATH: path.join(
       app.getPath('userData'),
       'infrastructure-history.json',
     ),
-  }
-  if (envPath) {
-    apiEnv.DOTENV_CONFIG_PATH = envPath
   }
 
   if (isDev) {
@@ -145,6 +189,7 @@ function startApi() {
     const mainScript = path.join(apiDir, 'dist', 'main.js')
     if (!fs.existsSync(mainScript)) {
       console.error(`[admin] Missing API bundle: ${mainScript}`)
+      setApiBootstrapStatus({ state: 'failed' })
       const parent = mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined
       dialog.showErrorBox(
         'JOBBIE Admin',
@@ -161,15 +206,19 @@ function startApi() {
       stdio: 'pipe',
     })
     apiProcess.stdout?.on('data', (chunk) => {
+      appendApiLog(chunk)
       process.stdout.write(`[admin-api] ${chunk}`)
     })
     apiProcess.stderr?.on('data', (chunk) => {
+      appendApiLog(chunk)
       process.stderr.write(`[admin-api] ${chunk}`)
     })
   }
 
   apiProcess.on('error', (err) => {
     console.error('[admin-api] spawn failed:', err)
+    appendApiLog(`\n[spawn error] ${err.message}\n`)
+    setApiBootstrapStatus({ state: 'failed' })
     const parent = mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined
     dialog.showErrorBox(
       'JOBBIE Admin — API failed to start',
@@ -178,7 +227,11 @@ function startApi() {
   })
   apiProcess.on('exit', (code, signal) => {
     if (code && code !== 0) {
-      console.error(`[admin-api] exited with code ${code}${signal ? ` signal ${signal}` : ''}`)
+      console.error(
+        `[admin-api] exited with code ${code}${signal ? ` signal ${signal}` : ''}`,
+      )
+      appendApiLog(`\n[exit] code=${code}${signal ? ` signal=${signal}` : ''}\n`)
+      setApiBootstrapStatus({ state: 'failed', exitCode: code ?? null })
     }
   })
   return true
@@ -206,6 +259,7 @@ async function bootstrapApiInBackground() {
 
   if (await probeHealth()) {
     console.log('[admin] API already running')
+    setApiBootstrapStatus({ state: 'healthy' })
     return
   }
 
@@ -218,11 +272,16 @@ async function bootstrapApiInBackground() {
   while (Date.now() < deadline) {
     if (await probeHealth()) {
       console.log(`[admin] API healthy at ${HEALTH_URL}`)
+      setApiBootstrapStatus({ state: 'healthy' })
+      return
+    }
+    if (apiBootstrapStatus.state === 'failed') {
       return
     }
     await new Promise((r) => setTimeout(r, 500))
   }
   console.error('[admin] API did not become healthy in background bootstrap')
+  setApiBootstrapStatus({ state: 'failed' })
 }
 
 function windowIconPath() {
@@ -287,7 +346,10 @@ async function loadWindowContent(win) {
       uiStaticServer.close()
       uiStaticServer = null
     }
-    const { server, url } = await createStaticUiServerWithFallback(distDir, ADMIN_UI_PORT)
+    const { server, url } = await createStaticUiServerWithFallback(
+      distDir,
+      ADMIN_UI_PORT,
+    )
     uiStaticServer = server
     console.log(`[admin] UI static server at ${url}`)
     await win.loadURL(url)
@@ -296,6 +358,18 @@ async function loadWindowContent(win) {
     await win.loadFile(indexHtml)
   }
 }
+
+ipcMain.handle('admin:getApiBootstrapStatus', () => ({
+  ...apiBootstrapStatus,
+  userDataPath: app.getPath('userData'),
+  isPackaged: app.isPackaged,
+}))
+
+ipcMain.handle('admin:openUserDataFolder', async () => {
+  const folder = app.getPath('userData')
+  await shell.openPath(folder)
+  return folder
+})
 
 app.whenReady().then(async () => {
   const win = createWindow()

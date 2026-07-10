@@ -1,4 +1,15 @@
-﻿## 2026-07-10 — Admin desktop login without Turnstile
+﻿## 2026-07-10 — Admin macOS launch (Gatekeeper / universal)
+
+- **electron-builder:** universal `.dmg`/`.zip` (Apple Silicon + Intel), ad-hoc `sign: "-"`, macOS entitlements; CI no longer sets `CSC_IDENTITY_AUTO_DISCOVERY=false` on Mac (was blocking codesign).
+- **Docs:** macOS „nie je možné otvoriť“ troubleshooting (`xattr -cr`, right-click Open).
+
+## 2026-07-10 — Admin packaged API startup fix (3099)
+
+- **electron:** merge bundled `resources/api.env` with operator overrides into `userData/api.runtime.env` (empty stale `%APPDATA%\JOBBIE Admin\.env` no longer blocks CI secrets); buffer API stderr and expose via preload IPC.
+- **jobbie-admin API:** lazy-load `ssh2` so Nest boots under Electron-as-Node; `AUDIT_CHAIN_SECRET` required in production `validate-env`; `electron-rebuild` for `ssh2` in `build:app:pack`.
+- **UI:** login + shell show API log excerpt and **Otvoriť priečinok konfigurácie** when `/health` fails; actionable copy instead of “reinstall”.
+
+## 2026-07-10 — Admin desktop login without Turnstile
 
 - **jobbie-admin:** removed Cloudflare Turnstile widget from login; admin API authenticates via service role on localhost (no CAPTCHA).
 - Removed `AdminTurnstileWidget`, `useTurnstileWidget`, `VITE_TURNSTILE_SITE_KEY` / `ADMIN_TURNSTILE_SITE_KEY` from CI.

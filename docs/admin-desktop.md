@@ -20,7 +20,7 @@ The desktop shell (`jobbie-admin/app/`) uses **Vue 3 + Vite**, **Tailwind CSS v4
 | Recent login | Suspend/moderation/audit export: JWT `auth_time` / `iat` within **`ADMIN_RECENT_LOGIN_MINUTES`** (admin API default **120**; main `backend-ts` remains 15 min) |
 | Env | Copy `jobbie-admin/api/.env` from main `backend-ts/.env` (service role, JWT, audit secret) |
 
-Packaged installs: edit `%APPDATA%\jobbie-admin\.env` (Windows) or `~/Library/Application Support/jobbie-admin/.env` (macOS), or place `.env` next to the executable. See [jobbie-admin/README.md](../jobbie-admin/README.md).
+Packaged installs: edit `%APPDATA%\JOBBIE Admin\.env` (Windows) or `~/Library/Application Support/JOBBIE Admin/.env` (macOS), or place `.env` next to the executable. See [jobbie-admin/README.md](../jobbie-admin/README.md).
 
 ## Distribution
 
@@ -34,7 +34,7 @@ Packaged installs: edit `%APPDATA%\jobbie-admin\.env` (Windows) or `~/Library/Ap
 
 App icons: `jobbie-admin/build/icon.{svg,icns,ico}` (regenerate with `npm run icons:generate`). The Electron packager uses `directories.app: "."` because the Vue UI lives in a subfolder named `app/`.
 
-**Share with a friend (Mac):** use **GitHub Releases** (workflow `jobbie-admin-release`) for a pre-configured `.dmg`, or build locally on macOS. Right-click → Open once if Gatekeeper blocks an unsigned build.
+**Share with a friend (Mac):** use **GitHub Releases** (workflow `jobbie-admin-release`) for a pre-configured universal `.dmg` (Apple Silicon + Intel). **Right-click → Otvoriť → Otvoriť** once if Gatekeeper blocks; if macOS says **„nie je možné otvoriť“**, run `xattr -cr "/Applications/JOBBIE Admin.app"`. See [macOS troubleshooting](../jobbie-admin/README.md#troubleshooting-macos--nie-je-možné-otvoriť--gatekeeper).
 
 **Share with a friend (Windows):** same **GitHub Releases** workflow — download `JOBBIE-Admin-*-Setup.exe`. SmartScreen → More info → Run anyway if needed. Full steps: [jobbie-admin/README.md](../jobbie-admin/README.md#github-actions-desktop-release-macos--windows-pre-filled-env).
 

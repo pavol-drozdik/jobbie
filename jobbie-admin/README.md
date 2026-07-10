@@ -112,6 +112,48 @@ Stop-Process -Id <pid> -Force
 
 **Do not** bind the admin API to `0.0.0.0` — it must stay on `127.0.0.1` only.
 
+## Troubleshooting (packaged app — GitHub Release `.exe` / `.dmg`)
+
+Symptom: `Admin API nedostupné` on login or yellow banner; `curl http://127.0.0.1:3099/health` fails.
+
+| Cause | Fix |
+|-------|-----|
+| **Stale empty `%APPDATA%\JOBBIE Admin\.env`** | Reinstall **does not** delete app data (`deleteAppDataOnUninstall: false`). An empty `.env` from an older run overrides bundled `resources\api.env`. **Delete** `%APPDATA%\JOBBIE Admin\.env` and restart. Use **Otvoriť priečinok konfigurácie** in the app banner if available. |
+| API still starting | Wait up to **90s** after launch; packaged Nest boots in the background. |
+| Port **3099** in use | Kill the stale process (see [Free port 3099](#free-port-3099-on-windows-eaddrinuse--address-already-in-use) above). |
+| Missing `AUDIT_CHAIN_SECRET` | Production API requires it. GitHub Release builds bundle it in `resources\api.env`; do not override with an incomplete `.env`. |
+| `ssh2` / native module error in log | Install a build that ran `electron-rebuild` for `ssh2` (CI `build:app:pack`). |
+
+**Verify after fix (PowerShell):**
+
+```powershell
+curl.exe http://127.0.0.1:3099/health
+```
+
+Expected: `{"ok":true,"version":"...","recentLoginMinutes":...}`.
+
+**Config paths (Windows):**
+
+| Path | Role |
+|------|------|
+| `%APPDATA%\JOBBIE Admin\api.runtime.env` | Merged env used at runtime (auto-generated) |
+| `%APPDATA%\JOBBIE Admin\.env` | Optional operator overrides (non-empty keys only) |
+| `<install dir>\resources\api.env` | Bundled secrets from GitHub Release CI |
+
+## Troubleshooting (macOS — „nie je možné otvoriť“ / Gatekeeper)
+
+Symptom: double-click shows **„Aplikáciu JOBBIE Admin nie je možné otvoriť“** or **„poškodená“** / **„damaged“**.
+
+| Cause | Fix |
+|-------|-----|
+| **Gatekeeper** (unsigned / downloaded app) | Do **not** double-click first. **Right-click** (or Control+click) **JOBBIE Admin** in Applications → **Otvoriť** → confirm **Otvoriť** once. |
+| **Quarantine** (browser / GitHub download) | Terminal: `xattr -cr "/Applications/JOBBIE Admin.app"` then open again (or right-click → Open). |
+| Opened from **DMG** without installing | Drag the app to **Applications**, eject DMG, launch from **Applications** only. |
+| **Intel Mac** + old **arm64-only** build | Use a release built after **universal** CI (`JOBBIE-Admin-*.dmg` from latest `jobbie-admin-release`). Check: `file "/Applications/JOBBIE Admin.app/Contents/MacOS/JOBBIE Admin"` should say `universal` or match your Mac CPU. |
+| Still blocked | **System Settings → Privacy & Security** → allow **JOBBIE Admin** if shown; or temporarily allow apps from identified developers. |
+
+CI builds are **ad-hoc signed** (`mac.sign: "-"`) but **not notarized** — Apple Developer ID + notarization removes these steps for wider distribution.
+
 ## Troubleshooting (login failed)
 
 | Symptom | Fix |
@@ -212,8 +254,8 @@ Workflow: [`.github/workflows/jobbie-admin-release.yml`](../.github/workflows/jo
 1. **Build on a Mac** (Apple Silicon or Intel): clone the repo, `cd jobbie-admin`, copy env files for dev only, then `npm install`, `npm run install:all`, and `npm run build:mac` (or `build:mac:unsigned`).
 2. **Send one file**: `release/JOBBIE-Admin-<version>.dmg` (AirDrop, USB stick, iCloud, etc.). A `.zip` is also produced if they prefer unzipping manually.
 3. **Install**: open the DMG, drag **JOBBIE Admin** to **Applications**, eject the disk image.
-4. **First launch (unsigned / ad-hoc)**: macOS Gatekeeper may block the app. Either **right-click → Open → Open** once, or in Terminal: `xattr -cr "/Applications/JOBBIE Admin.app"` then open normally.
-5. **Configure secrets**: CI/GitHub Release builds bundle `resources/api.env` — **no manual `.env` step**. Manual Mac builds still need `~/Library/Application Support/jobbie-admin/.env` or use **GitHub Actions release** above.
+4. **First launch (ad-hoc signed, not notarized)**: macOS Gatekeeper may block on double-click. Use **right-click → Otvoriť → Otvoriť** once. If you see **„nie je možné otvoriť“**, run: `xattr -cr "/Applications/JOBBIE Admin.app"` in Terminal, then right-click → Open again.
+5. **Configure secrets**: CI/GitHub Release builds bundle `resources/api.env` — **no manual `.env` step**. Manual Mac builds still need `~/Library/Application Support/JOBBIE Admin/.env` or use **GitHub Actions release** above.
 
 Code signing with an **Apple Developer ID Application** certificate plus notarization removes the Gatekeeper warning for most users; that is optional for trusted friends who can use right-click Open once.
 
@@ -223,7 +265,7 @@ Code signing with an **Apple Developer ID Application** certificate plus notariz
 2. **Send one file**: `release/JOBBIE-Admin-<version>-Setup.exe` (USB stick, OneDrive, Google Drive, etc.).
 3. **Install**: run the installer, choose install folder if prompted, optionally add a desktop shortcut, finish. Uninstall later via **Settings â†’ Apps** or **Add or remove programs** (â€œJOBBIE Adminâ€).
 4. **First run (unsigned)**: Windows SmartScreen may show **Windows protected your PC**. Click **More info**, then **Run anyway** (same as any unsigned internal app). Optional **Authenticode** signing with a code-signing certificate reduces this for wider distribution.
-5. **Configure secrets**: CI/GitHub Release builds bundle `resources/api.env` — **no manual `.env` step**. Manual Windows builds still need `%APPDATA%\jobbie-admin\.env` or use **GitHub Actions release** above. Sign in with `profiles.app_role = admin` and complete **TOTP MFA** if enabled.
+5. **Configure secrets**: CI/GitHub Release builds bundle `resources/api.env` — **no manual `.env` step**. Manual Windows builds still need `%APPDATA%\JOBBIE Admin\.env` or use **GitHub Actions release** above. Sign in with `profiles.app_role = admin` and complete **TOTP MFA** if enabled.
 
 ### Packaged `.env` (production)
 
@@ -231,8 +273,8 @@ On first launch, if no env file exists, the app copies `api.env.example` from in
 
 | OS | Default path |
 |----|----------------|
-| Windows | `%APPDATA%\jobbie-admin\.env` (Electron `userData`) |
-| macOS | `~/Library/Application Support/jobbie-admin/.env` |
+| Windows | `%APPDATA%\JOBBIE Admin\.env` (Electron `userData`, product name **JOBBIE Admin**) |
+| macOS | `~/Library/Application Support/JOBBIE Admin/.env` |
 
 You can also place `.env` **next to the installed executable** (portable installs) â€” that takes precedence.
 
@@ -275,7 +317,7 @@ Optional: `npm run build:win:force` — timestamped output only, no `clean:relea
 
 See [`api/.env.example`](api/.env.example): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, `AUDIT_CHAIN_SECRET`, optional `SEARCH_ANALYTICS_SECRET`, `ADMIN_RECENT_LOGIN_MINUTES` (step-up window for suspend/moderation/audit export; default **120**).
 
-**Solo operator:** use default `120` or set `480` (8 h) in `api/.env` / packaged `%APPDATA%\jobbie-admin\.env` if you rarely want to re-authenticate with MFA. Tighten to `15` only if you need parity with production step-up policy on a shared machine.
+**Solo operator:** use default `120` or set `480` (8 h) in `api/.env` / packaged `%APPDATA%\JOBBIE Admin\.env` if you rarely want to re-authenticate with MFA. Tighten to `15` only if you need parity with production step-up policy on a shared machine.
 
 ## Security notes
 

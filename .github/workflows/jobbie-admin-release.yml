@@ -104,12 +104,14 @@ jobs:
         env:
           ADMIN_GITHUB_UPDATE_TOKEN: ${{ secrets.ADMIN_GITHUB_UPDATE_TOKEN }}
 
-      - name: Build macOS DMG (unsigned, env bundled)
+      - name: Test packaged env merge
+        run: npm run test:electron-env
+
+      - name: Build macOS DMG (ad-hoc signed universal, env bundled)
         if: matrix.platform == 'mac'
         run: npm run build:app:pack && npx electron-builder --mac --publish never
         env:
           CI: true
-          CSC_IDENTITY_AUTO_DISCOVERY: false
           ADMIN_SUPABASE_URL: ${{ secrets.ADMIN_SUPABASE_URL }}
           ADMIN_SUPABASE_ANON_KEY: ${{ secrets.ADMIN_SUPABASE_ANON_KEY }}
           ADMIN_VITE_ADMIN_API_URL: ${{ secrets.ADMIN_VITE_ADMIN_API_URL }}
@@ -173,10 +175,10 @@ jobs:
 
             | Platform | File |
             |----------|------|
-            | macOS (Apple Silicon) | `JOBBIE-Admin-*.dmg` |
+            | macOS (Apple Silicon + Intel) | `JOBBIE-Admin-*.dmg` (universal binary, ad-hoc signed) |
             | Windows | `JOBBIE-Admin-*-Setup.exe` |
 
-            **macOS (unsigned):** right-click JOBBIE Admin → Open → Open.
+            **macOS (ad-hoc signed, not notarized):** open the `.dmg`, drag **JOBBIE Admin** to **Applications**, then **right-click the app → Open → Open** once. If macOS still says the app cannot be opened, run in Terminal: `xattr -cr "/Applications/JOBBIE Admin.app"` and try again.
 
             **Windows (unsigned):** SmartScreen → More info → Run anyway.
 

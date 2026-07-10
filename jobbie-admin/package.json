@@ -10,18 +10,19 @@
     "dev": "concurrently -k \"npm run dev:api\" \"npm run dev:app\" \"wait-on http://127.0.0.1:5199 http://127.0.0.1:3099/health && cross-env JOBBIE_ADMIN_SKIP_API_SPAWN=1 electron .\"",
     "build:api": "npm run build --prefix api",
     "build:app": "npm run build --prefix app",
-    "build:app:pack": "npm run build:api && npm run vite:env && npm run build:app",
+    "build:app:pack": "npm run build:api && npm run rebuild:api-native && npm run vite:env && npm run build:app",
     "clean:release": "node scripts/clean-release-run.cjs",
     "build:win": "npm run build:app:pack && node scripts/win-build.cjs",
     "build:win:unsigned": "npm run env:packaged:example && npm run build:app:pack && node scripts/win-build.cjs --unsigned",
     "build:win:release": "npm run env:packaged && npm run update:token && npm run build:app:pack && node scripts/win-build.cjs --unsigned",
     "build:mac": "npm run build:app:pack && electron-builder --mac",
-    "build:mac:unsigned": "npm run env:packaged:example && npm run build:app:pack && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac",
+    "build:mac:unsigned": "npm run env:packaged:example && npm run build:app:pack && electron-builder --mac",
     "env:packaged": "node scripts/write-packaged-env.cjs",
     "env:packaged:example": "node scripts/write-packaged-env.cjs --from-example",
     "update:token": "node scripts/write-update-token.cjs",
-    "vite:env": "node scripts/write-vite-env.cjs",
-    "build:mac:release": "npm run env:packaged && npm run update:token && npm run build:app:pack && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --publish never",
+    "rebuild:api-native": "node scripts/rebuild-api-native.cjs",
+    "test:electron-env": "node electron/resolve-api-env.spec.cjs",
+    "build:mac:release": "npm run env:packaged && npm run update:token && npm run build:app:pack && electron-builder --mac --publish never",
     "icons:generate": "node scripts/generate-icons.mjs",
     "install:all": "npm install --prefix api && npm install --prefix app",
     "build:win:force": "npm run build:app:pack && node scripts/win-build.cjs --force"
@@ -104,13 +105,28 @@
     },
     "mac": {
       "target": [
-        "dmg",
-        "zip"
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "universal"
+          ]
+        }
       ],
       "icon": "build/icon.icns",
       "category": "public.app-category.business",
       "artifactName": "JOBBIE-Admin-${version}.${ext}",
-      "hardenedRuntime": false
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "identity": null,
+      "sign": "-",
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
     },
     "dmg": {
       "title": "JOBBIE Admin ${version}",
