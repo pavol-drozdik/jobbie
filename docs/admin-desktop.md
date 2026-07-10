@@ -84,6 +84,7 @@ App icons: `jobbie-admin/build/icon.{svg,icns,ico}` (regenerate with `npm run ic
 | GET | `/api/admin/company-ads/:id` |
 | GET | `/api/admin/consent/cookie-log` |
 | GET | `/api/admin/contract-withdrawals` (`status`, `q`, `from`, `to`, cursor) |
+| GET | `/api/admin/contract-withdrawals/export` (`format`: `csv` \| `json`; same filters; recent login) |
 | PATCH | `/api/admin/contract-withdrawals/:id` (`status`: `pending` \| `approved` \| `rejected`; recent login; audit `contract.withdrawal.status_updated`) |
 | GET | `/api/admin/blog` |
 | GET | `/api/admin/blog/:id` |
@@ -109,7 +110,7 @@ User-facing content reports remain on the main API: `POST /api/reports`. Public 
 
 **Podpora** (`/support`): UUID hub; job/ad detail with unpublish + public URL; user detail with billing, applications, chat rooms, grant credits, GDPR export, account close.
 
-**Odstúpenie od zmluvy** (`/contract-withdrawals`): list of consumer withdrawal requests from `/odstupenie-od-zmluvy`; filters by status/date/search; per-row status dropdown (pending / approved / rejected) with step-up on PATCH.
+**Odstúpenie od zmluvy** (`/contract-withdrawals`): list of consumer withdrawal requests from `/odstupenie-od-zmluvy`; filters by status/date/search; CSV/JSON export (current filters, recent login); per-row status dropdown (pending / approved / rejected) with step-up on PATCH.
 
 **Analytics UI:** presets 7 / 30 / 90 days and **Vlastné** (custom `from`/`to`, max 366 days); saved presets in `localStorage`; KPI grid shows % change vs prior equal-length period; **Export CSV** from current summary; **Web & marketing** uses `GET /api/admin/analytics/external` (PostHog, GA4, Microsoft Clarity, Google Search Console — each optional via `jobbie-admin/api/.env`; **Test pripojenia** → `GET /api/admin/analytics/external/test`). Set `PWA_PUBLIC_URL` (or `JOBBIE_PUBLIC_URL`) for moderation deep links.
 

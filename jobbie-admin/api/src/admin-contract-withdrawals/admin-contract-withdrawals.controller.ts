@@ -5,8 +5,10 @@ import {
   Param,
   Patch,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { JwksAuthGuard } from '../auth/jwks-auth.guard';
 import { AppRoleGuard } from '../auth/app-role.guard';
 import { RequireAppRoles } from '../auth/app-roles.decorator';
@@ -28,6 +30,29 @@ import {
 @RequireAdminScopes('support')
 export class AdminContractWithdrawalsController {
   constructor(private readonly withdrawals: AdminContractWithdrawalsService) {}
+
+  @Get('export')
+  @RequireRecentLogin()
+  async exportRows(
+    @Res() res: Response,
+    @Query('status') status?: string,
+    @Query('q') q?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('format') format?: string,
+  ): Promise<void> {
+    const fmt = format === 'json' ? 'json' : 'csv';
+    const exported = await this.withdrawals.exportRows(
+      { status, q, from, to },
+      fmt,
+    );
+    res.setHeader('Content-Type', exported.contentType);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${exported.filename}"`,
+    );
+    res.send(exported.body);
+  }
 
   @Get()
   async list(

@@ -522,7 +522,11 @@ export class AdminPromoCampaignService {
 
       .from('promo_campaigns')
 
-      .select('redemption_count, reward_type, stripe_coupon_id')
+      .select(
+
+        'redemption_count, reward_type, stripe_coupon_id, reward_credits, reward_percent, reward_amount_cents, discount_kind, subscription_discount_duration, subscription_discount_duration_months, require_first_publish, require_promo_code, require_no_prior_subscription, require_no_published_offer',
+
+      )
 
       .eq('id', campaignId)
 
@@ -552,43 +556,95 @@ export class AdminPromoCampaignService {
 
     }
 
+    const existingRow = existing as Record<string, unknown>;
+
     const rewardType =
 
       dto.reward_type ??
 
-      ((existing as { reward_type?: string }).reward_type as
+      (existingRow.reward_type as
 
         | AdminCreatePromoCampaignDto['reward_type']
 
         | undefined);
 
-    this.assertRewardShape({
+    if (this.shouldValidateRewardShapeOnUpdate(dto)) {
 
-      reward_type: rewardType,
+      this.assertRewardShape({
 
-      reward_credits: dto.reward_credits ?? undefined,
+        reward_type: rewardType,
 
-      reward_percent: dto.reward_percent ?? undefined,
+        reward_credits:
 
-      reward_amount_cents: dto.reward_amount_cents ?? undefined,
+          dto.reward_credits ??
 
-      discount_kind: dto.discount_kind ?? undefined,
+          (existingRow.reward_credits as number | undefined),
 
-      subscription_discount_duration: dto.subscription_discount_duration ?? undefined,
+        reward_percent:
 
-      subscription_discount_duration_months:
+          dto.reward_percent ??
 
-        dto.subscription_discount_duration_months ?? undefined,
+          (existingRow.reward_percent as number | undefined),
 
-      require_first_publish: dto.require_first_publish,
+        reward_amount_cents:
 
-      require_promo_code: dto.require_promo_code,
+          dto.reward_amount_cents ??
 
-      require_no_prior_subscription: dto.require_no_prior_subscription,
+          (existingRow.reward_amount_cents as number | undefined),
 
-      require_no_published_offer: dto.require_no_published_offer,
+        discount_kind:
 
-    });
+          dto.discount_kind ??
+
+          (existingRow.discount_kind as
+
+            | AdminCreatePromoCampaignDto['discount_kind']
+
+            | undefined),
+
+        subscription_discount_duration:
+
+          dto.subscription_discount_duration ??
+
+          (existingRow.subscription_discount_duration as
+
+            | AdminCreatePromoCampaignDto['subscription_discount_duration']
+
+            | undefined),
+
+        subscription_discount_duration_months:
+
+          dto.subscription_discount_duration_months ??
+
+          (existingRow.subscription_discount_duration_months as number | undefined),
+
+        require_first_publish:
+
+          dto.require_first_publish ??
+
+          (existingRow.require_first_publish as boolean | undefined),
+
+        require_promo_code:
+
+          dto.require_promo_code ??
+
+          (existingRow.require_promo_code as boolean | undefined),
+
+        require_no_prior_subscription:
+
+          dto.require_no_prior_subscription ??
+
+          (existingRow.require_no_prior_subscription as boolean | undefined),
+
+        require_no_published_offer:
+
+          dto.require_no_published_offer ??
+
+          (existingRow.require_no_published_offer as boolean | undefined),
+
+      });
+
+    }
 
     const patch: Record<string, unknown> = { ...dto };
 
@@ -1291,6 +1347,42 @@ export class AdminPromoCampaignService {
     }
 
     return out;
+
+  }
+
+
+
+  private shouldValidateRewardShapeOnUpdate(
+
+    dto: AdminUpdatePromoCampaignDto,
+
+  ): boolean {
+
+    return (
+
+      dto.reward_type !== undefined ||
+
+      dto.reward_credits !== undefined ||
+
+      dto.reward_percent !== undefined ||
+
+      dto.reward_amount_cents !== undefined ||
+
+      dto.discount_kind !== undefined ||
+
+      dto.subscription_discount_duration !== undefined ||
+
+      dto.subscription_discount_duration_months !== undefined ||
+
+      dto.require_first_publish !== undefined ||
+
+      dto.require_promo_code !== undefined ||
+
+      dto.require_no_prior_subscription !== undefined ||
+
+      dto.require_no_published_offer !== undefined
+
+    );
 
   }
 
