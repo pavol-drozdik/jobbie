@@ -5,6 +5,8 @@ api/dist/
 app/dist/
 release/
 release-build-*/
+release-build-*/
+build/api.env
 api/.env
 app/.env
 api/.data/

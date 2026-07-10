@@ -26,16 +26,17 @@ Packaged installs: edit `%APPDATA%\jobbie-admin\.env` (Windows) or `~/Library/Ap
 
 | Platform | Command | Artifact |
 |----------|---------|----------|
-| macOS | `npm run build:mac` (on a Mac) | `jobbie-admin/release/JOBBIE-Admin-<version>.dmg` |
-| macOS unsigned | `npm run build:mac:unsigned` | same (no Developer ID signing) |
-| Windows | `npm run build:win` (on Windows) | `jobbie-admin/release/JOBBIE-Admin-<version>-Setup.exe` |
-| Windows unsigned | `npm run build:win:unsigned` | same (no Authenticode signing) |
+| CI (macOS + Windows) | `.github/workflows/jobbie-admin-release.yml` | GitHub Releases `.dmg`, `.zip`, `*-Setup.exe` + bundled `api.env` |
+| macOS local | `npm run build:mac` (on a Mac) | `jobbie-admin/release/JOBBIE-Admin-<version>.dmg` |
+| macOS local test | `npm run build:mac:unsigned` | template env only |
+| Windows local | `npm run build:win` (on Windows) | `jobbie-admin/release/JOBBIE-Admin-<version>-Setup.exe` |
+| Windows local test | `npm run build:win:unsigned` | template env only |
 
 App icons: `jobbie-admin/build/icon.{svg,icns,ico}` (regenerate with `npm run icons:generate`). The Electron packager uses `directories.app: "."` because the Vue UI lives in a subfolder named `app/`.
 
-**Share with a friend (Mac):** build the DMG on macOS, send the single `.dmg`, drag to Applications, then right-click → Open once if Gatekeeper blocks an unsigned build. Full steps: [jobbie-admin/README.md](../jobbie-admin/README.md#share-with-a-friend-mac).
+**Share with a friend (Mac):** use **GitHub Releases** (workflow `jobbie-admin-release`) for a pre-configured `.dmg`, or build locally on macOS. Right-click → Open once if Gatekeeper blocks an unsigned build.
 
-**Share with a friend (Windows):** build the NSIS installer on Windows, send `JOBBIE-Admin-<version>-Setup.exe`, run the wizard, then **More info → Run anyway** if SmartScreen blocks an unsigned build. Configure `%APPDATA%\jobbie-admin\.env` after install. Full steps: [jobbie-admin/README.md](../jobbie-admin/README.md#share-with-a-friend-windows).
+**Share with a friend (Windows):** same **GitHub Releases** workflow — download `JOBBIE-Admin-*-Setup.exe`. SmartScreen → More info → Run anyway if needed. Full steps: [jobbie-admin/README.md](../jobbie-admin/README.md#github-actions-desktop-release-macos--windows-pre-filled-env).
 
 **Code signing (optional):** Apple **Developer ID Application** + notarization (Mac) or Windows **Authenticode** (`.pfx` + `CSC_LINK` / `CSC_KEY_PASSWORD` for electron-builder) reduces OS warnings for wider distribution.
 

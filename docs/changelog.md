@@ -1,4 +1,15 @@
-﻿## 2026-07-12 — Promo campaign builder Phase 5
+﻿## 2026-07-10 — Admin desktop GitHub release (macOS + Windows)
+
+- **CI:** `.github/workflows/jobbie-admin-release.yml` — parallel macOS `.dmg` and Windows `Setup.exe` on GitHub Releases; bundled `api.env` from `ADMIN_*` secrets.
+- **jobbie-admin:** `npm run build:win:release` for local Windows release builds with secrets.
+- **docs:** `jobbie-admin/README.md`, `docs/admin-desktop.md`.
+
+## 2026-07-10 — Admin desktop macOS GitHub release
+
+- **CI:** `.github/workflows/jobbie-admin-mac-release.yml` — superseded by `jobbie-admin-release.yml`.
+- **jobbie-admin:** `scripts/write-packaged-env.cjs` bundles `build/api.env` → `resources/api.env` from `ADMIN_*` GitHub secrets (coworker install without manual `.env`).
+
+## 2026-07-12 — Promo campaign builder Phase 5
 
 - **Database:** `require_no_published_offer`; partial unique index on redemptions (retry after `cancelled`); RPC `release_promo_campaign_redemption`; pending-redemption index for cron.
 - **backend-ts:** Release pending on PI cancel + stale cron; subscription/amount_off validate preview; safe public validate `reasons`; pool-aware `GET /api/promotions/active`.

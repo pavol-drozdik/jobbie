@@ -173,13 +173,41 @@ npm run build:mac:unsigned   # same DMG/zip, no signing discovery
 
 Same artifacts as `build:win` / `build:mac`. Recipients still need SmartScreen or Gatekeeper steps below.
 
+### GitHub Actions desktop release (macOS + Windows, pre-filled `.env`)
+
+Build Mac `.dmg` and Windows `.exe` via CI and publish both to **GitHub Releases**. Supabase credentials are **bundled** into each installer (`resources/api.env`) from repository secrets — operators install, open, and sign in.
+
+**One-time setup** — GitHub → Settings → Secrets and variables → Actions → **Repository secrets**:
+
+| Secret | Required | Same as |
+|--------|----------|---------|
+| `ADMIN_SUPABASE_URL` | yes | `SUPABASE_URL` in `api/.env` |
+| `ADMIN_SUPABASE_SERVICE_ROLE_KEY` | yes | `SUPABASE_SERVICE_ROLE_KEY` |
+| `ADMIN_SUPABASE_ANON_KEY` | yes | `SUPABASE_ANON_KEY` |
+| `ADMIN_SUPABASE_JWT_SECRET` | yes | `SUPABASE_JWT_SECRET` |
+| `ADMIN_AUDIT_CHAIN_SECRET` | yes | `AUDIT_CHAIN_SECRET` |
+| `ADMIN_PWA_PUBLIC_URL` | no | `PWA_PUBLIC_URL` (default `https://jobbie.sk` if omitted) |
+
+Optional Infra / analytics secrets (`VPS_*`, PostHog, GA4, …) are passed through when set (reuse existing deploy secrets where names match).
+
+**Run a release:**
+
+1. Actions → **jobbie-admin-release** → **Run workflow** (enter version, e.g. `1.0.0`), **or**
+2. `git tag admin-v1.0.1 && git push origin admin-v1.0.1`
+
+Download from **Releases**: `JOBBIE-Admin-<version>.dmg` (Mac) and `JOBBIE-Admin-<version>-Setup.exe` (Windows).
+
+**Security:** installers contain the service role key. Only distribute to trusted operators; rotate keys if a build leaks.
+
+Workflow: [`.github/workflows/jobbie-admin-release.yml`](../.github/workflows/jobbie-admin-release.yml). Local: `npm run build:mac:release` / `npm run build:win:release` with the same env vars exported.
+
 ### Share with a friend (Mac)
 
 1. **Build on a Mac** (Apple Silicon or Intel): clone the repo, `cd jobbie-admin`, copy env files for dev only, then `npm install`, `npm run install:all`, and `npm run build:mac` (or `build:mac:unsigned`).
 2. **Send one file**: `release/JOBBIE-Admin-<version>.dmg` (AirDrop, USB stick, iCloud, etc.). A `.zip` is also produced if they prefer unzipping manually.
 3. **Install**: open the DMG, drag **JOBBIE Admin** to **Applications**, eject the disk image.
-4. **First launch (unsigned / ad-hoc)**: macOS Gatekeeper may block the app. Either **right-click â†’ Open â†’ Open** once, or in Terminal: `xattr -cr "/Applications/JOBBIE Admin.app"` then open normally.
-5. **Configure secrets**: on first run the app creates `~/Library/Application Support/jobbie-admin/.env` from the bundled template (or place `.env` next to the `.app`). Fill `SUPABASE_*` and `AUDIT_CHAIN_SECRET` like `api/.env.example`, then restart.
+4. **First launch (unsigned / ad-hoc)**: macOS Gatekeeper may block the app. Either **right-click → Open → Open** once, or in Terminal: `xattr -cr "/Applications/JOBBIE Admin.app"` then open normally.
+5. **Configure secrets**: CI/GitHub Release builds bundle `resources/api.env` — **no manual `.env` step**. Manual Mac builds still need `~/Library/Application Support/jobbie-admin/.env` or use **GitHub Actions release** above.
 
 Code signing with an **Apple Developer ID Application** certificate plus notarization removes the Gatekeeper warning for most users; that is optional for trusted friends who can use right-click Open once.
 
@@ -189,7 +217,7 @@ Code signing with an **Apple Developer ID Application** certificate plus notariz
 2. **Send one file**: `release/JOBBIE-Admin-<version>-Setup.exe` (USB stick, OneDrive, Google Drive, etc.).
 3. **Install**: run the installer, choose install folder if prompted, optionally add a desktop shortcut, finish. Uninstall later via **Settings â†’ Apps** or **Add or remove programs** (â€œJOBBIE Adminâ€).
 4. **First run (unsigned)**: Windows SmartScreen may show **Windows protected your PC**. Click **More info**, then **Run anyway** (same as any unsigned internal app). Optional **Authenticode** signing with a code-signing certificate reduces this for wider distribution.
-5. **Configure secrets**: on first run the app creates `%APPDATA%\jobbie-admin\.env` from the bundled template (or place `.env` next to `JOBBIE Admin.exe` in the install folder). Fill `SUPABASE_*` and `AUDIT_CHAIN_SECRET` like `api/.env.example`, then restart. Sign in with an account that has `profiles.app_role = 'admin'` and complete **TOTP MFA**.
+5. **Configure secrets**: CI/GitHub Release builds bundle `resources/api.env` — **no manual `.env` step**. Manual Windows builds still need `%APPDATA%\jobbie-admin\.env` or use **GitHub Actions release** above. Sign in with `profiles.app_role = admin` and complete **TOTP MFA** if enabled.
 
 ### Packaged `.env` (production)
 
