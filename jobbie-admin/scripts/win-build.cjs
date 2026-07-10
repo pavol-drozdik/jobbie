@@ -30,7 +30,7 @@ if (unsigned) {
 
 const eb = spawnSync(
   'npx',
-  ['electron-builder', '--win', `-c.directories.output=${outDirName}`],
+  ['electron-builder', '--win', '--publish', 'never', `-c.directories.output=${outDirName}`],
   { cwd: root, stdio: 'inherit', shell: true, env: ebEnv },
 );
 
