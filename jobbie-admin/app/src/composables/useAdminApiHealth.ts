@@ -30,7 +30,7 @@ export function useAdminApiHealth() {
   }
 
   async function checkWithRetry(
-    maxAttempts = 15,
+    maxAttempts = 60,
     delayMs = 1000,
   ): Promise<boolean> {
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {

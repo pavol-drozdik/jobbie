@@ -1,4 +1,8 @@
-﻿## 2026-07-10 — Admin desktop API reachability
+﻿## 2026-07-10 — Admin desktop startup (window first)
+
+- **electron:** show UI immediately; start Nest API in background (no 60s blocking wait before window); UI port fallback; Windows-safe static file paths; API logs via stdio pipe in production.
+
+## 2026-07-10 — Admin desktop API reachability
 
 - **jobbie-admin API:** CORS allows any `127.0.0.1` / `localhost` UI origin (packaged UI on port 5198).
 - **electron:** spawn Nest API from `app.asar.unpacked/api` in production builds.

@@ -3,7 +3,7 @@ const path = require('path')
 const fs = require('fs')
 const { spawn } = require('child_process')
 const { initAutoUpdater } = require('./auto-updater.cjs')
-const { createStaticUiServer } = require('./static-ui-server.cjs')
+const { createStaticUiServerWithFallback } = require('./static-ui-server.cjs')
 
 const isDev = !app.isPackaged
 const API_PORT = process.env.ADMIN_API_PORT || '3099'
@@ -18,6 +18,7 @@ let apiProcess = null
 let mainWindow = null
 /** @type {import('node:http').Server | null} */
 let uiStaticServer = null
+let apiBootstrapStarted = false
 
 const ADMIN_UI_PORT = Number(process.env.ADMIN_UI_PORT || '5198')
 
@@ -101,7 +102,8 @@ function resolveEnvFile() {
       )
       console.log(`[admin] Created empty env at ${userDataEnv}`)
     }
-    dialog.showMessageBoxSync({
+    const parent = mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined
+    dialog.showMessageBox(parent, {
       type: 'warning',
       title: 'JOBBIE Admin — configuration',
       message: 'Environment file required',
@@ -143,6 +145,7 @@ function startApi() {
     const mainScript = path.join(apiDir, 'dist', 'main.js')
     if (!fs.existsSync(mainScript)) {
       console.error(`[admin] Missing API bundle: ${mainScript}`)
+      const parent = mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined
       dialog.showErrorBox(
         'JOBBIE Admin',
         'Admin API files are missing from the installation. Reinstall the app.',
@@ -155,15 +158,22 @@ function startApi() {
         ...apiEnv,
         ELECTRON_RUN_AS_NODE: '1',
       },
-      stdio: 'inherit',
+      stdio: 'pipe',
+    })
+    apiProcess.stdout?.on('data', (chunk) => {
+      process.stdout.write(`[admin-api] ${chunk}`)
+    })
+    apiProcess.stderr?.on('data', (chunk) => {
+      process.stderr.write(`[admin-api] ${chunk}`)
     })
   }
 
   apiProcess.on('error', (err) => {
     console.error('[admin-api] spawn failed:', err)
+    const parent = mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined
     dialog.showErrorBox(
       'JOBBIE Admin — API failed to start',
-      `Could not start the local admin API.\n\n${err.message}\n\nFrom jobbie-admin/, run: npm run dev:api`,
+      `Could not start the local admin API.\n\n${err.message}`,
     )
   })
   apiProcess.on('exit', (code, signal) => {
@@ -186,56 +196,33 @@ async function probeHealth() {
 }
 
 /**
- * Poll /health until the Nest API is listening (nest start --watch can take 10–20s).
+ * Start Nest API without blocking the Electron window (UI polls /health).
  */
-async function waitForHealth(maxMs, intervalMs = 500) {
-  const deadline = Date.now() + maxMs
+async function bootstrapApiInBackground() {
+  if (apiBootstrapStarted || SKIP_API_SPAWN) {
+    return
+  }
+  apiBootstrapStarted = true
+
+  if (await probeHealth()) {
+    console.log('[admin] API already running')
+    return
+  }
+
+  console.log('[admin] Starting local admin API in background…')
+  if (startApi() === false) {
+    return
+  }
+
+  const deadline = Date.now() + (isDev ? 120_000 : 90_000)
   while (Date.now() < deadline) {
     if (await probeHealth()) {
       console.log(`[admin] API healthy at ${HEALTH_URL}`)
-      return true
+      return
     }
-    await new Promise((r) => setTimeout(r, intervalMs))
+    await new Promise((r) => setTimeout(r, 500))
   }
-  return false
-}
-
-async function ensureApiReady() {
-  if (await probeHealth()) {
-    console.log('[admin] API already running')
-    return true
-  }
-
-  if (SKIP_API_SPAWN) {
-    console.error(
-      '[admin] API not reachable and spawn skipped (JOBBIE_ADMIN_SKIP_API_SPAWN). Start: npm run dev:api',
-    )
-    dialog.showMessageBoxSync({
-      type: 'error',
-      title: 'JOBBIE Admin — API not running',
-      message: 'Local admin API is not reachable',
-      detail: `Nothing is listening on http://127.0.0.1:${API_PORT}.\n\nFrom jobbie-admin/, run:\n  npm run dev:api\n\nOr the full dev stack:\n  npm run dev`,
-    })
-    return false
-  }
-
-  console.log('[admin] Starting local admin API…')
-  if (startApi() === false) {
-    return false
-  }
-
-  const maxWait = isDev ? 120_000 : 60_000
-  const ok = await waitForHealth(maxWait)
-  if (!ok) {
-    console.error(`[admin] API did not become healthy within ${maxWait / 1000}s`)
-    dialog.showMessageBoxSync({
-      type: 'error',
-      title: 'JOBBIE Admin — API timeout',
-      message: 'Admin API did not start in time',
-      detail: `Check api/.env (copy from api/.env.example) and the terminal for Nest errors.\n\nVerify manually:\n  curl http://127.0.0.1:${API_PORT}/health\n\nExpected: {"ok":true}`,
-    })
-  }
-  return ok
+  console.error('[admin] API did not become healthy in background bootstrap')
 }
 
 function windowIconPath() {
@@ -257,6 +244,7 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
+    show: false,
     ...(fs.existsSync(icon) ? { icon } : {}),
     title: 'JOBBIE Admin',
     webPreferences: {
@@ -270,6 +258,9 @@ function createWindow() {
     if (mainWindow === win) {
       mainWindow = null
     }
+  })
+  win.once('ready-to-show', () => {
+    win.show()
   })
   return win
 }
@@ -296,7 +287,7 @@ async function loadWindowContent(win) {
       uiStaticServer.close()
       uiStaticServer = null
     }
-    const { server, url } = await createStaticUiServer(distDir, ADMIN_UI_PORT)
+    const { server, url } = await createStaticUiServerWithFallback(distDir, ADMIN_UI_PORT)
     uiStaticServer = server
     console.log(`[admin] UI static server at ${url}`)
     await win.loadURL(url)
@@ -307,10 +298,26 @@ async function loadWindowContent(win) {
 }
 
 app.whenReady().then(async () => {
-  await ensureApiReady()
   const win = createWindow()
-  await loadWindowContent(win)
+  try {
+    await loadWindowContent(win)
+  } catch (err) {
+    console.error('[admin] Failed to load UI', err)
+    dialog.showErrorBox(
+      'JOBBIE Admin',
+      `Failed to open the admin UI.\n\n${err instanceof Error ? err.message : String(err)}`,
+    )
+  }
   initAutoUpdater(() => mainWindow)
+  void bootstrapApiInBackground()
+})
+
+process.on('uncaughtException', (err) => {
+  console.error('[admin] uncaughtException', err)
+})
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[admin] unhandledRejection', reason)
 })
 
 app.on('window-all-closed', () => {
@@ -336,6 +343,11 @@ app.on('window-all-closed', () => {
 app.on('activate', async () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     const win = createWindow()
-    await loadWindowContent(win)
+    try {
+      await loadWindowContent(win)
+    } catch (err) {
+      console.error('[admin] Failed to load UI on activate', err)
+    }
+    void bootstrapApiInBackground()
   }
 })
