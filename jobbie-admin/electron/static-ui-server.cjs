@@ -18,7 +18,7 @@ const MIME = {
 }
 
 /**
- * Serves packaged Vue dist over http://127.0.0.1 (Turnstile rejects file:// origins).
+ * Serves packaged Vue dist over http://127.0.0.1 (valid origin for browser APIs).
  * @param {string} rootDir
  * @param {number} port
  */

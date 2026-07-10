@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import Button from 'primevue/button'
 import IconField from 'primevue/iconfield'
@@ -14,33 +14,13 @@ import {
   BRAND_FAVICON_PATH,
   BRAND_LOGO_WHITE_PATH,
 } from '../utils/brand-assets'
-import AdminTurnstileWidget from '../components/AdminTurnstileWidget.vue'
 
 const email = ref('')
 const password = ref('')
-const captchaToken = ref('')
-const turnstileRef = ref<InstanceType<typeof AdminTurnstileWidget> | null>(null)
-const captchaRequired = ref(false)
 
-const turnstileSiteKey = computed(() =>
-  String(import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '').trim(),
-)
-const showTurnstile = computed(
-  () => captchaRequired.value && Boolean(turnstileSiteKey.value),
-)
-
-const { signIn, signOut, loading, authError, lastAuthErrorCode } = useAdminAuth()
+const { signIn, signOut, loading, authError } = useAdminAuth()
 const router = useRouter()
 const route = useRoute()
-
-const configHint = computed(() => {
-  if (captchaRequired.value && !turnstileSiteKey.value) {
-    return 'Supabase vyžaduje CAPTCHA. Pridajte VITE_TURNSTILE_SITE_KEY do app/.env (rovnaký ako NUXT_PUBLIC_TURNSTILE_SITE_KEY v app-pwa/.env).'
-  }
-  return null
-})
-
-const isDev = import.meta.env.DEV
 
 const highlights = [
   {
@@ -71,28 +51,9 @@ async function verifyAdminOperator(): Promise<boolean> {
   return false
 }
 
-function resetCaptcha(): void {
-  turnstileRef.value?.reset()
-  captchaToken.value = ''
-}
-
 async function submitLogin() {
-  if (configHint.value) {
-    authError.value = configHint.value
-    return
-  }
-  if (showTurnstile.value && !captchaToken.value.trim()) {
-    authError.value = 'Dokončite overenie CAPTCHA (Turnstile) pred prihlásením.'
-    return
-  }
-  const ok = await signIn(email.value, password.value, captchaToken.value)
-  if (!ok) {
-    if (lastAuthErrorCode.value === 'captcha_failed') {
-      captchaRequired.value = true
-      resetCaptcha()
-    }
-    return
-  }
+  const ok = await signIn(email.value, password.value)
+  if (!ok) return
   const verified = await verifyAdminOperator()
   if (!verified) return
   await router.replace((route.query.redirect as string) || '/overview')
@@ -207,10 +168,6 @@ async function submitLogin() {
           @submit.prevent="submitLogin"
         >
           <div class="space-y-5">
-            <Message v-if="configHint" severity="error" :closable="false">
-              {{ configHint }}
-            </Message>
-
             <div class="flex flex-col gap-2">
               <label for="login-email" class="text-sm font-medium text-slate-700">
                 E-mail
@@ -247,12 +204,6 @@ async function submitLogin() {
               </IconField>
             </div>
 
-            <AdminTurnstileWidget
-              v-if="showTurnstile"
-              ref="turnstileRef"
-              v-model="captchaToken"
-            />
-
             <Button
               type="submit"
               label="Prihlásiť sa"
@@ -264,12 +215,6 @@ async function submitLogin() {
             <Message v-if="authError" severity="error" :closable="false">
               {{ authError }}
             </Message>
-
-            <p v-if="isDev" class="m-0 text-center text-xs text-slate-400">
-              Dev: nastavte
-              <code class="rounded bg-slate-100 px-1 py-0.5 text-[0.7rem]">VITE_TURNSTILE_SITE_KEY</code>
-              v <code class="rounded bg-slate-100 px-1 py-0.5 text-[0.7rem]">app/.env</code>.
-            </p>
           </div>
         </form>
 

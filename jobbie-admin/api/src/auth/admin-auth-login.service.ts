@@ -8,42 +8,41 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class AdminAuthLoginService {
-  private anonClient: SupabaseClient | null = null;
+  private serviceClient: SupabaseClient | null = null;
 
   constructor(private readonly config: ConfigService) {}
 
-  private getAnonClient(): SupabaseClient {
-    if (!this.anonClient) {
+  /**
+   * Service-role client on localhost — bypasses Supabase Auth CAPTCHA (desktop admin only).
+   */
+  private getServiceClient(): SupabaseClient {
+    if (!this.serviceClient) {
       const url = this.config.get<string>('SUPABASE_URL')?.trim();
-      const key = this.config.get<string>('SUPABASE_ANON_KEY')?.trim();
+      const key = this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY')?.trim();
       if (!url || !key) {
         throw new ServiceUnavailableException({
-          code: 'missing_anon_key',
-          message:
-            'SUPABASE_ANON_KEY missing in api/.env (copy NUXT_PUBLIC_SUPABASE_ANON_KEY from app-pwa/.env — not the service role key).',
+          code: 'missing_service_role',
+          message: 'SUPABASE_SERVICE_ROLE_KEY missing in api/.env.',
         });
       }
-      this.anonClient = createClient(url, key, {
+      this.serviceClient = createClient(url, key, {
         auth: { persistSession: false, autoRefreshToken: false },
       });
     }
-    return this.anonClient;
+    return this.serviceClient;
   }
 
   async signIn(
     email: string,
     password: string,
-    captchaToken?: string,
   ): Promise<{
     access_token: string;
     refresh_token: string;
     expires_in: number | null;
   }> {
-    const trimmedCaptcha = captchaToken?.trim()
-    const { data, error } = await this.getAnonClient().auth.signInWithPassword({
+    const { data, error } = await this.getServiceClient().auth.signInWithPassword({
       email: email.trim(),
       password,
-      options: trimmedCaptcha ? { captchaToken: trimmedCaptcha } : undefined,
     });
     if (error) {
       throw new UnauthorizedException({

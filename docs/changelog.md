@@ -1,4 +1,9 @@
-﻿## 2026-07-10 — Admin desktop startup (window first)
+﻿## 2026-07-10 — Admin desktop login without Turnstile
+
+- **jobbie-admin:** removed Cloudflare Turnstile widget from login; admin API authenticates via service role on localhost (no CAPTCHA).
+- Removed `AdminTurnstileWidget`, `useTurnstileWidget`, `VITE_TURNSTILE_SITE_KEY` / `ADMIN_TURNSTILE_SITE_KEY` from CI.
+
+## 2026-07-10 — Admin desktop startup (window first)
 
 - **electron:** show UI immediately; start Nest API in background (no 60s blocking wait before window); UI port fallback; Windows-safe static file paths; API logs via stdio pipe in production.
 
