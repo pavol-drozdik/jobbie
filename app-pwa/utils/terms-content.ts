@@ -1,11 +1,12 @@
 import type { TrustContentPage } from '~/utils/trust-page-content'
+import { ROUTES } from '~/utils/app-routes'
 
 /** Official general terms and conditions (SK) — `/vseobecne-podmienky`. */
 export const TRUST_TERMS_PAGE: TrustContentPage = {
   title: 'Všeobecné obchodné podmienky',
   intro:
     'Tieto obchodné podmienky upravujú Vaše práva a povinnosti pri používaní platformy Jobbie. Podmienky sú pre používateľov záväzné a ich prijatie je podmienkou používania platformy.',
-  updatedAt: '2026-01-01',
+  updatedAt: '2026-07-10',
   dateLabel: 'effective',
   sections: [
     {
@@ -938,8 +939,16 @@ export const TRUST_TERMS_PAGE: TrustContentPage = {
       headingLevel: 3,
       blocks: [
         {
-          kind: 'paragraph',
-          text: 'Podľa platných právnych predpisov máte právo odstúpiť od zmluvy do 14 dní od jej uzavretia, ak služba ešte nebola poskytnutá.',
+          kind: 'rich',
+          parts: [
+            { type: 'text', text: 'Informácie nájdete v ' },
+            {
+              type: 'link',
+              to: ROUTES.withdrawalRightsNotice,
+              label: 'Poučení o práve na odstúpenie od zmluvy',
+            },
+            { type: 'text', text: '.' },
+          ],
         },
       ],
     },
@@ -956,12 +965,46 @@ export const TRUST_TERMS_PAGE: TrustContentPage = {
     },
     {
       id: 'uplatnenie-prava',
-      title: '11.4. Uplatnenie práva',
+      title: '11.4. Uplatnenie práva na odstúpenie od zmluvy',
       headingLevel: 3,
       blocks: [
         {
           kind: 'paragraph',
-          text: 'Na uplatnenie práva na odstúpenie nás kontaktujte e-mailom na podpora@jobbie.sk. Uveďte číslo objednávky, dátum uzavretia zmluvy a spôsob vrátenia peňazí.',
+          text: 'Spotrebiteľ môže uplatniť právo na odstúpenie od zmluvy:',
+        },
+        {
+          kind: 'rich',
+          parts: [
+            { type: 'text', text: '• prostredníctvom ' },
+            {
+              type: 'link',
+              to: ROUTES.contractWithdrawal,
+              label: 'online formulára na odstúpenie od zmluvy',
+            },
+            {
+              type: 'text',
+              text: ' dostupného v päte webovej stránky Jobbie v sekcii „Odstúpenie od zmluvy“, alebo',
+            },
+          ],
+        },
+        {
+          kind: 'rich',
+          parts: [
+            {
+              type: 'text',
+              text: '• zaslaním jednoznačného vyhlásenia na e-mailovú adresu ',
+            },
+            {
+              type: 'mailto',
+              email: 'podpora@jobbie.sk',
+              label: 'podpora@jobbie.sk',
+            },
+            { type: 'text', text: '.' },
+          ],
+        },
+        {
+          kind: 'paragraph',
+          text: 'Online formulár umožňuje spotrebiteľovi elektronicky oznámiť odstúpenie od zmluvy. Po odoslaní formulára prevádzkovateľ bez zbytočného odkladu potvrdí prijatie odstúpenia na e-mailovú adresu uvedenú vo formulári.',
         },
       ],
     },
