@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
 import { AuditService } from '../audit/audit.service';
+import { PromoCampaignService } from '../promotions/promo-campaign.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { PENDING_UPLOAD_MAX_AGE_MS } from '../storage/upload-policy';
 @Injectable()
@@ -12,6 +13,7 @@ export class MaintenanceCron {
     private readonly supabase: SupabaseService,
     private readonly config: ConfigService,
     private readonly audit: AuditService,
+    private readonly promoCampaigns: PromoCampaignService,
   ) {}
 
   /** Weekly: remove stale device session rows. */
@@ -67,10 +69,19 @@ export class MaintenanceCron {
     }
   }
 
+  /** Hourly: release stale pending promo checkout redemptions. */
+  @Cron('45 * * * *')
+  async releaseStalePromoRedemptions(): Promise<void> {
+    try {
+      await this.promoCampaigns.releaseStalePendingRedemptions();
+    } catch (err) {
+      this.logger.warn(`releaseStalePromoRedemptions: ${String(err)}`);
+    }
+  }
+
   /** Hourly: expire stale direct-upload pending rows and remove orphan objects. */
   @Cron('30 * * * *')
-  async purgeStalePendingUploads(): Promise<void> {
-    const cutoff = new Date(Date.now() - PENDING_UPLOAD_MAX_AGE_MS).toISOString();
+  async purgeStalePendingUploads(): Promise<void> {    const cutoff = new Date(Date.now() - PENDING_UPLOAD_MAX_AGE_MS).toISOString();
     const client = this.supabase.getClient();
     const { data: stale, error: selErr } = await client
       .from('storage_pending_uploads')

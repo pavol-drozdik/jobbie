@@ -105,6 +105,11 @@ export class CreatePaymentIntentCreditsDto {
   @ValidateNested()
   @Type(() => CheckoutBillingDetailsDto)
   billing?: CheckoutBillingDetailsDto;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  promo_code?: string;
 }
 
 export class ConfirmCreditsPurchaseDto {
@@ -125,6 +130,11 @@ export class CreatePaymentIntentSubscriptionDto {
   @ValidateNested()
   @Type(() => CheckoutBillingDetailsDto)
   billing?: CheckoutBillingDetailsDto;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  promo_code?: string;
 }
 
 export class ConfirmSubscriptionPurchaseDto {

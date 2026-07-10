@@ -468,7 +468,7 @@
               <AppCheckbox v-model="newsletterSubscribe" class="mt-1" />
               <span class="text-sm font-medium text-black/70">{{ S.jobAlertsNewsletterLabel }}</span>
             </label>
-            <div v-if="promoActive" class="flex flex-col gap-1.5">
+            <div v-if="promoRegistrationAvailable" class="flex flex-col gap-1.5">
               <label :class="fieldLabelClass">{{ S.registrationPromoCodeLabel }}</label>
               <div class="relative flex items-center">
                 <input
@@ -483,6 +483,12 @@
                 />
               </div>
               <p class="m-0 text-xs font-medium text-black/45">{{ S.registrationPromoCodeHint }}</p>
+              <p
+                v-if="registrationPoolMode"
+                class="m-0 text-xs font-medium text-amber-800/80"
+              >
+                {{ S.registrationPromoPoolHint }}
+              </p>
             </div>
             <AuthTurnstileWidget
               v-if="turnstileSiteKey"
@@ -585,7 +591,8 @@ const config = useRuntimeConfig().public
 const supabase = useSupabase()
 const { setCredentials, setRoles, getMetaForSignUp } = useRegistration()
 const { doSignUp, saving } = useRegistrationSignUp()
-const { promoCode, promoActive, loadPromoActive } = useRegistrationPromo()
+const { promoCode, promoRegistrationAvailable, registrationPoolMode, loadPromoActive } =
+  useRegistrationPromo()
 const { submit: submitNewsletter } = useNewsletterSubscribe()
 const { turnstileEnabled, captchaRequiredMessage, supabaseCaptchaOptions } = useAuthCaptcha()
 
@@ -937,6 +944,10 @@ function readAuthSignupFailedMessage(): string | null {
 
 onMounted(() => {
   void loadPromoActive()
+  const promoRaw = route.query.promo
+  if (typeof promoRaw === 'string' && promoRaw.trim()) {
+    promoCode.value = promoRaw.trim()
+  }
   const message = readAuthSignupFailedMessage()
   if (message) {
     submitError.value = message

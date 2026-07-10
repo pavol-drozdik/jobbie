@@ -24,6 +24,11 @@ export const adminNavGroups: AdminNavGroup[] = [
       { to: '/infrastructure', label: 'Infra', icon: 'pi pi-server' },
       { to: '/support', label: 'Podpora', icon: 'pi pi-headphones' },
       {
+        to: '/contract-withdrawals',
+        label: 'Odstúpenie od zmluvy',
+        icon: 'pi pi-inbox',
+      },
+      {
         to: '/moderation',
         label: 'Moderácia',
         icon: 'pi pi-flag',

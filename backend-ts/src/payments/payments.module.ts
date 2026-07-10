@@ -5,6 +5,7 @@ import { BillingModule } from '../billing/billing.module';
 import { EmailModule } from '../email/email.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { SkRpoLookupService } from '../registry/sk-rpo-lookup.service';
+import { PromotionsModule } from '../promotions/promotions.module';
 import { PaymentsController } from './payments.controller';
 import { StripeService } from './stripe.service';
 import { SubscriptionCreditsService } from './subscription-credits.service';
@@ -16,6 +17,7 @@ import { BillingInvoiceEmailService } from './billing-invoice-email.service';
     AuthModule,
     AuditModule,
     EmailModule,
+    PromotionsModule,
     forwardRef(() => BillingModule),
     NotificationsModule,
   ],

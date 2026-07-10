@@ -30,6 +30,25 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
   const error = ref<string | null>(null)
   const clientSecret = ref<string | null>(null)
   const billingPrefill = ref<ProfileBillingPrefill | null>(null)
+  const planSlugRef = computed(() => planId)
+  const route = useRoute()
+  const initialPromoCode = computed(() => {
+    const raw = route.query.promo
+    return typeof raw === 'string' ? raw.trim() : ''
+  })
+  const {
+    promoCode,
+    promoPreview,
+    promoError,
+    validating: promoValidating,
+    promoCheckoutAvailable,
+    displayCents,
+    resolvedPromoCodeForCheckout,
+  } = useCheckoutPromo({
+    context: 'subscription_checkout',
+    targetSlug: planSlugRef,
+    initialPromoCode,
+  })
   /** Frozen on init from GET /api/payments/subscription-checkout-preview — not updated during pay. */
   const checkoutTrialDays = ref(0)
   const checkoutIntentType = ref<'payment' | 'setup'>('payment')
@@ -134,11 +153,19 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
       return null
     }
     await loadBillingAccount(true)
-    const body: { plan_id: string; billing?: CheckoutBillingPayload } = {
+    const body: {
+      plan_id: string
+      billing?: CheckoutBillingPayload
+      promo_code?: string
+    } = {
       plan_id: planId,
     }
     if (billing) {
       body.billing = billing
+    }
+    const promo = resolvedPromoCodeForCheckout()
+    if (promo) {
+      body.promo_code = promo
     }
     const res = await api<{
       client_secret: string
@@ -202,6 +229,11 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
     }
   }
 
+  const checkoutAmountCents = computed(() => {
+    if (displayCents.value != null) return displayCents.value
+    return plan.value?.price_monthly_cents ?? 0
+  })
+
   return {
     plan,
     loading,
@@ -212,6 +244,12 @@ export function useCheckoutSubscription(options: { planId: string; returnPath: s
     checkoutTrialDays,
     checkoutIntentType,
     checkoutUsesSetupDeferred,
+    promoCode,
+    promoPreview,
+    promoError,
+    promoValidating,
+    promoCheckoutAvailable,
+    checkoutAmountCents,
     formatPlanPrice,
     navigateToCheckoutResult,
     createPaymentIntent,

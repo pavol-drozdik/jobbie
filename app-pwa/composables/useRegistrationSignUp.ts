@@ -192,8 +192,8 @@ export function useRegistrationSignUp() {
           }
         }
       }
-      const { redeemRegistrationPromo } = useRegistrationPromo()
-      const promoResult = await redeemRegistrationPromo(
+      const { redeemRegistrationPromoIfSignupEligible } = useRegistrationPromo()
+      const promoResult = await redeemRegistrationPromoIfSignupEligible(
         effectiveCredentials.promoCode ?? undefined,
       )
       clear()

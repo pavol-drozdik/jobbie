@@ -24,8 +24,48 @@
         {{ pack.credits }} {{ S.credits }}
         <span class="font-medium text-black/50">· {{ S.checkoutCreditsLabel }}</span>
       </p>
+      <p
+        v-if="promoPreview && promoPreview.discounted_cents < promoPreview.original_cents"
+        class="m-0 mt-1 text-sm text-black/45 line-through"
+      >
+        {{ S.checkoutPromoOriginalPrice }}:
+        {{ formatPrice(promoPreview.original_cents, pack.currency) }}
+      </p>
       <p class="m-0 mt-1 font-dmSans text-2xl font-extrabold text-marketing-green">
-        {{ formatPrice(pack.unit_amount, pack.currency) }}
+        {{ formatPrice(checkoutAmountCents, pack.currency) }}
+        <span
+          v-if="promoPreview?.percent_off"
+          class="ml-2 text-sm font-semibold text-marketing-green/80"
+        >
+          −{{ promoPreview.percent_off }} %
+        </span>
+        <span
+          v-else-if="promoPreview?.amount_off_cents"
+          class="ml-2 text-sm font-semibold text-marketing-green/80"
+        >
+          {{ formatPromoAmountOff(promoPreview.amount_off_cents) }}
+        </span>
+      </p>
+    </div>
+
+    <div v-if="pack && promoCheckoutAvailable" class="mb-6 flex flex-col gap-2">
+      <label class="text-sm font-medium text-black/70" for="checkout-credits-promo">
+        {{ S.checkoutPromoCodeLabel }}
+      </label>
+      <input
+        id="checkout-credits-promo"
+        v-model="promoCode"
+        type="text"
+        class="max-w-sm rounded-xl border border-black/15 px-4 py-2.5 text-sm"
+        :placeholder="S.checkoutPromoCodePlaceholder"
+        autocomplete="off"
+      />
+      <p class="m-0 text-xs text-black/45">{{ S.checkoutPromoCodeHint }}</p>
+      <p v-if="promoValidating" class="m-0 text-xs text-black/45">
+        {{ S.checkoutPromoValidating }}
+      </p>
+      <p v-else-if="promoError" class="m-0 text-xs text-red-600" role="alert">
+        {{ promoError }}
       </p>
     </div>
 
@@ -37,7 +77,7 @@
         collect-business-billing
         :return-url="stripeReturnUrl"
         :billing-prefill="billingPrefill"
-        :deferred-amount="pack.unit_amount"
+        :deferred-amount="checkoutAmountCents"
         :deferred-currency="pack.currency"
         :prepare-payment="prepareCheckoutPayment"
         @success="(id, billing) => navigateToCheckoutResult(id, billing)"
@@ -49,6 +89,7 @@
 
 <script setup lang="ts">
 import { S } from '~/utils/strings'
+import { formatPromoAmountOff } from '~/composables/useCheckoutPromo'
 
 const props = defineProps<{
   packSlug: string
@@ -68,6 +109,12 @@ const {
   error,
   billingPrefill,
   stripeReturnUrl,
+  promoCode,
+  promoPreview,
+  promoError,
+  promoValidating,
+  promoCheckoutAvailable,
+  checkoutAmountCents,
   formatPrice,
   navigateToCheckoutResult,
   createPaymentIntent,

@@ -63,6 +63,7 @@ import {
   mapJobForViewer,
   viewerFromUser,
 } from './public-response.mapper';
+import { PromoCampaignService } from '../promotions/promo-campaign.service';
 import { ProfileActivityAuthorizationService } from '../profiles/profile-activity-authorization.service';
 import { IndexNowService } from '../seo/indexnow.service';
 import {
@@ -173,7 +174,12 @@ export class JobsController {
     private topPromotion: ListingTopPromotionService,
     private profileActivity: ProfileActivityAuthorizationService,
     private indexNow: IndexNowService,
+    private promoCampaigns: PromoCampaignService,
   ) {}
+
+  private triggerFirstPublishPromo(userId: string): void {
+    void this.promoCampaigns.tryAutoGrantOnFirstPublish(userId);
+  }
 
   private async enrichJobsTopBadge(
     jobs: JobOfferResponseDto[],
@@ -841,6 +847,7 @@ export class JobsController {
           );
         }
         jobRow = activated as JobRow;
+        this.triggerFirstPublishPromo(user.id);
       } catch (e) {
         await this.rollbackJobSpend(
           user.id,
@@ -1414,6 +1421,7 @@ export class JobsController {
     });
     this.emitJobPublishedIfPublic(activated);
     void this.searchIndexing.indexJobById(activated.id);
+    this.triggerFirstPublishPromo(user.id);
     return { ok: true };
   }
 

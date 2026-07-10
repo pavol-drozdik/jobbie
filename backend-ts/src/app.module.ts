@@ -39,6 +39,7 @@ import { MaintenanceModule } from './maintenance/maintenance.module';
 import { StorageModule } from './storage/storage.module';
 import { ConsentModule } from './consent/consent.module';
 import { DataExportModule } from './data-export/data-export.module';
+import { PromotionsModule } from './promotions/promotions.module';
 import { GlobalAuthGuard } from './auth/global-auth.guard';
 
 const redisUrl = process.env.REDIS_URL?.trim();
@@ -112,6 +113,7 @@ function throttlerSkipIf(context: ExecutionContext): boolean {
     StorageModule,
     ConsentModule,
     DataExportModule,
+    PromotionsModule,
   ],
   controllers: [AppController],
   providers: [
