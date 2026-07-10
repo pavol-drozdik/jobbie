@@ -118,7 +118,7 @@ Stop-Process -Id <pid> -Force
 |---------|-----|
 | `Chýba app/.env` / missing Supabase | `app/.env`: `VITE_ADMIN_API_URL=http://127.0.0.1:3099` (Supabase keys live in **api/.env**) |
 | `SUPABASE_ANON_KEY missing` | `api/.env`: copy `NUXT_PUBLIC_SUPABASE_ANON_KEY` from `app-pwa/.env` — **not** the service role key |
-| `captcha_failed` / Turnstile | Supabase Auth CAPTCHA is on — add `VITE_TURNSTILE_SITE_KEY` to `app/.env` (same as PWA site key). **Desktop:** packaged app serves UI on `http://127.0.0.1:5198` (Turnstile rejects `file://`); in [Cloudflare Turnstile](https://dash.cloudflare.com/) → your widget → **Hostname management**, add `127.0.0.1` (and `localhost` if needed). Widget appears only after a failed login requests CAPTCHA. |
+| `captcha_failed` | Should not occur — admin login uses service role on localhost (no Turnstile). |
 | `Nesprávny e-mail alebo heslo` | Same credentials as [jobbie.sk](https://jobbie.sk); reset password in the PWA if needed |
 | Login OK but 403 on overview | Set `profiles.app_role = 'admin'` for your user in Supabase |
 | `Missing or invalid Bearer token` after login | `api/.env` — `SUPABASE_JWT_SECRET` must match Supabase Dashboard → API → JWT Secret |
@@ -187,7 +187,6 @@ Build Mac `.dmg` and Windows `.exe` via CI and publish both to **GitHub Releases
 | `ADMIN_SUPABASE_JWT_SECRET` | yes | `SUPABASE_JWT_SECRET` |
 | `ADMIN_AUDIT_CHAIN_SECRET` | yes | `AUDIT_CHAIN_SECRET` |
 | `ADMIN_GITHUB_UPDATE_TOKEN` | yes (auto-update) | Fine-grained GitHub PAT — **Contents: Read-only** on this private repo (release downloads) |
-| `ADMIN_TURNSTILE_SITE_KEY` | no | Same as `NUXT_PUBLIC_TURNSTILE_SITE_KEY` — baked into UI at CI build (CAPTCHA on login) |
 | `ADMIN_VITE_ADMIN_API_URL` | no | Override only; default `http://127.0.0.1:3099` (local Nest API in packaged app) |
 | `ADMIN_PWA_PUBLIC_URL` | no | `PWA_PUBLIC_URL` (default `https://jobbie.sk` if omitted) |
 

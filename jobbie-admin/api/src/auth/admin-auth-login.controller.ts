@@ -8,11 +8,11 @@ import { AdminAuthLoginService } from './admin-auth-login.service';
 export class AdminAuthLoginController {
   constructor(private readonly loginService: AdminAuthLoginService) {}
 
-  /** Localhost-only password login; uses Supabase anon key from api/.env. */
+  /** Localhost-only password login via service role (no CAPTCHA). */
   @Public()
   @Post('login')
   @Throttle({ default: { limit: 15, ttl: 60_000 } })
   login(@Body() dto: AdminAuthLoginDto) {
-    return this.loginService.signIn(dto.email, dto.password, dto.captcha_token);
+    return this.loginService.signIn(dto.email, dto.password);
   }
 }

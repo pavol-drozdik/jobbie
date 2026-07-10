@@ -79,7 +79,6 @@ export function useAdminAuth() {
   async function signIn(
     email: string,
     password: string,
-    captchaToken?: string,
   ): Promise<boolean> {
     loading.value = true
     authError.value = null
@@ -93,9 +92,6 @@ export function useAdminAuth() {
           body: JSON.stringify({
             email: email.trim(),
             password,
-            ...(captchaToken?.trim()
-              ? { captcha_token: captchaToken.trim() }
-              : {}),
           }),
         })
       } catch (err) {

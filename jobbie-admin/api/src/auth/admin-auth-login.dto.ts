@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsString, MinLength } from 'class-validator';
 
 export class AdminAuthLoginDto {
   @IsEmail()
@@ -7,9 +7,4 @@ export class AdminAuthLoginDto {
   @IsString()
   @MinLength(1)
   password!: string;
-
-  /** Cloudflare Turnstile token when Supabase Auth CAPTCHA is enabled. */
-  @IsOptional()
-  @IsString()
-  captcha_token?: string;
 }
