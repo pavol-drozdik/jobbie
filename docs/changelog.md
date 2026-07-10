@@ -52,6 +52,16 @@
 - **app-pwa:** Checkout promo reason messages, amount-off UI, `?promo=` deep links, registration pool hint.
 - **docs/payments-credits.md** — Phase 5 section.
 
+## 2026-07-10 — Contract withdrawal email styling
+
+Changed:
+- **backend-ts:** User confirmation e-mail uses auth-style layout (`auth-style-email.template.ts`) matching `supabase/email-templates` (mint bg, gradient header, white logo, login-card typography).
+
+## 2026-07-10 — Contract withdrawal email timezone
+
+Fixed:
+- **backend-ts:** Confirmation/support e-mail submission timestamp uses `Europe/Bratislava` (was server UTC, ~2 h early in summer).
+
 ## 2026-07-09 — Contract withdrawal admin queue
 
 Added:

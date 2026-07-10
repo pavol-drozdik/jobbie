@@ -73,21 +73,14 @@
       </p>
     </div>
 
-    <div
+    <PromoCodeToggleField
       v-if="plan && checkoutTrialDays === 0 && promoCheckoutAvailable"
-      class="mb-6 flex flex-col gap-2"
+      v-model="promoCode"
+      available
+      input-id="checkout-subscription-promo"
+      :input-class="promoInputClass"
+      class="mb-6"
     >
-      <label class="text-sm font-medium text-black/70" for="checkout-subscription-promo">
-        {{ S.checkoutPromoCodeLabel }}
-      </label>
-      <input
-        id="checkout-subscription-promo"
-        v-model="promoCode"
-        type="text"
-        class="max-w-sm rounded-xl border border-black/15 px-4 py-2.5 text-sm"
-        :placeholder="S.checkoutPromoCodePlaceholder"
-        autocomplete="off"
-      />
       <p class="m-0 text-xs text-black/45">{{ S.checkoutPromoCodeHint }}</p>
       <p v-if="promoValidating" class="m-0 text-xs text-black/45">
         {{ S.checkoutPromoValidating }}
@@ -95,7 +88,7 @@
       <p v-else-if="promoError" class="m-0 text-xs text-red-600" role="alert">
         {{ promoError }}
       </p>
-    </div>
+    </PromoCodeToggleField>
 
     <p v-if="loading" class="text-sm text-black/55">{{ S.checkoutLoadingPayment }}</p>
     <ClientOnly v-else-if="plan">
@@ -121,6 +114,9 @@
 import { S } from '~/utils/strings'
 import { subscriptionTrialBadgeLabel } from '~/utils/subscription-trial'
 import { formatPromoAmountOff } from '~/composables/useCheckoutPromo'
+import { formTextInputClass } from '~/utils/form-field-ui'
+
+const promoInputClass = formTextInputClass
 
 const props = defineProps<{
   planId: string

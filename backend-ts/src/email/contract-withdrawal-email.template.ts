@@ -1,7 +1,5 @@
-import {
-  buildTransactionalEmailLayout,
-  escapeHtml,
-} from './transactional-email.template';
+import { buildAuthStyleEmailLayout } from './auth-style-email.template';
+import { escapeHtml } from './transactional-email.template';
 
 export type ContractWithdrawalEmailSnapshot = {
   name: string;
@@ -15,9 +13,11 @@ export type ContractWithdrawalEmailSnapshot = {
 };
 
 function buildDetailRow(label: string, value: string): string {
+  const f =
+    "'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
   return `<tr>
-<td style="padding:8px 0;font-size:14px;color:#3d5444;vertical-align:top;">${escapeHtml(label)}</td>
-<td style="padding:8px 0;font-size:14px;text-align:right;font-weight:600;vertical-align:top;">${escapeHtml(value)}</td>
+<td style="padding:10px 0;font-family:${f};font-size:14px;line-height:1.4;color:rgba(0,0,0,0.55);vertical-align:top;">${escapeHtml(label)}</td>
+<td style="padding:10px 0;font-family:${f};font-size:14px;line-height:1.4;text-align:right;font-weight:600;color:#1a1a1a;vertical-align:top;">${escapeHtml(value)}</td>
 </tr>`;
 }
 
@@ -39,8 +39,14 @@ function buildWithdrawalDetailsTable(snapshot: ContractWithdrawalEmailSnapshot):
     buildDetailRow('Dátum a čas odoslania', snapshot.submittedAtLabel),
   ];
 
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 4px 0;width:100%;max-width:480px;">
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0;background-color:#fafcfb;border:1px solid rgba(0,0,0,0.06);border-radius:18px;">
+<tr>
+<td style="padding:16px 20px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
 ${rows.join('\n')}
+</table>
+</td>
+</tr>
 </table>`;
 }
 
@@ -53,18 +59,19 @@ export function buildContractWithdrawalUserConfirmationHtml(params: {
   snapshot: ContractWithdrawalEmailSnapshot;
   termsUrl: string;
 }): string {
-  const bodyHtml = `
-<p style="margin:0 0 16px 0;font-size:16px;line-height:1.5;">Dobrý deň${params.snapshot.name ? `, ${escapeHtml(params.snapshot.name)}` : ''},</p>
-<p style="margin:0 0 16px 0;font-size:16px;line-height:1.5;">potvrdzujeme prijatie vašej žiadosti o <strong>odstúpenie od zmluvy</strong>. Zaznamenali sme ju a spracujeme v súlade s obchodnými podmienkami. O ďalšom postupe vás budeme informovať na uvedenú e-mailovú adresu.</p>
-<p style="margin:0 0 12px 0;font-size:15px;line-height:1.5;font-weight:700;">Súhrn vašej žiadosti</p>
-${buildWithdrawalDetailsTable(params.snapshot)}
-<p style="margin:16px 0 0 0;font-size:14px;line-height:1.5;color:#3d5444;">Ak ste žiadosť neodoslali vy, kontaktujte nás na <a href="mailto:podpora@jobbie.sk" style="color:#22c55e;font-weight:600;text-decoration:none;">podpora@jobbie.sk</a>.</p>`.trim();
+  const nameGreeting = params.snapshot.name
+    ? `, ${escapeHtml(params.snapshot.name)}`
+    : '';
 
-  return buildTransactionalEmailLayout({
+  return buildAuthStyleEmailLayout({
     appOrigin: params.appOrigin,
-    bodyHtml,
     preheader: `Žiadosť o odstúpenie od zmluvy prijatá ${params.snapshot.submittedAtLabel}`,
-    footerLinksHtml: `<a href="${escapeHtml(params.termsUrl)}" style="color:#22c55e;text-decoration:none;">Obchodné podmienky</a>`,
+    titleHtml:
+      'Potvrdenie <span style="color:#22c55e;">žiadosti</span>',
+    leadHtml: `Dobrý deň${nameGreeting}, potvrdzujeme prijatie vašej žiadosti o <strong style="font-weight:600;color:#1a1a1a;">odstúpenie od zmluvy</strong>. Zaznamenali sme ju a spracujeme v súlade s obchodnými podmienkami. O ďalšom postupe vás budeme informovať na uvedenú e-mailovú adresu.`,
+    bodyHtml: `<p style="margin:0 0 12px 0;font-family:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;font-weight:700;line-height:1.4;color:#1a1a1a;">Súhrn vašej žiadosti</p>
+${buildWithdrawalDetailsTable(params.snapshot)}`,
+    footerNoteHtml: `Ak ste žiadosť neodoslali vy, kontaktujte nás na <a href="mailto:podpora@jobbie.sk" style="color:#22c55e;font-weight:600;text-decoration:none;">podpora@jobbie.sk</a>. <a href="${escapeHtml(params.termsUrl)}" style="color:#22c55e;text-decoration:none;">Obchodné podmienky</a>.`,
   });
 }
 
@@ -94,6 +101,7 @@ export function formatContractWithdrawalPurchaseDate(isoDate: string): string {
 export function formatContractWithdrawalSubmittedAt(date: Date): string {
   try {
     return new Intl.DateTimeFormat('sk-SK', {
+      timeZone: 'Europe/Bratislava',
       day: 'numeric',
       month: 'numeric',
       year: 'numeric',

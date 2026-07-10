@@ -161,14 +161,16 @@
   registerTermsAgreePrivacyLabel: 'zásadami ochrany osobných údajov',
   termsRequired: 'Pre registráciu je potrebný súhlas s podmienkami a zásadami ochrany osobných údajov.',
   registrationPromoCodeLabel: 'Promo kód (voliteľné)',
-  registrationPromoCodePlaceholder: 'LAUNCH20',
+  registrationPromoCodePlaceholder: 'Promo kód',
+  havePromoCodeLabel: 'Mám promo kód',
+  promoCodePlaceholder: 'Promo kód',
   registrationPromoCodeHint:
     'Kód zadajte teraz. Kredity môžu byť pripísané hneď po registrácii alebo po prvom zverejnení inzerátu — podľa podmienok akcie.',
   registrationPromoPoolHint:
     'Zadajte kód z pozvánky (napr. z e-mailu), nie názov kampane.',
   registrationPromoGrantedBanner: 'Na váš účet bolo pripísaných {credits} kreditov z promo kódu.',
   checkoutPromoCodeLabel: 'Promo kód',
-  checkoutPromoCodePlaceholder: 'Zadajte kód',
+  checkoutPromoCodePlaceholder: 'Promo kód',
   checkoutPromoCodeHint: 'Zľava sa uplatní pri tejto platbe.',
   checkoutPromoValidating: 'Overujem promo kód…',
   checkoutPromoInvalidGeneric:

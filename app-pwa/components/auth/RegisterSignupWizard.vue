@@ -468,20 +468,13 @@
               <AppCheckbox v-model="newsletterSubscribe" class="mt-1" />
               <span class="text-sm font-medium text-black/70">{{ S.jobAlertsNewsletterLabel }}</span>
             </label>
-            <div v-if="promoRegistrationAvailable" class="flex flex-col gap-1.5">
-              <label :class="fieldLabelClass">{{ S.registrationPromoCodeLabel }}</label>
-              <div class="relative flex items-center">
-                <input
-                  v-model="promoCode"
-                  type="text"
-                  autocomplete="off"
-                  :placeholder="S.registrationPromoCodePlaceholder"
-                  :class="inputWithTrailingIconClass"
-                />
-                <i
-                  class="fa-solid fa-ticket pointer-events-none absolute right-[18px] text-[15px] text-black/30"
-                />
-              </div>
+            <PromoCodeToggleField
+              v-if="promoRegistrationAvailable === true"
+              v-model="promoCode"
+              available
+              :input-class="inputWithTrailingIconClass"
+              with-trailing-icon
+            >
               <p class="m-0 text-xs font-medium text-black/45">{{ S.registrationPromoCodeHint }}</p>
               <p
                 v-if="registrationPoolMode"
@@ -489,7 +482,7 @@
               >
                 {{ S.registrationPromoPoolHint }}
               </p>
-            </div>
+            </PromoCodeToggleField>
             <AuthTurnstileWidget
               v-if="turnstileSiteKey"
               ref="signupTurnstileRef"

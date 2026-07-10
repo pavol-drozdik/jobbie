@@ -48,18 +48,14 @@
       </p>
     </div>
 
-    <div v-if="pack && promoCheckoutAvailable" class="mb-6 flex flex-col gap-2">
-      <label class="text-sm font-medium text-black/70" for="checkout-credits-promo">
-        {{ S.checkoutPromoCodeLabel }}
-      </label>
-      <input
-        id="checkout-credits-promo"
-        v-model="promoCode"
-        type="text"
-        class="max-w-sm rounded-xl border border-black/15 px-4 py-2.5 text-sm"
-        :placeholder="S.checkoutPromoCodePlaceholder"
-        autocomplete="off"
-      />
+    <PromoCodeToggleField
+      v-if="pack && promoCheckoutAvailable"
+      v-model="promoCode"
+      available
+      input-id="checkout-credits-promo"
+      :input-class="promoInputClass"
+      class="mb-6"
+    >
       <p class="m-0 text-xs text-black/45">{{ S.checkoutPromoCodeHint }}</p>
       <p v-if="promoValidating" class="m-0 text-xs text-black/45">
         {{ S.checkoutPromoValidating }}
@@ -67,7 +63,7 @@
       <p v-else-if="promoError" class="m-0 text-xs text-red-600" role="alert">
         {{ promoError }}
       </p>
-    </div>
+    </PromoCodeToggleField>
 
     <p v-if="loading" class="text-sm text-black/55">{{ S.checkoutLoadingPayment }}</p>
     <ClientOnly v-else-if="pack">
@@ -90,6 +86,9 @@
 <script setup lang="ts">
 import { S } from '~/utils/strings'
 import { formatPromoAmountOff } from '~/composables/useCheckoutPromo'
+import { formTextInputClass } from '~/utils/form-field-ui'
+
+const promoInputClass = formTextInputClass
 
 const props = defineProps<{
   packSlug: string
