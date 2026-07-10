@@ -1,4 +1,10 @@
-﻿## 2026-07-10 — Admin desktop Turnstile (Electron)
+﻿## 2026-07-10 — Admin desktop API reachability
+
+- **jobbie-admin API:** CORS allows any `127.0.0.1` / `localhost` UI origin (packaged UI on port 5198).
+- **electron:** spawn Nest API from `app.asar.unpacked/api` in production builds.
+- **UI:** packaged-friendly error copy when `/health` fails.
+
+## 2026-07-10 — Admin desktop Turnstile (Electron)
 
 - **jobbie-admin:** packaged UI served on `http://127.0.0.1:5198` (`electron/static-ui-server.cjs`) so Cloudflare Turnstile works; login shows CAPTCHA widget only after Supabase requests it.
 - **docs:** Cloudflare hostname `127.0.0.1` required for desktop widget.

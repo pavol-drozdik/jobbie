@@ -22,6 +22,19 @@ let uiStaticServer = null
 const ADMIN_UI_PORT = Number(process.env.ADMIN_UI_PORT || '5198')
 
 function apiRootDir() {
+  if (isDev) {
+    return path.join(__dirname, '..', 'api')
+  }
+  const candidates = [
+    path.join(process.resourcesPath, 'app.asar.unpacked', 'api'),
+    path.join(app.getAppPath() + '.unpacked', 'api'),
+    path.join(__dirname, '..', 'api'),
+  ]
+  for (const dir of candidates) {
+    if (fs.existsSync(path.join(dir, 'dist', 'main.js'))) {
+      return dir
+    }
+  }
   return path.join(__dirname, '..', 'api')
 }
 
