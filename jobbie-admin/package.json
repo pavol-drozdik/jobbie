@@ -20,6 +20,7 @@
     "env:packaged": "node scripts/write-packaged-env.cjs",
     "env:packaged:example": "node scripts/write-packaged-env.cjs --from-example",
     "update:token": "node scripts/write-update-token.cjs",
+    "vite:env": "node scripts/write-vite-env.cjs",
     "rebuild:api-native": "node scripts/rebuild-api-native.cjs",
     "test:electron-env": "node electron/resolve-api-env.spec.cjs",
     "build:mac:release": "npm run env:packaged && npm run update:token && npm run build:app:pack && electron-builder --mac --publish never",
