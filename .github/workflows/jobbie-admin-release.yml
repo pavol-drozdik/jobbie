@@ -106,7 +106,7 @@ jobs:
 
       - name: Build macOS DMG (unsigned, env bundled)
         if: matrix.platform == 'mac'
-        run: npm run build:app:pack && npx electron-builder --mac
+        run: npm run build:app:pack && npx electron-builder --mac --publish never
         env:
           CI: true
           CSC_IDENTITY_AUTO_DISCOVERY: false

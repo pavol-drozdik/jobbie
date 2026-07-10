@@ -20,7 +20,7 @@
     "env:packaged": "node scripts/write-packaged-env.cjs",
     "env:packaged:example": "node scripts/write-packaged-env.cjs --from-example",
     "update:token": "node scripts/write-update-token.cjs",
-    "build:mac:release": "npm run env:packaged && npm run update:token && npm run build:app:pack && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac",
+    "build:mac:release": "npm run env:packaged && npm run update:token && npm run build:app:pack && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --publish never",
     "icons:generate": "node scripts/generate-icons.mjs",
     "install:all": "npm install --prefix api && npm install --prefix app",
     "build:win:force": "npm run build:app:pack && node scripts/win-build.cjs --force"
