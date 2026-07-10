@@ -12,6 +12,10 @@ node_modules/
 # Build outputs
 dist/
 build/
+# jobbie-admin Electron icons (exception: build/ is ignored above)
+!jobbie-admin/build/
+!jobbie-admin/build/**
+jobbie-admin/build/api.env
 app-pwa/.nuxt/
 app-pwa/.output/
 app-pwa/dist/

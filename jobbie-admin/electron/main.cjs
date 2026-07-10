@@ -2,6 +2,7 @@ const { app, BrowserWindow, dialog } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const { spawn } = require('child_process')
+const { initAutoUpdater } = require('./auto-updater.cjs')
 
 const isDev = !app.isPackaged
 const API_PORT = process.env.ADMIN_API_PORT || '3099'
@@ -12,6 +13,8 @@ const SKIP_API_SPAWN =
   process.env.JOBBIE_ADMIN_API_EXTERNAL === '1'
 
 let apiProcess = null
+/** @type {BrowserWindow | null} */
+let mainWindow = null
 
 function apiRootDir() {
   return path.join(__dirname, '..', 'api')
@@ -241,6 +244,12 @@ function createWindow() {
       nodeIntegration: false,
     },
   })
+  mainWindow = win
+  win.on('closed', () => {
+    if (mainWindow === win) {
+      mainWindow = null
+    }
+  })
   if (isDev) {
     win.loadURL('http://127.0.0.1:5199')
     win.webContents.openDevTools({ mode: 'detach' })
@@ -252,6 +261,7 @@ function createWindow() {
 app.whenReady().then(async () => {
   await ensureApiReady()
   createWindow()
+  initAutoUpdater(() => mainWindow)
 })
 
 app.on('window-all-closed', () => {

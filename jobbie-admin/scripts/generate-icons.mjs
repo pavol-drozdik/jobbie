@@ -13,10 +13,17 @@ import png2icons from 'png2icons'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const buildDir = path.join(__dirname, '..', 'build')
 const svgPath = path.join(buildDir, 'icon.svg')
+const fallbackSvg = path.join(__dirname, '..', 'app', 'public', 'favicon.svg')
 const png1024 = path.join(buildDir, 'icon-1024.png')
 
+fs.mkdirSync(buildDir, { recursive: true })
+if (!fs.existsSync(svgPath) && fs.existsSync(fallbackSvg)) {
+  fs.copyFileSync(fallbackSvg, svgPath)
+  console.log('Copied', path.relative(process.cwd(), fallbackSvg), '→', path.relative(process.cwd(), svgPath))
+}
+
 if (!fs.existsSync(svgPath)) {
-  console.error('Missing', svgPath)
+  console.error('Missing', svgPath, '(and no fallback at', fallbackSvg + ')')
   process.exit(1)
 }
 
