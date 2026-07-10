@@ -52,6 +52,12 @@
 - **app-pwa:** Checkout promo reason messages, amount-off UI, `?promo=` deep links, registration pool hint.
 - **docs/payments-credits.md** — Phase 5 section.
 
+## 2026-07-10 — Contract withdrawal admin export
+
+Changed:
+- **jobbie-admin:** `GET /api/admin/contract-withdrawals/export` (`csv` / `json`, same filters as list, recent login).
+- **jobbie-admin UI:** **Odstúpenie od zmluvy** — Export CSV / Export JSON buttons.
+
 ## 2026-07-10 — Contract withdrawal email styling
 
 Changed:

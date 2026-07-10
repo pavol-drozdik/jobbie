@@ -9,7 +9,7 @@ import Message from 'primevue/message'
 import ProgressSpinner from 'primevue/progressspinner'
 import Select from 'primevue/select'
 import Tag from 'primevue/tag'
-import { adminApi } from '../composables/adminApi'
+import { adminApi, adminApiDownload } from '../composables/adminApi'
 import { useAdminAuth } from '../composables/adminAuth'
 import { useConfirm } from '../composables/useConfirm'
 import {
@@ -52,7 +52,9 @@ const limit = ref(50)
 
 const loading = ref(true)
 const loadingMore = ref(false)
+const exporting = ref(false)
 const error = ref<string | null>(null)
+const exportError = ref<string | null>(null)
 const actionError = ref<string | null>(null)
 const actionSuccess = ref<string | null>(null)
 const needsReLogin = ref(false)
@@ -79,10 +81,8 @@ function statusSeverity(
   return 'secondary'
 }
 
-function filterQuery(): Record<string, string> {
-  const q: Record<string, string> = {
-    limit: String(limit.value),
-  }
+function exportFilterQuery(): Record<string, string> {
+  const q: Record<string, string> = {}
   if (statusFilter.value) {
     q.status = statusFilter.value
   }
@@ -92,13 +92,42 @@ function filterQuery(): Record<string, string> {
   }
   if (preset.value !== 'all') {
     const range = auditPresetToRange(preset.value)
-    dateLabel.value = formatDateRangeLabel(range.from, range.to)
     q.from = range.from
     q.to = range.to
+  }
+  return q
+}
+
+function filterQuery(): Record<string, string> {
+  const q: Record<string, string> = {
+    limit: String(limit.value),
+    ...exportFilterQuery(),
+  }
+  if (preset.value !== 'all') {
+    const range = auditPresetToRange(preset.value)
+    dateLabel.value = formatDateRangeLabel(range.from, range.to)
   } else {
     dateLabel.value = 'Všetky záznamy'
   }
   return q
+}
+
+async function exportFile(format: 'csv' | 'json') {
+  exporting.value = true
+  exportError.value = null
+  const stamp = new Date().toISOString().slice(0, 10)
+  const ext = format === 'csv' ? 'csv' : 'json'
+  const res = await adminApiDownload('/admin/contract-withdrawals/export', {
+    query: { ...exportFilterQuery(), format },
+    filename: `jobbie-contract-withdrawals-${stamp}.${ext}`,
+  })
+  if (!res.ok) {
+    exportError.value =
+      res.status === 403
+        ? `Export vyžaduje čerstvé prihlásenie (do ${recentLoginMinutes.value ?? '—'} min). Odhláste sa a prihláste znova.`
+        : res.body || `HTTP ${res.status}`
+  }
+  exporting.value = false
 }
 
 async function fetchPage(append: boolean) {
@@ -239,9 +268,27 @@ onMounted(() => {
             placeholder="E-mail alebo číslo faktúry"
           />
         </div>
+        <div class="flex flex-wrap items-end gap-2">
+          <Button
+            :label="exporting ? 'Export…' : 'Export CSV'"
+            size="small"
+            severity="secondary"
+            :loading="exporting"
+            @click="exportFile('csv')"
+          />
+          <Button
+            label="Export JSON"
+            size="small"
+            severity="secondary"
+            :loading="exporting"
+            @click="exportFile('json')"
+          />
+        </div>
       </div>
       <p v-if="dateLabel" class="m-0 mt-3 text-sm text-slate-500">{{ dateLabel }}</p>
     </section>
+
+    <Message v-if="exportError" severity="error" :closable="false">{{ exportError }}</Message>
 
     <Message v-if="needsReLogin" severity="warn" :closable="false" class="w-full">
       <div class="flex flex-wrap items-center gap-3">
