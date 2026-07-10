@@ -1,0 +1,165 @@
+name: jobbie-admin-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 1.0.0)'
+        required: true
+        default: '1.0.0'
+  push:
+    tags:
+      - 'admin-v*'
+
+permissions:
+  contents: write
+
+jobs:
+  resolve-version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - id: version
+        shell: bash
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "tag=v${GITHUB_REF_NAME#admin-v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=v${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: resolve-version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            platform: mac
+          - os: windows-latest
+            platform: win
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: jobbie-admin
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            jobbie-admin/package-lock.json
+            jobbie-admin/api/package-lock.json
+            jobbie-admin/app/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm ci --prefix api
+          npm ci --prefix app
+
+      - name: Generate app icons
+        run: npm run icons:generate
+
+      - name: Write packaged API env from secrets
+        run: npm run env:packaged
+        env:
+          SUPABASE_URL: ${{ secrets.ADMIN_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.ADMIN_SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.ADMIN_SUPABASE_ANON_KEY }}
+          SUPABASE_JWT_SECRET: ${{ secrets.ADMIN_SUPABASE_JWT_SECRET }}
+          AUDIT_CHAIN_SECRET: ${{ secrets.ADMIN_AUDIT_CHAIN_SECRET }}
+          PWA_PUBLIC_URL: ${{ secrets.ADMIN_PWA_PUBLIC_URL }}
+          POSTHOG_PERSONAL_API_KEY: ${{ secrets.ADMIN_POSTHOG_PERSONAL_API_KEY }}
+          POSTHOG_PROJECT_ID: ${{ secrets.ADMIN_POSTHOG_PROJECT_ID }}
+          POSTHOG_HOST: ${{ secrets.ADMIN_POSTHOG_HOST }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.ADMIN_GOOGLE_SERVICE_ACCOUNT_JSON }}
+          GA4_PROPERTY_ID: ${{ secrets.ADMIN_GA4_PROPERTY_ID }}
+          GSC_SITE_URL: ${{ secrets.ADMIN_GSC_SITE_URL }}
+          CLARITY_API_TOKEN: ${{ secrets.ADMIN_CLARITY_API_TOKEN }}
+          VPS_STAGING_SSH_HOST: ${{ secrets.VPS_STAGING_SSH_HOST }}
+          VPS_STAGING_SSH_USER: ${{ secrets.VPS_STAGING_SSH_USER }}
+          VPS_STAGING_SSH_PRIVATE_KEY: ${{ secrets.VPS_STAGING_SSH_PRIVATE_KEY }}
+          VPS_STAGING_HEALTH_URL: ${{ secrets.VPS_STAGING_HEALTH_URL }}
+          VPS_STAGING_METRICS_URL: ${{ secrets.VPS_STAGING_METRICS_URL }}
+          VPS_STAGING_METRICS_BEARER_TOKEN: ${{ secrets.VPS_STAGING_METRICS_BEARER_TOKEN }}
+          VPS_PRODUCTION_SSH_HOST: ${{ secrets.VPS_PRODUCTION_SSH_HOST }}
+          VPS_PRODUCTION_SSH_USER: ${{ secrets.VPS_PRODUCTION_SSH_USER }}
+          VPS_PRODUCTION_SSH_PRIVATE_KEY: ${{ secrets.VPS_PRODUCTION_SSH_PRIVATE_KEY }}
+          VPS_PRODUCTION_HEALTH_URL: ${{ secrets.VPS_PRODUCTION_HEALTH_URL }}
+          VPS_PRODUCTION_METRICS_URL: ${{ secrets.VPS_PRODUCTION_METRICS_URL }}
+          VPS_PRODUCTION_METRICS_BEARER_TOKEN: ${{ secrets.VPS_PRODUCTION_METRICS_BEARER_TOKEN }}
+
+      - name: Build macOS DMG (unsigned, env bundled)
+        if: matrix.platform == 'mac'
+        run: npm run build:app:pack && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac
+        env:
+          CI: true
+
+      - name: Build Windows installer (unsigned, env bundled)
+        if: matrix.platform == 'win'
+        run: npm run build:win:release
+        env:
+          CI: true
+
+      - name: Upload macOS artifacts
+        if: matrix.platform == 'mac'
+        uses: actions/upload-artifact@v4
+        with:
+          name: jobbie-admin-mac
+          path: |
+            jobbie-admin/release/JOBBIE-Admin-*.dmg
+            jobbie-admin/release/JOBBIE-Admin-*.zip
+          if-no-files-found: error
+
+      - name: Upload Windows artifact
+        if: matrix.platform == 'win'
+        uses: actions/upload-artifact@v4
+        with:
+          name: jobbie-admin-win
+          path: jobbie-admin/release/JOBBIE-Admin-*-Setup.exe
+          if-no-files-found: error
+
+  release:
+    needs: [resolve-version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: jobbie-admin-*
+          merge-multiple: true
+          path: release-artifacts
+
+      - name: List release files
+        run: find release-artifacts -type f
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.resolve-version.outputs.tag }}
+          name: JOBBIE Admin ${{ needs.resolve-version.outputs.tag }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            Desktop admin builds with **pre-configured** API credentials (`resources/api.env`).
+
+            | Platform | File |
+            |----------|------|
+            | macOS (Apple Silicon) | `JOBBIE-Admin-*.dmg` |
+            | Windows | `JOBBIE-Admin-*-Setup.exe` |
+
+            **macOS (unsigned):** right-click JOBBIE Admin → Open → Open.
+
+            **Windows (unsigned):** SmartScreen → More info → Run anyway.
+
+            Sign in with a Supabase account that has `profiles.app_role = admin`.
+
+            Rotate Supabase keys if an installer is shared beyond trusted operators.
+          files: release-artifacts/**
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
