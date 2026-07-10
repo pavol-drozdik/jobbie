@@ -106,9 +106,10 @@ jobs:
 
       - name: Build macOS DMG (unsigned, env bundled)
         if: matrix.platform == 'mac'
-        run: npm run build:app:pack && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac
+        run: npm run build:app:pack && npx electron-builder --mac
         env:
           CI: true
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Build Windows installer (unsigned, env bundled)
         if: matrix.platform == 'win'
