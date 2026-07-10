@@ -115,6 +115,39 @@
         >
         <span>{{ S.checkoutSkResidenceAttestation }}</span>
       </label>
+
+      <div class="mb-4 space-y-3">
+        <label class="flex is-clickable items-start gap-2.5 text-sm leading-snug text-black/70">
+          <AppCheckbox v-model="checkoutTermsAgree" class="mt-0.5" />
+          <span>
+            {{ S.checkoutConsentTermsIntro }}
+            <NuxtLink
+              :to="ROUTES.terms"
+              class="font-semibold text-marketing-green underline decoration-marketing-green/50 underline-offset-2 outline-none hover:decoration-marketing-green focus-visible:ring-2 focus-visible:ring-marketing-green/40"
+              target="_blank"
+              rel="noopener noreferrer"
+              @click.stop
+            >{{ S.checkoutConsentTermsLink }}</NuxtLink>.
+          </span>
+        </label>
+        <label class="flex is-clickable items-start gap-2.5 text-sm leading-snug text-black/70">
+          <AppCheckbox v-model="checkoutDigitalServiceAgree" class="mt-0.5" />
+          <span>{{ S.checkoutConsentDigitalService }}</span>
+        </label>
+        <label class="flex is-clickable items-start gap-2.5 text-sm leading-snug text-black/70">
+          <AppCheckbox v-model="checkoutWithdrawalNoticeAgree" class="mt-0.5" />
+          <span>
+            {{ S.checkoutConsentWithdrawalNoticeIntro }}
+            <NuxtLink
+              :to="ROUTES.withdrawalRightsNotice"
+              class="font-semibold text-marketing-green underline decoration-marketing-green/50 underline-offset-2 outline-none hover:decoration-marketing-green focus-visible:ring-2 focus-visible:ring-marketing-green/40"
+              target="_blank"
+              rel="noopener noreferrer"
+              @click.stop
+            >{{ S.checkoutConsentWithdrawalNoticeLink }}</NuxtLink>{{ S.checkoutConsentWithdrawalNoticeSuffix }}
+          </span>
+        </label>
+      </div>
     </template>
 
     <div class="pb-2">
@@ -177,6 +210,7 @@ import {
   type PreparePaymentResult,
 } from '~/utils/stripe-prepare-payment'
 import { S } from '~/utils/strings'
+import { ROUTES } from '~/utils/app-routes'
 
 const config = useRuntimeConfig().public
 const stripePublishableKey = config.stripePublishableKey as string
@@ -266,6 +300,9 @@ const addressLine1 = ref('')
 const addressCity = ref('')
 const addressPostalCode = ref('')
 const skResidenceAttestation = ref(false)
+const checkoutTermsAgree = ref(false)
+const checkoutDigitalServiceAgree = ref(false)
+const checkoutWithdrawalNoticeAgree = ref(false)
 
 const usesCheckoutDeferred = computed(
   () =>
@@ -507,6 +544,22 @@ function readBillingAddressFromForm(): {
   return { line1, city, postal }
 }
 
+function validateCheckoutLegalConsents(): boolean {
+  if (!checkoutTermsAgree.value) {
+    payError.value = S.checkoutConsentTermsRequired
+    return false
+  }
+  if (!checkoutDigitalServiceAgree.value) {
+    payError.value = S.checkoutConsentDigitalServiceRequired
+    return false
+  }
+  if (!checkoutWithdrawalNoticeAgree.value) {
+    payError.value = S.checkoutConsentWithdrawalNoticeRequired
+    return false
+  }
+  return true
+}
+
 async function buildBillingPayload(): Promise<CheckoutBillingPayload | undefined> {
   if (!props.collectBusinessBilling) return undefined
   const address = readBillingAddressFromForm()
@@ -630,6 +683,10 @@ async function handlePay() {
   paying.value = true
   payError.value = null
   try {
+    if (props.collectBusinessBilling && !validateCheckoutLegalConsents()) {
+      return
+    }
+
     const billing = await buildBillingPayload()
     if (props.collectBusinessBilling && !billing) {
       return

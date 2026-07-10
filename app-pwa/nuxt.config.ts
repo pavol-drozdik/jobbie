@@ -378,6 +378,7 @@ export default defineNuxtConfig({
             '/vseobecne-podmienky',
             '/ochrana-osobnych-udajov',
             '/odstupenie-od-zmluvy',
+            '/poucenie-odstupenie-od-zmluvy',
           ]
         : [],
     },

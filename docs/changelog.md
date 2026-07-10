@@ -52,6 +52,17 @@
 - **app-pwa:** Checkout promo reason messages, amount-off UI, `?promo=` deep links, registration pool hint.
 - **docs/payments-credits.md** — Phase 5 section.
 
+## 2026-07-10 — Terms withdrawal sections 11.2 / 11.4
+
+Changed:
+- **PWA:** `/vseobecne-podmienky` — §11.2 odkazuje na `/poucenie-odstupenie-od-zmluvy`; §11.4 prepísané (formulár v päte, e-mail, potvrdenie).
+
+## 2026-07-10 — Checkout legal consents & withdrawal notice page
+
+Changed:
+- **PWA:** `/platba` checkout requires three consents (terms, immediate digital service, withdrawal notice) before payment.
+- **PWA:** New page `/poucenie-odstupenie-od-zmluvy` (consumer withdrawal rights notice); linked from checkout consent checkbox.
+
 ## 2026-07-10 — Contract withdrawal admin export
 
 Changed:

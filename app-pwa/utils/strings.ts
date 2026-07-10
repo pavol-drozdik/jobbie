@@ -669,6 +669,20 @@
     'Potvrdzujem, že mám fakturačnú adresu na Slovensku.',
   checkoutSkResidenceAttestationRequired:
     'Vyplňte fakturačnú adresu na Slovensku a potvrďte súhlas.',
+  checkoutConsentTermsIntro: 'Súhlasím s',
+  checkoutConsentTermsLink: 'obchodnými podmienkami',
+  checkoutConsentDigitalService:
+    'Žiadam, aby sa poskytovanie digitálnej služby začalo ihneď po vykonaní platby.',
+  checkoutConsentWithdrawalNoticeIntro:
+    'Pred uzavretím zmluvy som bol oboznámený s',
+  checkoutConsentWithdrawalNoticeLink:
+    'Poučením o práve na odstúpenie od zmluvy',
+  checkoutConsentWithdrawalNoticeSuffix: '.',
+  checkoutConsentTermsRequired: 'Potvrďte súhlas s obchodnými podmienkami.',
+  checkoutConsentDigitalServiceRequired:
+    'Potvrďte súhlas so začatím poskytovania digitálnej služby.',
+  checkoutConsentWithdrawalNoticeRequired:
+    'Potvrďte, že ste boli oboznámení s poučením o práve na odstúpenie od zmluvy.',
   checkoutBillingIcoInvalid: 'Zadajte platné slovenské IČO.',
   checkoutSubscriptionSuccess: 'Predplatné bolo úspešne aktivované.',
   checkoutSubscriptionTrialSuccess:

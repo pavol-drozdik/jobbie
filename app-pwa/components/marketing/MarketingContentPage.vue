@@ -34,6 +34,24 @@
               >
                 {{ block.text }}
               </p>
+              <p
+                v-else-if="block.kind === 'rich'"
+                class="m-0 font-dmSans text-base font-medium leading-relaxed text-black/75"
+              >
+                <template v-for="(part, partIndex) in block.parts" :key="partIndex">
+                  <span v-if="part.type === 'text'">{{ part.text }}</span>
+                  <a
+                    v-else-if="part.type === 'mailto'"
+                    :href="`mailto:${part.email}`"
+                    class="font-semibold text-marketing-green underline decoration-marketing-green/50 underline-offset-2 outline-none hover:decoration-marketing-green focus-visible:ring-2 focus-visible:ring-marketing-green/40"
+                  >{{ part.label ?? part.email }}</a>
+                  <NuxtLink
+                    v-else-if="part.type === 'link'"
+                    :to="part.to"
+                    class="font-semibold text-marketing-green underline decoration-marketing-green/50 underline-offset-2 outline-none hover:decoration-marketing-green focus-visible:ring-2 focus-visible:ring-marketing-green/40"
+                  >{{ part.label }}</NuxtLink>
+                </template>
+              </p>
               <ul
                 v-else
                 class="m-0 list-disc space-y-2 pl-5 font-dmSans text-base font-medium leading-relaxed text-black/75"

@@ -3,6 +3,12 @@
 export type TrustContentBlock =
   | { readonly kind: 'paragraph'; readonly text: string }
   | { readonly kind: 'bullets'; readonly items: readonly string[] }
+  | { readonly kind: 'rich'; readonly parts: readonly TrustRichPart[] }
+
+export type TrustRichPart =
+  | { readonly type: 'text'; readonly text: string }
+  | { readonly type: 'mailto'; readonly email: string; readonly label?: string }
+  | { readonly type: 'link'; readonly to: string; readonly label: string }
 
 export type TrustContentSection = {
   readonly id: string

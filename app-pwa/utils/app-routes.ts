@@ -46,6 +46,7 @@ export const ROUTES = {
   blog: '/blog',
   security: '/bezpecnost',
   terms: '/vseobecne-podmienky',
+  withdrawalRightsNotice: '/poucenie-odstupenie-od-zmluvy',
   contractWithdrawal: '/odstupenie-od-zmluvy',
   privacy: '/ochrana-osobnych-udajov',
   authRegister: '/auth/register',
