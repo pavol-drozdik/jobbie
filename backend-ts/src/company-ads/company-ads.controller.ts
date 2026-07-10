@@ -837,6 +837,7 @@ export class CompanyAdsController {
           /* Client may retry POST .../top-listing. */
         }
         this.notifyAdPublishedIfActive(updated as AdRow);
+        this.triggerFirstPublishPromo(user.id);
         return publishedDto;
       } catch (e) {
         await this.credits.reverseSpendByRef(

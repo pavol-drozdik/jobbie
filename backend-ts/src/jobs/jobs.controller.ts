@@ -1292,6 +1292,9 @@ export class JobsController {
     });
     this.emitJobPublishedIfPublic(updated);
     void this.searchIndexing.indexJobById(updated.id);
+    if (becomingPublic) {
+      this.triggerFirstPublishPromo(user.id);
+    }
     return this.enrichJobTopBadge(updated);
   }
 
