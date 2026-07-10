@@ -54,6 +54,8 @@ export function useRegistrationPromo() {
   const { api } = useApi()
 
   async function loadPromoActive(): Promise<boolean> {
+    promoRegistrationAvailable.value = null
+    registrationPoolMode.value = false
     try {
       const res = await api<PromoAvailability>('/api/promotions/active', {
         skipSessionExpiry: true,
