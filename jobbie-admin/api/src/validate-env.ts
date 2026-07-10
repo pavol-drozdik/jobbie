@@ -8,6 +8,8 @@ const REQUIRED_KEYS = [
   'SUPABASE_JWT_SECRET',
 ] as const;
 
+const PRODUCTION_EXTRA_KEYS = ['AUDIT_CHAIN_SECRET'] as const;
+
 /**
  * Fail fast with actionable logs when api/.env is missing or incomplete.
  */
@@ -26,7 +28,12 @@ export function validateAdminApiEnv(): void {
     process.exit(1);
   }
 
-  const missing = REQUIRED_KEYS.filter((key) => !process.env[key]?.trim());
+  const requiredKeys =
+    process.env.NODE_ENV === 'production'
+      ? [...REQUIRED_KEYS, ...PRODUCTION_EXTRA_KEYS]
+      : [...REQUIRED_KEYS];
+
+  const missing = requiredKeys.filter((key) => !process.env[key]?.trim());
   if (missing.length > 0) {
     console.error('[admin-api] Missing required environment variables:');
     for (const key of missing) {
@@ -34,7 +41,7 @@ export function validateAdminApiEnv(): void {
     }
     console.error(`[admin-api]   Edit: ${resolved}`);
     console.error(
-      '[admin-api]   Use the same values as backend-ts/.env (SUPABASE_URL, service role, anon key, JWT secret).',
+      '[admin-api]   Use the same values as backend-ts/.env (SUPABASE_URL, service role, anon key, JWT secret, audit chain secret in production).',
     );
     process.exit(1);
   }

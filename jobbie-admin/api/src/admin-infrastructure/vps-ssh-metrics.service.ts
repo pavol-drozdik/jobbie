@@ -2,8 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { existsSync, readFile, readFileSync } from 'node:fs';
 import * as path from 'path';
 import { promisify } from 'node:util';
-import { Client } from 'ssh2';
+import type { Client } from 'ssh2';
 import type { VpsHostMetricsDto } from './admin-infrastructure.dto';
+import { loadSshClientCtor } from './vps-ssh-client.util';
 import type { VpsEnvironmentConfig } from './vps-environment.config';
 
 const readFileAsync = promisify(readFile);
@@ -54,12 +55,13 @@ export class VpsSshMetricsService {
     );
   }
 
-  private execRemoteScript(
+  private async execRemoteScript(
     ssh: NonNullable<VpsEnvironmentConfig['ssh']>,
     script: string,
   ): Promise<string> {
+    const ClientCtor = await loadSshClientCtor();
     return new Promise((resolve, reject) => {
-      const conn = new Client();
+      const conn = new ClientCtor();
       let stdout = '';
       let stderr = '';
       let settled = false;

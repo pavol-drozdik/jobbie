@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { readFileSync } from 'node:fs';
-import { Client } from 'ssh2';
+import type { Client } from 'ssh2';
 import type {
   VpsBackendsSummaryDto,
   VpsHostMetricsDto,
@@ -19,6 +19,7 @@ import {
   validateBackendContainerName,
 } from './vps-backend-instances.util';
 import type { VpsEnvironmentConfig } from './vps-environment.config';
+import { loadSshClientCtor } from './vps-ssh-client.util';
 
 const SSH_TIMEOUT_MS = 30_000;
 const DEPLOY_ROOT = '/srv/nestjs-typesense';
@@ -142,12 +143,13 @@ export class VpsBackendOperationsService {
     }
   }
 
-  private execRemoteCommand(
+  private async execRemoteCommand(
     ssh: NonNullable<VpsEnvironmentConfig['ssh']>,
     command: string,
   ): Promise<string> {
+    const ClientCtor = await loadSshClientCtor();
     return new Promise((resolve, reject) => {
-      const conn = new Client();
+      const conn = new ClientCtor();
       let stdout = '';
       let stderr = '';
       let settled = false;

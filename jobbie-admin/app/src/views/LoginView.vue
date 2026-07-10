@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import Button from 'primevue/button'
 import IconField from 'primevue/iconfield'
@@ -9,6 +9,11 @@ import Message from 'primevue/message'
 import Password from 'primevue/password'
 import { useAdminAuth } from '../composables/adminAuth'
 import { adminApi } from '../composables/adminApi'
+import { useAdminApiHealth } from '../composables/useAdminApiHealth'
+import {
+  formatApiLogExcerpt,
+  useAdminApiBootstrap,
+} from '../composables/useAdminApiBootstrap'
 import { formatAdminApiError } from '../utils/format-admin-api-error'
 import {
   BRAND_FAVICON_PATH,
@@ -21,6 +26,14 @@ const password = ref('')
 const { signIn, signOut, loading, authError } = useAdminAuth()
 const router = useRouter()
 const route = useRoute()
+const { reachable, checking, checkWithRetry } = useAdminApiHealth()
+const { status: bootstrapStatus, available: bootstrapAvailable, openUserDataFolder } =
+  useAdminApiBootstrap()
+
+const apiUnreachable = computed(() => reachable.value === false)
+const apiLogExcerpt = computed(() =>
+  formatApiLogExcerpt(bootstrapStatus.value?.logTail ?? ''),
+)
 
 const highlights = [
   {
@@ -162,6 +175,43 @@ async function submitLogin() {
             Zadajte prihlasovacie údaje operátorského účtu.
           </p>
         </header>
+
+        <Message
+          v-if="apiUnreachable"
+          severity="warn"
+          :closable="false"
+          class="mb-4"
+        >
+          <div class="space-y-2 text-sm">
+            <p class="m-0 font-semibold">Admin API sa nespustilo.</p>
+            <p class="m-0 text-xs">
+              Očakávaná adresa: <code>http://127.0.0.1:3099/health</code>. Reštartujte aplikáciu.
+              Po preinštalácii skontrolujte
+              <code>%APPDATA%\JOBBIE Admin\.env</code> — prázdny súbor prepíše tajomstvá z buildu.
+            </p>
+            <pre
+              v-if="bootstrapAvailable && apiLogExcerpt"
+              class="m-0 max-h-28 overflow-auto rounded bg-slate-900/5 p-2 text-[0.7rem] leading-relaxed"
+            >{{ apiLogExcerpt }}</pre>
+            <div class="flex flex-wrap gap-2">
+              <Button
+                :label="checking ? 'Kontrolujem…' : 'Skúsiť znova'"
+                size="small"
+                severity="warn"
+                :disabled="checking"
+                @click="checkWithRetry()"
+              />
+              <Button
+                v-if="bootstrapAvailable"
+                label="Otvoriť priečinok konfigurácie"
+                size="small"
+                severity="secondary"
+                outlined
+                @click="openUserDataFolder"
+              />
+            </div>
+          </div>
+        </Message>
 
         <form
           class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm shadow-slate-200/60 sm:p-8"
