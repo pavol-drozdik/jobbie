@@ -1,4 +1,9 @@
-﻿## 2026-07-10 — Admin desktop Vite env in CI builds
+﻿## 2026-07-10 — Admin desktop Turnstile (Electron)
+
+- **jobbie-admin:** packaged UI served on `http://127.0.0.1:5198` (`electron/static-ui-server.cjs`) so Cloudflare Turnstile works; login shows CAPTCHA widget only after Supabase requests it.
+- **docs:** Cloudflare hostname `127.0.0.1` required for desktop widget.
+
+## 2026-07-10 — Admin desktop Vite env in CI builds
 
 - **jobbie-admin:** `scripts/write-vite-env.cjs` bakes `VITE_ADMIN_API_URL` (default localhost), `VITE_SUPABASE_*`, Turnstile into `app/.env.production.local` during `build:app:pack`; login no longer errors when `VITE_ADMIN_API_URL` is unset (defaults to `127.0.0.1:3099`).
 - **CI:** maps `ADMIN_*` secrets into Vite env on macOS/Windows build steps.
