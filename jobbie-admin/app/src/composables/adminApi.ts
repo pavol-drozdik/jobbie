@@ -1,8 +1,8 @@
 import { useAdminAuth } from './adminAuth'
 
-const baseUrl =
-  import.meta.env.VITE_ADMIN_API_URL?.replace(/\/$/, '') ||
-  'http://127.0.0.1:3099'
+import { ADMIN_API_BASE_URL } from '../config/admin-api-url'
+
+const baseUrl = ADMIN_API_BASE_URL
 
 export type ApiResult<T> =
   | { ok: true; data: T; status: number }

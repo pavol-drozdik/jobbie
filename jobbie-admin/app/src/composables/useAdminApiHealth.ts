@@ -1,8 +1,7 @@
 import { onMounted, ref } from 'vue'
+import { ADMIN_API_BASE_URL } from '../config/admin-api-url'
 
-const baseUrl =
-  import.meta.env.VITE_ADMIN_API_URL?.replace(/\/$/, '') ||
-  'http://127.0.0.1:3099'
+const baseUrl = ADMIN_API_BASE_URL
 
 export function useAdminApiHealth() {
   const reachable = ref<boolean | null>(null)

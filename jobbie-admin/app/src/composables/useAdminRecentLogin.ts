@@ -1,11 +1,10 @@
 import { computed, ref } from 'vue'
+import { ADMIN_API_BASE_URL } from '../config/admin-api-url'
 
 const DEFAULT_RECENT_LOGIN_MINUTES = 120
 const WARN_BEFORE_MINUTES = 5
 
-const baseUrl =
-  import.meta.env.VITE_ADMIN_API_URL?.replace(/\/$/, '') ||
-  'http://127.0.0.1:3099'
+const baseUrl = ADMIN_API_BASE_URL
 
 const recentLoginMinutes = ref(DEFAULT_RECENT_LOGIN_MINUTES)
 let configLoaded = false

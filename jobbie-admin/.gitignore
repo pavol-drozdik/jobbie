@@ -10,5 +10,6 @@ build/api.env
 build/github-update-token
 api/.env
 app/.env
+app/.env.production.local
 api/.data/
 *.log

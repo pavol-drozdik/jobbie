@@ -34,10 +34,6 @@ const router = useRouter()
 const route = useRoute()
 
 const configHint = computed(() => {
-  const apiUrl = import.meta.env.VITE_ADMIN_API_URL?.trim()
-  if (!apiUrl) {
-    return 'Nastavte VITE_ADMIN_API_URL=http://127.0.0.1:3099 v app/.env.'
-  }
   if (captchaRequired.value && !turnstileSiteKey.value) {
     return 'Supabase vyžaduje CAPTCHA. Pridajte VITE_TURNSTILE_SITE_KEY do app/.env (rovnaký ako NUXT_PUBLIC_TURNSTILE_SITE_KEY v app-pwa/.env).'
   }

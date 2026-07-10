@@ -187,7 +187,11 @@ Build Mac `.dmg` and Windows `.exe` via CI and publish both to **GitHub Releases
 | `ADMIN_SUPABASE_JWT_SECRET` | yes | `SUPABASE_JWT_SECRET` |
 | `ADMIN_AUDIT_CHAIN_SECRET` | yes | `AUDIT_CHAIN_SECRET` |
 | `ADMIN_GITHUB_UPDATE_TOKEN` | yes (auto-update) | Fine-grained GitHub PAT — **Contents: Read-only** on this private repo (release downloads) |
+| `ADMIN_TURNSTILE_SITE_KEY` | no | Same as `NUXT_PUBLIC_TURNSTILE_SITE_KEY` — baked into UI at CI build (CAPTCHA on login) |
+| `ADMIN_VITE_ADMIN_API_URL` | no | Override only; default `http://127.0.0.1:3099` (local Nest API in packaged app) |
 | `ADMIN_PWA_PUBLIC_URL` | no | `PWA_PUBLIC_URL` (default `https://jobbie.sk` if omitted) |
+
+`ADMIN_SUPABASE_URL` / `ADMIN_SUPABASE_ANON_KEY` are also written into the Vue build (`VITE_SUPABASE_*`) during CI — **a GitHub secret alone is not enough** unless the workflow maps it at build time (`npm run vite:env` inside `build:app:pack`).
 
 Optional Infra / analytics secrets (`VPS_*`, PostHog, GA4, …) are passed through when set (reuse existing deploy secrets where names match).
 

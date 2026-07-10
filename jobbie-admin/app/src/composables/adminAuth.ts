@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { computed, ref } from 'vue'
+import { ADMIN_API_BASE_URL } from '../config/admin-api-url'
 import { parseAdminLoginApiError } from '../utils/map-admin-login-error'
 
 const ACCESS_STORAGE_KEY = 'jb_admin_access_token'
@@ -12,9 +13,7 @@ const loading = ref(false)
 
 let supabase: SupabaseClient | null = null
 
-const adminApiBase =
-  import.meta.env.VITE_ADMIN_API_URL?.replace(/\/$/, '') ||
-  'http://127.0.0.1:3099'
+const adminApiBase = ADMIN_API_BASE_URL
 
 function getSupabaseOptional(): SupabaseClient | null {
   if (supabase) return supabase
