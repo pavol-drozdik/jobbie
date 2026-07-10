@@ -714,6 +714,10 @@ export class PromoCampaignService {
         this.logger.log(
           `First-publish promo granted ${result.credits_granted} to ${userId}`,
         );
+      } else if (result.reason && result.reason !== 'no_code') {
+        this.logger.debug(
+          `First-publish promo not granted for ${userId}: ${result.reason}`,
+        );
       }
     }
   }
