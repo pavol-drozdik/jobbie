@@ -221,14 +221,17 @@ async function ensureApiReady() {
 }
 
 function windowIconPath() {
-  const buildDir = path.join(__dirname, '..', 'build')
+  const devBuildDir = path.join(__dirname, '..', 'build')
+  const packagedIconsDir = path.join(process.resourcesPath, 'icons')
+  const baseDir = app.isPackaged ? packagedIconsDir : devBuildDir
+
   if (process.platform === 'win32') {
-    return path.join(buildDir, 'icon.ico')
+    return path.join(baseDir, 'icon.ico')
   }
   if (process.platform === 'darwin') {
-    return path.join(buildDir, 'icon.icns')
+    return path.join(baseDir, 'icon.icns')
   }
-  return path.join(buildDir, 'icon-1024.png')
+  return path.join(baseDir, 'icon.png')
 }
 
 function createWindow() {

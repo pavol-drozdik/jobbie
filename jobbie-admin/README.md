@@ -158,7 +158,7 @@ npm run icons:generate
 
 The build compiles the Nest API and Vue UI, then packages them with Electron. **macOS `.dmg` must be built on a Mac** (or macOS CI runner); Windows cannot cross-compile a signed-looking `.app` reliably.
 
-> **Note:** The Vue UI folder is named `app/`, which electron-builder would treat as the Electron app dir by default. `package.json` sets `build.directories.app` to `"."` so packaging uses the repo root (`electron/main.cjs`). Windows builds disable executable signing edits (`signAndEditExecutable: false`) so packaging works without admin symlink privileges.
+> **Note:** The Vue UI folder is named `app/`, which electron-builder would treat as the Electron app dir by default. `package.json` sets `build.directories.app` to `"."` so packaging uses the repo root (`electron/main.cjs`). Windows uses `win.sign: null` (no Authenticode) while still embedding `build/icon.ico` via rcedit — do **not** set `signAndEditExecutable: false` or the `.exe` keeps the default Electron icon.
 >
 > Windows builds write to a unique `release-build-<timestamp>-<pid>/` folder during packaging; the NSIS installer is copied to `release/`. See [Troubleshooting (Windows build)](#troubleshooting-windows-build).
 

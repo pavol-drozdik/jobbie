@@ -1,4 +1,8 @@
-﻿## 2026-07-10 — Admin desktop auto-update (private GitHub)
+﻿## 2026-07-10 — Admin desktop app icon
+
+- **jobbie-admin:** embed JOBBIE icon in Windows `.exe` (`win.sign: null` instead of `signAndEditExecutable: false`); bundle `build/icon.*` in `resources/icons/` for packaged window icon; root `build.icon` for electron-builder.
+
+## 2026-07-10 — Admin desktop auto-update (private GitHub)
 
 - **jobbie-admin:** `electron-updater` — checks private GitHub Releases on startup; PAT from `resources/github-update-token`; `scripts/write-update-token.cjs`, `scripts/set-package-version.cjs`.
 - **CI:** `ADMIN_GITHUB_UPDATE_TOKEN` secret; sync `package.json` version to release tag; upload `latest.yml` / `latest-mac.yml` (+ blockmaps) to Releases.
