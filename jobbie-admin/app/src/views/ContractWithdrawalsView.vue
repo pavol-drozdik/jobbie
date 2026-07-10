@@ -155,7 +155,7 @@ async function onStatusChange(
       message: `Zamietnuť žiadosť od ${row.name} (faktúra ${row.invoice_number})?`,
       confirmLabel: 'Zamietnuť',
       cancelLabel: 'Zrušiť',
-      destructive: true,
+      danger: true,
     })
     if (!ok) return
   }
