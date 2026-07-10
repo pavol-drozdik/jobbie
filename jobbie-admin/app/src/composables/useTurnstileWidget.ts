@@ -54,6 +54,7 @@ export function useTurnstileWidget() {
   const containerRef = ref<HTMLElement | null>(null)
   const widgetId = ref<string | undefined>(undefined)
   const remountKey = ref(0)
+  const loadError = ref<string | null>(null)
 
   function clearToken(): void {
     captchaToken.value = ''
@@ -74,8 +75,18 @@ export function useTurnstileWidget() {
 
   async function mount(): Promise<void> {
     if (!siteKey.value || !containerRef.value) return
-    await loadTurnstileScript()
-    if (!window.turnstile?.render || !containerRef.value) return
+    loadError.value = null
+    try {
+      await loadTurnstileScript()
+    } catch {
+      loadError.value =
+        'Turnstile sa nepodarilo načítať. V Cloudflare Turnstile pridajte hostname 127.0.0.1 (desktop admin) a skontrolujte sieť.'
+      return
+    }
+    if (!window.turnstile?.render || !containerRef.value) {
+      loadError.value = 'Turnstile API nie je k dispozícii.'
+      return
+    }
     removeWidget()
     widgetId.value = window.turnstile.render(containerRef.value, {
       sitekey: siteKey.value,
@@ -102,5 +113,6 @@ export function useTurnstileWidget() {
     reset,
     removeWidget,
     clearToken,
+    loadError,
   }
 }

@@ -26,7 +26,7 @@ const turnstileSiteKey = computed(() =>
   String(import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '').trim(),
 )
 const showTurnstile = computed(
-  () => Boolean(turnstileSiteKey.value) || captchaRequired.value,
+  () => captchaRequired.value && Boolean(turnstileSiteKey.value),
 )
 
 const { signIn, signOut, loading, authError, lastAuthErrorCode } = useAdminAuth()

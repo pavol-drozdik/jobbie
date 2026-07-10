@@ -3,6 +3,7 @@ const path = require('path')
 const fs = require('fs')
 const { spawn } = require('child_process')
 const { initAutoUpdater } = require('./auto-updater.cjs')
+const { createStaticUiServer } = require('./static-ui-server.cjs')
 
 const isDev = !app.isPackaged
 const API_PORT = process.env.ADMIN_API_PORT || '3099'
@@ -15,6 +16,10 @@ const SKIP_API_SPAWN =
 let apiProcess = null
 /** @type {BrowserWindow | null} */
 let mainWindow = null
+/** @type {import('node:http').Server | null} */
+let uiStaticServer = null
+
+const ADMIN_UI_PORT = Number(process.env.ADMIN_UI_PORT || '5198')
 
 function apiRootDir() {
   return path.join(__dirname, '..', 'api')
@@ -253,21 +258,53 @@ function createWindow() {
       mainWindow = null
     }
   })
+  return win
+}
+
+async function loadWindowContent(win) {
   if (isDev) {
-    win.loadURL('http://127.0.0.1:5199')
+    await win.loadURL('http://127.0.0.1:5199')
     win.webContents.openDevTools({ mode: 'detach' })
-  } else {
-    win.loadFile(path.join(__dirname, '..', 'app', 'dist', 'index.html'))
+    return
+  }
+
+  const distDir = path.join(__dirname, '..', 'app', 'dist')
+  const indexHtml = path.join(distDir, 'index.html')
+  if (!fs.existsSync(indexHtml)) {
+    dialog.showErrorBox(
+      'JOBBIE Admin',
+      'UI build missing from installation. Reinstall the app.',
+    )
+    return
+  }
+
+  try {
+    if (uiStaticServer) {
+      uiStaticServer.close()
+      uiStaticServer = null
+    }
+    const { server, url } = await createStaticUiServer(distDir, ADMIN_UI_PORT)
+    uiStaticServer = server
+    console.log(`[admin] UI static server at ${url}`)
+    await win.loadURL(url)
+  } catch (err) {
+    console.error('[admin] UI static server failed, falling back to file://', err)
+    await win.loadFile(indexHtml)
   }
 }
 
 app.whenReady().then(async () => {
   await ensureApiReady()
-  createWindow()
+  const win = createWindow()
+  await loadWindowContent(win)
   initAutoUpdater(() => mainWindow)
 })
 
 app.on('window-all-closed', () => {
+  if (uiStaticServer) {
+    uiStaticServer.close()
+    uiStaticServer = null
+  }
   if (apiProcess) {
     apiProcess.kill('SIGTERM')
     setTimeout(() => {
@@ -283,6 +320,9 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) createWindow()
+app.on('activate', async () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    const win = createWindow()
+    await loadWindowContent(win)
+  }
 })
