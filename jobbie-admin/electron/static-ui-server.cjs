@@ -32,7 +32,8 @@ function createStaticUiServer(rootDir, port) {
       if (rel === '/') rel = '/index.html'
 
       const filePath = path.normalize(path.join(root, rel.replace(/^\//, '')))
-      if (!filePath.startsWith(root)) {
+      const relToRoot = path.relative(root, filePath)
+      if (relToRoot.startsWith('..') || path.isAbsolute(relToRoot)) {
         res.writeHead(403)
         res.end('Forbidden')
         return
@@ -66,4 +67,26 @@ function createStaticUiServer(rootDir, port) {
   })
 }
 
-module.exports = { createStaticUiServer }
+/**
+ * @param {string} rootDir
+ * @param {number} preferredPort
+ */
+async function createStaticUiServerWithFallback(rootDir, preferredPort) {
+  const maxAttempts = 12
+  let lastError = null
+  for (let offset = 0; offset < maxAttempts; offset += 1) {
+    const port = preferredPort + offset
+    try {
+      return await createStaticUiServer(rootDir, port)
+    } catch (err) {
+      lastError = err
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'EADDRINUSE') {
+        continue
+      }
+      throw err
+    }
+  }
+  throw lastError ?? new Error(`No free UI port near ${preferredPort}`)
+}
+
+module.exports = { createStaticUiServer, createStaticUiServerWithFallback }
