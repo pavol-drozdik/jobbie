@@ -52,18 +52,21 @@
     },
     "files": [
       "electron/**/*",
-      "api/dist/**/*",
-      "api/package.json",
-      "api/node_modules/**/*",
       "app/dist/**/*",
       "!release-build-*{,/**/*}",
       "!release-fresh{,/**/*}"
     ],
-    "asarUnpack": [
-      "api/dist/**/*",
-      "api/node_modules/**/*"
-    ],
+    "asarUnpack": [],
     "extraResources": [
+      {
+        "from": "api",
+        "to": "api",
+        "filter": [
+          "dist/**/*",
+          "package.json",
+          "node_modules/**/*"
+        ]
+      },
       {
         "from": "api/.env.example",
         "to": "api.env.example"
