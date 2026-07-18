@@ -53,8 +53,12 @@
     "files": [
       "electron/**/*",
       "app/dist/**/*",
+      "package.json",
+      "node_modules/**/*",
       "!release-build-*{,/**/*}",
-      "!release-fresh{,/**/*}"
+      "!release-fresh{,/**/*}",
+      "!**/python3.14",
+      "!**/Python.framework/**"
     ],
     "asarUnpack": [],
     "extraResources": [
@@ -64,7 +68,9 @@
         "filter": [
           "dist/**/*",
           "package.json",
-          "node_modules/**/*"
+          "node_modules/**/*",
+          "!node_modules/**/python3.14",
+          "!node_modules/**/Python.framework/**"
         ]
       },
       {
@@ -131,7 +137,8 @@
       "sign": "-",
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
-      "x64ArchFiles": "Contents/Resources/api/node_modules/**"
+      "mergeASARs": true,
+      "x64ArchFiles": "**/python3.14"
     },
     "dmg": {
       "title": "JOBBIE Admin ${version}",
