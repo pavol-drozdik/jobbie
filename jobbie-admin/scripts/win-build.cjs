@@ -8,20 +8,41 @@ const force = args.includes('--force');
 const unsigned = args.includes('--unsigned');
 
 if (!force) {
-  const clean = spawnSync('npm', ['run', 'clean:release'], {
-    cwd: root,
-    stdio: 'inherit',
-    shell: true,
+  const clean = spawnSync(
+    process.platform === 'win32' ? 'npm.cmd' : 'npm',
+    ['run', 'clean:release'],
+    {
+      cwd: root,
+      stdio: 'inherit',
+      shell: false,
+    },
+  );
+
+  if (clean.error) {
+    console.error('clean:release failed to start:', clean.error);
+  }
+
+  console.log('clean:release exit:', {
+    status: clean.status,
+    signal: clean.signal,
   });
+
   if (clean.status !== 0) {
-    console.warn('clean:release reported issues; continuing with a fresh output directory.');
+    console.warn(
+      'clean:release reported issues; continuing with a fresh output directory.',
+    );
   }
 }
 
 const outDirName = `release-build-${Date.now()}-${process.pid}`;
 const outDir = path.join(root, outDirName);
 fs.mkdirSync(outDir, { recursive: true });
-console.log(`electron-builder output: ${outDirName}/`);
+
+console.log('electron-builder output:', {
+  outDirName,
+  outDir,
+  exists: fs.existsSync(outDir),
+});
 
 const ebEnv = { ...process.env };
 if (unsigned) {
@@ -45,8 +66,17 @@ const eb = spawnSync(
   },
 );
 
+if (eb.error) {
+  console.error('electron-builder failed to start:', eb.error);
+  process.exit(1);
+}
+
 if (eb.status !== 0) {
-  process.exit(eb.status === null ? 1 : eb.status);
+  console.error('electron-builder failed:', {
+    status: eb.status,
+    signal: eb.signal,
+  });
+  process.exit(eb.status ?? 1);
 }
 
 console.log('electron-builder finished, starting copy step...');

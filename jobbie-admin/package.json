@@ -54,9 +54,7 @@
       "electron/**/*",
       "app/dist/**/*",
       "!release-build-*{,/**/*}",
-      "!release-fresh{,/**/*}",
-      "!**/python3*",
-      "!**/Python.framework/**/*"
+      "!release-fresh{,/**/*}"
     ],
     "asarUnpack": [],
     "extraResources": [
@@ -64,14 +62,9 @@
         "from": "api",
         "to": "api",
         "filter": [
-        "dist/**/*",
-        "package.json",
-        "node_modules/**/*",
-        "!node_modules/**/prebuilds/darwin-*/**/*",
-        "!node_modules/**/prebuilds/win32-*/**/*",
-        "!node_modules/**/prebuilds/linux-*/**/*",
-        "!node_modules/**/python*",
-        "!node_modules/**/Python.framework/**"
+          "dist/**/*",
+          "package.json",
+          "node_modules/**/*"
         ]
       },
       {
@@ -129,9 +122,6 @@
           ]
         }
       ],
-      "x64ArchFiles": [
-        "Contents/Resources/api/node_modules/**"
-      ],
       "icon": "build/icon.icns",
       "category": "public.app-category.business",
       "artifactName": "JOBBIE-Admin-${version}.${ext}",
@@ -140,7 +130,8 @@
       "identity": null,
       "sign": "-",
       "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist"
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "x64ArchFiles": "Contents/Resources/api/node_modules/**"
     },
     "dmg": {
       "title": "JOBBIE Admin ${version}",
