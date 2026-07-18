@@ -54,7 +54,9 @@
       "electron/**/*",
       "app/dist/**/*",
       "!release-build-*{,/**/*}",
-      "!release-fresh{,/**/*}"
+      "!release-fresh{,/**/*}",
+      "!**/python3*",
+      "!**/Python.framework/**/*"
     ],
     "asarUnpack": [],
     "extraResources": [
@@ -64,7 +66,9 @@
         "filter": [
           "dist/**/*",
           "package.json",
-          "node_modules/**/*"
+          "node_modules/**/*",
+          "!node_modules/**/python*",
+          "!node_modules/**/Python.framework/**"
         ]
       },
       {
