@@ -64,11 +64,14 @@
         "from": "api",
         "to": "api",
         "filter": [
-          "dist/**/*",
-          "package.json",
-          "node_modules/**/*",
-          "!node_modules/**/python*",
-          "!node_modules/**/Python.framework/**"
+        "dist/**/*",
+        "package.json",
+        "node_modules/**/*",
+        "!node_modules/**/prebuilds/darwin-*/**/*",
+        "!node_modules/**/prebuilds/win32-*/**/*",
+        "!node_modules/**/prebuilds/linux-*/**/*",
+        "!node_modules/**/python*",
+        "!node_modules/**/Python.framework/**"
         ]
       },
       {
@@ -125,6 +128,9 @@
             "universal"
           ]
         }
+      ],
+      "x64ArchFiles": [
+        "Contents/Resources/api/node_modules/**"
       ],
       "icon": "build/icon.icns",
       "category": "public.app-category.business",

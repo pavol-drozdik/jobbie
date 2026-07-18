@@ -29,19 +29,38 @@ if (unsigned) {
 }
 
 const eb = spawnSync(
-  'npx',
-  ['electron-builder', '--win', '--publish', 'never', `-c.directories.output=${outDirName}`],
-  { cwd: root, stdio: 'inherit', shell: true, env: ebEnv },
+  process.platform === 'win32' ? 'npx.cmd' : 'npx',
+  [
+    'electron-builder',
+    '--win',
+    '--publish',
+    'never',
+    `-c.directories.output=${outDirName}`,
+  ],
+  {
+    cwd: root,
+    stdio: 'inherit',
+    shell: false,
+    env: ebEnv,
+  },
 );
 
 if (eb.status !== 0) {
   process.exit(eb.status === null ? 1 : eb.status);
 }
 
-const copy = spawnSync('node', [path.join(__dirname, 'copy-win-installer.cjs'), outDirName], {
-  cwd: root,
-  stdio: 'inherit',
-  shell: false,
-});
+console.log('electron-builder finished, starting copy step...');
+
+const copy = spawnSync(
+  process.execPath,
+  [path.join(__dirname, 'copy-win-installer.cjs'), outDirName],
+  {
+    cwd: root,
+    stdio: 'inherit',
+    shell: false,
+  },
+);
+
+console.log('copy step finished with code:', copy.status);
 
 process.exit(copy.status === null ? 1 : copy.status);
