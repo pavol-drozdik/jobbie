@@ -46,9 +46,10 @@ function appendApiLog(chunk) {
 
 function apiRootDir() {
   if (isDev) {
-    return path.join(__dirname, '..', 'api')
+    return path.join(process.resourcesPath, 'api')
   }
   const candidates = [
+    path.join(process.resourcesPath, 'api'),
     path.join(process.resourcesPath, 'app.asar.unpacked', 'api'),
     path.join(app.getAppPath() + '.unpacked', 'api'),
     path.join(__dirname, '..', 'api'),
