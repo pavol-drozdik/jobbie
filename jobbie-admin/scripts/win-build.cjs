@@ -4,25 +4,22 @@ const path = require('path');
 
 const root = path.join(__dirname, '..');
 const args = process.argv.slice(2);
+
 const force = args.includes('--force');
 const unsigned = args.includes('--unsigned');
 
-function runCommand(command, args, options = {}) {
-  if (process.platform === 'win32' && command.endsWith('.cmd')) {
-    return spawnSync(
-      process.env.ComSpec || 'cmd.exe',
-      [
-        '/d',
-        '/s',
-        '/c',
-        `"${command}"`,
-        ...args,
-      ],
-      options,
-    );
-  }
+function runCommand(command, commandArgs, options = {}) {
+  const isWindowsCmd =
+    process.platform === 'win32' && command.toLowerCase().endsWith('.cmd');
 
-  return spawnSync(command, args, options);
+  return spawnSync(
+    command,
+    commandArgs,
+    {
+      ...options,
+      shell: isWindowsCmd,
+    },
+  );
 }
 
 if (!force) {
@@ -32,37 +29,32 @@ if (!force) {
     {
       cwd: root,
       stdio: 'inherit',
-      shell: false,
     },
   );
 
   if (clean.error) {
-    console.error('clean:release failed to start:', clean.error);
+    console.warn('clean:release failed:', clean.error.message);
   }
-
-  console.log('clean:release exit:', {
-    status: clean.status,
-    signal: clean.signal,
-  });
 
   if (clean.status !== 0) {
     console.warn(
-      'clean:release reported issues; continuing with a fresh output directory.',
+      'clean:release failed, continuing with fresh output directory.',
     );
   }
 }
 
 const outDirName = `release-build-${Date.now()}-${process.pid}`;
+
 const outDir = path.join(root, outDirName);
+
 fs.mkdirSync(outDir, { recursive: true });
 
-console.log('electron-builder output:', {
-  outDirName,
-  outDir,
-  exists: fs.existsSync(outDir),
-});
+console.log('electron-builder output:', outDirName);
 
-const ebEnv = { ...process.env };
+const ebEnv = {
+  ...process.env,
+};
+
 if (unsigned) {
   ebEnv.CSC_IDENTITY_AUTO_DISCOVERY = 'false';
 }
@@ -78,11 +70,13 @@ const electronBuilderBin = path.join(
 
 if (!fs.existsSync(electronBuilderBin)) {
   console.error(
-    'Missing electron-builder binary:',
+    'electron-builder not found:',
     electronBuilderBin,
   );
   process.exit(1);
 }
+
+console.log('using electron-builder:', electronBuilderBin);
 
 const eb = runCommand(
   electronBuilderBin,
@@ -95,41 +89,61 @@ const eb = runCommand(
   {
     cwd: root,
     stdio: 'inherit',
-    shell: false,
     env: ebEnv,
   },
 );
 
 if (eb.error) {
-  console.error('electron-builder failed to start:', eb.error);
+  console.error(
+    'electron-builder start failed:',
+    eb.error,
+  );
   process.exit(1);
 }
 
 if (eb.status !== 0) {
-  console.error('electron-builder failed:', {
-    status: eb.status,
-    signal: eb.signal,
-  });
+  console.error(
+    'electron-builder failed:',
+    {
+      status: eb.status,
+      signal: eb.signal,
+    },
+  );
+
   process.exit(eb.status ?? 1);
 }
 
-console.log('electron-builder finished, starting copy step...');
+console.log('electron-builder finished.');
 
 const copy = spawnSync(
   process.execPath,
-  [path.join(__dirname, 'copy-win-installer.cjs'), outDirName],
+  [
+    path.join(
+      __dirname,
+      'copy-win-installer.cjs',
+    ),
+    outDirName,
+  ],
   {
     cwd: root,
     stdio: 'inherit',
-    shell: false,
   },
 );
 
 if (copy.error) {
-  console.error('copy step failed to start:', copy.error);
+  console.error(
+    'copy step failed:',
+    copy.error,
+  );
   process.exit(1);
 }
 
-console.log('copy step finished with code:', copy.status);
+if (copy.status !== 0) {
+  console.error(
+    'copy step failed with code:',
+    copy.status,
+  );
+  process.exit(copy.status ?? 1);
+}
 
-process.exit(copy.status ?? 1);
+console.log('copy step completed successfully.');
