@@ -7,8 +7,26 @@ const args = process.argv.slice(2);
 const force = args.includes('--force');
 const unsigned = args.includes('--unsigned');
 
+function runCommand(command, args, options = {}) {
+  if (process.platform === 'win32' && command.endsWith('.cmd')) {
+    return spawnSync(
+      process.env.ComSpec || 'cmd.exe',
+      [
+        '/d',
+        '/s',
+        '/c',
+        `"${command}"`,
+        ...args,
+      ],
+      options,
+    );
+  }
+
+  return spawnSync(command, args, options);
+}
+
 if (!force) {
-  const clean = spawnSync(
+  const clean = runCommand(
     process.platform === 'win32' ? 'npm.cmd' : 'npm',
     ['run', 'clean:release'],
     {
@@ -49,10 +67,26 @@ if (unsigned) {
   ebEnv.CSC_IDENTITY_AUTO_DISCOVERY = 'false';
 }
 
-const eb = spawnSync(
-  process.platform === 'win32' ? 'npx.cmd' : 'npx',
+const electronBuilderBin = path.join(
+  root,
+  'node_modules',
+  '.bin',
+  process.platform === 'win32'
+    ? 'electron-builder.cmd'
+    : 'electron-builder',
+);
+
+if (!fs.existsSync(electronBuilderBin)) {
+  console.error(
+    'Missing electron-builder binary:',
+    electronBuilderBin,
+  );
+  process.exit(1);
+}
+
+const eb = runCommand(
+  electronBuilderBin,
   [
-    'electron-builder',
     '--win',
     '--publish',
     'never',
@@ -91,6 +125,11 @@ const copy = spawnSync(
   },
 );
 
+if (copy.error) {
+  console.error('copy step failed to start:', copy.error);
+  process.exit(1);
+}
+
 console.log('copy step finished with code:', copy.status);
 
-process.exit(copy.status === null ? 1 : copy.status);
+process.exit(copy.status ?? 1);
