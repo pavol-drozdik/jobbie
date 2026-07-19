@@ -7,6 +7,7 @@ const {
   parseEnvFile,
   resolvePackagedApiEnv,
   isEnvComplete,
+  isPlaceholderValue,
 } = require('./resolve-api-env.cjs')
 
 function withTempDir(fn) {
@@ -91,5 +92,47 @@ assert.equal(
   ),
   false,
 )
+
+// stale example-seeded override (placeholder URL) must not shadow real bundled secret
+withTempDir((dir) => {
+  const bundled = path.join(dir, 'api.env')
+  const user = path.join(dir, 'user.env')
+  fs.writeFileSync(
+    bundled,
+    'SUPABASE_URL=https://real.supabase.co\nSUPABASE_SERVICE_ROLE_KEY=sr_real\n',
+  )
+  fs.writeFileSync(user, 'SUPABASE_URL=https://your-project.supabase.co\n')
+
+  const merged = mergeEnvLayers([bundled, user])
+  assert.equal(merged.SUPABASE_URL, 'https://real.supabase.co')
+})
+
+// placeholder detection: example values count as missing, real values do not
+assert.equal(isPlaceholderValue(''), true)
+assert.equal(isPlaceholderValue('  '), true)
+assert.equal(isPlaceholderValue('https://your-project.supabase.co'), true)
+assert.equal(isPlaceholderValue('https://ctleiabsrsqxjlnuordj.supabase.co'), false)
+assert.equal(isPlaceholderValue('sr_bundled'), false)
+
+// a build that bundled api/.env.example is reported as incomplete (not spawned + crashed)
+withTempDir((dir) => {
+  const resources = path.join(dir, 'resources')
+  const userData = path.join(dir, 'userData')
+  fs.mkdirSync(resources)
+  fs.mkdirSync(userData)
+  fs.writeFileSync(
+    path.join(resources, 'api.env'),
+    'SUPABASE_URL=https://your-project.supabase.co\nSUPABASE_SERVICE_ROLE_KEY=sr\nSUPABASE_ANON_KEY=anon\nSUPABASE_JWT_SECRET=jwt\nAUDIT_CHAIN_SECRET=audit\n',
+  )
+
+  const result = resolvePackagedApiEnv({
+    isProduction: true,
+    resourcesPath: resources,
+    userDataPath: userData,
+    exeDir: path.join(dir, 'exe'),
+  })
+
+  assert.ok(result.missingKeys.includes('SUPABASE_URL'))
+})
 
 console.log('resolve-api-env.spec.cjs: OK')

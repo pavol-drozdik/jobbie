@@ -10,6 +10,25 @@ const REQUIRED_KEYS = [
 
 const PRODUCTION_EXTRA_KEYS = ['AUDIT_CHAIN_SECRET']
 
+/**
+ * Values that are technically non-empty but are template placeholders (from api/.env.example),
+ * not real credentials. Treated as missing so the app shows the "configure env" dialog instead
+ * of spawning the API and hard-crashing inside @supabase/supabase-js on a fake project URL.
+ */
+const PLACEHOLDER_PATTERNS = [
+  /your-project\.supabase\.co/i,
+  /^your[-_]/i,
+  /^changeme$/i,
+  /^replace[-_]?me$/i,
+]
+
+/** True when a value is empty or an example placeholder (i.e. not a usable secret). */
+function isPlaceholderValue(value) {
+  const v = typeof value === 'string' ? value.trim() : ''
+  if (!v) return true
+  return PLACEHOLDER_PATTERNS.some((re) => re.test(v))
+}
+
 function escapeEnvValue(value) {
   const s = String(value)
   if (/[\s#"'\\]/.test(s)) {
@@ -59,7 +78,9 @@ function mergeEnvLayers(layerPaths) {
     if (!layerPath || !fs.existsSync(layerPath)) continue
     const parsed = parseEnvFile(fs.readFileSync(layerPath, 'utf8'))
     for (const [key, value] of Object.entries(parsed)) {
-      if (value?.trim()) {
+      // Skip empty AND placeholder values so a stale example-seeded override
+      // (userData/.env copied from .env.example) can't shadow real bundled secrets.
+      if (!isPlaceholderValue(value)) {
         merged[key] = value.trim()
       }
     }
@@ -101,7 +122,7 @@ function resolvePackagedApiEnv(opts) {
     ? [...REQUIRED_KEYS, ...PRODUCTION_EXTRA_KEYS]
     : [...REQUIRED_KEYS]
 
-  const missingKeys = requiredKeys.filter((key) => !merged[key]?.trim())
+  const missingKeys = requiredKeys.filter((key) => isPlaceholderValue(merged[key]))
 
   fs.mkdirSync(opts.userDataPath, { recursive: true })
   fs.writeFileSync(runtimePath, formatEnvFile(merged), 'utf8')
@@ -125,12 +146,13 @@ function isEnvComplete(merged, isProduction) {
   const requiredKeys = isProduction
     ? [...REQUIRED_KEYS, ...PRODUCTION_EXTRA_KEYS]
     : [...REQUIRED_KEYS]
-  return requiredKeys.every((key) => merged[key]?.trim())
+  return requiredKeys.every((key) => !isPlaceholderValue(merged[key]))
 }
 
 module.exports = {
   REQUIRED_KEYS,
   PRODUCTION_EXTRA_KEYS,
+  isPlaceholderValue,
   parseEnvFile,
   mergeEnvLayers,
   formatEnvFile,

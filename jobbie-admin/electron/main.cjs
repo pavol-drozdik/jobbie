@@ -142,12 +142,13 @@ function resolveEnvFile() {
   return {
     envPath: resolved.runtimePath,
     missingKeys: resolved.missingKeys,
+    merged: resolved.merged,
   }
 }
 
 function startApi() {
   const apiDir = apiRootDir()
-  const { envPath, missingKeys } = resolveEnvFile()
+  const { envPath, missingKeys, merged } = resolveEnvFile()
   setApiBootstrapStatus({
     state: 'starting',
     missingEnvKeys: missingKeys,
@@ -168,6 +169,10 @@ function startApi() {
 
   const apiEnv = {
     ...process.env,
+    // The resolved env file is authoritative: spread its values AFTER process.env so a stray
+    // machine-level SUPABASE_URL / secret can't shadow the bundled credentials (dotenv and
+    // @nestjs/config both let a pre-existing process.env value win over the env file).
+    ...(merged ?? {}),
     NODE_ENV: isDev ? 'development' : 'production',
     ADMIN_API_PORT: API_PORT,
     PORT: API_PORT,
