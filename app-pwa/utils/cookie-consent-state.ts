@@ -48,6 +48,7 @@ const VISITOR_COOKIE_OPTIONS = {
 }
 
 let analyticsGranted = false
+let marketingGranted = false
 
 /** In-memory mirror updated by store + boot plugin (for sync reads in analytics clients). */
 export function setAnalyticsConsentGranted(value: boolean): void {
@@ -56,6 +57,15 @@ export function setAnalyticsConsentGranted(value: boolean): void {
 
 export function isAnalyticsConsentGranted(): boolean {
   return analyticsGranted
+}
+
+/** In-memory mirror of marketing consent (Meta Pixel and other ad tags). */
+export function setMarketingConsentGranted(value: boolean): void {
+  marketingGranted = value
+}
+
+export function isMarketingConsentGranted(): boolean {
+  return marketingGranted
 }
 
 export function parseConsentCookie(raw: string | null | undefined): CookieConsentPayload | null {

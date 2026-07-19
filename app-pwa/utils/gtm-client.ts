@@ -6,9 +6,12 @@ let consentListenerRegistered = false
 
 const GTM_CONTAINER_ID_PATTERN = /^GTM-[A-Z0-9]+$/i
 
-/** Third-party tags injected by GTM (not the container bootstrap). */
+/** Third-party analytics tags injected by GTM (not the container bootstrap). */
 export const INJECTED_ANALYTICS_SCRIPT_RE =
   /googletagmanager\.com\/gtag\/|google-analytics\.com|clarity\.ms|scripts\.clarity\.ms|c\.bing\.com|doubleclick\.net/i
+
+/** Meta Pixel tag injected by GTM (fbevents.js bootstrap + /tr beacon). */
+export const INJECTED_MARKETING_SCRIPT_RE = /connect\.facebook\.net|facebook\.com\/tr/i
 
 export function isGtmConfigured(): boolean {
   const config = useRuntimeConfig().public
@@ -45,6 +48,45 @@ export function signalAnalyticsConsentToGtm(granted: boolean): void {
   window.dataLayer.push({
     event: granted ? 'analytics_consent_granted' : 'analytics_consent_withdrawn',
     analytics_consent: granted,
+  })
+}
+
+export type RegistrationEventDetails = {
+  /** 'individual' | 'company' — mapped to a Meta content_category / GA4 param in GTM. */
+  accountType: string
+  /** Sign-up method for GA4 `sign_up` (email, google…). */
+  method?: string
+  /** True when the account was created but still needs email confirmation. */
+  emailConfirmationPending: boolean
+}
+
+/**
+ * Push a registration conversion to the dataLayer. GTM maps `sign_up` to GA4 sign_up and the
+ * Meta Pixel `CompleteRegistration` tag. Pushed unconditionally — GTM's marketing-consent
+ * trigger + Consent Mode decide whether it forwards to Meta, so no user is tracked without consent.
+ */
+export function trackRegistrationComplete(details: RegistrationEventDetails): void {
+  if (!import.meta.client) {
+    return
+  }
+  window.dataLayer = window.dataLayer ?? []
+  window.dataLayer.push({
+    event: 'sign_up',
+    method: details.method ?? 'email',
+    account_type: details.accountType,
+    email_confirmation_pending: details.emailConfirmationPending,
+  })
+}
+
+/** Custom dataLayer events so the Meta Pixel tag fires/stops on marketing consent changes. */
+export function signalMarketingConsentToGtm(granted: boolean): void {
+  if (!import.meta.client) {
+    return
+  }
+  window.dataLayer = window.dataLayer ?? []
+  window.dataLayer.push({
+    event: granted ? 'marketing_consent_granted' : 'marketing_consent_withdrawn',
+    marketing_consent: granted,
   })
 }
 
@@ -112,12 +154,29 @@ export function purgeInjectedAnalyticsScripts(): void {
   }
 }
 
-/** Remove GTM bootstrap + injected tags on consent withdraw so GA4/Clarity cannot keep sending. */
+/** Remove the Meta Pixel bootstrap + beacons and neutralize fbq on marketing consent withdraw. */
+export function teardownMetaPixel(): void {
+  if (!import.meta.client) {
+    return
+  }
+  document.querySelectorAll('script[src]').forEach((el) => {
+    const src = el.getAttribute('src') ?? ''
+    if (INJECTED_MARKETING_SCRIPT_RE.test(src)) {
+      el.remove()
+    }
+  })
+  if (typeof window.fbq === 'function') {
+    window.fbq = () => {}
+  }
+}
+
+/** Remove GTM bootstrap + all injected tags on consent withdraw so no tag can keep sending. */
 export function teardownGtmAnalytics(): void {
   if (!import.meta.client) {
     return
   }
   purgeInjectedAnalyticsScripts()
+  teardownMetaPixel()
   document.querySelectorAll('script[src]').forEach((el) => {
     const src = el.getAttribute('src') ?? ''
     if (GTM_BOOTSTRAP_SCRIPT_RE.test(src)) {

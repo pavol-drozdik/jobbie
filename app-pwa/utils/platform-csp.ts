@@ -215,6 +215,10 @@ export function buildContentSecurityPolicy(options: PlatformCspOptions): string 
 
     'https://*.clarity.ms',
 
+    'https://connect.facebook.net',
+
+    'https://www.facebook.com',
+
   ]
 
     .filter(Boolean)
@@ -240,6 +244,8 @@ export function buildContentSecurityPolicy(options: PlatformCspOptions): string 
     'https://*.google-analytics.com',
 
     'https://*.clarity.ms',
+
+    'https://www.facebook.com',
 
   ]
 
@@ -272,6 +278,8 @@ export function buildContentSecurityPolicy(options: PlatformCspOptions): string 
     'https://www.clarity.ms',
 
     'https://*.clarity.ms',
+
+    'https://connect.facebook.net',
 
   )
 

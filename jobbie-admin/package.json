@@ -137,7 +137,8 @@
       "sign": "-",
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
-      "mergeASARs": false
+      "mergeASARs": false,
+      "x64ArchFiles": "**/prebuilds/**/*"
     },
     "dmg": {
       "title": "JOBBIE Admin ${version}",

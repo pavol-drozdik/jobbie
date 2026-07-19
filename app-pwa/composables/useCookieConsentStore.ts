@@ -55,7 +55,7 @@ export function useCookieConsentStore() {
 
     ensureConsentVisitorId()
     consentCookie.value = buildConsentPayload(next)
-    applyAnalyticsConsent(next.analytics)
+    applyAnalyticsConsent(next.analytics, next.marketing)
     logCookieConsentEvent({
       action: resolvedAction,
       source: resolvedSource,

@@ -207,11 +207,14 @@ const necessaryRows = computed(() => {
   return rows.filter((row) => row.name !== 'cf_clearance')
 })
 
+const hasGtm = computed(
+  () =>
+    typeof config.public.gtmContainerId === 'string' &&
+    /^GTM-[A-Z0-9]+$/i.test(config.public.gtmContainerId.trim()),
+)
+
 const analyticsRows = computed(() => {
   const rows = buildAnalyticsCookieRows(inventoryCtx.value)
-  const hasGtm =
-    typeof config.public.gtmContainerId === 'string' &&
-    /^GTM-[A-Z0-9]+$/i.test(config.public.gtmContainerId.trim())
   const hasPosthog =
     typeof config.public.posthogKey === 'string' && config.public.posthogKey.trim().length > 0
   const hasSentry =
@@ -230,13 +233,16 @@ const analyticsRows = computed(() => {
       row.name === '_clck' ||
       row.name === '_clsk'
     ) {
-      return hasGtm
+      return hasGtm.value
     }
     return true
   })
 })
 
-const marketingRows = computed(() => buildMarketingCookieRows(inventoryCtx.value))
+// Meta Pixel is delivered through GTM, so its cookies only exist when a container is configured.
+const marketingRows = computed(() =>
+  hasGtm.value ? buildMarketingCookieRows(inventoryCtx.value) : [],
+)
 const personalizationRows = computed(() => buildPersonalizationCookieRows(inventoryCtx.value))
 
 function syncDraftFromProps(): void {
