@@ -46,6 +46,7 @@
     "appId": "sk.jobbie.admin",
     "productName": "JOBBIE Admin",
     "icon": "build/icon",
+    "compression": "store",
     "directories": {
       "output": "release",
       "buildResources": "build",
@@ -69,6 +70,8 @@
           "dist/**/*",
           "package.json",
           "node_modules/**/*",
+          "!node_modules/jobbie-admin",
+          "!node_modules/jobbie-admin/**",
           "!node_modules/**/python3*",
           "!node_modules/**/Python.framework/**",
           "!node_modules/**/.bin/**"
