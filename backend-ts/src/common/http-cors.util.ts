@@ -40,11 +40,17 @@ const DEFAULT_DEV_ORIGINS = [
  *
  * /api/payments/webhook — Stripe posts webhooks server-to-server with no Origin
  * header; the event is authenticated by Stripe signature verification, not CORS.
+ *
+ * /robots.txt, /favicon.ico — crawlers and browsers fetch these public, non-
+ * credentialed well-known paths with no Origin. Rejecting them as CORS errors
+ * only produces unhandled-error noise, so let the request route normally.
  */
 const CORS_BYPASS_PATHS = new Set([
   '/health',
   '/metrics',
   '/api/payments/webhook',
+  '/robots.txt',
+  '/favicon.ico',
 ]);
 
 /**

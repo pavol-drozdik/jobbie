@@ -138,9 +138,27 @@ export function buildAnalyticsCookieRows(ctx: CookieInventoryContext): CookieInv
   ]
 }
 
-/** Marketingové cookies — len po súhlase (žiadne aktívne služby v predvolenej inštancii). */
-export function buildMarketingCookieRows(_ctx: CookieInventoryContext): CookieInventoryRow[] {
-  return []
+/** Marketingové cookies — len po súhlase. */
+export function buildMarketingCookieRows(ctx: CookieInventoryContext): CookieInventoryRow[] {
+  const host = hostLabel(ctx)
+  return [
+    {
+      name: '_fbp',
+      domain: `.${host}`,
+      expiry: '3 mesiace',
+      path: '/',
+      description:
+        'Meta Pixel (Facebook/Instagram) — identifikátor prehliadača na meranie reklám a remarketing (načítaný cez Google Tag Manager po súhlase).',
+    },
+    {
+      name: '_fbc',
+      domain: `.${host}`,
+      expiry: '3 mesiace',
+      path: '/',
+      description:
+        'Meta Pixel — ukladá identifikátor kliknutia na reklamu (fbclid) na priradenie konverzií (cez GTM po súhlase).',
+    },
+  ]
 }
 
 /** Personalizačné cookies — len po súhlase (žiadne aktívne služby v predvolenej inštancii). */

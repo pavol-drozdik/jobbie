@@ -1,5 +1,6 @@
 import type { RegistrationCredentials, RegistrationPreferences } from '~/composables/useRegistration'
 import { markPendingRegistrationPromo } from '~/composables/useRegistrationPromo'
+import { trackRegistrationComplete } from '~/utils/gtm-client'
 import { validateIndividualRegistrationBirthDate } from '~/utils/age-eligibility'
 import { isApiUnreachableStatus } from '~/utils/api-fetch'
 import { ROUTES } from '~/utils/app-routes'
@@ -152,6 +153,10 @@ export function useRegistrationSignUp() {
 
       if (!token) {
         markPendingRegistrationPromo(effectiveCredentials.promoCode)
+        trackRegistrationComplete({
+          accountType: effectiveCredentials.accountType,
+          emailConfirmationPending: true,
+        })
         return { ok: true, needsEmailConfirmation: true }
       }
 
@@ -196,6 +201,10 @@ export function useRegistrationSignUp() {
       const promoResult = await redeemRegistrationPromoIfSignupEligible(
         effectiveCredentials.promoCode ?? undefined,
       )
+      trackRegistrationComplete({
+        accountType: effectiveCredentials.accountType,
+        emailConfirmationPending: false,
+      })
       clear()
       const homeQuery: Record<string, string> = {}
       if (promoResult?.ok && promoResult.credits_granted != null) {

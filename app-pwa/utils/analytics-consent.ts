@@ -2,10 +2,15 @@ import {
   captureGtmPageView,
   loadGtm,
   teardownGtmAnalytics,
+  teardownMetaPixel,
   signalAnalyticsConsentToGtm,
+  signalMarketingConsentToGtm,
 } from '~/utils/gtm-client'
 import { initPosthogIfConsented, shutdownPosthog } from '~/utils/posthog-client'
-import { setAnalyticsConsentGranted } from '~/utils/cookie-consent-state'
+import {
+  setAnalyticsConsentGranted,
+  setMarketingConsentGranted,
+} from '~/utils/cookie-consent-state'
 
 type ConsentSignal = 'granted' | 'denied'
 
@@ -28,13 +33,14 @@ export function initGtagConsentDefault(): (...args: unknown[]) => void {
   return gtag
 }
 
-export function syncGtagConsent(analyticsGranted: boolean): void {
-  const signal: ConsentSignal = analyticsGranted ? 'granted' : 'denied'
+export function syncGtagConsent(analyticsGranted: boolean, marketingGranted = false): void {
+  const analyticsSignal: ConsentSignal = analyticsGranted ? 'granted' : 'denied'
+  const adSignal: ConsentSignal = marketingGranted ? 'granted' : 'denied'
   window.gtag?.('consent', 'update', {
-    analytics_storage: signal,
-    ad_storage: 'denied',
-    ad_user_data: 'denied',
-    ad_personalization: 'denied',
+    analytics_storage: analyticsSignal,
+    ad_storage: adSignal,
+    ad_user_data: adSignal,
+    ad_personalization: adSignal,
     functionality_storage: 'denied',
     personalization_storage: 'denied',
     security_storage: 'granted',
@@ -104,28 +110,66 @@ function clearAnalyticsCookies(): void {
   clearStorageKeys(sessionStorage, (key) => key.toLowerCase().includes('clarity'))
 }
 
-/** Enable or disable third-party analytics based on cookie consent. */
-export function applyAnalyticsConsentEffect(granted: boolean): void {
-  setAnalyticsConsentGranted(granted)
-  syncGtagConsent(granted)
-  signalAnalyticsConsentToGtm(granted)
-  if (granted) {
-    loadGtm()
-    initPosthogIfConsented()
-    captureGtmPageView()
-    window.dispatchEvent(new Event('jobbie:analytics-consent-changed'))
-    return
-  }
-  shutdownPosthog()
-  teardownGtmAnalytics()
-  clearAnalyticsCookies()
-  window.dispatchEvent(new Event('jobbie:analytics-consent-changed'))
-}
-
-/** Enable or disable third-party analytics based on cookie consent. */
-export function applyAnalyticsConsent(granted: boolean): void {
+/** Expire Meta Pixel identifiers (_fbp/_fbc) when marketing consent is withdrawn. */
+function clearMarketingCookies(): void {
   if (!import.meta.client) {
     return
   }
-  applyAnalyticsConsentEffect(granted)
+  const domainVariants = analyticsCookieDomainVariants(location.hostname)
+  for (const name of ['_fbp', '_fbc']) {
+    for (const domain of domainVariants) {
+      expireCookie(name, domain)
+    }
+  }
+}
+
+/**
+ * Enable or disable third-party tags based on cookie consent.
+ * GTM hosts both analytics (GA4/Clarity/PostHog) and marketing (Meta Pixel) tags, so the
+ * container loads when either category is granted; per-tag firing is gated via Consent Mode
+ * (`analytics_storage` / `ad_storage`) and the consent dataLayer events.
+ */
+export function applyAnalyticsConsentEffect(
+  analyticsGranted: boolean,
+  marketingGranted = false,
+): void {
+  setAnalyticsConsentGranted(analyticsGranted)
+  setMarketingConsentGranted(marketingGranted)
+  syncGtagConsent(analyticsGranted, marketingGranted)
+  signalAnalyticsConsentToGtm(analyticsGranted)
+  signalMarketingConsentToGtm(marketingGranted)
+
+  if (analyticsGranted || marketingGranted) {
+    loadGtm()
+  }
+
+  if (analyticsGranted) {
+    initPosthogIfConsented()
+    captureGtmPageView()
+  } else {
+    shutdownPosthog()
+    clearAnalyticsCookies()
+  }
+
+  if (marketingGranted) {
+    // Pixel is fired inside GTM via the marketing consent trigger — nothing to inject here.
+  } else {
+    teardownMetaPixel()
+    clearMarketingCookies()
+  }
+
+  // Fully remove the GTM bootstrap only when no optional category remains.
+  if (!analyticsGranted && !marketingGranted) {
+    teardownGtmAnalytics()
+  }
+
+  window.dispatchEvent(new Event('jobbie:analytics-consent-changed'))
+}
+
+/** Enable or disable third-party tags based on cookie consent. */
+export function applyAnalyticsConsent(analyticsGranted: boolean, marketingGranted = false): void {
+  if (!import.meta.client) {
+    return
+  }
+  applyAnalyticsConsentEffect(analyticsGranted, marketingGranted)
 }

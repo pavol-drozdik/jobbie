@@ -4,6 +4,7 @@ import {
   ensureConsentVisitorId,
   hasValidConsentChoice,
   setAnalyticsConsentGranted,
+  setMarketingConsentGranted,
   useConsentCookieRef,
 } from '~/utils/cookie-consent-state'
 import { openCookiePreferences } from '~/utils/cookie-consent-ui'
@@ -24,9 +25,10 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   if (hasValidConsentChoice(consentCookie.value)) {
     const categories = categoriesFromPayload(consentCookie.value)
-    applyAnalyticsConsent(categories.analytics)
+    applyAnalyticsConsent(categories.analytics, categories.marketing)
     return
   }
 
   setAnalyticsConsentGranted(false)
+  setMarketingConsentGranted(false)
 })

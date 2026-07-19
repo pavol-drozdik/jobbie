@@ -10,6 +10,29 @@ import {
 
 let sentryInitialized = false
 
+/**
+ * Function names / script URLs injected by in-app browser WebViews (Instagram, Facebook,
+ * TikTok…). Their native-bridge instrumentation throws on our pages during navigation/unload
+ * — e.g. `window.webkit.messageHandlers` missing on iPad, or "Java object is gone" on Android
+ * when the bridge is torn down. These are third-party and not actionable, so we drop them.
+ */
+const IN_APP_BROWSER_BRIDGE_RE =
+  /sendDataToNative|sendPageHideMessage|sendBeforeUnloadMessage|navigation_performance_logger|iabjs:\/\//i
+
+/** True when any exception frame originates from an in-app browser native bridge. */
+function isInAppBrowserBridgeError(event: {
+  exception?: { values?: { stacktrace?: { frames?: { function?: string; filename?: string }[] } }[] }
+}): boolean {
+  const values = event.exception?.values ?? []
+  return values.some((value) =>
+    (value.stacktrace?.frames ?? []).some(
+      (frame) =>
+        IN_APP_BROWSER_BRIDGE_RE.test(frame.function ?? '') ||
+        IN_APP_BROWSER_BRIDGE_RE.test(frame.filename ?? ''),
+    ),
+  )
+}
+
 function buildTracePropagationTargets(apiBaseUrl: string | undefined): (string | RegExp)[] {
   const targets: (string | RegExp)[] = [/^https?:\/\/localhost/]
   if (import.meta.client && typeof window !== 'undefined') {
@@ -52,7 +75,13 @@ export default defineNuxtPlugin((nuxtApp) => {
           'Importing a module script failed',
           'error loading dynamically imported module',
           "Couldn't resolve component",
+          // In-app browser (Instagram/Facebook/TikTok WebView) native-bridge noise.
+          "window.webkit.messageHandlers",
+          'Java object is gone',
         ],
+        beforeSend(event) {
+          return isInAppBrowserBridgeError(event) ? null : event
+        },
         environment:
           typeof config.sentryEnvironment === 'string' ? config.sentryEnvironment : undefined,
         integrations: [

@@ -37,6 +37,16 @@ describe('buildContentSecurityPolicy', () => {
     expect(scriptSrc).toContain('https://*.clarity.ms')
   })
 
+  it('allows the Meta Pixel origins for GTM-delivered marketing tags', () => {
+    const csp = buildContentSecurityPolicy(prodOrigins)
+    const scriptSrc = csp.split(';').find((d) => d.trim().startsWith('script-src'))
+    const connectSrc = csp.split(';').find((d) => d.trim().startsWith('connect-src'))
+    const imgSrc = csp.split(';').find((d) => d.trim().startsWith('img-src'))
+    expect(scriptSrc).toContain('https://connect.facebook.net')
+    expect(connectSrc).toContain('https://www.facebook.com')
+    expect(imgSrc).toContain('https://www.facebook.com')
+  })
+
   it('allows API WebSocket and CDN fonts in connect-src / font-src', () => {
     const csp = buildContentSecurityPolicy(prodOrigins)
     const connectSrc = csp.split(';').find((d) => d.trim().startsWith('connect-src'))

@@ -80,6 +80,11 @@ describe('shouldBypassCors', () => {
     expect(shouldBypassCors('/metrics')).toBe(true);
   });
 
+  it('allows /robots.txt and /favicon.ico without Origin for crawlers/browsers', () => {
+    expect(shouldBypassCors('/robots.txt')).toBe(true);
+    expect(shouldBypassCors('/favicon.ico')).toBe(true);
+  });
+
   it('does not bypass credentialed API routes', () => {
     expect(shouldBypassCors('/api/profiles/me')).toBe(false);
   });
