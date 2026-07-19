@@ -40,12 +40,25 @@ jobs:
           - os: windows-latest
             platform: win
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     defaults:
       run:
         working-directory: jobbie-admin
 
     steps:
       - uses: actions/checkout@v4
+
+      # Windows Defender real-time scanning re-scans every file makensis/7z touch while
+      # compressing the bundled api/node_modules (native .node binaries, pagent.exe), which
+      # can stall the NSIS step for hours. Excluding the workspace lets the installer build.
+      - name: Disable Defender scanning on Windows runner
+        if: matrix.platform == 'win'
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          Set-MpPreference -DisableRealtimeMonitoring $true
+          Add-MpPreference -ExclusionPath "${{ github.workspace }}"
+          Add-MpPreference -ExclusionPath "$env:LOCALAPPDATA\electron-builder\Cache"
 
       - uses: actions/setup-node@v4
         with:
