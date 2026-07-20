@@ -23,10 +23,24 @@ export class SupabaseService {
   private readonly readClient: SupabaseClient;
 
   constructor(private config: ConfigService) {
-    const url = normalizeSupabaseUrl(this.config.get<string>('SUPABASE_URL'));
+    const rawUrl = this.config.get<string>('SUPABASE_URL');
+    const url = normalizeSupabaseUrl(rawUrl);
     const key = this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY')?.trim();
     if (!url || !key) {
-      throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required');
+      throw new Error(
+        `Admin API config incomplete — SUPABASE_URL=${JSON.stringify(rawUrl)} SERVICE_ROLE_KEY=${key ? 'set' : 'MISSING'}. ` +
+          'Fix resources/api.env or %APPDATA%/JOBBIE Admin/.env, then restart.',
+      );
+    }
+    // Fail with an actionable message instead of a cryptic supabase-js stack on a bad URL.
+    try {
+      // eslint-disable-next-line no-new
+      new URL(url);
+    } catch {
+      throw new Error(
+        `SUPABASE_URL is not a valid URL after normalization: ${JSON.stringify(url)} ` +
+          `(raw: ${JSON.stringify(rawUrl)}). Expected e.g. https://<ref>.supabase.co`,
+      );
     }
     this.client = createClient(url, key);
     const readUrl = normalizeSupabaseUrl(this.config.get<string>('SUPABASE_READ_URL'));
