@@ -6,7 +6,7 @@
     <p v-if="loading" class="font-dmSans text-sm text-black/50">{{ S.loading }}</p>
     <p v-else-if="loadError" class="text-sm text-red-600">{{ loadError }}</p>
     <template v-else>
-      <div class="overflow-hidden rounded-[20px] bg-white shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)]">
+      <div class="overflow-hidden rounded-[20px] bg-white shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]">
         <div
           class="grid grid-cols-1 min-[960px]:grid-cols-4 min-[960px]:divide-x min-[960px]:divide-black/[0.06]"
         >

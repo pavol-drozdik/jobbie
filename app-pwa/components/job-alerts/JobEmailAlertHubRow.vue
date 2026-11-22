@@ -1,6 +1,6 @@
 <template>
   <article
-    class="flex flex-col gap-3 rounded-[20px] border border-black/[0.06] bg-white p-4 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.1)] sm:flex-row sm:items-center sm:gap-4 sm:p-3.5 sm:pr-5"
+    class="flex flex-col gap-3 rounded-[20px] border border-black/[0.06] bg-white p-4 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:flex-row sm:items-center sm:gap-4 sm:p-3.5 sm:pr-5"
   >
     <div class="flex min-w-0 flex-1 items-stretch gap-3">
       <CategoryHubGlyph :category="categorySlug" />

@@ -7,7 +7,7 @@
       <aside
         id="job-alert-sidebar"
         ref="sidebarRef"
-        class="relative z-50 rounded-[20px] bg-white p-[18px] shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)] max-[820px]:static"
+        class="relative z-50 rounded-[20px] bg-white p-[18px] shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] max-[820px]:static"
       >
         <div class="flex flex-col gap-2">
           <button
@@ -60,7 +60,7 @@
         </div>
       </aside>
 
-      <section class="overflow-hidden rounded-[20px] bg-white shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)]">
+      <section class="overflow-hidden rounded-[20px] bg-white shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]">
         <div class="overflow-hidden rounded-t-[20px]">
           <div class="h-2 bg-black/[0.06]">
             <span

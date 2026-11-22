@@ -1,6 +1,6 @@
 /** Shared spreadsheet table tokens (aligned with profile offers table). */
 export const applicantsTableShell =
-  'rounded-[20px] bg-white px-4 py-5 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)] marketing:px-6 marketing:py-6'
+  'rounded-[20px] bg-white px-4 py-5 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-6 marketing:py-6'
 export const applicantsTableWrap = 'overflow-x-auto'
 export const applicantsTableClass = 'w-full min-w-[720px] border-collapse font-dmSans'
 export const applicantsTableClassWide = 'w-full min-w-[960px] border-collapse font-dmSans'

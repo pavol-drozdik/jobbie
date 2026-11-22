@@ -4,7 +4,7 @@
 
     v-if="user"
 
-    class="mb-8 rounded-[20px] bg-white p-5 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)] sm:p-6"
+    class="mb-8 rounded-[20px] bg-white p-5 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:p-6"
 
   >
 

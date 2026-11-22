@@ -1,6 +1,6 @@
 <template>
   <article
-    class="flex w-full min-h-0 min-w-0 flex-col gap-4 overflow-hidden rounded-[15px] bg-marketing-surface p-4 shadow-[0px_0px_4px_0px_rgba(0,0,0,0.2)] sm:flex-row sm:items-stretch sm:gap-5 sm:p-5"
+    class="flex w-full min-h-0 min-w-0 flex-col gap-4 overflow-hidden rounded-[15px] bg-marketing-surface p-4 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:flex-row sm:items-stretch sm:gap-5 sm:p-5"
   >
     <div class="flex shrink-0 gap-3 sm:flex-col sm:items-center">
       <div

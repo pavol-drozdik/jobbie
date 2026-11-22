@@ -82,7 +82,7 @@
                 </button>
                 <div
                   v-show="categoryOpen"
-                  class="absolute left-0 top-[calc(100%+8px)] z-[200] max-h-[260px] min-w-full overflow-y-auto rounded-2xl bg-white p-2 shadow-[0_4px_20px_rgba(0,0,0,0.12)]"
+                  class="absolute left-0 top-[calc(100%+8px)] z-[200] max-h-[260px] min-w-full overflow-y-auto rounded-2xl bg-white p-2 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
                 >
                   <button
                     v-for="slug in CATEGORIES"

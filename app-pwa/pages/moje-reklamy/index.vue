@@ -40,7 +40,7 @@
 
   <div v-else-if="!isProvider" class="min-h-screen bg-marketing-mint px-5 py-16 font-dmSans">
 
-    <div class="mx-auto max-w-lg rounded-[20px] bg-white p-6 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.1)]">
+    <div class="mx-auto max-w-lg rounded-[20px] bg-white p-6 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]">
 
       <p class="m-0 text-sm text-black/70">{{ S.firmyProviderRequired }}</p>
 
@@ -127,7 +127,7 @@
 
           :key="n"
 
-          class="h-[84px] animate-pulse rounded-[20px] bg-white shadow-[0px_3px_6px_1px_rgba(0,0,0,0.08)]"
+          class="h-[84px] animate-pulse rounded-[20px] bg-white shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
 
         />
 
@@ -141,7 +141,7 @@
 
           <div
 
-            class="rounded-[20px] border border-black/[0.06] bg-marketing-panel px-5 py-6 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.1)] sm:px-8 sm:py-7"
+            class="rounded-[20px] border border-black/[0.06] bg-marketing-panel px-5 py-6 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:px-8 sm:py-7"
 
           >
 
@@ -397,7 +397,7 @@
 
           <div
 
-            class="w-full max-w-md rounded-t-2xl border border-black/10 bg-white px-6 py-8 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)] sm:rounded-2xl sm:px-8 sm:py-7"
+            class="w-full max-w-md rounded-t-2xl border border-black/10 bg-white px-6 py-8 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:rounded-2xl sm:px-8 sm:py-7"
 
             @click.stop
 

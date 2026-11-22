@@ -1,6 +1,6 @@
 /** Chart.js colors and defaults aligned with marketing tokens (tailwind.config marketing.green). */
 
-export const CHART_GREEN = '#22c55e'
+export const CHART_GREEN = '#10231A'
 export const CHART_GREEN_RGB = '34, 197, 94'
 export const CHART_GREEN_FILL = `rgba(${CHART_GREEN_RGB}, 0.5)`
 export const CHART_AMBER = '#f5a623'

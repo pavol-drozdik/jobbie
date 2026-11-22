@@ -1,6 +1,6 @@
 <template>
   <article
-    class="flex flex-col gap-3 rounded-[20px] border border-black/[0.06] bg-white p-4 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.1)] marketing:gap-4 marketing:p-5"
+    class="flex flex-col gap-3 rounded-[20px] border border-black/[0.06] bg-white p-4 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:gap-4 marketing:p-5"
     :class="
       selected
         ? 'ring-2 ring-marketing-green/40 bg-marketing-mint/20'

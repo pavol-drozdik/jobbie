@@ -19,7 +19,7 @@
     :redirect-path="redirectPath"
   />
   <div v-else-if="!isProvider" class="min-h-screen bg-marketing-mint px-5 py-16 font-dmSans">
-    <div class="mx-auto max-w-lg rounded-[20px] bg-white p-6 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.1)]">
+    <div class="mx-auto max-w-lg rounded-[20px] bg-white p-6 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]">
       <p class="m-0 text-sm text-black/70">{{ S.firmyProviderRequired }}</p>
       <AppButton
         variant="primary"

@@ -24,7 +24,7 @@
         <div
           v-for="i in 5"
           :key="`sk-${i}`"
-          class="animate-pulse rounded-[20px] border border-black/[0.06] bg-white p-5 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.1)]"
+          class="animate-pulse rounded-[20px] border border-black/[0.06] bg-white p-5 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
         >
           <div class="h-6 w-2/5 rounded bg-black/10" />
           <div class="mt-4 h-4 w-full rounded bg-black/10" />
@@ -38,7 +38,7 @@
 
     <div
       v-else-if="rows.length === 0"
-      class="rounded-[20px] border border-black/[0.06] bg-white px-6 py-12 text-center shadow-[0px_3px_6px_1px_rgba(0,0,0,0.1)]"
+      class="rounded-[20px] border border-black/[0.06] bg-white px-6 py-12 text-center shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
     >
       <p class="m-0 font-dmSans text-base text-marketing-muted">{{ emptyMessage }}</p>
     </div>

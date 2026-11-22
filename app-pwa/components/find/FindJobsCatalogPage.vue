@@ -76,7 +76,7 @@
     <section class="job-posts w-full">
       <div class="grid w-full max-w-[1400px] grid-cols-1 gap-[25px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <template v-if="loading">
-          <div v-for="n in 8" :key="`sk-${n}`" class="animate-pulse overflow-hidden rounded-[15px] bg-marketing-surface shadow-[0px_0px_4px_0px_rgba(0,0,0,0.2)]">
+          <div v-for="n in 8" :key="`sk-${n}`" class="animate-pulse overflow-hidden rounded-[15px] bg-marketing-surface shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]">
             <div class="aspect-[4/3] bg-black/10" />
             <div class="space-y-3 p-5">
               <div class="h-10 w-4/5 rounded bg-black/10" />
@@ -107,7 +107,7 @@
             v-for="job in jobs"
             :key="job.id"
           :to="ROUTES.jobDetail(job.id)"
-          class="catalog-job-card block min-w-0 overflow-hidden rounded-[15px] bg-marketing-surface no-underline shadow-[0px_0px_4px_0px_rgba(0,0,0,0.2)]"
+          class="catalog-job-card block min-w-0 overflow-hidden rounded-[15px] bg-marketing-surface no-underline shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
         >
           <div class="relative aspect-[4/3]">
             <NuxtImg

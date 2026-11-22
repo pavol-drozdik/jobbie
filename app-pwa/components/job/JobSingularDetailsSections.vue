@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-5">
     <section
       v-if="scheduleItems.length > 0"
-      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9"
+      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-9"
     >
       <h2 class="m-0 mb-[18px] text-[22px] font-extrabold text-black">
         {{ S.jobDetailScheduleTitle }}
@@ -21,7 +21,7 @@
 
     <section
       v-if="locationDetail.lines.length > 0"
-      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9"
+      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-9"
     >
       <div class="mb-[18px] flex flex-wrap items-center gap-2">
         <h2 class="m-0 text-[22px] font-extrabold text-black">
@@ -48,7 +48,7 @@
 
     <section
       v-if="hasRequirements"
-      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9"
+      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-9"
     >
       <h2 class="m-0 mb-[18px] text-[22px] font-extrabold text-black">
         {{ S.jobDetailRequirementsTitle }}
@@ -123,7 +123,7 @@
 
     <section
       v-if="benefitLabels.length > 0"
-      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9"
+      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-9"
     >
       <h2 class="m-0 mb-[18px] text-[22px] font-extrabold text-black">
         {{ S.benefitsSectionTitle }}
@@ -141,7 +141,7 @@
 
     <section
       v-if="hasApplicationInfo"
-      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9"
+      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-9"
     >
       <h2 class="m-0 mb-[18px] text-[22px] font-extrabold text-black">
         {{ S.jobDetailApplicationTitle }}

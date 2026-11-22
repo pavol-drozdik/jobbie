@@ -30,10 +30,10 @@
             <!-- Hero -->
             <div
               v-if="!reviewsOnly"
-              class="overflow-hidden rounded-[20px] bg-white shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)]"
+              class="overflow-hidden rounded-[20px] bg-white shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
             >
               <div
-                class="relative h-40 overflow-hidden bg-[linear-gradient(155deg,#15803d_0%,#22c55e_100%)]"
+                class="relative h-40 overflow-hidden bg-[#10231A]"
               >
                 <div
                   class="pointer-events-none absolute -right-[60px] -top-20 size-[280px] rounded-full bg-white/[0.08]"
@@ -133,7 +133,7 @@
             <!-- O mne -->
             <section
               v-if="!reviewsOnly && aboutParagraphs.length"
-              class="rounded-[20px] bg-white px-8 py-7 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)] max-[900px]:px-6 max-[900px]:py-6"
+              class="rounded-[20px] bg-white px-8 py-7 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] max-[900px]:px-6 max-[900px]:py-6"
             >
               <h2 class="m-0 mb-5 text-xl font-extrabold text-black">{{ S.profilePublicAboutTitle }}</h2>
               <div class="text-[17px] font-normal leading-[1.75] text-black/[0.72]">
@@ -146,7 +146,7 @@
             <!-- Aktívne ponuky -->
             <section
               v-if="!reviewsOnly"
-              class="rounded-[20px] bg-white px-8 py-7 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)] max-[900px]:px-6 max-[900px]:py-6"
+              class="rounded-[20px] bg-white px-8 py-7 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] max-[900px]:px-6 max-[900px]:py-6"
             >
               <h2 class="m-0 mb-5 text-xl font-extrabold text-black">{{ S.aktivnePonuky }}</h2>
               <p v-if="publicJobsLoading && publicJobs.length === 0" class="text-base text-black/50">{{ S.loading }}</p>
@@ -191,7 +191,7 @@
 
             <!-- Recenzie -->
             <section
-              class="rounded-[20px] bg-white px-8 py-7 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)] max-[900px]:px-6 max-[900px]:py-6"
+              class="rounded-[20px] bg-white px-8 py-7 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] max-[900px]:px-6 max-[900px]:py-6"
             >
               <h2 class="m-0 mb-5 text-xl font-extrabold text-black">{{ S.profilePublicReviewsTitle }}</h2>
               <ProfileReviewForm
@@ -255,7 +255,7 @@
             class="flex w-full shrink-0 flex-col gap-4 marketing:sticky marketing:top-[calc(0.625rem+3.5rem+max(0.25rem,env(safe-area-inset-top,0px))+0.75rem)] marketing:order-none marketing:w-[320px] marketing:min-w-[320px] max-[900px]:order-first"
           >
             <div
-              class="flex flex-col gap-3 rounded-[20px] bg-white p-6 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)]"
+              class="flex flex-col gap-3 rounded-[20px] bg-white p-6 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
             >
               <button
                 v-if="!isOwner"
@@ -311,7 +311,7 @@
             </div>
 
             <div
-              class="rounded-[20px] bg-white px-7 py-6 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)] max-[900px]:px-6"
+              class="rounded-[20px] bg-white px-7 py-6 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] max-[900px]:px-6"
             >
               <h3 class="m-0 mb-4 text-lg font-extrabold text-black">{{ S.profilePublicStatsTitle }}</h3>
               <div class="flex flex-col">

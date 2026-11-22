@@ -2,7 +2,7 @@
 
   <section
 
-    class="overflow-hidden rounded-[20px] bg-white font-dmSans text-black shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)]"
+    class="overflow-hidden rounded-[20px] bg-white font-dmSans text-black shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
 
   >
 

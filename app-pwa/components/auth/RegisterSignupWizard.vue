@@ -3,14 +3,14 @@
     class="font-dmSans flex min-h-screen items-center justify-center bg-marketing-mint px-5 py-10 antialiased"
   >
     <div
-      class="flex w-full max-w-[1060px] flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.13)] md:flex-row"
+      class="flex w-full max-w-[1060px] flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] md:flex-row"
     >
       <!-- Left marketing panel -->
       <div :class="authMarketingPanelRegisterClass">
         <AppBrandLogo
           variant="mark"
           root-class="relative z-[1]"
-          image-class="size-10 rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.12)]"
+          image-class="size-10 rounded-xl shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
         />
         <div class="relative z-[1]">
           <h2 class="m-0 text-[38px] font-extrabold leading-[1.2] text-white">

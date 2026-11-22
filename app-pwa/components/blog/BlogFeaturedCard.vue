@@ -22,7 +22,7 @@ defineProps<{
   >
     <div
       :class="[
-        'w-full shrink-0 overflow-hidden bg-[#cff0db] md:w-[48%]',
+        'w-full shrink-0 overflow-hidden bg-[#C8F03C] md:w-[48%]',
         BLOG_COVER_ASPECT_CLASS,
       ]"
     >
@@ -37,7 +37,7 @@ defineProps<{
       >
     </div>
     <div class="flex flex-1 flex-col justify-center p-6 md:py-10 md:pr-9 md:pl-0">
-      <span class="mb-3.5 inline-flex w-fit items-center rounded-full bg-[#cff0db] px-3 py-1 font-dmSans text-[13px] font-bold text-[#15803d]">
+      <span class="mb-3.5 inline-flex w-fit items-center rounded-full bg-[#C8F03C] px-3 py-1 font-dmSans text-[13px] font-bold text-[#10231A]">
         {{ blogCategoryLabel(post.category) }}
       </span>
       <h2 :class="BLOG_FEATURED_TITLE_CLASS">

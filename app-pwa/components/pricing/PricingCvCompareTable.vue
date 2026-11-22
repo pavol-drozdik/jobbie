@@ -1,5 +1,5 @@
 <template>
-  <div class="mt-8 overflow-hidden rounded-[20px] bg-white px-4 py-5 shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] sm:px-6 sm:py-6">
+  <div class="mt-8 overflow-hidden rounded-[20px] bg-white px-4 py-5 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:px-6 sm:py-6">
     <h3 class="m-0 mb-5 font-dmSans text-[17px] font-extrabold text-black">
       {{ S.pricingCvCompareTitle }}
     </h3>

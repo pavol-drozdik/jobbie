@@ -7,7 +7,7 @@
       aria-label="Hlavná navigácia"
     >
       <div
-        class="mx-auto mt-2.5 flex h-[70px] w-full max-w-[2000px] items-center justify-between gap-3 rounded-full bg-white px-[15px] shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)]"
+        class="mx-auto mt-2.5 flex h-[70px] w-full max-w-[2000px] items-center justify-between gap-3 rounded-full bg-white px-[15px] shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
       >
         <div class="relative flex h-full w-full items-center gap-2 marketing:gap-3">
           <AppBrandLogo

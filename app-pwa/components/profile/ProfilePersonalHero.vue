@@ -1,7 +1,7 @@
 <template>
   <!-- profile-card: design uses lighter shadow than .p-card -->
   <div
-    class="overflow-hidden rounded-[20px] bg-white shadow-[0_0_12px_rgba(0,0,0,0.07)]"
+    class="overflow-hidden rounded-[20px] bg-white shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
   >
     <!-- profile-card-banner -->
     <div

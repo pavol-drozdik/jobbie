@@ -46,7 +46,7 @@ const CATEGORY_SWATCH: Record<string, string> = {
 }
 
 export function companyAdCategorySwatch(category: string): string {
-  return CATEGORY_SWATCH[category] ?? 'bg-gradient-to-br from-marketing-green to-[#15803d]'
+  return CATEGORY_SWATCH[category] ?? 'bg-gradient-to-br from-marketing-green to-[#10231A]'
 }
 
 export function partitionCompanyAds(ads: CompanyAdListItem[]): {

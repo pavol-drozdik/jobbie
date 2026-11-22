@@ -26,7 +26,7 @@
     </p>
     <div
       v-if="contentLayout === 'card'"
-      class="rounded-[20px] bg-white px-6 py-7 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)] sm:px-8"
+      class="rounded-[20px] bg-white px-6 py-7 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:px-8"
     >
       <slot />
     </div>

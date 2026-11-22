@@ -4,7 +4,7 @@
       <div
         v-for="n in skeletonCount"
         :key="`sk-${n}`"
-        class="animate-pulse overflow-hidden rounded-[15px] bg-marketing-surface shadow-[0px_0px_4px_0px_rgba(0,0,0,0.2)]"
+        class="animate-pulse overflow-hidden rounded-[15px] bg-marketing-surface shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
       >
         <div class="aspect-[4/3] bg-black/10" />
         <div class="space-y-3 p-5">

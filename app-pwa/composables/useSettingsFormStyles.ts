@@ -31,7 +31,7 @@ export function useSettingsFormStyles() {
     'inline-flex min-h-[44px] is-clickable items-center justify-center rounded-full border-[1.5px] border-transparent bg-transparent px-3 py-2 font-dmSans text-[15px] font-semibold text-black/55 underline decoration-black/25 underline-offset-2 hover:text-red-700 hover:decoration-red-700/60'
 
   const settingsCardClass =
-    'rounded-[20px] bg-white px-6 py-7 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)] sm:px-8'
+    'rounded-[20px] bg-white px-6 py-7 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:px-8'
 
   return {
     labelClass,

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="mb-10 overflow-hidden rounded-[20px] bg-white shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)]">
+    <div class="mb-10 overflow-hidden rounded-[20px] bg-white shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]">
       <article
         v-for="(service, index) in PRICING_ADDON_SERVICES"
         :key="service.id"

@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="jobs.length > 0"
-    class="rounded-[20px] bg-white p-6 shadow-[0_0_12px_rgba(0,0,0,0.07)]"
+    class="rounded-[20px] bg-white p-6 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
   >
     <h3 class="m-0 text-lg font-extrabold text-black">{{ S.jobSimilarOffers }}</h3>
     <div class="mt-4 flex flex-col gap-3">

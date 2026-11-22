@@ -1,5 +1,5 @@
 <template>
-  <div class="relative flex flex-col gap-3.5 overflow-visible rounded-[20px] bg-white p-7 shadow-[0_0_12px_rgba(0,0,0,0.07)]">
+  <div class="relative flex flex-col gap-3.5 overflow-visible rounded-[20px] bg-white p-7 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]">
     <div v-if="priceDisplay">
       <div class="text-[13px] font-medium text-black/40">{{ S.firmyAdPriceLabel }}</div>
       <div class="text-[42px] font-extrabold leading-none text-marketing-green">{{ priceDisplay }}</div>

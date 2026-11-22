@@ -5,7 +5,7 @@
         <div
           v-for="i in 5"
           :key="`sk-${i}`"
-          class="animate-pulse rounded-[20px] border border-black/[0.06] bg-white p-5 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.1)]"
+          class="animate-pulse rounded-[20px] border border-black/[0.06] bg-white p-5 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
         >
           <div class="h-6 w-3/5 rounded bg-black/10" />
           <div class="mt-3 h-4 w-2/5 rounded bg-black/10" />
@@ -23,7 +23,7 @@
 
     <div
       v-else-if="jobs.length === 0"
-      class="rounded-[20px] border border-black/[0.06] bg-white px-6 py-12 text-center shadow-[0px_3px_6px_1px_rgba(0,0,0,0.1)]"
+      class="rounded-[20px] border border-black/[0.06] bg-white px-6 py-12 text-center shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
     >
       <h2 class="m-0 text-lg font-bold text-black">{{ emptyTitle }}</h2>
       <p v-if="emptyDescription" class="mt-2 text-marketing-muted">{{ emptyDescription }}</p>
@@ -34,7 +34,7 @@
       <article
         v-for="job in jobs"
         :key="job.id"
-        class="flex flex-col gap-4 rounded-[20px] border border-black/[0.06] bg-white p-4 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.1)] marketing:p-5"
+        class="flex flex-col gap-4 rounded-[20px] border border-black/[0.06] bg-white p-4 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:p-5"
       >
         <div class="flex min-w-0 flex-1 items-stretch gap-3">
           <div

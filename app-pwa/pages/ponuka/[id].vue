@@ -54,7 +54,7 @@
                 >Nové</div>
               </div>
             </div>
-            <div class="rounded-[20px] bg-white px-6 py-6 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9 marketing:py-8">
+            <div class="rounded-[20px] bg-white px-6 py-6 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-9 marketing:py-8">
               <h1 class="m-0 mb-5 text-[26px] font-extrabold leading-snug text-black">{{ job.title }}</h1>
               <div class="flex flex-wrap gap-2.5">
                 <div
@@ -87,7 +87,7 @@
               @apply="handleApply"
               @save="toggleSave"
             />
-            <div class="flex flex-col gap-3 rounded-[20px] bg-white px-7 py-6 shadow-[0_0_12px_rgba(0,0,0,0.07)] sm:flex-row sm:items-center sm:gap-[18px]">
+            <div class="flex flex-col gap-3 rounded-[20px] bg-white px-7 py-6 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:flex-row sm:items-center sm:gap-[18px]">
               <div class="flex min-w-0 flex-1 items-center gap-[18px]">
                 <div
                   class="flex size-[58px] min-h-[58px] min-w-[58px] shrink-0 items-center justify-center rounded-full bg-marketing-green text-xl font-bold text-white"
@@ -108,7 +108,7 @@
                 class="inline-flex w-full shrink-0 is-disabled-cursor items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-gray-200 bg-marketing-soft px-5 py-2.5 text-[15px] font-semibold text-black/35 sm:w-auto"
               >{{ S.jobViewProfile }}</span>
             </div>
-            <div class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9">
+            <div class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-9">
               <h2 class="m-0 mb-[18px] text-[22px] font-extrabold text-black">{{ S.jobDescription }}</h2>
               <div
                 v-if="descUsesHtml"
@@ -123,7 +123,7 @@
             <JobSingularDetailsSections v-if="job" :job="job" />
             <div
               v-if="galleryPhotos.length > 0"
-              class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9"
+              class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-9"
             >
               <h2 class="m-0 mb-[18px] text-[22px] font-extrabold text-black">{{ S.jobGalleryTitle }}</h2>
               <div class="flex flex-col gap-3">
@@ -215,7 +215,7 @@
                   >Nové</div>
                 </div>
               </div>
-              <div class="rounded-[20px] bg-white px-6 py-6 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9 marketing:py-8">
+              <div class="rounded-[20px] bg-white px-6 py-6 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-9 marketing:py-8">
                 <h1 class="m-0 mb-5 text-[26px] font-extrabold leading-snug text-black marketing:text-4xl">{{ job.title }}</h1>
                 <div class="flex flex-wrap gap-2.5">
                   <div
@@ -228,7 +228,7 @@
                   </div>
                 </div>
               </div>
-              <div class="flex flex-col gap-3 rounded-[20px] bg-white px-7 py-6 shadow-[0_0_12px_rgba(0,0,0,0.07)] sm:flex-row sm:items-center sm:gap-[18px]">
+              <div class="flex flex-col gap-3 rounded-[20px] bg-white px-7 py-6 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:flex-row sm:items-center sm:gap-[18px]">
                 <div class="flex min-w-0 flex-1 items-center gap-[18px]">
                   <div
                     class="flex size-[58px] min-h-[58px] min-w-[58px] shrink-0 items-center justify-center rounded-full bg-marketing-green text-xl font-bold text-white"
@@ -249,7 +249,7 @@
                   class="inline-flex w-full shrink-0 is-disabled-cursor items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-gray-200 bg-marketing-soft px-5 py-2.5 text-[15px] font-semibold text-black/35 sm:w-auto"
                 >{{ S.jobViewProfile }}</span>
               </div>
-              <div class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9">
+              <div class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-9">
                 <h2 class="m-0 mb-[18px] text-[22px] font-extrabold text-black">{{ S.jobDescription }}</h2>
                 <div
                   v-if="descUsesHtml"
@@ -264,7 +264,7 @@
               <JobSingularDetailsSections v-if="job" :job="job" />
               <div
                 v-if="galleryPhotos.length > 0"
-                class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9"
+                class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-9"
               >
                 <h2 class="m-0 mb-[18px] text-[22px] font-extrabold text-black">{{ S.jobGalleryTitle }}</h2>
                 <div class="flex flex-col gap-3">
