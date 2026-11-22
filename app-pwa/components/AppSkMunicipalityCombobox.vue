@@ -93,7 +93,7 @@ const triggerClass = computed(() => {
 
 const panelClass = computed(() => {
   if (isFilter.value) {
-    return 'absolute left-0 right-0 top-[calc(100%+8px)] z-[100] flex max-h-[min(260px,42svh)] min-w-full flex-col rounded-2xl bg-white p-2 shadow-[0_4px_20px_rgba(0,0,0,0.12)] marketing:left-0 marketing:right-auto marketing:max-h-[min(320px,70vh)]'
+    return 'absolute left-0 right-0 top-[calc(100%+8px)] z-[100] flex max-h-[min(260px,42svh)] min-w-full flex-col rounded-2xl bg-white p-2 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:left-0 marketing:right-auto marketing:max-h-[min(320px,70vh)]'
   }
   return 'app-form-dropdown__panel'
 })

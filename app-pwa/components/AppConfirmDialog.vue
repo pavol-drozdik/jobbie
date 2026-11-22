@@ -10,7 +10,7 @@
       @click.self="onBackdrop"
     >
       <div
-        class="w-full max-w-md rounded-t-2xl border border-black/10 bg-white px-6 py-8 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)] sm:rounded-2xl sm:px-10 sm:py-9"
+        class="w-full max-w-md rounded-t-2xl border border-black/10 bg-white px-6 py-8 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:rounded-2xl sm:px-10 sm:py-9"
         @click.stop
       >
         <div class="mx-auto max-w-[22rem] text-center">

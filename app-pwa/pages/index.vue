@@ -14,7 +14,7 @@
           Ako Jobbie Funguje
         </h2>
         <div
-          class="mx-[10px] flex w-fit max-w-full flex-wrap items-center justify-center rounded-[999px] bg-white p-1.5 shadow-[0_0_3px_0_rgba(0,0,0,0.2)] marketing:rounded-full"
+          class="mx-[10px] flex w-fit max-w-full flex-wrap items-center justify-center rounded-[999px] bg-white p-1.5 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:rounded-full"
           role="tablist"
           aria-label="Rola"
         >
@@ -50,7 +50,7 @@
               v-for="(slide, i) in homeCarouselSlides"
               :key="`${homeCarouselRole}-${i}`"
               data-home-carousel-card
-              class="flex min-h-0 w-[min(700px,calc(100vw-48px))] min-w-[min(700px,calc(100vw-48px))] shrink-0 flex-col gap-3 rounded-[20px] border border-black/5 bg-marketing-panel p-6 max-[600px]:p-5 marketing:w-[700px] marketing:min-w-[700px] marketing:gap-4 marketing:p-10"
+              class="flex min-h-0 w-[min(700px,calc(100vw-48px))] min-w-[min(700px,calc(100vw-48px))] shrink-0 flex-col gap-3 rounded-[20px] bg-marketing-panel shadow-[0_0_0_2px_#10231A,6px_6px_0_2px_#10231A] p-6 max-[600px]:p-5 marketing:w-[700px] marketing:min-w-[700px] marketing:gap-4 marketing:p-10"
             >
               <h3 class="m-0 font-dmSans text-[22px] font-extrabold text-black max-[600px]:text-[22px] marketing:text-[34px] marketingXl:text-4xl">
                 {{ slide.title }}
@@ -104,19 +104,19 @@
           <p class="mb-0 mt-[10px] font-dmSans text-lg font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Ušetri si čas pri hľadaní pracovnej ponuky a začni zarábať čo najskôr</p>
           <div class="mt-5 flex flex-col gap-2.5">
             <div class="flex items-center gap-2.5">
-              <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full bg-marketing-green font-dmSans text-xl font-bold text-white/80 marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
+              <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full border-2 border-[#10231A] bg-[#C8F03C] font-dmSans text-xl font-bold text-[#10231A] marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
                 1.
               </div>
               <span class="font-dmSans text-[17px] font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Stovky pracovných ponúk na jednom mieste</span>
             </div>
             <div class="flex items-center gap-2.5">
-              <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full bg-marketing-green font-dmSans text-xl font-bold text-white/80 marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
+              <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full border-2 border-[#10231A] bg-[#C8F03C] font-dmSans text-xl font-bold text-[#10231A] marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
                 2.
               </div>
               <span class="font-dmSans text-[17px] font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Jednoduché vyhľadávanie podľa tvojich preferencií</span>
             </div>
             <div class="flex items-center gap-2.5">
-              <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full bg-marketing-green font-dmSans text-xl font-bold text-white/80 marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
+              <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full border-2 border-[#10231A] bg-[#C8F03C] font-dmSans text-xl font-bold text-[#10231A] marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
                 3.
               </div>
               <span class="font-dmSans text-[17px] font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Hodnotenia pre lepšiu dôveryhodnosť</span>
@@ -170,19 +170,19 @@
           <p class="mb-0 mt-[10px] font-dmSans text-lg font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Ušetri si čas pri hľadaní uchádzača.</p>
           <div class="mt-5 flex flex-col gap-2.5">
             <div class="flex items-center gap-2.5">
-              <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full bg-marketing-green font-dmSans text-xl font-bold text-white/80 marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
+              <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full border-2 border-[#10231A] bg-[#C8F03C] font-dmSans text-xl font-bold text-[#10231A] marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
                 1.
               </div>
               <span class="font-dmSans text-[17px] font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Oslovte tisíce overených uchádzačov</span>
             </div>
             <div class="flex items-center gap-2.5">
-              <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full bg-marketing-green font-dmSans text-xl font-bold text-white/80 marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
+              <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full border-2 border-[#10231A] bg-[#C8F03C] font-dmSans text-xl font-bold text-[#10231A] marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
                 2.
               </div>
               <span class="font-dmSans text-[17px] font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Jednoduché spravovanie prihlášok</span>
             </div>
             <div class="flex items-center gap-2.5">
-              <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full bg-marketing-green font-dmSans text-xl font-bold text-white/80 marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
+              <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full border-2 border-[#10231A] bg-[#C8F03C] font-dmSans text-xl font-bold text-[#10231A] marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
                 3.
               </div>
               <span class="font-dmSans text-[17px] font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Rýchle obsadenie pozície do 48 hodín</span>
@@ -201,7 +201,7 @@
             v-for="cat in CATEGORIES"
             :key="cat"
             :to="`${ROUTES.find}?category=${cat}`"
-            class="flex items-center gap-2.5 rounded-[10px] bg-marketing-surface p-3 text-inherit no-underline shadow-[0px_0px_4px_0px_rgba(0,0,0,0.2)] transition-transform duration-150 hover:-translate-y-0.5"
+            class="flex items-center gap-2.5 rounded-[10px] bg-marketing-surface p-3 text-inherit no-underline shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] transition-transform duration-150 hover:-translate-y-0.5"
           >
             <span class="flex text-marketing-green">
               <CategoryIcon :category="cat" :size="30" />
@@ -232,7 +232,7 @@
         </div>
         <div class="w-full">
           <div v-if="loadingGrid" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div v-for="n in 8" :key="n" class="overflow-hidden rounded-[15px] bg-marketing-surface shadow-[0px_0px_4px_0px_rgba(0,0,0,0.2)]">
+            <div v-for="n in 8" :key="n" class="overflow-hidden rounded-[15px] bg-marketing-surface shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]">
               <div class="aspect-[4/3] rounded-t-[15px] bg-gray-200" />
               <div class="space-y-3 p-5">
                 <div class="h-10 w-3/4 rounded bg-gray-200" />
@@ -246,7 +246,7 @@
               v-for="job in gridJobs"
               :key="job.id"
               :to="ROUTES.jobDetail(job.id)"
-              class="block min-w-0 overflow-hidden rounded-[15px] bg-marketing-surface text-inherit no-underline shadow-[0px_0px_4px_0px_rgba(0,0,0,0.2)] transition-[box-shadow,transform] duration-150 hover:-translate-y-0.5 hover:shadow-[0px_4px_12px_0px_rgba(0,0,0,0.12)]"
+              class="block min-w-0 overflow-hidden rounded-[15px] bg-marketing-surface text-inherit no-underline shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] transition-[box-shadow,transform] duration-150 hover:-translate-y-0.5 hover:shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
             >
               <div class="relative aspect-[4/3]">
                 <div class="absolute left-2.5 top-2.5 inline-flex items-center gap-1.5 rounded-full bg-[rgba(249,252,250,0.95)] px-2.5 py-1 font-dmSans text-[13px] font-semibold text-gray-900">

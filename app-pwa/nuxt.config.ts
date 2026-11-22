@@ -432,7 +432,7 @@ export default defineNuxtConfig({
       short_name: 'JOBBIE',
       description: 'Brigády a pracovné ponuky na Slovensku aj v zahraničí.',
       theme_color: BRAND_THEME_COLOR,
-      background_color: '#ffffff',
+      background_color: '#FFFBEF',
       display: 'standalone',
       start_url: '/',
       icons: [

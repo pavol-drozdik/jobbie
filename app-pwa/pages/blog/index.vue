@@ -2,7 +2,7 @@
   <div class="font-dmSans">
     <!-- Hero -->
     <div
-      class="relative flex w-full flex-col items-center overflow-hidden bg-gradient-to-br from-[#15803d] to-marketing-green px-5 pb-[60px] pt-[calc(5.5rem+env(safe-area-inset-top))] text-center md:pt-[130px]"
+      class="relative flex w-full flex-col items-center overflow-hidden bg-gradient-to-br from-[#10231A] to-marketing-green px-5 pb-[60px] pt-[calc(5.5rem+env(safe-area-inset-top))] text-center md:pt-[130px]"
     >
       <div
         class="pointer-events-none absolute -right-[100px] -top-[120px] size-[400px] rounded-full bg-white/[0.06]"

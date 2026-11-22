@@ -52,14 +52,14 @@
         <div
           v-for="n in 3"
           :key="n"
-          class="h-[84px] animate-pulse rounded-[20px] bg-white shadow-[0px_3px_6px_1px_rgba(0,0,0,0.08)]"
+          class="h-[84px] animate-pulse rounded-[20px] bg-white shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
         />
       </div>
 
       <template v-else-if="!err">
         <div v-if="rows.length === 0" class="mt-10 lg:mt-12">
           <div
-            class="rounded-[20px] border border-black/[0.06] bg-marketing-panel px-5 py-6 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.1)] sm:px-8 sm:py-7"
+            class="rounded-[20px] border border-black/[0.06] bg-marketing-panel px-5 py-6 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:px-8 sm:py-7"
           >
             <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-4">
               <div class="flex shrink-0 justify-center sm:pt-0.5">
@@ -189,7 +189,7 @@
           @click.self="renameDialogOpen = false"
         >
           <div
-            class="w-full max-w-md rounded-t-2xl border border-black/10 bg-white px-6 py-8 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)] sm:rounded-2xl sm:px-8 sm:py-7"
+            class="w-full max-w-md rounded-t-2xl border border-black/10 bg-white px-6 py-8 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:rounded-2xl sm:px-8 sm:py-7"
             @click.stop
           >
             <h2 class="m-0 text-center text-xl font-extrabold text-black">

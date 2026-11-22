@@ -1,6 +1,6 @@
 <template>
   <div
-    class="mx-auto max-w-lg rounded-[24px] border border-black/10 bg-white px-6 py-10 text-center font-dmSans shadow-[0px_3px_6px_1px_rgba(0,0,0,0.08)] sm:px-10"
+    class="mx-auto max-w-lg rounded-[24px] border border-black/10 bg-white px-6 py-10 text-center font-dmSans shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:px-10"
   >
     <h1 class="mb-2 text-2xl font-extrabold tracking-tight text-black">
       {{ title }}

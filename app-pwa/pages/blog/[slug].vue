@@ -7,7 +7,7 @@
       aria-busy="true"
       aria-label="Načítava sa"
     >
-      <div class="mb-4 h-7 w-24 animate-pulse rounded-full bg-[#cff0db]" />
+      <div class="mb-4 h-7 w-24 animate-pulse rounded-full bg-[#C8F03C]" />
       <div class="mb-3 h-10 w-full max-w-3xl animate-pulse rounded-lg bg-gray-200/60 lg:h-14" />
       <div class="mb-8 h-6 w-full max-w-2xl animate-pulse rounded-lg bg-gray-200/45" />
       <div class="mb-8 flex flex-wrap gap-3">
@@ -27,7 +27,7 @@
         <div ref="containerRef" class="flex flex-col items-start gap-8 lg:flex-row lg:gap-12">
           <article class="min-w-0 flex-1">
             <span
-              class="mb-4 inline-flex items-center rounded-full bg-[#cff0db] px-3.5 py-[5px] font-dmSans text-[13px] font-bold text-[#15803d]"
+              class="mb-4 inline-flex items-center rounded-full bg-[#C8F03C] px-3.5 py-[5px] font-dmSans text-[13px] font-bold text-[#10231A]"
             >
               {{ blogCategoryLabel(post.category) }}
             </span>
@@ -86,7 +86,7 @@
               {{ post.author_bio }}
             </p>
 
-            <div :class="['mb-9 w-full overflow-hidden rounded-[20px] bg-[#cff0db]', BLOG_COVER_ASPECT_CLASS]">
+            <div :class="['mb-9 w-full overflow-hidden rounded-[20px] bg-[#C8F03C]', BLOG_COVER_ASPECT_CLASS]">
               <img
                 :src="post.cover_image_url || BLOG_DEFAULT_COVER"
                 :alt="post.title"
@@ -411,14 +411,14 @@ watch(slug, async () => {
   color: #000;
 }
 .blog-article :deep(a) {
-  color: #22c55e;
+  color: #10231A;
   text-decoration: underline;
 }
 .blog-article :deep(blockquote) {
   margin: 1.5rem 0;
-  border-left: 4px solid #22c55e;
+  border-left: 4px solid #10231A;
   border-radius: 0 12px 12px 0;
-  background: #f0faf4;
+  background: #FFFBEF;
   padding: 1.125rem 1.375rem;
   font-style: italic;
   color: rgba(0, 0, 0, 0.65);
@@ -432,14 +432,14 @@ watch(slug, async () => {
   font-style: normal;
 }
 .blog-article :deep(.highlight-box) {
-  background: #cff0db;
+  background: #C8F03C;
   border-radius: 16px;
   padding: 1.375rem 1.625rem;
   margin: 1.75rem 0;
 }
 .blog-article :deep(.highlight-box p) {
   margin: 0;
-  color: #15803d;
+  color: #10231A;
   font-weight: 600;
 }
 .blog-article :deep(img) {

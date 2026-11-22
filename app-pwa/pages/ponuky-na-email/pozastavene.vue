@@ -11,7 +11,7 @@
 
       <div class="mt-10 lg:mt-12">
         <div
-          class="mx-auto max-w-xl rounded-[20px] border border-black/[0.06] bg-marketing-panel px-5 py-6 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.1)] sm:px-8 sm:py-8"
+          class="mx-auto max-w-xl rounded-[20px] border border-black/[0.06] bg-marketing-panel px-5 py-6 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:px-8 sm:py-8"
         >
           <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-4">
             <div class="flex shrink-0 justify-center sm:pt-0.5">

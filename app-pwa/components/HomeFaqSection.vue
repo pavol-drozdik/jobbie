@@ -109,7 +109,7 @@ watch(activeRole, () => {
   }
 }
 
-/* Align with .frame-surface (#F6FAF8) — same shell as hero & steps */
+/* Align with .frame-surface (#FFFBEF) — same shell as hero & steps */
 .home-faq {
   width: 100%;
   background: transparent;

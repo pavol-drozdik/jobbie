@@ -5,11 +5,11 @@
 
 /** Left green panel on auth split layouts (desktop). */
 export const authMarketingPanelClass =
-  'auth-marketing-panel relative hidden w-full flex-col justify-between overflow-hidden bg-[linear-gradient(155deg,#15803d_0%,#22c55e_100%)] px-11 py-10 text-white before:pointer-events-none before:absolute before:-right-[100px] before:-top-20 before:size-[320px] before:rounded-full before:bg-white/[0.07] after:pointer-events-none after:absolute after:-left-[60px] after:bottom-10 after:size-[200px] after:rounded-full after:bg-white/[0.07] min-[701px]:flex min-[701px]:w-[42%] min-[701px]:px-11 min-[701px]:py-10'
+  'auth-marketing-panel relative hidden w-full flex-col justify-between overflow-hidden bg-[#10231A] px-11 py-10 text-white before:pointer-events-none before:absolute before:-right-[100px] before:-top-20 before:size-[320px] before:rounded-full before:bg-white/[0.07] after:pointer-events-none after:absolute after:-left-[60px] after:bottom-10 after:size-[200px] after:rounded-full after:bg-white/[0.07] min-[701px]:flex min-[701px]:w-[42%] min-[701px]:px-11 min-[701px]:py-10'
 
 /** Register wizard variant (38% width on md+). */
 export const authMarketingPanelRegisterClass =
-  'auth-marketing-panel relative hidden w-full flex-col justify-between overflow-hidden bg-gradient-to-br from-[#15803d] to-[#22c55e] px-11 py-10 before:pointer-events-none before:absolute before:right-[-100px] before:top-[-80px] before:size-[320px] before:rounded-full before:bg-white/[0.07] after:pointer-events-none after:absolute after:bottom-10 after:left-[-60px] after:size-[200px] after:rounded-full after:bg-white/[0.07] md:flex md:min-h-[640px] md:w-[38%] md:min-w-[38%] md:max-w-[38%]'
+  'auth-marketing-panel relative hidden w-full flex-col justify-between overflow-hidden bg-[#10231A] px-11 py-10 before:pointer-events-none before:absolute before:right-[-100px] before:top-[-80px] before:size-[320px] before:rounded-full before:bg-white/[0.07] after:pointer-events-none after:absolute after:bottom-10 after:left-[-60px] after:size-[200px] after:rounded-full after:bg-white/[0.07] md:flex md:min-h-[640px] md:w-[38%] md:min-w-[38%] md:max-w-[38%]'
 
 /** Green gradient banner above catalog filters. */
 export const catalogFilterHeroClass =

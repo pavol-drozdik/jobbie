@@ -1,6 +1,6 @@
 <template>
   <footer
-    class="relative mt-12 w-full bg-marketing-mint bg-[radial-gradient(ellipse_at_0%_100%,rgba(34,197,94,0.08),transparent_55%)] pb-[max(6rem,calc(4rem+env(safe-area-inset-bottom,0px)))] pt-14 font-dmSans marketing:mt-16 marketing:pb-10 marketing:pt-16"
+    class="relative mt-12 w-full bg-marketing-mint border-t-2 border-[#10231A] pb-[max(6rem,calc(4rem+env(safe-area-inset-bottom,0px)))] pt-14 font-dmSans marketing:mt-16 marketing:pb-10 marketing:pt-16"
   >
     <div class="mx-auto w-full max-w-[1320px] px-5 marketing:px-12">
       <div

@@ -9,7 +9,7 @@
       @click.self="onDismiss"
     >
       <div
-        class="flex max-h-[min(92vh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-black/10 bg-white shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)] sm:rounded-2xl"
+        class="flex max-h-[min(92vh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-black/10 bg-white shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:rounded-2xl"
         @click.stop
       >
         <div class="overflow-y-auto px-6 py-7 sm:px-8">

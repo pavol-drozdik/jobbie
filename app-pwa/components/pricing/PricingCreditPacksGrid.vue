@@ -10,7 +10,7 @@
     </p>
     <template v-else>
       <p v-if="error" class="mb-4 text-sm text-red-600">{{ error }}</p>
-      <div class="overflow-hidden rounded-[20px] bg-white shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)]">
+      <div class="overflow-hidden rounded-[20px] bg-white shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]">
         <div
           v-for="(pack, index) in packs"
           :key="pack.slug ?? pack.price_id"

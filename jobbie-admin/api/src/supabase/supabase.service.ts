@@ -2,6 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
+// supabase-js >= 2.106 builds a Realtime client in createClient() that needs a global
+// WebSocket. The packaged desktop app runs the API under Electron's bundled Node 20, which
+// has no native WebSocket (added globally in Node 21+/22), so createClient throws
+// "Node.js 20 detected without native WebSocket support". Supply the `ws` implementation
+// explicitly. `require` (not import) mirrors http-cors.util.ts and avoids needing @types/ws.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const NodeWebSocket = require('ws');
+
+const SUPABASE_CLIENT_OPTIONS = {
+  realtime: { transport: NodeWebSocket },
+} as const;
+
 /**
  * supabase-js >= 2.106 requires an explicit http(s) scheme (throws
  * "Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL" otherwise). Secrets are
@@ -42,10 +54,10 @@ export class SupabaseService {
           `(raw: ${JSON.stringify(rawUrl)}). Expected e.g. https://<ref>.supabase.co`,
       );
     }
-    this.client = createClient(url, key);
+    this.client = createClient(url, key, SUPABASE_CLIENT_OPTIONS);
     const readUrl = normalizeSupabaseUrl(this.config.get<string>('SUPABASE_READ_URL'));
     if (readUrl && readUrl !== url) {
-      this.readClient = createClient(readUrl, key);
+      this.readClient = createClient(readUrl, key, SUPABASE_CLIENT_OPTIONS);
     } else {
       this.readClient = this.client;
     }

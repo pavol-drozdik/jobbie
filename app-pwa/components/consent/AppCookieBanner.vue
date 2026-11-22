@@ -9,7 +9,7 @@
       :aria-describedby="descId"
     >
       <div
-        class="w-full rounded-t-2xl border border-black/10 bg-white px-5 py-6 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)] sm:rounded-2xl sm:px-6 sm:py-7"
+        class="w-full rounded-t-2xl border border-black/10 bg-white px-5 py-6 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:rounded-2xl sm:px-6 sm:py-7"
         :class="safeAreaClass"
       >
         <h2

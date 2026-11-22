@@ -744,7 +744,7 @@ const skeletonCount = 8
           <div
             v-for="n in skeletonCount"
             :key="`cv-sk-${n}`"
-            class="animate-pulse flex gap-4 overflow-hidden rounded-[15px] bg-marketing-surface p-4 shadow-[0px_0px_4px_0px_rgba(0,0,0,0.2)] sm:p-5"
+            class="animate-pulse flex gap-4 overflow-hidden rounded-[15px] bg-marketing-surface p-4 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:p-5"
           >
             <div class="size-14 shrink-0 rounded-xl bg-black/10 sm:size-[72px]" />
             <div class="min-w-0 flex-1 space-y-3 py-1">
@@ -762,7 +762,7 @@ const skeletonCount = 8
         </template>
         <div
           v-else-if="listError"
-          class="flex w-full flex-col items-center gap-3 rounded-[15px] bg-marketing-surface px-6 py-12 text-center shadow-[0px_0px_4px_0px_rgba(0,0,0,0.2)]"
+          class="flex w-full flex-col items-center gap-3 rounded-[15px] bg-marketing-surface px-6 py-12 text-center shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
         >
           <p class="m-0 font-dmSans text-base font-semibold text-red-600">{{ listError }}</p>
           <button
@@ -775,7 +775,7 @@ const skeletonCount = 8
         </div>
         <div
           v-else-if="!items.length"
-          class="flex w-full flex-col items-center gap-3 rounded-[15px] bg-marketing-surface px-6 py-16 text-center shadow-[0px_0px_4px_0px_rgba(0,0,0,0.2)]"
+          class="flex w-full flex-col items-center gap-3 rounded-[15px] bg-marketing-surface px-6 py-16 text-center shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
         >
           <h2 class="m-0 font-dmSans text-xl font-extrabold text-black">{{ S.cvDbNoResultsTitle }}</h2>
           <p class="m-0 max-w-md font-dmSans text-base text-black/55">{{ S.cvDbNoResultsHelp }}</p>
@@ -804,7 +804,7 @@ const skeletonCount = 8
 
       <div
         v-if="items.length && total > limit"
-        class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[15px] bg-marketing-surface px-4 py-4 shadow-[0px_0px_4px_0px_rgba(0,0,0,0.2)]"
+        class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[15px] bg-marketing-surface px-4 py-4 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
       >
         <p class="m-0 font-dmSans text-sm text-black/55">
           Zobrazené {{ offset + 1 }}–{{ Math.min(offset + items.length, total) }} z {{ total }}

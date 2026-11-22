@@ -10,7 +10,7 @@
 
       <aside
 
-        class="flex w-full min-w-0 flex-col gap-0.5 rounded-[20px] bg-white px-3.5 py-5 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)] max-lg:flex-row max-lg:flex-wrap max-lg:p-3 lg:mt-0 lg:w-64 lg:min-w-[256px] lg:max-w-[256px] lg:flex-col lg:self-start"
+        class="flex w-full min-w-0 flex-col gap-0.5 rounded-[20px] bg-white px-3.5 py-5 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] max-lg:flex-row max-lg:flex-wrap max-lg:p-3 lg:mt-0 lg:w-64 lg:min-w-[256px] lg:max-w-[256px] lg:flex-col lg:self-start"
 
       >
 

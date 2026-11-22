@@ -24,7 +24,7 @@ const emit = defineEmits<{
   <aside class="flex w-full shrink-0 flex-col gap-5 lg:w-[300px] lg:min-w-[300px]">
     <div
       v-if="tocItems.length"
-      class="rounded-[20px] bg-white p-6 shadow-[0_0_12px_rgba(0,0,0,0.07)]"
+      class="rounded-[20px] bg-white p-6 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
     >
       <h2 class="m-0 mb-4 font-dmSans text-[17px] font-extrabold text-black">Obsah článku</h2>
       <nav class="flex flex-col" aria-label="Obsah článku">
@@ -55,7 +55,7 @@ const emit = defineEmits<{
 
     <div
       v-if="related.length"
-      class="rounded-[20px] bg-white p-6 shadow-[0_0_12px_rgba(0,0,0,0.07)]"
+      class="rounded-[20px] bg-white p-6 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
     >
       <h2 class="m-0 mb-4 font-dmSans text-[17px] font-extrabold text-black">Súvisiace články</h2>
       <div class="flex flex-col gap-3.5">
@@ -65,7 +65,7 @@ const emit = defineEmits<{
           :to="`/blog/${rel.slug}`"
           class="flex gap-3 no-underline transition-opacity hover:opacity-75"
         >
-          <div :class="['w-[60px] min-w-[60px] overflow-hidden rounded-[10px] bg-[#cff0db]', BLOG_COVER_ASPECT_CLASS]">
+          <div :class="['w-[60px] min-w-[60px] overflow-hidden rounded-[10px] bg-[#C8F03C]', BLOG_COVER_ASPECT_CLASS]">
             <img
               :src="rel.cover_image_url || BLOG_DEFAULT_COVER"
               :alt="rel.title"
@@ -90,7 +90,7 @@ const emit = defineEmits<{
 
     <div
       class="rounded-[20px] p-6"
-      style="background: linear-gradient(155deg, #15803d 0%, #22c55e 100%)"
+      style="background: linear-gradient(155deg, #10231A 0%, #10231A 100%)"
     >
       <h2 class="m-0 mb-1.5 font-dmSans text-lg font-extrabold text-white">Novinky do e-mailu</h2>
       <p class="m-0 mb-4 font-dmSans text-sm leading-snug text-white/80">

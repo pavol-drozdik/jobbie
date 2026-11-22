@@ -13,7 +13,7 @@
     </div>
     <div
       v-if="showRoleTabs"
-      class="mx-[10px] flex w-fit max-w-full flex-wrap items-center justify-center self-center rounded-[999px] bg-white p-1.5 shadow-[0_0_3px_0_rgba(0,0,0,0.2)] marketing:rounded-full"
+      class="mx-[10px] flex w-fit max-w-full flex-wrap items-center justify-center self-center rounded-[999px] bg-white p-1.5 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:rounded-full"
       role="tablist"
       aria-label="Rola"
     >
@@ -34,7 +34,7 @@
       <div
         v-for="(item, index) in visibleItems"
         :key="`${activeRole}-${index}`"
-        class="rounded-[14px] bg-white px-5 py-4 shadow-[0px_0px_6px_0px_rgba(0,0,0,0.12)] marketing:px-7 marketing:py-5"
+        class="rounded-[14px] bg-white px-5 py-4 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-7 marketing:py-5"
       >
         <h3 class="m-0 font-dmSans text-[18px] font-bold text-black marketing:text-[22px]">
           {{ item.question }}

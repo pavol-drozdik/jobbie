@@ -1,6 +1,6 @@
 <template>
   <section
-    class="overflow-hidden rounded-[20px] bg-white px-5 py-5 shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] sm:px-8 sm:py-6"
+    class="overflow-hidden rounded-[20px] bg-white px-5 py-5 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:px-8 sm:py-6"
     aria-labelledby="pricing-credits-usage-heading"
   >
     <h2

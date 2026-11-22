@@ -13,7 +13,7 @@
       <aside
         id="cv-sidebar"
         ref="sidebarRef"
-        class="relative z-50 rounded-[20px] bg-white p-[18px] shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)] max-[820px]:static"
+        class="relative z-50 rounded-[20px] bg-white p-[18px] shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] max-[820px]:static"
       >
         <div class="flex flex-col gap-2">
           <button
@@ -57,7 +57,7 @@
           </button>
         </div>
       </aside>
-      <section class="overflow-hidden rounded-[20px] bg-white shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)]">
+      <section class="overflow-hidden rounded-[20px] bg-white shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]">
         <div class="h-2 bg-black/[0.06]">
           <span
             class="block h-full bg-marketing-green transition-[width] duration-300"
@@ -109,7 +109,7 @@
               v-for="tpl in templateCards"
               :key="tpl.key"
               class="is-clickable rounded-[20px] border-2 border-transparent bg-marketing-soft p-4 transition-all hover:-translate-y-0.5"
-              :class="uiTemplate === tpl.key ? 'border-marketing-green shadow-[0_0_0_5px_rgba(34,197,94,0.14)]' : ''"
+              :class="uiTemplate === tpl.key ? 'border-marketing-green shadow-[0_0_0_5px_rgba(200,240,60,0.14)]' : ''"
               @click="selectUiTemplate(tpl.key)"
             >
               <div class="mb-2.5 flex flex-wrap items-center gap-2">

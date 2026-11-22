@@ -76,3 +76,5 @@ Thumbs.db
 
 # Local archives (not source)
 JOBBIE.zip
+
+*.zip

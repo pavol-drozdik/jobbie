@@ -14,7 +14,7 @@
     </p>
     <template v-else-if="account">
       <div
-        class="relative overflow-hidden bg-[linear-gradient(155deg,#15803d_0%,#22c55e_100%)] py-7 text-white max-[480px]:px-6"
+        class="relative overflow-hidden bg-[#10231A] py-7 text-white max-[480px]:px-6"
         :class="heroClass"
       >
         <div
@@ -277,7 +277,7 @@ const account = ref<BillingAccount | null>(null)
 const rootClass = computed(() =>
   props.embedded
     ? 'overflow-hidden font-dmSans'
-    : 'overflow-hidden rounded-[20px] bg-white font-dmSans shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)]',
+    : 'overflow-hidden rounded-[20px] bg-white font-dmSans shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]',
 )
 
 const heroClass = computed(() =>

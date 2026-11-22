@@ -164,7 +164,7 @@
                 :msg="seg.msg"
                 :is-me="isMe(seg.msg)"
                 :avatar-initials="bubbleInitials(seg.msg)"
-                :avatar-bg="isMe(seg.msg) ? '#22c55e' : bubbleAvatarColor(seg.msg.sender_id)"
+                :avatar-bg="isMe(seg.msg) ? '#10231A' : bubbleAvatarColor(seg.msg.sender_id)"
                 :highlight-needle="highlightNeedle"
                 :show-read-receipt="showReadReceiptFor(seg.msg)"
                 :time-formatted="timeStr(seg.msg.created_at)"

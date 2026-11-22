@@ -31,11 +31,11 @@ const isHome = computed(() => props.variant === 'home')
     class="group flex h-full flex-col overflow-hidden no-underline transition-[transform,box-shadow] duration-200"
     :class="
       isHome
-        ? 'rounded-[15px] bg-marketing-surface shadow-[0px_0px_4px_0px_rgba(0,0,0,0.2)]'
-        : 'rounded-[20px] bg-white shadow-[0_0_12px_rgba(0,0,0,0.07)] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.11)]'
+        ? 'rounded-[15px] bg-marketing-surface shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]'
+        : 'rounded-[20px] bg-white shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.11)]'
     "
   >
-    <div :class="['relative w-full shrink-0 overflow-hidden bg-[#cff0db]', BLOG_COVER_ASPECT_CLASS]">
+    <div :class="['relative w-full shrink-0 overflow-hidden bg-[#C8F03C]', BLOG_COVER_ASPECT_CLASS]">
       <img
         :src="post.cover_image_url || BLOG_DEFAULT_COVER"
         :alt="post.title"
@@ -52,7 +52,7 @@ const isHome = computed(() => props.variant === 'home')
         :class="
           isHome
             ? 'right-2.5 top-2.5 bg-marketing-green text-white'
-            : 'left-3.5 top-3.5 bg-[#cff0db] text-[#15803d]'
+            : 'left-3.5 top-3.5 bg-[#C8F03C] text-[#10231A]'
         "
       >
         {{ blogCategoryLabel(post.category) }}

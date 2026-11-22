@@ -71,7 +71,7 @@ async function onSubmit(): Promise<void> {
       @click.self="closeDialog"
     >
       <div
-        class="w-full max-w-md rounded-2xl border border-black/10 bg-white px-6 py-7 shadow-[0px_3px_6px_1px_rgba(0,0,0,0.12)] sm:px-8"
+        class="w-full max-w-md rounded-2xl border border-black/10 bg-white px-6 py-7 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:px-8"
         @click.stop
       >
         <h2

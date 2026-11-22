@@ -4,7 +4,7 @@
 
     :to="ROUTES.professionalDetail(ad.id)"
 
-    class="block min-w-0 overflow-hidden rounded-[15px] bg-marketing-surface no-underline shadow-[0px_0px_4px_0px_rgba(0,0,0,0.2)]"
+    class="block min-w-0 overflow-hidden rounded-[15px] bg-marketing-surface no-underline shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
 
   >
 

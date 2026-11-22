@@ -1,40 +1,58 @@
 import type { Config } from 'tailwindcss'
 
+/**
+ * Jobbie — "Limetková energia" theme.
+ * The `marketing.*` keys are kept so existing class names keep working;
+ * only their values changed. `jobbie.*` holds the raw brand palette.
+ */
 export default {
   theme: {
     extend: {
       fontFamily: {
         dmSans: ['DM Sans Variable', 'DM Sans', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['Bricolage Grotesque Variable', 'DM Sans Variable', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       screens: {
         marketing: '900px',
         marketingXl: '1200px',
       },
       colors: {
+        jobbie: {
+          ink: '#10231A',
+          lime: '#C8F03C',
+          pink: '#FF9ED2',
+          sun: '#FFF0C2',
+          cream: '#FFFBEF',
+          muted: '#3D4A42',
+        },
         marketing: {
-          mint: '#f2faf4',
-          green: '#22c55e',
-          /** A/B homepage hero accent from Claude design export */
-          abGreen: '#179a2c',
-          abBright: '#2ecc40',
-          abInk: '#1a1a1a',
-          abMuted: '#52635a',
-          abLink: '#41514a',
-          abBottom: '#7e8b82',
-          abChipBg: '#e8f0eb',
-          surface: '#f9fcfa',
-          soft: '#fafcfb',
-          panel: '#cff0db',
-          muted: '#8e8e8e',
+          /** Light page background (was mint) */
+          mint: '#FFFBEF',
+          /** Primary action / accent text / borders — dark forest ink (was green) */
+          green: '#10231A',
+          abGreen: '#10231A',
+          abBright: '#C8F03C',
+          abInk: '#10231A',
+          abMuted: '#3D4A42',
+          abLink: '#10231A',
+          abBottom: '#5C6A61',
+          abChipBg: '#FFF0C2',
+          surface: '#FFFFFF',
+          soft: '#FFF8E6',
+          /** Highlight panels (was light green) — lime */
+          panel: '#C8F03C',
+          muted: '#5C6A61',
         },
       },
       borderRadius: {
         card: '1.25rem',
       },
       boxShadow: {
-        card: '0px 3px 6px 1px rgba(0, 0, 0, 0.12)',
-        dropdown: '0 12px 28px rgba(0, 0, 0, 0.12)',
-        hero: '0 8px 40px rgba(0, 0, 0, 0.13)',
+        card: '0 0 0 2px #10231A, 4px 4px 0 2px #10231A',
+        dropdown: '0 0 0 2px #10231A, 4px 4px 0 2px #10231A',
+        hero: '0 0 0 2px #10231A, 6px 6px 0 2px #10231A',
+        brutal: '0 0 0 2px #10231A, 4px 4px 0 2px #10231A',
+        'brutal-lg': '0 0 0 2px #10231A, 7px 7px 0 2px #10231A',
       },
     },
   },

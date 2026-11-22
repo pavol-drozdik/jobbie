@@ -25,7 +25,7 @@
         <div class="rounded-full bg-marketing-green px-3.5 py-1.5 text-sm font-bold text-white">Nové</div>
       </div>
     </div>
-    <div class="rounded-[20px] bg-white px-6 py-6 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9 marketing:py-8">
+    <div class="rounded-[20px] bg-white px-6 py-6 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-9 marketing:py-8">
       <h1 class="m-0 mb-2 text-[26px] font-extrabold leading-snug text-black marketing:text-4xl">{{ ad.title }}</h1>
       <p v-if="ad.tagline" class="m-0 mb-5 text-base font-medium text-black/55">{{ ad.tagline }}</p>
       <div v-else class="mb-5" />
@@ -42,7 +42,7 @@
     </div>
     <div
       v-if="showPlatformMessageCta"
-      class="rounded-[20px] bg-white p-5 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:p-7"
+      class="rounded-[20px] bg-white p-5 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:p-7"
     >
       <CompanyAdOwnerOpenChatActions :company-ad-id="ad.id" variant="primary" />
     </div>
@@ -52,7 +52,7 @@
       :is-owner="isOwner"
       :has-user="hasUser"
     />
-    <div class="flex flex-col gap-4 rounded-[20px] bg-white px-7 py-6 shadow-[0_0_12px_rgba(0,0,0,0.07)] sm:flex-row sm:items-center sm:gap-[18px]">
+    <div class="flex flex-col gap-4 rounded-[20px] bg-white px-7 py-6 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:flex-row sm:items-center sm:gap-[18px]">
       <div
         class="flex size-[58px] min-h-[58px] min-w-[58px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-marketing-green text-xl font-bold text-white"
       >
@@ -85,7 +85,7 @@
     </div>
     <div
       v-if="descriptionPlain || descriptionUsesHtml"
-      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9"
+      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-9"
     >
       <h2 class="m-0 mb-[18px] text-[22px] font-extrabold text-black">{{ S.firmyAdBody }}</h2>
       <div
@@ -100,7 +100,7 @@
     </div>
     <div
       v-if="ad.services.length > 0"
-      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9"
+      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-9"
     >
       <h2 class="m-0 mb-[18px] text-[22px] font-extrabold text-black">{{ S.firmySectionServices }}</h2>
       <ul class="m-0 flex list-none flex-wrap gap-2 p-0">
@@ -113,7 +113,7 @@
     </div>
     <div
       v-if="(ad.specializations?.length ?? 0) > 0"
-      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9"
+      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-9"
     >
       <h2 class="m-0 mb-[18px] text-[22px] font-extrabold text-black">{{ S.firmySpecializations }}</h2>
       <ul class="m-0 flex list-none flex-wrap gap-2 p-0">
@@ -126,7 +126,7 @@
     </div>
     <div
       v-if="(ad.certifications?.length ?? 0) > 0"
-      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9"
+      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-9"
     >
       <h2 class="m-0 mb-[18px] text-[22px] font-extrabold text-black">{{ S.firmyCertifications }}</h2>
       <ul class="m-0 flex list-none flex-wrap gap-2 p-0">
@@ -139,7 +139,7 @@
     </div>
     <div
       v-if="locationDisplay || serviceAreasDisplay"
-      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9"
+      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-9"
     >
       <h2 class="m-0 mb-[18px] text-[22px] font-extrabold text-black">{{ S.firmySectionLocation }}</h2>
       <p v-if="locationDisplay" class="m-0 text-[17px] leading-relaxed text-black/75">{{ locationDisplay }}</p>
@@ -151,7 +151,7 @@
     </div>
     <div
       v-if="hasContactBlock"
-      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9"
+      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-9"
     >
       <h2 class="m-0 mb-[18px] text-[22px] font-extrabold text-black">{{ S.firmySectionContact }}</h2>
       <dl class="m-0 flex flex-col gap-3 text-base text-black/70">
@@ -175,7 +175,7 @@
     </div>
     <div
       v-if="galleryItems.length > 0"
-      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_12px_rgba(0,0,0,0.07)] marketing:px-9"
+      class="rounded-[20px] bg-white px-6 py-8 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:px-9"
     >
       <h2 class="m-0 mb-[18px] text-[22px] font-extrabold text-black">{{ S.jobGalleryTitle }}</h2>
       <div class="flex flex-col gap-3">

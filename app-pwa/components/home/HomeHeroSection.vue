@@ -1,10 +1,10 @@
 <template>
   <section
-    class="relative w-full overflow-hidden marketing:mt-[30px]"
+    class="relative w-full overflow-hidden border-y-2 border-[#10231A] bg-[#C8F03C] marketing:mt-[30px]"
     aria-label="Úvod"
   >
     <div
-      class="mx-auto w-full max-w-[1440px] px-5 pt-[10px] pb-8 marketing:px-12 marketing:py-14 marketingXl:px-16"
+      class="mx-auto w-full max-w-[1440px] px-5 pt-8 pb-10 marketing:px-12 marketing:py-14 marketingXl:px-16"
     >
       <div
         class="grid grid-cols-1 items-center gap-10 marketing:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] marketing:gap-8 marketingXl:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] marketingXl:gap-12"
@@ -15,10 +15,10 @@
           >
             Nájdi brigádu<br>
             za pár
-            <span class="relative inline-block whitespace-nowrap text-marketing-green">
+            <span class="relative inline-block whitespace-nowrap text-[#10231A]">
               klikov.
               <svg
-                class="pointer-events-none absolute -bottom-1 left-0 h-3 w-full min-w-[5.5rem] text-marketing-green marketing:-bottom-1.5 marketing:h-4"
+                class="pointer-events-none absolute -bottom-1 left-0 h-3 w-full min-w-[5.5rem] text-[#FF5FA8] marketing:-bottom-1.5 marketing:h-4"
                 viewBox="0 0 200 16"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
@@ -28,47 +28,47 @@
                 <path
                   d="M4 12C48 4 92 14 196 8"
                   stroke="currentColor"
-                  stroke-width="4"
+                  stroke-width="6"
                   stroke-linecap="round"
                 />
               </svg>
             </span>
           </h1>
           <p
-            class="m-0 max-w-[640px] font-dmSans text-[17px] font-medium leading-[1.5] text-[#52635a] marketing:text-[19px] marketing:leading-[1.45]"
+            class="m-0 max-w-[640px] font-dmSans text-[17px] font-medium leading-[1.5] text-[#23382C] marketing:text-[19px] marketing:leading-[1.45]"
           >
             Spojíme ťa s firmami aj ľuďmi, ktorí potrebujú pomôcť — rýchlo, jednoducho a zadarmo.
           </p>
           <form
-            class="mt-7 flex w-full max-w-[640px] flex-row items-stretch overflow-hidden rounded-[999px] bg-white p-1 shadow-[0_12px_40px_rgba(14,28,20,0.1)] marketing:mt-8 marketing:p-1.5"
+            class="mt-7 flex w-full max-w-[640px] flex-row items-stretch overflow-hidden rounded-[18px] bg-white p-1 shadow-[0_0_0_2px_#10231A,6px_6px_0_2px_#10231A] marketing:mt-8 marketing:p-1.5"
             @submit.prevent="onSearchSubmit"
           >
             <div class="flex min-h-[48px] min-w-0 flex-1 items-center gap-2 px-2.5 py-1.5 marketing:min-h-[52px] marketing:gap-2.5 marketing:px-5 marketing:py-2">
-              <AppIcon name="search" :size="18" class="hidden shrink-0 text-[#9aa8a0] min-[400px]:block" />
+              <AppIcon name="search" :size="18" class="hidden shrink-0 text-[#5C6A61] min-[400px]:block" />
               <input
                 v-model="positionQuery"
                 type="search"
                 placeholder="Pozícia, napr. skladník"
                 autocomplete="off"
-                class="min-w-0 flex-1 border-none bg-transparent font-dmSans text-[14px] font-medium text-[#1a1a1a] outline-none placeholder:text-[#9aa8a0] marketing:text-base"
+                class="min-w-0 flex-1 border-none bg-transparent font-dmSans text-[14px] font-medium text-[#1a1a1a] outline-none placeholder:text-[#5C6A61] marketing:text-base"
                 aria-label="Pozícia"
               >
             </div>
             <div class="h-8 w-px shrink-0 self-center bg-[rgba(14,28,20,0.1)]" aria-hidden="true" />
             <div class="flex min-h-[48px] min-w-0 flex-1 items-center gap-2 px-2.5 py-1.5 marketing:min-h-[52px] marketing:gap-2.5 marketing:px-5 marketing:py-2">
-              <AppIcon name="map-pin" :size="18" class="hidden shrink-0 text-[#9aa8a0] min-[400px]:block" />
+              <AppIcon name="map-pin" :size="18" class="hidden shrink-0 text-[#5C6A61] min-[400px]:block" />
               <input
                 v-model="locationQuery"
                 type="search"
                 placeholder="Mesto alebo okolie"
                 autocomplete="off"
-                class="min-w-0 flex-1 border-none bg-transparent font-dmSans text-[14px] font-medium text-[#1a1a1a] outline-none placeholder:text-[#9aa8a0] marketing:text-base"
+                class="min-w-0 flex-1 border-none bg-transparent font-dmSans text-[14px] font-medium text-[#1a1a1a] outline-none placeholder:text-[#5C6A61] marketing:text-base"
                 aria-label="Mesto alebo okolie"
               >
             </div>
             <button
               type="submit"
-              class="m-0 flex size-11 shrink-0 is-clickable items-center justify-center self-center rounded-full border-none bg-marketing-green text-white transition-opacity hover:opacity-90 marketing:size-[52px]"
+              class="m-0 flex size-11 shrink-0 is-clickable items-center justify-center self-center rounded-[12px] border-none bg-marketing-green text-white transition-opacity hover:opacity-90 marketing:size-[52px]"
               aria-label="Hľadať"
             >
               <AppIcon name="search" :size="20" class="text-white" />
@@ -89,7 +89,7 @@
                 v-for="(chip, index) in heroSearchBarChips"
                 :key="chip.key"
                 :to="{ path: ROUTES.find, query: chip.query }"
-                class="inline-flex w-fit shrink-0 items-center gap-2 rounded-full border px-4 py-2 font-dmSans text-sm font-semibold no-underline transition-colors marketing:px-[18px] marketing:py-2.5 marketing:text-[15px]"
+                class="inline-flex w-fit shrink-0 items-center gap-2 rounded-full border-2 px-4 py-2 font-dmSans text-sm font-semibold no-underline transition-colors marketing:px-[18px] marketing:py-2.5 marketing:text-[15px]"
                 :class="heroChipLinkClass(index)"
               >
                 <CategoryIcon
@@ -111,12 +111,12 @@
           <div class="mt-5 grid w-full max-w-[640px] grid-cols-1 gap-3 min-[520px]:grid-cols-2 marketing:mt-6">
             <NuxtLink
               :to="ROUTES.find"
-              class="flex items-center gap-3 rounded-2xl bg-[#141414] p-4 no-underline shadow-[0_8px_24px_rgba(14,28,20,0.12)] transition-opacity hover:opacity-95 marketing:p-5"
+              class="flex items-center gap-3 rounded-2xl bg-[#10231A] p-4 no-underline shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#FF9ED2] transition-opacity hover:opacity-95 marketing:p-5"
             >
               <span
-                class="flex size-11 shrink-0 items-center justify-center rounded-full bg-marketing-green/15 marketing:size-12"
+                class="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#C8F03C] marketing:size-12"
               >
-                <AppIcon name="user" :size="22" class="text-marketing-green" />
+                <AppIcon name="user" :size="22" class="text-[#10231A]" />
               </span>
               <span class="min-w-0 text-left">
                 <span class="block font-dmSans text-[15px] font-bold leading-tight text-white marketing:text-base">Pre uchádzačov</span>
@@ -125,22 +125,26 @@
             </NuxtLink>
             <NuxtLink
               :to="ROUTES.jobHub"
-              class="flex items-center gap-3 rounded-2xl border border-[rgba(14,28,20,0.1)] bg-white p-4 no-underline shadow-[0_4px_16px_rgba(14,28,20,0.06)] transition-colors hover:border-marketing-green/25 marketing:p-5"
+              class="flex items-center gap-3 rounded-2xl bg-[#FFFBEF] p-4 no-underline shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] transition-colors hover:bg-white marketing:p-5"
             >
               <span
-                class="flex size-11 shrink-0 items-center justify-center rounded-full bg-marketing-green/10 marketing:size-12"
+                class="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#FF9ED2] marketing:size-12"
               >
                 <AppIcon name="file-lines" :size="22" class="text-marketing-green" />
               </span>
               <span class="min-w-0 text-left">
                 <span class="block font-dmSans text-[15px] font-bold leading-tight text-[#1a1a1a] marketing:text-base">Pre firmy</span>
-                <span class="mt-0.5 block font-dmSans text-[13px] font-medium text-[#7e8b82] marketing:text-sm">Chcem inzerovať</span>
+                <span class="mt-0.5 block font-dmSans text-[13px] font-medium text-[#3D4A42] marketing:text-sm">Chcem inzerovať</span>
               </span>
             </NuxtLink>
           </div>
         </div>
         <div class="relative flex w-full min-w-0 items-center justify-center marketing:items-end">
-          <picture>
+          <div
+            aria-hidden="true"
+            class="pointer-events-none absolute left-1/2 top-1/2 aspect-square w-[78%] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#10231A] bg-[#FF9ED2]"
+          />
+          <picture class="relative">
             <source
               media="(min-width: 900px)"
               srcset="/img/jobbie-mobile-hero.webp"
@@ -336,12 +340,12 @@ const heroSearchBarChips = computed((): HomeHeroSearchChip[] => {
 
 function heroChipLinkClass(index: number): string {
   if (showRecentChips.value) {
-    return 'border-[rgba(14,28,20,0.12)] bg-white text-[#52635a] hover:border-marketing-green/25'
+    return 'border-[#10231A] bg-[#FFFBEF] text-[#10231A] hover:bg-white'
   }
   if (index === 0) {
-    return 'border-transparent bg-marketing-green text-white'
+    return 'border-[#10231A] bg-[#10231A] text-[#C8F03C]'
   }
-  return 'border-[rgba(14,28,20,0.12)] bg-white text-[#52635a] hover:border-marketing-green/25'
+  return 'border-[#10231A] bg-[#FFFBEF] text-[#10231A] hover:bg-white'
 }
 
 function heroChipIconClass(index: number): string {
@@ -349,7 +353,7 @@ function heroChipIconClass(index: number): string {
   if (showRecentChips.value || index > 0) {
     return `${base} text-marketing-green`
   }
-  return `${base} text-white`
+  return `${base} text-[#C8F03C]`
 }
 
 function refreshRecentFindFilters(): void {

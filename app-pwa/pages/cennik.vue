@@ -28,7 +28,7 @@
 
             v-if="accountCredits !== null && hasBillingWalletAccess"
 
-            class="mt-6 inline-flex min-w-[min(100%,200px)] flex-col items-center rounded-2xl bg-white/95 px-6 py-3 shadow-[0px_4px_16px_rgba(0,0,0,0.1)]"
+            class="mt-6 inline-flex min-w-[min(100%,200px)] flex-col items-center rounded-2xl bg-white/95 px-6 py-3 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
 
           >
 

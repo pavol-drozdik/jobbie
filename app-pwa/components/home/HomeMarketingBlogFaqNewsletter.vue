@@ -51,7 +51,7 @@
         Často kladené <span class="text-marketing-green">otázky</span>
       </h2>
       <div
-        class="mx-[10px] flex w-fit max-w-full flex-wrap items-center justify-center self-center rounded-[999px] bg-white p-1.5 shadow-[0_0_3px_0_rgba(0,0,0,0.2)] marketing:rounded-full"
+        class="mx-[10px] flex w-fit max-w-full flex-wrap items-center justify-center self-center rounded-[999px] bg-white p-1.5 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:rounded-full"
         role="tablist"
         aria-label="Rola"
       >
@@ -72,7 +72,7 @@
         <div
           v-for="(item, i) in faqItems"
           :key="`${carouselRole}-${i}`"
-          class="w-full overflow-hidden rounded-[14px] bg-white shadow-[0px_0px_6px_0px_rgba(0,0,0,0.12)]"
+          class="w-full overflow-hidden rounded-[14px] bg-white shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
         >
           <button
             type="button"

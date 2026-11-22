@@ -79,7 +79,7 @@
         </div>
         <div
           v-if="heroJob"
-          class="hero-pill hero-pill--new flex w-fit max-w-[min(11rem,calc(100%-1rem))] items-center justify-center gap-2 rounded-lg bg-marketing-soft p-2 text-[#111] shadow-[4px_4px_4px_0px_rgba(0,0,0,0.2)] marketing:max-w-none marketing:p-2.5"
+          class="hero-pill hero-pill--new flex w-fit max-w-[min(11rem,calc(100%-1rem))] items-center justify-center gap-2 rounded-lg bg-marketing-soft p-2 text-[#111] shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:max-w-none marketing:p-2.5"
         >
           <span class="flex shrink-0 text-marketing-green">
             <AppIcon name="bolt" :size="18" />
@@ -88,7 +88,7 @@
         </div>
         <div
           v-if="heroJob"
-          class="hero-pill hero-pill--rate flex w-fit max-w-[min(9rem,calc(100%-1rem))] items-center justify-center gap-2 rounded-lg bg-marketing-soft p-2 text-[#111] shadow-[4px_4px_4px_0px_rgba(0,0,0,0.2)] marketing:max-w-none marketing:p-2.5"
+          class="hero-pill hero-pill--rate flex w-fit max-w-[min(9rem,calc(100%-1rem))] items-center justify-center gap-2 rounded-lg bg-marketing-soft p-2 text-[#111] shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:max-w-none marketing:p-2.5"
         >
           <span class="flex shrink-0 text-marketing-green">
             <AppIcon name="currency" :size="18" />
@@ -97,7 +97,7 @@
         </div>
         <div
           v-if="heroJob"
-          class="hero-pill hero-pill--loc flex w-fit max-w-[min(12rem,calc(100%-1.5rem))] items-center justify-center gap-2 rounded-lg bg-marketing-soft p-2 text-[#111] shadow-[4px_4px_4px_0px_rgba(0,0,0,0.2)] marketing:max-w-none marketing:p-2.5"
+          class="hero-pill hero-pill--loc flex w-fit max-w-[min(12rem,calc(100%-1.5rem))] items-center justify-center gap-2 rounded-lg bg-marketing-soft p-2 text-[#111] shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:max-w-none marketing:p-2.5"
         >
           <span class="flex shrink-0 text-marketing-green">
             <AppIcon name="map-pin" :size="18" />

@@ -11,9 +11,9 @@ export type JobbieStripeAppearanceVariant = 'auth' | 'settings'
 /** Tailwind `marketing.soft` — matches `.addjob-input` / `AppFormDropdown`. */
 export const JOBBIE_STRIPE_INPUT_BACKGROUND = '#fafcfb'
 
-const JOBBIE_STRIPE_MINT = '#f2faf4'
-const JOBBIE_STRIPE_PANEL = '#cff0db'
-const JOBBIE_STRIPE_GREEN = '#22c55e'
+const JOBBIE_STRIPE_MINT = '#FFFBEF'
+const JOBBIE_STRIPE_PANEL = '#C8F03C'
+const JOBBIE_STRIPE_GREEN = '#10231A'
 const JOBBIE_STRIPE_BORDER = 'rgba(0, 0, 0, 0.06)'
 const JOBBIE_STRIPE_TEXT = '#000000'
 const JOBBIE_STRIPE_TEXT_MUTED = 'rgba(0, 0, 0, 0.8)'
