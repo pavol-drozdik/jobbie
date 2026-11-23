@@ -80,7 +80,7 @@ async function onSubmit(): Promise<void> {
         >
           {{ S.contentReportDialogTitle }}
         </h2>
-        <p v-if="done" class="mt-4 text-center text-sm text-green-700">
+        <p v-if="done" class="mt-4 text-center text-sm text-jobbie-ink">
           {{ S.contentReportSuccess }}
         </p>
         <template v-else>

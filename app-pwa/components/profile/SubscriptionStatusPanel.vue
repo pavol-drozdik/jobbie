@@ -14,7 +14,7 @@
     </p>
     <template v-else-if="account">
       <div
-        class="relative overflow-hidden bg-[#10231A] py-7 text-white max-[480px]:px-6"
+        class="relative overflow-hidden bg-jobbie-lime jb-on-light py-7 text-white max-[480px]:px-6"
         :class="heroClass"
       >
         <div

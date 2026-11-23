@@ -6,7 +6,7 @@
 
       <section
 
-        class="relative mb-8 mt-[30px] overflow-hidden rounded-[30px] bg-[linear-gradient(155deg,rgb(21,128,61)_0%,rgb(34,197,94)_100%)] px-6 py-10 sm:px-12 sm:py-14"
+        class="relative mb-8 mt-[30px] overflow-hidden rounded-[30px] bg-jobbie-pink jb-on-light shadow-brutal-lg px-6 py-10 sm:px-12 sm:py-14"
 
       >
 
@@ -434,7 +434,9 @@ watch(activeTab, (tab) => {
 
   border-radius: 999px;
 
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.7);
+
+  box-shadow: 0 0 0 2px #10231a;
 
   padding: 4px;
 
@@ -474,7 +476,7 @@ watch(activeTab, (tab) => {
 
 .pricing-hero-tabs :deep([role='radio']:not([aria-checked='true'])) {
 
-  color: rgba(255, 255, 255, 0.9);
+  color: #10231a;
 
 }
 
@@ -482,7 +484,7 @@ watch(activeTab, (tab) => {
 
 .pricing-hero-tabs :deep([role='radio']:not([aria-checked='true']):hover) {
 
-  color: #fff;
+  color: #10231a;
 
 }
 
@@ -492,7 +494,7 @@ watch(activeTab, (tab) => {
 
   background: #fff;
 
-  color: rgb(21, 128, 61);
+  color: rgb(16, 35, 26);
 
 }
 

@@ -5,15 +5,15 @@
 
 /** Left green panel on auth split layouts (desktop). */
 export const authMarketingPanelClass =
-  'auth-marketing-panel relative hidden w-full flex-col justify-between overflow-hidden bg-[#10231A] px-11 py-10 text-white before:pointer-events-none before:absolute before:-right-[100px] before:-top-20 before:size-[320px] before:rounded-full before:bg-white/[0.07] after:pointer-events-none after:absolute after:-left-[60px] after:bottom-10 after:size-[200px] after:rounded-full after:bg-white/[0.07] min-[701px]:flex min-[701px]:w-[42%] min-[701px]:px-11 min-[701px]:py-10'
+  'auth-marketing-panel relative hidden w-full flex-col justify-between overflow-hidden bg-jobbie-lime jb-on-light px-11 py-10 text-white before:pointer-events-none before:absolute before:-right-[100px] before:-top-20 before:size-[320px] before:rounded-full before:border-2 before:border-jobbie-ink before:bg-jobbie-pink after:pointer-events-none after:absolute after:-left-[60px] after:bottom-10 after:size-[200px] after:rounded-full after:border-2 after:border-jobbie-ink after:bg-jobbie-pink min-[701px]:flex min-[701px]:w-[42%] min-[701px]:px-11 min-[701px]:py-10'
 
 /** Register wizard variant (38% width on md+). */
 export const authMarketingPanelRegisterClass =
-  'auth-marketing-panel relative hidden w-full flex-col justify-between overflow-hidden bg-[#10231A] px-11 py-10 before:pointer-events-none before:absolute before:right-[-100px] before:top-[-80px] before:size-[320px] before:rounded-full before:bg-white/[0.07] after:pointer-events-none after:absolute after:bottom-10 after:left-[-60px] after:size-[200px] after:rounded-full after:bg-white/[0.07] md:flex md:min-h-[640px] md:w-[38%] md:min-w-[38%] md:max-w-[38%]'
+  'auth-marketing-panel relative hidden w-full flex-col justify-between overflow-hidden bg-jobbie-lime jb-on-light px-11 py-10 before:pointer-events-none before:absolute before:right-[-100px] before:top-[-80px] before:size-[320px] before:rounded-full before:border-2 before:border-jobbie-ink before:bg-jobbie-pink after:pointer-events-none after:absolute after:bottom-10 after:left-[-60px] after:size-[200px] after:rounded-full after:border-2 after:border-jobbie-ink after:bg-jobbie-pink md:flex md:min-h-[640px] md:w-[38%] md:min-w-[38%] md:max-w-[38%]'
 
 /** Green gradient banner above catalog filters. */
 export const catalogFilterHeroClass =
-  'catalog-filter-hero mb-[50px] mt-[30px] w-full max-w-[1400px] rounded-card bg-[linear-gradient(155deg,rgb(21,128,61)_0%,rgb(34,197,94)_100%)] p-6 shadow-hero marketing:p-[50px]'
+  'catalog-filter-hero mb-[50px] mt-[30px] w-full max-w-[1400px] rounded-card bg-jobbie-lime jb-on-light p-6 shadow-hero marketing:p-[50px]'
 
 /** Chat list page outer shell. */
 export const chatPageRootClass =

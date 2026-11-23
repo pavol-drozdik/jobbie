@@ -1,7 +1,7 @@
 <template>
   <section
     ref="shellRef"
-    class="mb-[50px] mt-[30px] w-full max-w-[1400px] rounded-[20px] bg-[linear-gradient(155deg,rgb(21,128,61)_0%,rgb(34,197,94)_100%)] p-6 marketing:p-[50px]"
+    class="mb-[50px] mt-[30px] w-full max-w-[1400px] rounded-[20px] bg-jobbie-lime jb-on-light shadow-hero p-6 marketing:p-[50px]"
   >
     <h1
       v-if="pageTitle"

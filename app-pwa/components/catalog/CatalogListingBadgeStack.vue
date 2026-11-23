@@ -21,7 +21,7 @@
     </div>
     <div
       v-if="showNew"
-      class="flex w-fit items-center justify-center rounded-full bg-marketing-green px-2.5 font-dmSans font-semibold text-white"
+      class="flex w-fit items-center justify-center rounded-full border-2 border-jobbie-ink bg-jobbie-pink px-2.5 font-dmSans font-bold text-jobbie-ink"
       :class="pillSizeClass"
     >
       {{ S.jobCardBadgeNew }}

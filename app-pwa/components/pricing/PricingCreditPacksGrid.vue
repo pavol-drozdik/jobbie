@@ -17,7 +17,7 @@
           class="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-6"
           :class="[
             index > 0 ? 'border-t border-black/[0.06]' : '',
-            pack.badge === 'popular' ? 'bg-[linear-gradient(90deg,rgba(240,253,244,0.95)_0%,rgba(255,255,255,1)_55%)]' : '',
+            pack.badge === 'popular' ? 'bg-[linear-gradient(90deg,rgba(255,251,239,0.95)_0%,rgba(255,255,255,1)_55%)]' : '',
           ]"
         >
           <div class="min-w-0 flex-1">

@@ -21,6 +21,7 @@ export default {
           ink: '#10231A',
           lime: '#C8F03C',
           pink: '#FF9ED2',
+          pinkSoft: '#FFE3F1',
           sun: '#FFF0C2',
           cream: '#FFFBEF',
           muted: '#3D4A42',
@@ -36,7 +37,7 @@ export default {
           abMuted: '#3D4A42',
           abLink: '#10231A',
           abBottom: '#5C6A61',
-          abChipBg: '#FFF0C2',
+          abChipBg: '#FF9ED2',
           surface: '#FFFFFF',
           soft: '#FFF8E6',
           /** Highlight panels (was light green) — lime */

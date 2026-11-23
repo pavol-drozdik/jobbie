@@ -107,7 +107,7 @@
             v-for="job in jobs"
             :key="job.id"
           :to="ROUTES.jobDetail(job.id)"
-          class="catalog-job-card block min-w-0 overflow-hidden rounded-[15px] bg-marketing-surface no-underline shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
+          class="catalog-job-card jb-job-card block min-w-0 overflow-hidden rounded-[15px] bg-marketing-surface no-underline shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
         >
           <div class="relative aspect-[4/3]">
             <NuxtImg
@@ -160,7 +160,7 @@
             <div class="flex items-center justify-between text-marketing-green">
               <div class="flex items-center gap-2">
                 <div
-                  class="flex size-10 min-w-10 shrink-0 items-center justify-center rounded-full bg-marketing-green font-dmSans text-base font-bold text-white"
+                  class="flex size-10 min-w-10 shrink-0 items-center justify-center rounded-full border-2 border-jobbie-ink bg-jobbie-pink font-dmSans text-base font-bold text-jobbie-ink"
                 >
                   {{ profileInitials(job.employer_name) }}
                 </div>

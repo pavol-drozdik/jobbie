@@ -5,8 +5,8 @@
       class="flex h-[60px] w-full is-clickable select-none items-center justify-center gap-2 rounded-full px-5 font-dmSans text-base font-semibold outline-none shadow-[0_2px_10px_rgba(0,0,0,0.15)] transition-[background-color,color,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-amber-200 focus-visible:ring-offset-2 focus-visible:ring-offset-[#10231A]"
       :class="
         ctx.filters.urgent_only
-          ? 'bg-amber-600 text-white shadow-[0_3px_12px_rgba(0,0,0,0.2)]'
-          : 'bg-amber-400 text-amber-950 hover:bg-amber-500'
+          ? 'bg-jobbie-ink text-jobbie-lime shadow-brutal'
+          : 'bg-jobbie-pink text-jobbie-ink shadow-brutal hover:bg-white'
       "
       :aria-pressed="ctx.filters.urgent_only"
       :aria-label="S.urgentOnly"

@@ -17,7 +17,9 @@ if (!existsSync(sharpPath)) {
 const sharp = require(sharpPath)
 const publicDir = path.resolve(scriptDir, '../public')
 const logoPath = path.join(publicDir, 'jobbielogowhite.svg')
-const thumbBg = '#22c55e'
+const thumbBg = '#C8F03C'
+/** Logo colour on the lime thumbnail ("Limetková energia" theme). */
+const thumbLogoFill = '#10231A'
 const width = 800
 const height = 600
 const logoScale = 0.094
@@ -33,7 +35,7 @@ function extractLogoInnerMarkup(svgSource) {
   if (!match?.[1]) {
     throw new Error('Could not parse jobbielogowhite.svg')
   }
-  return match[1].trim()
+  return match[1].trim().replace(/fill:\s*#fff(?:fff)?\b/gi, `fill:${thumbLogoFill}`)
 }
 
 function buildThumbSvg(logoInner) {

@@ -35,7 +35,7 @@ export function companyAdStatusLabel(
 const CATEGORY_SWATCH: Record<string, string> = {
   stavba: 'bg-gradient-to-br from-amber-600 to-stone-900',
   domacnost: 'bg-gradient-to-br from-sky-500 to-blue-800',
-  zahrada: 'bg-gradient-to-br from-lime-600 to-green-900',
+  zahrada: 'bg-gradient-to-br from-lime-600 to-[#10231A]',
   stahovanie: 'bg-gradient-to-br from-orange-500 to-amber-900',
   sklad: 'bg-gradient-to-br from-zinc-500 to-zinc-900',
   eventy: 'bg-gradient-to-br from-fuchsia-500 to-pink-700',

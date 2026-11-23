@@ -1733,7 +1733,7 @@ h2.font-dmSans {
 h1 [class~='text-marketing-green'],
 h2 [class~='text-marketing-green'] {
   color: var(--jb-ink);
-  background-image: linear-gradient(transparent 58%, var(--jb-lime) 58%);
+  background-image: linear-gradient(transparent 58%, var(--jb-pink) 58%);
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
   padding: 0 0.08em;
@@ -1753,7 +1753,7 @@ input[type='range'] {
 }
 
 ::selection {
-  background: var(--jb-lime);
+  background: var(--jb-pink);
   color: var(--jb-ink);
 }
 
@@ -1799,4 +1799,56 @@ input[type='range'] {
   .jb-btn {
     transition: none;
   }
+}
+
+/* Catalog filter hero is lime now (was a green gradient): dark text on it,
+   except inside ink buttons, which keep lime/white content. */
+.catalog-filter-hero [class*='text-white']:not([class~='bg-marketing-green']):not([class~='bg-marketing-green'] *),
+.catalog-filter-hero [class*='decoration-white'] {
+  color: var(--jb-ink);
+  text-decoration-color: var(--jb-ink);
+}
+
+/* Pink accents: primary buttons get a pink offset shadow, job cards lift
+   onto a pink shadow on hover. */
+a[class~='bg-marketing-green'][class~='text-white'],
+button[class~='bg-marketing-green'][class~='text-white'] {
+  box-shadow: 3px 3px 0 var(--jb-pink);
+}
+
+.jb-job-card {
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.jb-job-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 0 0 0 2px var(--jb-ink), 7px 7px 0 2px var(--jb-pink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jb-job-card,
+  .jb-job-card:hover {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* Light brand panels (lime / pink) that used to be dark green with white text:
+   turn white text and translucent white chrome dark, except inside ink buttons. */
+.jb-on-light,
+.jb-on-light[class*='text-white'],
+.jb-on-light [class*='text-white']:not([class~='bg-marketing-green']):not([class~='bg-marketing-green'] *):not([class~='bg-jobbie-ink']):not([class~='bg-jobbie-ink'] *) {
+  color: var(--jb-ink);
+}
+
+.jb-on-light [class*='border-white'] {
+  border-color: rgba(16, 35, 26, 0.35);
+}
+
+.jb-on-light [class*='bg-white/'] {
+  background-color: rgba(255, 255, 255, 0.6);
+}
+
+.jb-on-light [class*='decoration-white'] {
+  text-decoration-color: var(--jb-ink);
 }

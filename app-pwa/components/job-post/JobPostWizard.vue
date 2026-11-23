@@ -516,7 +516,7 @@
 
         <JobPostSectionCard :title="S.jobPublishCreditsSectionTitle">
           <div
-            class="rounded-2xl border border-marketing-green/20 bg-gradient-to-br from-marketing-mint/80 to-marketing-mint/30 p-5 sm:p-6"
+            class="rounded-2xl border border-marketing-green/20 bg-jobbie-pinkSoft p-5 sm:p-6"
           >
             <div class="grid gap-5 sm:grid-cols-[1fr_auto] sm:items-end">
               <div>

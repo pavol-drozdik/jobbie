@@ -28,7 +28,7 @@
         >
           <a
             :href="href"
-            class="relative flex is-clickable items-center gap-3.5 px-5 py-3.5 no-underline text-inherit transition-colors hover:bg-[#f7fdf9]"
+            class="relative flex is-clickable items-center gap-3.5 px-5 py-3.5 no-underline text-inherit transition-colors hover:bg-[#FFFBEF]"
             :class="[
               room.id === activeRoomId ? 'bg-marketing-mint' : '',
               openingRoomId === room.id ? 'pointer-events-none opacity-60' : '',
