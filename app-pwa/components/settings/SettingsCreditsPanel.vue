@@ -13,7 +13,7 @@
       </div>
       <div
         v-else
-        class="rounded-2xl border border-marketing-green/20 bg-gradient-to-br from-marketing-mint/80 to-marketing-mint/30 p-5 sm:p-6"
+        class="rounded-2xl border border-marketing-green/20 bg-jobbie-pinkSoft p-5 sm:p-6"
       >
         <p class="m-0 font-dmSans text-sm font-medium text-black/50">
           {{ S.settingsCreditsBalanceLabel }}

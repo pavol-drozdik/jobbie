@@ -107,7 +107,7 @@
               <div class="hidden items-center gap-2 marketing:flex">
                 <NuxtLink
                   :to="registerTo"
-                  class="inline-flex h-10 is-clickable items-center justify-center whitespace-nowrap rounded-full border-none bg-white px-4 text-[20px] font-bold text-marketing-green no-underline"
+                  class="inline-flex h-10 is-clickable items-center justify-center whitespace-nowrap rounded-full border-2 border-jobbie-ink bg-jobbie-pink px-4 text-[20px] font-bold text-jobbie-ink no-underline"
                 >
                   {{ S.navRegister }}
                 </NuxtLink>

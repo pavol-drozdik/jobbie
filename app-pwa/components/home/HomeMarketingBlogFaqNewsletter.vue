@@ -1,6 +1,6 @@
 <template>
   <section
-    class="mt-[72px] flex w-full flex-col items-center bg-marketing-green px-5 pt-[60px] text-center marketing:mt-[120px] marketingXl:mt-[140px]"
+    class="mt-[72px] flex w-full flex-col items-center bg-marketing-green px-5 pb-[60px] pt-[60px] text-center marketing:mt-[120px] marketingXl:mt-[140px]"
   >
     <h2 class="font-dmSans text-[32px] font-extrabold leading-[1.1] text-white marketing:text-[52px] marketing:leading-[1.05] marketingXl:text-[60px] marketingXl:leading-[60px]">
       {{ S.homeDownloadTitle }}
@@ -9,20 +9,11 @@
       {{ S.homeDownloadLead }}
     </p>
     <p
-      class="my-4 inline-flex items-center justify-center rounded-full border border-white/25 bg-white/10 px-5 py-2.5 font-dmSans text-base font-bold text-white marketing:text-lg"
+      class="my-4 inline-flex items-center justify-center rounded-full border-2 border-jobbie-pink bg-jobbie-pink px-5 py-2.5 font-dmSans text-base font-bold text-jobbie-ink marketing:text-lg"
       role="status"
     >
       {{ S.homeDownloadStatus }}
     </p>
-    <img
-      src="/img/jobbie-app.webp"
-      alt="Jobbie mobilná aplikácia — ukážka rozhrania"
-      width="300"
-      height="600"
-      loading="lazy"
-      decoding="async"
-      class="mt-5 h-auto w-full max-w-[280px] object-contain marketing:max-w-[300px]"
-    >
   </section>
   <section class="mt-[72px] flex w-full flex-col items-center marketing:mt-[120px] marketingXl:mt-[140px]">
     <div class="box-border w-full max-w-[1400px] px-5">
@@ -104,18 +95,8 @@
   </section>
   <section class="mt-[72px] flex w-full flex-col items-center pb-12 marketing:mt-[120px] marketingXl:mt-[140px]">
     <div class="box-border flex w-full max-w-[1400px] flex-col gap-6 px-5 marketing:flex-row marketing:items-center">
-      <div class="w-full md:block marketing:w-1/2">
-        <NuxtImg
-          class="mx-auto block w-full rounded-[20px] object-contain marketing:w-[90%]"
-          src="/img/perspective.png"
-          alt="Novinky zo sveta práce — ilustrácia"
-          width="640"
-          height="480"
-          format="webp"
-          quality="82"
-          loading="lazy"
-          decoding="async"
-        />
+      <div class="w-full pb-4 md:block marketing:w-1/2">
+        <HomeFeatureIllustration variant="newsletter" />
       </div>
       <div class="w-full marketing:w-1/2">
         <h2 class="mt-0 font-dmSans text-[32px] font-extrabold leading-[1.1] text-black marketing:text-[52px] marketing:leading-[1.05] marketingXl:text-[60px] marketingXl:leading-[60px]">

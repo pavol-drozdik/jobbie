@@ -162,10 +162,10 @@ const {
 
 function planColumnClass(plan: PlanRow): string {
   if (mySub.value?.plan_id === plan.id) {
-    return 'bg-[#f0fdf4] ring-2 ring-inset ring-marketing-green/30'
+    return 'bg-[#FFFBEF] ring-2 ring-inset ring-marketing-green/30'
   }
   if (plan.slug === 'plus') {
-    return 'bg-[linear-gradient(180deg,rgba(240,253,244,0.9)_0%,rgba(255,255,255,1)_100%)]'
+    return 'bg-[linear-gradient(180deg,rgba(255,251,239,0.9)_0%,rgba(255,255,255,1)_100%)]'
   }
   return ''
 }

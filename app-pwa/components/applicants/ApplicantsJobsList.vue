@@ -188,7 +188,7 @@ function statusStats(job: EmployerJobHubItem): StatusStatRow[] {
       key: 'accepted',
       label: S.applicantsColAccepted,
       count: c.accepted,
-      valueClass: c.accepted > 0 ? 'text-emerald-700' : 'text-black/45',
+      valueClass: c.accepted > 0 ? 'text-jobbie-ink' : 'text-black/45',
     },
     {
       key: 'rejected',

@@ -1,14 +1,14 @@
 <template>
-  <div class="relative flex flex-col gap-3.5 overflow-visible rounded-[20px] bg-white p-7 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]">
+  <div class="relative flex flex-col gap-3.5 overflow-visible rounded-[20px] bg-jobbie-pinkSoft p-7 shadow-[0_0_0_2px_#10231A,5px_5px_0_2px_#FF9ED2]">
     <div>
-      <div class="text-[13px] font-medium text-black/40">{{ salaryKindLabel }}</div>
+      <div class="text-[13px] font-medium text-black/65">{{ salaryKindLabel }}</div>
       <div class="text-[42px] font-extrabold leading-none text-marketing-green">{{ salaryAmountLine }}</div>
-      <div v-if="salarySubline" class="mt-0.5 text-base font-medium text-black/40">{{ salarySubline }}</div>
+      <div v-if="salarySubline" class="mt-0.5 text-base font-medium text-black/65">{{ salarySubline }}</div>
     </div>
     <hr class="m-0 border-0 border-t border-black/[0.07]">
     <div
       v-if="applicationDeadlineFormatted"
-      class="flex items-center gap-2 text-sm font-medium text-black/50"
+      class="flex items-center gap-2 text-sm font-medium text-black/70"
     >
       <AppIcon name="hourglass" :size="14" class="shrink-0 text-marketing-green" />
       <span>{{ S.jobApplyBy }} <strong class="font-semibold text-black">{{ applicationDeadlineFormatted }}</strong></span>

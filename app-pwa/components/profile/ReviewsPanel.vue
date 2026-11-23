@@ -5,7 +5,7 @@
     <p v-if="loading" class="px-8 py-12 text-center text-base text-black/50">{{ S.loading }}</p>
     <template v-else-if="detail">
       <div
-        class="relative overflow-hidden bg-[#10231A] px-8 py-7 text-white max-[480px]:px-6"
+        class="relative overflow-hidden bg-jobbie-lime jb-on-light px-8 py-7 text-white max-[480px]:px-6"
       >
         <div
           class="pointer-events-none absolute -right-12 -top-16 size-[200px] rounded-full bg-white/[0.08]"

@@ -83,7 +83,7 @@
 
         <div
           v-if="savedBanner"
-          class="mt-6 rounded-[20px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-[15px] font-semibold text-emerald-900"
+          class="mt-6 rounded-[20px] border border-jobbie-ink bg-jobbie-cream px-5 py-4 text-[15px] font-semibold text-jobbie-ink"
           role="status"
         >
           {{ S.jobEmailAlertsSaved }}

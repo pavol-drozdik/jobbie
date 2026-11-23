@@ -78,7 +78,7 @@ export function statusBadgeClass(status: string): string {
     case 'rejected':
       return 'bg-red-100 text-red-800'
     case 'accepted':
-      return 'bg-emerald-100 text-emerald-900'
+      return 'bg-jobbie-lime text-jobbie-ink'
     case 'withdrawn':
       return 'bg-black/10 text-black/50'
     default:

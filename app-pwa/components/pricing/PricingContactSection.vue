@@ -9,7 +9,7 @@
       class="flex flex-col overflow-hidden rounded-[24px] shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] min-[900px]:min-h-[520px] min-[900px]:flex-row"
     >
       <aside
-        class="pricing-contact-panel relative flex flex-col justify-between overflow-hidden bg-[#10231A] px-6 py-8 text-white min-[900px]:w-[40%] min-[900px]:px-10 min-[900px]:py-10"
+        class="pricing-contact-panel relative flex flex-col justify-between overflow-hidden bg-jobbie-lime jb-on-light px-6 py-8 text-white min-[900px]:w-[40%] min-[900px]:px-10 min-[900px]:py-10"
       >
         <div class="relative z-[1]">
           <h2

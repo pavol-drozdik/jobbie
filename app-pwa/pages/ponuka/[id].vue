@@ -90,7 +90,7 @@
             <div class="flex flex-col gap-3 rounded-[20px] bg-white px-7 py-6 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:flex-row sm:items-center sm:gap-[18px]">
               <div class="flex min-w-0 flex-1 items-center gap-[18px]">
                 <div
-                  class="flex size-[58px] min-h-[58px] min-w-[58px] shrink-0 items-center justify-center rounded-full bg-marketing-green text-xl font-bold text-white"
+                  class="flex size-[58px] min-h-[58px] min-w-[58px] shrink-0 items-center justify-center rounded-full border-2 border-jobbie-ink bg-jobbie-pink text-xl font-bold text-jobbie-ink"
                 >{{ employerInitials(job.employer_name) }}</div>
                 <div class="min-w-0 flex-1">
                   <div class="mb-0.5 text-[13px] font-medium text-black/40">{{ S.jobPostedBy }}</div>
@@ -231,7 +231,7 @@
               <div class="flex flex-col gap-3 rounded-[20px] bg-white px-7 py-6 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] sm:flex-row sm:items-center sm:gap-[18px]">
                 <div class="flex min-w-0 flex-1 items-center gap-[18px]">
                   <div
-                    class="flex size-[58px] min-h-[58px] min-w-[58px] shrink-0 items-center justify-center rounded-full bg-marketing-green text-xl font-bold text-white"
+                    class="flex size-[58px] min-h-[58px] min-w-[58px] shrink-0 items-center justify-center rounded-full border-2 border-jobbie-ink bg-jobbie-pink text-xl font-bold text-jobbie-ink"
                   >{{ employerInitials(job.employer_name) }}</div>
                   <div class="min-w-0 flex-1">
                     <div class="mb-0.5 text-[13px] font-medium text-black/40">{{ S.jobPostedBy }}</div>

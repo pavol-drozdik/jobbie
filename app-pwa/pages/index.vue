@@ -8,213 +8,47 @@
       {{ promoCreditsBanner }}
     </div>
     <HomeHeroSection />
-    <section class="mt-[72px] flex w-full flex-col items-center marketing:mt-[120px] marketingXl:mt-[140px]">
-      <div class="flex w-full flex-col items-center gap-10">
-        <h2 class="mt-0 text-center font-dmSans text-[32px] font-extrabold leading-[1.1] text-black marketing:text-[52px] marketing:leading-[1.05] marketingXl:mb-5 marketingXl:text-[60px] marketingXl:leading-[60px]">
-          Ako Jobbie Funguje
-        </h2>
-        <div
-          class="mx-[10px] flex w-fit max-w-full flex-wrap items-center justify-center rounded-[999px] bg-white p-1.5 shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] marketing:rounded-full"
-          role="tablist"
-          aria-label="Rola"
-        >
-          <button
-            v-for="tab in homeCarouselTabs"
-            :key="tab.role"
-            type="button"
-            role="tab"
-            :aria-selected="homeCarouselRole === tab.role"
-            class="m-0.5 is-clickable whitespace-nowrap rounded-full border-none px-2 py-1.5 text-[13px] font-dmSans font-bold transition-[background-color,color] duration-200 min-[390px]:m-1 min-[390px]:px-3 min-[390px]:py-2 min-[390px]:text-[15px] marketing:m-[5px] marketing:px-5 marketing:py-2.5 marketing:text-[22px] aria-selected:bg-marketing-green aria-selected:text-white"
-            :class="homeCarouselRole === tab.role ? 'bg-marketing-green text-white' : 'bg-transparent text-black'"
-            @click="selectHomeCarouselRole(tab.role)"
-          >
-            {{ tab.label }}
-          </button>
-        </div>
-        <div
-          ref="homeCarouselEl"
-          class="w-full touch-pan-y overflow-hidden"
-          role="region"
-          aria-label="Ukážka funkcií Jobbie"
-          aria-live="polite"
-        >
-          <div
-            ref="homeCarouselTrackRef"
-            class="flex gap-[30px] will-change-transform"
-            :style="{ transform: `translateX(${homeCarouselTranslatePx}px)`, transition: homeCarouselTransition }"
-            @touchstart.passive="onHomeCarouselTouchStart"
-            @touchmove="onHomeCarouselTouchMove"
-            @touchend="onHomeCarouselTouchEnd"
-          >
-            <div
-              v-for="(slide, i) in homeCarouselSlides"
-              :key="`${homeCarouselRole}-${i}`"
-              data-home-carousel-card
-              class="flex min-h-0 w-[min(700px,calc(100vw-48px))] min-w-[min(700px,calc(100vw-48px))] shrink-0 flex-col gap-3 rounded-[20px] bg-marketing-panel shadow-[0_0_0_2px_#10231A,6px_6px_0_2px_#10231A] p-6 max-[600px]:p-5 marketing:w-[700px] marketing:min-w-[700px] marketing:gap-4 marketing:p-10"
-            >
-              <h3 class="m-0 font-dmSans text-[22px] font-extrabold text-black max-[600px]:text-[22px] marketing:text-[34px] marketingXl:text-4xl">
-                {{ slide.title }}
-              </h3>
-              <p class="m-0 text-base font-medium text-black/80 max-[600px]:text-base marketing:text-[22px] marketingXl:text-2xl">
-                {{ slide.text }}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div class="mt-6 flex items-center justify-center gap-2.5">
-          <button
-            type="button"
-            class="mr-2 flex size-11 min-w-[44px] is-clickable items-center justify-center rounded-full border-none bg-marketing-green text-white"
-            aria-label="Predchádzajúce"
-            @click="homeCarouselGoDelta(-1)"
-          >
-            <AppIcon name="chevron-left" :size="20" class="text-white" />
-          </button>
-          <button
-            v-for="(_, i) in homeCarouselSlides"
-            :key="`dot-${i}`"
-            type="button"
-            class="flex size-11 is-clickable items-center justify-center rounded-full border-none bg-transparent p-0"
-            :aria-label="`Snímka ${i + 1} z ${homeCarouselSlides.length}`"
-            @click="homeCarouselGoTo(i, true)"
-          >
-            <span
-              class="block h-2.5 rounded-full bg-black/20 transition-[background-color,width] duration-[250ms] ease-in-out"
-              :class="i === homeCarouselIndex ? 'w-7 bg-marketing-green' : 'w-2.5'"
-              aria-hidden="true"
-            />
-          </button>
-          <button
-            type="button"
-            class="ml-2 flex size-11 min-w-[44px] is-clickable items-center justify-center rounded-full border-none bg-marketing-green text-white"
-            aria-label="Ďalšie"
-            @click="homeCarouselGoDelta(1)"
-          >
-            <AppIcon name="chevron-right" :size="20" class="text-white" />
-          </button>
+    <section class="border-b-2 border-jobbie-ink bg-jobbie-ink" aria-label="Prečo Jobbie">
+      <div class="mx-auto grid w-full max-w-[1400px] grid-cols-2 gap-6 px-5 py-7 marketing:grid-cols-4 marketing:px-12">
+        <div v-for="(item, i) in homeTrustItems" :key="item.value" class="flex flex-col gap-1">
+          <span class="font-display text-[26px] font-extrabold marketing:text-[34px]" :class="i % 2 ? 'text-jobbie-pink' : 'text-jobbie-lime'">{{ item.value }}</span>
+          <span class="font-dmSans text-[15px] font-medium text-[#D7E3DB]">{{ item.label }}</span>
         </div>
       </div>
     </section>
-    <section class="mt-[72px] flex w-full flex-col items-center marketing:mt-[120px] marketingXl:mt-[140px]">
-      <div class="box-border flex w-full max-w-[1400px] flex-col gap-6 px-5 marketing:flex-row marketing:items-center">
-        <div class="w-full marketing:w-1/2">
-          <h2 class="mt-0 font-dmSans text-[32px] font-extrabold leading-[1.1] text-black marketing:text-[52px] marketing:leading-[1.05] marketingXl:text-[60px] marketingXl:leading-[60px]">
-            Tisíce ponúk. <br> <span class="text-marketing-green">Jeden web.</span>
-          </h2>
-          <p class="mb-0 mt-[10px] font-dmSans text-lg font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Ušetri si čas pri hľadaní pracovnej ponuky a začni zarábať čo najskôr</p>
-          <div class="mt-5 flex flex-col gap-2.5">
-            <div class="flex items-center gap-2.5">
-              <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full border-2 border-[#10231A] bg-[#C8F03C] font-dmSans text-xl font-bold text-[#10231A] marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
-                1.
-              </div>
-              <span class="font-dmSans text-[17px] font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Stovky pracovných ponúk na jednom mieste</span>
-            </div>
-            <div class="flex items-center gap-2.5">
-              <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full border-2 border-[#10231A] bg-[#C8F03C] font-dmSans text-xl font-bold text-[#10231A] marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
-                2.
-              </div>
-              <span class="font-dmSans text-[17px] font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Jednoduché vyhľadávanie podľa tvojich preferencií</span>
-            </div>
-            <div class="flex items-center gap-2.5">
-              <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full border-2 border-[#10231A] bg-[#C8F03C] font-dmSans text-xl font-bold text-[#10231A] marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
-                3.
-              </div>
-              <span class="font-dmSans text-[17px] font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Hodnotenia pre lepšiu dôveryhodnosť</span>
-            </div>
-          </div>
-        </div>
-        <div class="w-full marketing:w-1/2">
-          <picture>
-            <source
-              media="(max-width: 899px)"
-              srcset="/img/phone-image-400.webp"
-              type="image/webp"
-            >
-            <img
-              src="/img/phone-image.webp"
-              alt="Mobilná aplikácia Jobbie na telefóne"
-              width="800"
-              height="600"
-              loading="lazy"
-              decoding="async"
-              class="mx-auto block w-full rounded-[20px] object-contain marketing:w-[90%]"
-            >
-          </picture>
-        </div>
-      </div>
-    </section>
-    <section class="mt-[72px] flex w-full flex-col items-center marketing:mt-[120px] marketingXl:mt-[140px]">
-      <div class="box-border flex w-full max-w-[1400px] flex-col gap-6 px-5 marketing:flex-row marketing:items-center">
-        <div class="order-2 w-full marketing:order-none marketing:w-1/2">
-          <picture>
-            <source
-              media="(max-width: 899px)"
-              srcset="/img/spotlight-400.webp"
-              type="image/webp"
-            >
-            <img
-              src="/img/spotlight.webp"
-              alt="Profil a hodnotenia v aplikácii Jobbie"
-              width="800"
-              height="600"
-              loading="lazy"
-              decoding="async"
-              class="mx-auto block w-full rounded-[20px] object-contain marketing:w-[90%]"
-            >
-          </picture>
-        </div>
-        <div class="order-1 w-full marketing:order-none marketing:w-1/2">
-          <h2 class="mt-0 font-dmSans text-[32px] font-extrabold leading-[1.1] text-black marketing:text-[52px] marketing:leading-[1.05] marketingXl:text-[60px] marketingXl:leading-[60px]">
-            Tisíce uchádzačov. <br> <span class="text-marketing-green">Jeden inzerát.</span>
-          </h2>
-          <p class="mb-0 mt-[10px] font-dmSans text-lg font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Ušetri si čas pri hľadaní uchádzača.</p>
-          <div class="mt-5 flex flex-col gap-2.5">
-            <div class="flex items-center gap-2.5">
-              <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full border-2 border-[#10231A] bg-[#C8F03C] font-dmSans text-xl font-bold text-[#10231A] marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
-                1.
-              </div>
-              <span class="font-dmSans text-[17px] font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Oslovte tisíce overených uchádzačov</span>
-            </div>
-            <div class="flex items-center gap-2.5">
-              <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full border-2 border-[#10231A] bg-[#C8F03C] font-dmSans text-xl font-bold text-[#10231A] marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
-                2.
-              </div>
-              <span class="font-dmSans text-[17px] font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Jednoduché spravovanie prihlášok</span>
-            </div>
-            <div class="flex items-center gap-2.5">
-              <div class="flex aspect-square h-10 min-w-10 items-center justify-center rounded-full border-2 border-[#10231A] bg-[#C8F03C] font-dmSans text-xl font-bold text-[#10231A] marketing:h-[45px] marketing:min-w-[45px] marketing:text-[26px]">
-                3.
-              </div>
-              <span class="font-dmSans text-[17px] font-medium text-black/80 marketing:text-2xl marketingXl:text-[28px]">Rýchle obsadenie pozície do 48 hodín</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-    <section class="mt-[72px] flex w-full flex-col items-center marketing:mt-[120px] marketingXl:mt-[140px]">
+
+    <section class="mt-[72px] flex w-full flex-col items-center marketing:mt-[110px]">
       <div class="box-border w-full max-w-[1400px] px-5">
-        <h2 class="mt-0 font-dmSans text-[32px] font-extrabold leading-[1.1] text-black marketing:text-[52px] marketing:leading-[1.05] marketingXl:text-[60px] marketingXl:leading-[60px]">
-          Kategórie
-        </h2>
-        <div class="mt-8 grid w-full max-w-[1400px] grid-cols-1 gap-4 min-[600px]:grid-cols-2 lg:grid-cols-4">
+        <div class="flex flex-col gap-3 marketing:flex-row marketing:items-end marketing:justify-between">
+          <div>
+            <h2 class="mt-0 font-dmSans text-[32px] font-extrabold leading-[1.1] text-black marketing:text-[52px] marketing:leading-[1.05] marketingXl:text-[60px] marketingXl:leading-[60px]">
+              Aká práca ti <span class="text-marketing-green">sadne?</span>
+            </h2>
+            <p class="m-0 mt-2 font-dmSans text-[17px] font-medium text-black/65 marketing:text-[22px]">Od sťahovania cez eventy až po záhradu.</p>
+          </div>
+          <NuxtLink :to="ROUTES.find" class="font-dmSans text-[17px] font-bold text-jobbie-ink underline decoration-2 underline-offset-4">Všetky ponuky</NuxtLink>
+        </div>
+        <div class="mt-8 grid w-full grid-cols-2 gap-4 min-[700px]:grid-cols-3 lg:grid-cols-5 lg:gap-5">
           <NuxtLink
             v-for="cat in CATEGORIES"
             :key="cat"
             :to="`${ROUTES.find}?category=${cat}`"
-            class="flex items-center gap-2.5 rounded-[10px] bg-marketing-surface p-3 text-inherit no-underline shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] transition-transform duration-150 hover:-translate-y-0.5"
+            class="flex min-h-[132px] flex-col justify-between gap-4 rounded-[18px] p-4 text-jobbie-ink no-underline shadow-brutal transition-transform duration-150 hover:-translate-y-0.5 marketing:p-5"
+            :class="categoryTileClass(cat)"
           >
-            <span class="flex text-marketing-green">
-              <CategoryIcon :category="cat" :size="30" />
+            <span class="flex size-12 items-center justify-center rounded-[13px] border-2 border-jobbie-ink bg-white">
+              <CategoryIcon :category="cat" :size="24" icon-class="text-jobbie-ink" />
             </span>
-            <div class="flex min-w-0 flex-col gap-1">
-              <span class="m-0 font-dmSans text-lg font-bold leading-[1.1] text-black/80 marketing:text-[22px] marketing:leading-[22px]">{{ getCategoryLabel(cat) }}</span>
-              <span class="m-0 font-dmSans text-sm font-medium leading-snug text-marketing-muted marketing:text-base marketing:leading-[26px]">{{ categoryJobCount(cat) }} aktuálnych ponúk</span>
-            </div>
+            <span class="flex flex-col gap-0.5">
+              <span class="font-dmSans text-lg font-bold leading-tight marketing:text-xl">{{ getCategoryLabel(cat) }}</span>
+              <span class="font-dmSans text-sm font-medium text-jobbie-ink/75">{{ categoryJobCount(cat) }} aktuálnych ponúk</span>
+            </span>
           </NuxtLink>
         </div>
       </div>
     </section>
-    <section ref="latestJobsSectionRef" class="mt-[72px] flex w-full flex-col items-center marketing:mt-[120px] marketingXl:mt-[140px]">
+
+    <section ref="latestJobsSectionRef" class="mt-[72px] flex w-full flex-col items-center border-y-2 border-jobbie-ink bg-jobbie-pinkSoft py-16 marketing:mt-[110px] marketing:py-24">
       <div class="box-border w-full max-w-[1400px] px-5">
         <div class="mb-8 flex w-full flex-col items-start gap-4 md:mb-8 md:flex-row md:items-center md:justify-between">
           <div>
@@ -223,12 +57,7 @@
             </h2>
             <p class="m-0 text-[17px] font-medium text-black/65 marketing:text-[22px]">Najnovšie ponuky pripravené priamo pre teba</p>
           </div>
-          <AppButton
-            variant="primary"
-            size="md"
-            :to="ROUTES.find"
-            class="px-[18px] py-2.5 text-[17px] marketing:text-xl"
-          >Zobraziť všetky ponuky</AppButton>
+          <NuxtLink :to="ROUTES.find" class="jb-btn jb-btn--ink text-[17px] marketing:text-xl">Zobraziť všetky ponuky</NuxtLink>
         </div>
         <div class="w-full">
           <div v-if="loadingGrid" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -246,7 +75,7 @@
               v-for="job in gridJobs"
               :key="job.id"
               :to="ROUTES.jobDetail(job.id)"
-              class="block min-w-0 overflow-hidden rounded-[15px] bg-marketing-surface text-inherit no-underline shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] transition-[box-shadow,transform] duration-150 hover:-translate-y-0.5 hover:shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
+              class="jb-job-card block min-w-0 overflow-hidden rounded-[15px] bg-marketing-surface text-inherit no-underline shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A] transition-[box-shadow,transform] duration-150 hover:-translate-y-0.5 hover:shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
             >
               <div class="relative aspect-[4/3]">
                 <div class="absolute left-2.5 top-2.5 inline-flex items-center gap-1.5 rounded-full bg-[rgba(249,252,250,0.95)] px-2.5 py-1 font-dmSans text-[13px] font-semibold text-gray-900">
@@ -297,7 +126,7 @@
                 <div class="my-2.5 h-px w-full bg-[rgba(177,178,181,0.3)]" />
                 <div class="flex items-center justify-between text-marketing-green">
                   <div class="flex min-w-0 items-center gap-2">
-                    <div class="flex size-10 min-w-10 items-center justify-center rounded-full bg-marketing-green font-dmSans text-sm font-bold text-white">
+                    <div class="flex size-10 min-w-10 items-center justify-center rounded-full border-2 border-jobbie-ink bg-jobbie-pink font-dmSans text-sm font-bold text-jobbie-ink">
                       {{ employerInitials(job.employer_name) }}
                     </div>
                     <span class="overflow-hidden text-ellipsis whitespace-nowrap font-dmSans text-sm font-bold leading-[1.1] text-black marketing:text-base">{{ job.employer_name || 'Zamestnávateľ' }}</span>
@@ -310,25 +139,103 @@
         </div>
       </div>
     </section>
-    <section class="mt-[72px] flex w-full justify-center marketing:mt-[120px] marketingXl:mt-[140px]">
-      <div class="mx-4 w-[calc(100%-32px)] max-w-[1360px] rounded-[20px] bg-marketing-green p-7 px-7 marketing:p-[70px] marketing:pl-[100px] marketing:pr-[100px]">
-      <h2 class="text-center font-dmSans text-[28px] font-extrabold leading-[1.15] text-white marketing:text-left marketing:text-[52px] marketing:leading-[1.05] marketingXl:text-[60px] marketingXl:leading-[60px]">
-        {{ homeCta.heading }}<span class="block text-white lg:inline lg:pl-1">{{ homeCta.highlight }}</span>
-      </h2>
 
-      <p class="mb-4 mt-0 text-center font-dmSans text-[17px] font-medium text-white/80 marketing:mb-5 marketing:text-left marketing:text-2xl marketingXl:text-[28px]">
-        {{ homeCta.sub }}
-      </p>
-        <div class="flex justify-center pt-[20px]">
-          <AppButton
-            variant="outline"
-            size="lg"
-            :to="homeCta.to"
-            class="!h-auto min-h-12 border-0 bg-white px-6 py-3 text-lg text-marketing-green hover:bg-white/90 marketing:min-h-14 marketing:px-8 marketing:py-3.5 marketing:text-2xl"
+    <section class="mt-[72px] flex w-full flex-col items-center marketing:mt-[110px]">
+      <div class="box-border flex w-full max-w-[1400px] flex-col gap-8 px-5">
+        <div class="flex flex-col gap-5 marketing:flex-row marketing:items-end marketing:justify-between">
+          <h2 class="mt-0 font-dmSans text-[32px] font-extrabold leading-[1.1] text-black marketing:text-[52px] marketing:leading-[1.05] marketingXl:text-[60px] marketingXl:leading-[60px]">Ako Jobbie funguje?</h2>
+          <div
+            class="flex w-fit max-w-full flex-wrap items-center gap-1 rounded-2xl bg-white p-1.5 shadow-brutal"
+            role="tablist"
+            aria-label="Rola"
           >
-            {{ homeCta.cta }}
-          </AppButton>
+            <button
+              v-for="tab in homeCarouselTabs"
+              :key="tab.role"
+              type="button"
+              role="tab"
+              :aria-selected="homeCarouselRole === tab.role"
+              class="is-clickable min-h-11 whitespace-nowrap rounded-xl border-none px-4 font-dmSans text-[15px] font-bold transition-[background-color,color] duration-200 marketing:px-5 marketing:text-[17px]"
+              :class="homeCarouselRole === tab.role ? 'bg-jobbie-ink text-jobbie-lime' : 'bg-transparent text-jobbie-ink'"
+              @click="selectHomeCarouselRole(tab.role)"
+            >
+              {{ tab.label }}
+            </button>
+          </div>
         </div>
+        <ol class="m-0 grid list-none grid-cols-1 gap-5 p-0 min-[700px]:grid-cols-3" aria-live="polite">
+          <li
+            v-for="(step, i) in homeSteps"
+            :key="`${homeCarouselRole}-${i}`"
+            class="flex flex-col gap-3 rounded-[20px] p-6 shadow-brutal marketing:p-8"
+            :class="['bg-jobbie-lime', 'bg-white', 'bg-jobbie-pink'][i % 3]"
+          >
+            <span class="font-display text-[56px] font-extrabold leading-none text-jobbie-ink">{{ step.number }}</span>
+            <h3 class="m-0 font-dmSans text-[22px] font-extrabold text-jobbie-ink marketing:text-2xl">{{ step.title }}</h3>
+            <p class="m-0 font-dmSans text-base font-medium leading-relaxed text-jobbie-ink/80 marketing:text-[17px]">{{ step.text }}</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="mt-[72px] flex w-full flex-col items-center marketing:mt-[120px]">
+      <div class="box-border flex w-full max-w-[1400px] flex-col gap-12 px-5 marketing:flex-row marketing:items-center marketing:gap-16">
+        <div class="w-full marketing:w-1/2">
+          <h2 class="mt-0 font-dmSans text-[32px] font-extrabold leading-[1.1] text-black marketing:text-[52px] marketing:leading-[1.05] marketingXl:text-[60px] marketingXl:leading-[60px]">
+            Tisíce ponúk. <br> <span class="text-marketing-green">Jeden web.</span>
+          </h2>
+          <p class="mb-0 mt-[10px] font-dmSans text-lg font-medium text-black/80 marketing:text-2xl">Ušetri si čas pri hľadaní pracovnej ponuky a začni zarábať čo najskôr</p>
+          <ul class="m-0 mt-6 flex list-none flex-col gap-3 p-0">
+            <li v-for="(point, i) in seekerPoints" :key="point" class="flex items-center gap-3">
+              <span class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-jobbie-ink bg-jobbie-lime font-dmSans text-lg font-bold text-jobbie-ink">{{ i + 1 }}</span>
+              <span class="font-dmSans text-[17px] font-medium text-black/80 marketing:text-xl">{{ point }}</span>
+            </li>
+          </ul>
+        </div>
+        <div class="w-full pb-6 marketing:w-1/2">
+          <HomeFeatureIllustration variant="seeker" />
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-[72px] flex w-full flex-col items-center marketing:mt-[120px]">
+      <div class="box-border flex w-full max-w-[1400px] flex-col gap-12 px-5 marketing:flex-row marketing:items-center marketing:gap-16">
+        <div class="order-2 w-full pb-6 marketing:order-none marketing:w-1/2">
+          <HomeFeatureIllustration variant="employer" />
+        </div>
+        <div class="order-1 w-full marketing:order-none marketing:w-1/2">
+          <h2 class="mt-0 font-dmSans text-[32px] font-extrabold leading-[1.1] text-black marketing:text-[52px] marketing:leading-[1.05] marketingXl:text-[60px] marketingXl:leading-[60px]">
+            Tisíce uchádzačov. <br> <span class="text-marketing-green">Jeden inzerát.</span>
+          </h2>
+          <p class="mb-0 mt-[10px] font-dmSans text-lg font-medium text-black/80 marketing:text-2xl">Ušetri si čas pri hľadaní uchádzača.</p>
+          <ul class="m-0 mt-6 flex list-none flex-col gap-3 p-0">
+            <li v-for="(point, i) in employerPoints" :key="point" class="flex items-center gap-3">
+              <span class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-jobbie-ink bg-jobbie-pink font-dmSans text-lg font-bold text-jobbie-ink">{{ i + 1 }}</span>
+              <span class="font-dmSans text-[17px] font-medium text-black/80 marketing:text-xl">{{ point }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-[72px] flex w-full justify-center px-4 marketing:mt-[120px]">
+      <div class="flex w-full max-w-[1360px] flex-col gap-8 rounded-[28px] bg-jobbie-ink p-7 shadow-[0_0_0_2px_#10231A,6px_6px_0_2px_#FF9ED2] marketing:flex-row marketing:items-center marketing:gap-12 marketing:p-16">
+        <div class="flex min-w-0 flex-1 flex-col gap-4">
+          <span class="w-fit rounded-full bg-jobbie-pink px-3 py-1 font-dmSans text-sm font-bold text-jobbie-ink">Jobbie</span>
+          <h2 class="m-0 font-dmSans text-[32px] font-extrabold leading-[1.05] text-white marketing:text-[52px]">
+            {{ homeCta.heading }}<span class="block text-jobbie-lime">{{ homeCta.highlight }}</span>
+          </h2>
+          <p class="m-0 font-dmSans text-[17px] font-medium text-[#D7E3DB] marketing:text-[22px]">{{ homeCta.sub }}</p>
+          <div class="pt-2">
+            <NuxtLink :to="homeCta.to" class="jb-btn jb-btn--lime text-lg marketing:text-xl">{{ homeCta.cta }}</NuxtLink>
+          </div>
+        </div>
+        <ul class="m-0 flex min-w-0 list-none flex-col gap-3 p-0 marketing:w-[40%]">
+          <li v-for="(point, i) in employerPoints" :key="`cta-${point}`" class="flex items-start gap-3 rounded-2xl bg-[#1D3A2C] px-5 py-4 font-dmSans text-base text-white">
+            <span class="font-bold text-jobbie-lime">0{{ i + 1 }}</span>
+            <span>{{ point }}</span>
+          </li>
+        </ul>
       </div>
     </section>
     <HomeMarketingReviews v-if="HOME_MARKETING_REVIEWS_ENABLED" />
@@ -548,7 +455,6 @@ watch(gridJobs, (list) => {
   thumbFallbackStages.value = next
 })
 
-const HOME_CAROUSEL_GAP_PX = 30
 const homeCarouselTabs: readonly { role: HomeDesignCarouselRole; label: string }[] = [
   { role: 'zamestnavatel', label: 'Zamestnávateľ' },
   { role: 'brigadnik', label: 'Uchádzač' },
@@ -556,93 +462,59 @@ const homeCarouselTabs: readonly { role: HomeDesignCarouselRole; label: string }
 ]
 const homeCarouselRole = ref<HomeDesignCarouselRole>('zamestnavatel')
 const homeFaqItems = computed(() => HOME_DESIGN_FAQ_BY_ROLE[homeCarouselRole.value])
-const homeCarouselIndex = ref(0)
-const homeCarouselTrackRef = ref<HTMLElement | null>(null)
-const homeCarouselEl = ref<HTMLElement | null>(null)
-const homeCarouselTranslatePx = ref(0)
-const homeCarouselTransition = ref('none')
 const homeCarouselSlides = computed(() => HOME_DESIGN_CAROUSEL[homeCarouselRole.value])
-let hcDragStartX = 0
-let hcDragDelta = 0
-let hcIsDragging = false
-let hcIsHorizontal: boolean | null = null
-
-function homeCarouselCardWidth(): number {
-  const el = homeCarouselTrackRef.value?.querySelector('[data-home-carousel-card]')
-  if (el instanceof HTMLElement) return el.offsetWidth
-  return 700
-}
-
-function homeCarouselGetOffset(index: number): number {
-  const container = homeCarouselEl.value
-  const w = homeCarouselCardWidth()
-  const cw = container ? container.offsetWidth : 0
-  return cw / 2 - w / 2 - index * (w + HOME_CAROUSEL_GAP_PX)
-}
-
-function homeCarouselGoTo(index: number, animate: boolean): void {
-  const n = homeCarouselSlides.value.length
-  const idx = ((index % n) + n) % n
-  homeCarouselIndex.value = idx
-  homeCarouselTransition.value = animate ? 'transform 0.5s ease' : 'none'
-  homeCarouselTranslatePx.value = homeCarouselGetOffset(idx)
-}
-
-function homeCarouselGoDelta(delta: number): void {
-  homeCarouselGoTo(homeCarouselIndex.value + delta, true)
-}
-
 function selectHomeCarouselRole(role: HomeDesignCarouselRole): void {
   homeCarouselRole.value = role
-  homeCarouselIndex.value = 0
 }
 
-function onHomeCarouselResize(): void {
-  homeCarouselGoTo(homeCarouselIndex.value, false)
+/** "Ako Jobbie funguje" step cards — titles in the data start with "1. ", the number is shown separately. */
+const homeSteps = computed(() =>
+  homeCarouselSlides.value.map((slide, i) => ({
+    number: String(i + 1).padStart(2, '0'),
+    title: slide.title.replace(/^\d+\.\s*/, ''),
+    text: slide.text,
+  })),
+)
+
+const homeTrustItems = [
+  { value: 'Zadarmo', label: 'pre uchádzačov' },
+  { value: '1 klik', label: 'a prihláška je odoslaná' },
+  { value: 'Hodnotenia', label: 'firiem aj uchádzačov' },
+  { value: 'Chat', label: 'priamo v Jobbie' },
+] as const
+
+const seekerPoints = [
+  'Stovky pracovných ponúk na jednom mieste',
+  'Jednoduché vyhľadávanie podľa tvojich preferencií',
+  'Hodnotenia pre lepšiu dôveryhodnosť',
+] as const
+
+const employerPoints = [
+  'Oslovte tisíce overených uchádzačov',
+  'Jednoduché spravovanie prihlášok',
+  'Rýchle obsadenie pozície do 48 hodín',
+] as const
+
+const CATEGORY_TILE_CLASSES: Record<string, string> = {
+  stavba: 'bg-jobbie-lime',
+  domacnost: 'bg-jobbie-pink',
+  zahrada: 'bg-[#7FE3B8]',
+  stahovanie: 'bg-[#9FD8FF]',
+  sklad: 'bg-[#FFD24D]',
+  eventy: 'bg-[#C6B6FF]',
+  starostlivost: 'bg-[#FFA877]',
+  gastro: 'bg-jobbie-lime',
+  auto: 'bg-jobbie-pink',
+  ine: 'bg-white',
+}
+
+function categoryTileClass(cat: string): string {
+  return CATEGORY_TILE_CLASSES[cat] ?? 'bg-white'
 }
 
 watch(homeCarouselRole, () => {
   openFaqIndex.value = null
-  requestAnimationFrame(() => homeCarouselGoTo(0, false))
 })
-
-function onHomeCarouselTouchStart(e: TouchEvent): void {
-  const t = e.touches[0]
-  if (!t) return
-  hcDragStartX = t.clientX
-  hcDragDelta = 0
-  hcIsDragging = true
-  hcIsHorizontal = null
-  homeCarouselTransition.value = 'none'
-}
-
-function onHomeCarouselTouchMove(e: TouchEvent): void {
-  if (!hcIsDragging) return
-  const t = e.touches[0]
-  if (!t) return
-  const dx = t.clientX - hcDragStartX
-  if (hcIsHorizontal === null) {
-    hcIsHorizontal = Math.abs(dx) > 8
-  }
-  if (!hcIsHorizontal) return
-  e.preventDefault()
-  hcDragDelta = dx
-  homeCarouselTranslatePx.value = homeCarouselGetOffset(homeCarouselIndex.value) + hcDragDelta
-}
-
-function onHomeCarouselTouchEnd(): void {
-  if (!hcIsDragging) return
-  hcIsDragging = false
-  const THRESHOLD = 60
-  if (hcDragDelta < -THRESHOLD) {
-    homeCarouselGoDelta(1)
-  } else if (hcDragDelta > THRESHOLD) {
-    homeCarouselGoDelta(-1)
-  } else {
-    homeCarouselGoTo(homeCarouselIndex.value, true)
-  }
-  hcDragDelta = 0
-}
 
 function categoryJobCount(cat: (typeof CATEGORIES)[number]): number {
   return categoryJobCounts.value[cat] ?? 0
@@ -712,14 +584,6 @@ onMounted(async () => {
     loadingGrid.value = false
   } else if (Object.keys(categoryJobCounts.value).length === 0) {
     await fetchCategoryJobCounts()
-  }
-  requestAnimationFrame(() => homeCarouselGoTo(0, false))
-  window.addEventListener('resize', onHomeCarouselResize)
-})
-
-onBeforeUnmount(() => {
-  if (typeof window !== 'undefined') {
-    window.removeEventListener('resize', onHomeCarouselResize)
   }
 })
 </script>

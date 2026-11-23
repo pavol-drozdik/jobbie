@@ -506,7 +506,7 @@ const firmyTopListingHint = computed(() => {
 const durationSliderTrackStyle = computed(() => {
   const pct = ((durationMonths.value - 1) / 11) * 100
   return {
-    background: `linear-gradient(to right, rgb(34,197,94) ${pct}%, rgb(229,231,235) ${pct}%)`,
+    background: `linear-gradient(to right, rgb(16,35,26) ${pct}%, rgb(229,231,235) ${pct}%)`,
   }
 })
 
@@ -742,7 +742,7 @@ input[type='range'].duration-slider::-webkit-slider-thumb {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: rgb(34, 197, 94);
+  background: rgb(16, 35, 26);
   cursor: pointer;
 }
 </style>

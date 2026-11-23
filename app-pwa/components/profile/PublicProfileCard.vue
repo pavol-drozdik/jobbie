@@ -33,7 +33,7 @@
               class="overflow-hidden rounded-[20px] bg-white shadow-[0_0_0_2px_#10231A,4px_4px_0_2px_#10231A]"
             >
               <div
-                class="relative h-40 overflow-hidden bg-[#10231A]"
+                class="relative h-40 overflow-hidden bg-jobbie-lime jb-on-light"
               >
                 <div
                   class="pointer-events-none absolute -right-[60px] -top-20 size-[280px] rounded-full bg-white/[0.08]"

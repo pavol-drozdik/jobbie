@@ -5,7 +5,7 @@
   >
     <!-- profile-card-banner -->
     <div
-      class="relative h-[140px] bg-[linear-gradient(155deg,rgb(21,128,61)_0%,rgb(34,197,94)_100%)]"
+      class="relative h-[140px] bg-jobbie-lime jb-on-light"
       aria-hidden="true"
     >
       <div
