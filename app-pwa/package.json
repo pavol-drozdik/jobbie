@@ -46,7 +46,7 @@
     "pdfjs-dist": "^6.0.227",
     "posthog-js": "^1.386.6",
     "socket.io-client": "^4.7.0",
-    "vue": "^3.5.30",
+    "vue": "^3.5.39",
     "vue-router": "^4.6.4",
     "web-vitals": "^5.3.0"
   },
